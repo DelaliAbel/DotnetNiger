@@ -16,7 +16,7 @@ DotnetNiger est une plateforme communautaire moderne construite avec une archite
 ### Fonctionnalités Principales
 
 - 🔐 **Authentication JWT** - Système d'authentification sécurisé avec tokens JWT
-- 👥 **Gestion Utilisateurs** - Inscription, profils, rôles (Admin, Moderator, Member)
+- 👥 **Gestion Utilisateurs** - Inscription, profils, rôles (Admin(Super Admin), Member)(Auto Attribut)
 - 📝 **Posts & Commentaires** - Création et partage de contenu
 - ❤️ **Système de Likes** - Interactions sociales
 - 👤 **Follow/Unfollow** - Réseau social
