@@ -14,7 +14,6 @@ public class ApplicationUser : IdentityUser<Guid>
 	public DateTime? LastLoginAt { get; set; }
 	public string? Country { get; set; }
 	public string? City { get; set; }
-	public bool EmailConfirmed { get; set; }
 
 	// Relations
 	public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
