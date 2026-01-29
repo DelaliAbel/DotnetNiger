@@ -124,7 +124,7 @@ curl -X POST http://localhost:5075/api/auth/login \
 
 - **Framework:** .NET 8.0 LTS (C# 12)
 - **API Gateway:** YARP (Yet Another Reverse Proxy)
-- **Database:** SQL Server 2022 / PostgreSQL 16+
+- **Database:** SQL Server 2022 / PostgreSQL 16+ / Sqlite (Test Local)
 - **ORM:** Entity Framework Core 8.0
 - **Cache:** Redis
 - **Authentication:** JWT Bearer
