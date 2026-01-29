@@ -1,0 +1,6 @@
+@DotnetNiger.Identity_HostAddress = http://localhost:5075
+
+GET {{DotnetNiger.Identity_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
