@@ -9,7 +9,7 @@
 
 ## 📋 Vue d'ensemble
 
-DotnetNiger est une plateforme communautaire moderne construite avec une architecture microservices .NET 8.0. Elle fournit des fonctionnalités de réseau social, forums de discussion et partage de contenu pour la communauté tech nigérienne.
+DotnetNiger est une plateforme communautaire moderne construite avec une architecture microservices .NET 8.0. Elle fournit des fonctionnalités de réseau social, forums de discussion et partage de contenu pour la communauté  DotnetNiger.
 
 > ⚠️ **Note:** Ce projet est actuellement en développement actif et n'est pas encore en production.
 
@@ -34,14 +34,14 @@ DotnetNiger est une plateforme communautaire moderne construite avec une archite
 │        JWT Validation • Rate Limiting • CORS            │
 └────────────────┬────────────────────────┬───────────────┘
                  │                        │
-        ┌────────▼─────────┐     ┌───────▼────────┐
-        │  Identity (5075) │     │ Community (5269)│
+        ┌────────▼─────────┐     ┌───────▼──────────┐
+        │  Identity (5075) │     │ Community (5269) │
         │  Authentication  │     │   Social Features│
         │  Authorization   │     │   Posts, Likes   │
         │  User Management │     │   Comments       │
         └──────────────────┘     └──────────────────┘
                  │                        │
-        ┌────────▼────────────────────────▼───────────┐
+        ┌────────▼────────────────────────▼────────────┐
         │           SQL Server 2022                    │
         │        (PostgreSQL 16+ supporté)             │
         └──────────────────────────────────────────────┘
@@ -191,7 +191,7 @@ Copyright (c) 2026 DotnetNiger
 
 ## 🌐 Liens
 
-- 📦 **Repository:** [github.com/akaletekoffilevis/DotnetNiger](https://github.com/akaletekoffilevis/DotnetNiger)
+- 📦 **Repository:** [github.com/akaletekoffilevis/DotnetNiger](https://github.com/akaletekoffilevis/DotnetNiger.git)
 - 💬 **Discussions:** [GitHub Discussions](https://github.com/akaletekoffilevis/DotnetNiger/discussions)
 - 📧 **Contact:**  abdallyacali@hotmail.com
 
@@ -223,4 +223,4 @@ Si vous trouvez ce projet intéressant ou utile :
 
 ---
 
-**Made with ❤️ for the Niger tech community**
+**Made with ❤️ for the DotnetNiger Community**
