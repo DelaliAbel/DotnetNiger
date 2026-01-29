@@ -1,272 +1,226 @@
-# DotnetNiger - API Gateway & Microservices Platform
+# DotnetNiger
 
-Une plateforme d'architecture microservices moderne basée sur .NET 8 LTS avec Gateway API centralisé, gestion d'identité et services communautaires.
+> Plateforme communautaire open-source pour la communauté tech nigérienne, construite avec .NET 8.0 LTS
 
-## 🎯 Vue d'ensemble
+[![.NET Version](https://img.shields.io/badge/.NET-8.0%20LTS-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download/dotnet/8.0)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](docs/18-LICENSE.md)
+[![Status](https://img.shields.io/badge/Status-In%20Development-yellow.svg)](https://github.com/akaletekoffilevis/DotnetNiger)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](docs/10-CONTRIBUTING.md)
 
-DotnetNiger est une solution complète de microservices qui démontre les meilleures pratiques pour :
-- Gateway API avec YARP (Yet Another Reverse Proxy)
-- Gestion centralisée des identités
-- Services modulaires et scalables
-- Containerisation avec Docker
-- Monitoring et métriques
-- Rate limiting et circuit breaker
-- Documentation automatisée Swagger
+## 📋 Vue d'ensemble
+
+DotnetNiger est une plateforme communautaire moderne construite avec une architecture microservices .NET 8.0. Elle fournit des fonctionnalités de réseau social, forums de discussion et partage de contenu pour la communauté tech nigérienne.
+
+> ⚠️ **Note:** Ce projet est actuellement en développement actif et n'est pas encore en production.
+
+### Fonctionnalités Principales
+
+- 🔐 **Authentication JWT** - Système d'authentification sécurisé avec tokens JWT
+- 👥 **Gestion Utilisateurs** - Inscription, profils, rôles (Admin, Moderator, Member)
+- 📝 **Posts & Commentaires** - Création et partage de contenu
+- ❤️ **Système de Likes** - Interactions sociales
+- 👤 **Follow/Unfollow** - Réseau social
+- 🔍 **Recherche & Filtres** - Recherche avancée de contenu
+- 🚀 **API Gateway** - Point d'entrée unique avec YARP
+- 📊 **Monitoring** - Logs structurés et métriques
+- 🐳 **Docker Ready** - Déploiement containerisé
 
 ## 🏗️ Architecture
 
 ```
-DotnetNiger/
-├── DotnetNiger.Gateway/      # API Gateway centralisée
-├── DotnetNiger.Identity/     # Service d'identité et authentification
-├── DotnetNiger.Community/    # Service communautaire
-└── docker-compose.yml        # Orchestration des services
+┌─────────────────────────────────────────────────────────┐
+│                     API Gateway (5000)                  │
+│                    YARP Reverse Proxy                   │
+│        JWT Validation • Rate Limiting • CORS            │
+└────────────────┬────────────────────────┬───────────────┘
+                 │                        │
+        ┌────────▼─────────┐     ┌───────▼────────┐
+        │  Identity (5075) │     │ Community (5269)│
+        │  Authentication  │     │   Social Features│
+        │  Authorization   │     │   Posts, Likes   │
+        │  User Management │     │   Comments       │
+        └──────────────────┘     └──────────────────┘
+                 │                        │
+        ┌────────▼────────────────────────▼───────────┐
+        │           SQL Server 2022                    │
+        │        (PostgreSQL 16+ supporté)             │
+        └──────────────────────────────────────────────┘
+                 │
+        ┌────────▼────────┐
+        │   Redis Cache   │
+        └─────────────────┘
 ```
 
-### Services
-
-| Service | Port | Description |
-|---------|------|-------------|
-| Gateway | 5000 | Point d'entrée unique |
-| Identity | 5075 | Gestion des identités et JWT |
-| Community | 5269 | Services communautaires |
-
-## 🚀 Démarrage rapide
+## 🚀 Quick Start
 
 ### Prérequis
-- .NET 8 SDK ou supérieur
-- Docker & Docker Compose
-- Git
 
-### Installation locale
+- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [SQL Server 2022](https://www.microsoft.com/sql-server/sql-server-downloads) ou [Docker](https://www.docker.com/products/docker-desktop)
+- [Visual Studio Code](https://code.visualstudio.com/) (recommandé)
+
+### Installation Rapide
 
 ```bash
-# Cloner le repository
-git clone <repository-url>
+# 1. Cloner le repository
+git clone https://github.com/akaletekoffilevis/DotnetNiger.git
 cd DotnetNiger
 
-# Restaurer les dépendances
+# 2. Restaurer les packages
 dotnet restore
 
-# Lancer les migrations de base de données
-dotnet ef database update
+# 3. Configurer la base de données (SQL Server via Docker)
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=YourStrong@Passw0rd" \
+  -p 1433:1433 -d mcr.microsoft.com/mssql/server:2022-latest
 
-# Démarrer les services
-dotnet run --project DotnetNiger.Gateway
-dotnet run --project DotnetNiger.Identity
-dotnet run --project DotnetNiger.Community
+# 4. Appliquer les migrations
+cd DotnetNiger.Identity
+dotnet ef database update
+cd ../DotnetNiger.Community
+dotnet ef database update
+cd ..
+
+# 5. Lancer tous les services
+.\run.ps1          # Windows
+./run.sh           # Linux/Mac
 ```
 
-### Avec Docker Compose
+### Tester l'API
 
 ```bash
-# Construire et lancer les services
-docker-compose up -d
+# Inscription
+curl -X POST http://localhost:5075/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"Test@123","firstName":"John","lastName":"Doe"}'
 
-# Vérifier le statut
-docker-compose ps
-
-# Arrêter les services
-docker-compose down
+# Login
+curl -X POST http://localhost:5075/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"Test@123"}'
 ```
 
 ## 📚 Documentation
 
-- [SETUP.md](./SETUP.md) - Guide de configuration détaillé
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - Architecture du projet
-- [API.md](./API.md) - Documentation des APIs
-- [DEPLOYMENT.md](./DEPLOYMENT.md) - Guide de déploiement
-- [CONTRIBUTING.md](./CONTRIBUTING.md) - Guide pour les contributeurs
+| Document | Description |
+|----------|-------------|
+| [📖 Index](docs/00-INDEX.md) | Navigation de la documentation |
+| [⚙️ Setup](docs/01-SETUP.md) | Guide d'installation détaillé |
+| [🚀 Quick Start](docs/02-QUICK-START.md) | Démarrage en 5 minutes |
+| [🏛️ Architecture](docs/03-ARCHITECTURE.md) | Architecture et design patterns |
+| [🛠️ Technical Stack](docs/04-TECHNICAL-STACK.md) | Technologies utilisées |
+| [📁 Project Structure](docs/05-PROJECT-STRUCTURE.md) | Organisation du code |
+| [🔌 API](docs/06-API.md) | Documentation API complète |
+| [📊 Monitoring](docs/07-MONITORING.md) | Logs et métriques |
+| [🤝 Contributing](./CONTRIBUTING.md) | Guide de contribution |
+| [📏 Code Standards](docs/08-CODE-STANDARDS.md) | Standards de code |
+| [🧪 Testing](docs/09-TESTING.md) | Guide de tests |
+| [❓ FAQ](./FAQ.md) | Questions fréquentes |
+| [📝 Changelog](./CHANGELOG.md) | Historique des versions |
+| [🔒 Security](./SECURITY.md) | Politique de sécurité |
+| [🤝 Code of Conduct](./CODE_OF_CONDUCT.md) | Code de conduite |
+| [📄 License](LICENSE.md) | Licence MIT |
 
-## 🔐 Accès à l'API
+## 🛠️ Stack Technique
 
-### Swagger/OpenAPI
+- **Framework:** .NET 8.0 LTS (C# 12)
+- **API Gateway:** YARP (Yet Another Reverse Proxy)
+- **Database:** SQL Server 2022 / PostgreSQL 16+
+- **ORM:** Entity Framework Core 8.0
+- **Cache:** Redis
+- **Authentication:** JWT Bearer
+- **Logging:** Serilog
+- **Monitoring:** Application Insights, Prometheus
+- **Testing:** xUnit, Moq, FluentAssertions
+- **Containers:** Docker, Docker Compose
 
-Une fois les services lancés, accédez à la documentation interactive :
+## 🤝 Contribuer
 
-```
-Gateway:    http://localhost:5000/swagger
-Identity:   http://localhost:5075/swagger
-Community:  http://localhost:5269/swagger
-```
+Nous accueillons les contributions ! Voici comment commencer :
 
-### Endpoints principaux
+1. **Fork** le repository
+2. **Clone** votre fork localement
+3. **Créer une branche** depuis `dev` : `git checkout -b feat/ma-fonctionnalite`
+4. **Commit** vos changements : `git commit -m "feat(scope): description"`
+5. **Push** vers votre fork : `git push origin feat/ma-fonctionnalite`
+6. **Créer une Pull Request** vers la branche `dev`
 
-#### Gateway
-- `GET /swagger` - Documentation Swagger
-- `GET /health` - Health check
-- `GET /metrics` - Métriques Prometheus
+📖 Voir le [Guide de Contribution](./CONTRIBUTING.md) pour les détails complets.
 
-#### Identity Service
-- `POST /auth/login` - Connexion
-- `POST /auth/register` - Inscription
-- `POST /auth/refresh` - Renouvellement du token
-- `GET /auth/profile` - Profil utilisateur
+### Workflow Git
 
-#### Community Service
-- `GET /posts` - Liste des posts
-- `POST /posts` - Créer un post
-- `GET /posts/{id}` - Détails d'un post
+- **`dev`** - Branche de développement (développez ici !)
+- **`main`** - Branche de production (releases uniquement)
 
-## 🔧 Configuration
+### Format des Commits
 
-### Fichiers de configuration
-
-```
-├── appsettings.json             # Configuration générale
-├── appsettings.Development.json # Configuration développement
-├── appsettings.Production.json  # Configuration production
-└── Configuration/
-    └── yarp-routes.json         # Configuration du routage
-```
-
-### Variables d'environnement
-
-```env
-# Authentification
-JWT_SECRET=your-secret-key
-JWT_ISSUER=https://Comming...
-JWT_AUDIENCE=Comming...
-
-# Base de données
-DB_CONNECTION_STRING=Server=localhost;Database=DotnetNiger;User Id=sa;Password=YourPassword123!
-
-# Services
-IDENTITY_SERVICE_URL=http://localhost:5075
-COMMUNITY_SERVICE_URL=http://localhost:5269
-
-# Caching
-REDIS_CONNECTION_STRING=localhost:6379
-
-# Logging
-LOG_LEVEL=Information
-```
-
-## 📊 Monitoring
-
-### Healthchecks
+Nous utilisons [Conventional Commits](https://www.conventionalcommits.org/):
 
 ```bash
-# Gateway health
-curl http://localhost:5000/health
-
-# Identity health
-curl http://localhost:5075/health
-
-# Community health
-curl http://localhost:5269/health
+feat(community): add post search functionality
+fix(identity): resolve token expiration bug
+docs: update API documentation
 ```
 
-### Métriques Prometheus
+## 📊 Statut du Projet
+
+- ⏳ Architecture microservices (en cours)
+- ⏳ API Gateway avec YARP (en cours)
+- ⏳ Service Identity (Auth JWT) (en cours)
+- ⏳ Service Community (Social) (en cours)
+- ⏳ Docker & Docker Compose (en cours)
+- ⏳ Documentation complète (en cours)
+- ⏳ Tests unitaires (en cours)
+- ⏳ Tests d'intégration (en cours)
+- ⏳ CI/CD GitHub Actions (en cours)
+- 📅 Déploiement production (prévu)
+- 📅 Real-time features (prévu v1.1)
+
+## 📄 Licence
+
+Ce projet est sous licence MIT. Voir [LICENSE.md](LICENSE.md) pour les détails.
 
 ```
-http://localhost:5000/metrics
+Copyright (c) 2026 DotnetNiger
 ```
 
-## 🧪 Tests
+## 👥 Auteur
 
-```bash
-# Exécuter tous les tests
-dotnet test
+- **Créateur & Mainteneur:** [@akaletekoffilevis](https://github.com/akaletekoffilevis)
 
-# Exécuter les tests d'un projet spécifique
-dotnet test DotnetNiger.Gateway
+> Ce projet est actuellement géré par son créateur en attendant sa mise en production et l'ouverture à la communauté.
 
-# Avec rapport de couverture
-dotnet test /p:CollectCoverage=true
-```
+## 🌐 Liens
 
-## 📦 Build & Déploiement
+- 📦 **Repository:** [github.com/akaletekoffilevis/DotnetNiger](https://github.com/akaletekoffilevis/DotnetNiger)
+- 💬 **Discussions:** [GitHub Discussions](https://github.com/akaletekoffilevis/DotnetNiger/discussions)
+- 📧 **Contact:**  abdallyacali@hotmail.com
 
-### Build local
+## 🎯 Roadmap
 
-```bash
-dotnet build -c Release
-```
+### Version 1.0.0 (En cours)
+- [ ] Architecture microservices
+- [ ] Services Identity & Community
+- [ ] API Gateway
+- [ ] Documentation complète
+- [ ] Tests d'intégration complets
+- [ ] CI/CD pipeline
+- [ ] Déploiement initial
 
-### Build Docker
+### Version 1.1.0 (Futur)
+- [ ] Real-time notifications (SignalR)
+- [ ] Advanced search (Elasticsearch)
+- [ ] File upload service
+- [ ] Email service (SendGrid)
+- [ ] Admin dashboard
 
-```bash
-docker build -t dotnetniger-gateway -f DotnetNiger.Gateway/Dockerfile .
-docker build -t dotnetniger-identity -f DotnetNiger.Identity/Dockerfile .
-docker build -t dotnetniger-community -f DotnetNiger.Community/Dockerfile .
-```
+## ⭐ Support
 
-### Déploiement
-
-Consultez [DEPLOYMENT.md](./DEPLOYMENT.md) pour les instructions détaillées de déploiement en environnement de production.
-
-## 🤝 Contribution
-
-Les contributions sont bienvenues ! Consultez [CONTRIBUTING.md](./CONTRIBUTING.md) pour les directives.
-
-### Processus de contribution
-
-1. Fork le repository
-2. Créer une branche pour votre feature (`git checkout -b feature/AmazingFeature`)
-3. Commit vos changements (`git commit -m 'Add some AmazingFeature'`)
-4. Push vers la branche (`git push origin feature/AmazingFeature`)
-5. Ouvrir une Pull Request
-
-## 📝 Convention de code
-
-- Respecter les directives [C# Coding Guidelines](https://docs.microsoft.com/en-us/dotnet/fundamentals/coding-style)
-- Nommer les classes et méthodes en PascalCase
-- Nommer les variables locales en camelCase
-- Ajouter des commentaires XML pour les méthodes publiques
-- Maintenir les tests unitaires pour le code critique
-
-## 🐛 Signalement de bugs
-
-Pour signaler un bug, veuillez ouvrir une issue avec :
-- Description détaillée du problème
-- Étapes pour reproduire
-- Comportement attendu vs actuel
-- Logs d'erreur pertinents
-- Environnement (OS, versions, etc.)
-
-## 📄 Licences
-
-Ce projet est sous licence MIT. Voir [LICENSE](./LICENSE) pour les détails.
-
-## 👥 Auteurs
-
-- **DotnetNiger Team** - Travail initial
-
-## 🙏 Remerciements
-
-- [YARP](https://microsoft.github.io/reverse-proxy/) - Reverse proxy
-- [Polly](https://github.com/App-vNext/Polly) - Circuit breaker
-- [Serilog](https://serilog.net/) - Logging
-- [Prometheus](https://prometheus.io/) - Monitoring
-
-## 📞 Support
-
-Pour toute question ou problème :
-- Consulter la [documentation](./docs)
-- Ouvrir une issue sur GitHub
-- Contacter l'équipe de support
-
-## 🗺️ Roadmap
-
-- [ ] Implémentation complète de l'authentification JWT
-- [ ] Services de notification email/SMS
-- [ ] Dashboard d'administration
-- [ ] Analytics et rapports
-- [ ] Support multi-tenancy
-- [ ] API GraphQL
-- [ ] Authentification OAuth2/OIDC
-
-## 📊 Statistiques
-
-- **Langage**: C# (.NET 9)
-- **Architecture**: Microservices
-- **Pattern**: Clean Architecture
-- **Database**: SQL Server/Sqlite (test local)
-- **Cache**: Redis
-- **Monitoring**: Prometheus
-- **Container**: Docker
+Si vous trouvez ce projet intéressant ou utile :
+- ⭐ Donnez une étoile sur GitHub
+- 🐛 Signalez des bugs via les [Issues](https://github.com/akaletekoffilevis/DotnetNiger/issues)
+- 💡 Proposez des features via les [Discussions](https://github.com/akaletekoffilevis/DotnetNiger/discussions)
+- 🤝 Contribuez via des Pull Requests
 
 ---
 
-**Dernière mise à jour**: 29 Janvier 2026
+**Made with ❤️ for the Niger tech community**
