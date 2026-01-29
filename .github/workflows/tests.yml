@@ -2,9 +2,9 @@ name: Tests & Quality
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, dev]
   pull_request:
-    branches: [main, develop]
+    branches: [main, dev]
 
 jobs:
   test:
@@ -17,7 +17,7 @@ jobs:
           ACCEPT_EULA: Y
           MSSQL_SA_PASSWORD: TestPassword123!
         options: >-
-          --health-cmd="/opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P TestPassword123! -Q 'SELECT 1' || exit 1"
+          --health-cmd="/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P TestPassword123! -Q 'SELECT 1' -C || exit 1"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -35,12 +35,12 @@ jobs:
           - 6379:6379
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Setup .NET 9
-        uses: actions/setup-dotnet@v3
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
+          dotnet-version: 8.0.x
 
       - name: Restore dependencies
         run: dotnet restore
@@ -48,28 +48,25 @@ jobs:
       - name: Build
         run: dotnet build --no-restore --configuration Release
 
-      - name: Run tests
-        run: dotnet test --no-build --verbosity normal --configuration Release
-
-      - name: Code coverage
-        run: dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+      - name: Run tests with coverage
+        run: dotnet test --no-build --verbosity normal --configuration Release /p:CollectCoverage=true /p:CoverletOutput=./TestResults/coverage/ /p:CoverletOutputFormat=opencover
 
       - name: Upload coverage reports
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
-          files: ./coverage/coverage.opencover.xml
+          files: "**/TestResults/coverage/coverage.opencover.xml"
           fail_ci_if_error: false
 
   code-quality:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Setup .NET 9
-        uses: actions/setup-dotnet@v3
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
+          dotnet-version: 8.0.x
 
       - name: Restore dependencies
         run: dotnet restore
@@ -81,7 +78,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Run Dependabot
         run: |
