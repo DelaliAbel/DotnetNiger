@@ -259,13 +259,13 @@ public async Task GetPosts_ReturnsSuccessAndPosts()
 {
     // Act
     var response = await _client.GetAsync("/api/posts");
-    
+
     // Assert
     response.StatusCode.Should().Be(HttpStatusCode.OK);
-    
+
     var content = await response.Content.ReadAsStringAsync();
     var posts = JsonSerializer.Deserialize<List<PostDto>>(content);
-    
+
     posts.Should().NotBeNull();
     posts.Should().HaveCount(2);
 }
@@ -289,7 +289,7 @@ public async Task CreatePost_WithValidData_ReturnsCreated()
     // Assert
     response.StatusCode.Should().Be(HttpStatusCode.Created);
     response.Headers.Location.Should().NotBeNull();
-    
+
     var content = await response.Content.ReadAsStringAsync();
     var post = JsonSerializer.Deserialize<PostDto>(content);
     post.Title.Should().Be("New Post");
@@ -432,7 +432,7 @@ public class PostServiceTests
     {
         // Arrange
         var dto = _fixture.Create<CreatePostDto>();
-        
+
         // Act & Assert
         // ...
     }
@@ -527,6 +527,7 @@ dotnet test /p:CollectCoverage=true
 ## CI/CD
 
 **GitHub Actions:**
+
 ```yaml
 - name: Run Tests
   run: dotnet test --no-build --verbosity normal

@@ -5,6 +5,7 @@ Guide de monitoring, logging et observabilité.
 ## Vue d'ensemble
 
 DotnetNiger utilise une stack complète de monitoring:
+
 - **Serilog** - Structured logging
 - **Application Insights** - APM Azure
 - **Prometheus** - Métriques
@@ -16,10 +17,11 @@ DotnetNiger utilise une stack complète de monitoring:
 ### Configuration
 
 **appsettings.json:**
+
 ```json
 {
   "Serilog": {
-    "Using": [ "Serilog.Sinks.Console", "Serilog.Sinks.File", "Serilog.Sinks.Seq" ],
+    "Using": ["Serilog.Sinks.Console", "Serilog.Sinks.File", "Serilog.Sinks.Seq"],
     "MinimumLevel": {
       "Default": "Information",
       "Override": {
@@ -44,7 +46,7 @@ DotnetNiger utilise une stack complète de monitoring:
         }
       }
     ],
-    "Enrich": [ "FromLogContext", "WithMachineName", "WithThreadId" ]
+    "Enrich": ["FromLogContext", "WithMachineName", "WithThreadId"]
   }
 }
 ```
@@ -64,7 +66,7 @@ public class PostService
     public async Task<Post> CreateAsync(CreatePostDto dto)
     {
         _logger.LogInformation("Creating post for user {UserId}", dto.UserId);
-        
+
         try
         {
             var post = await _repository.AddAsync(new Post { ... });
@@ -97,8 +99,8 @@ services.AddApplicationInsightsTelemetry(options =>
 
 ```csharp
 _telemetryClient.TrackMetric("PostsCreated", 1);
-_telemetryClient.TrackEvent("UserRegistered", 
-    new Dictionary<string, string> 
+_telemetryClient.TrackEvent("UserRegistered",
+    new Dictionary<string, string>
     {
         { "UserId", userId.ToString() },
         { "Source", "Web" }
@@ -130,14 +132,14 @@ app.MapMetrics(); // Expose /metrics endpoint
 ```csharp
 public class MetricsService
 {
-    private static readonly Counter _requestsTotal = 
+    private static readonly Counter _requestsTotal =
         Metrics.CreateCounter("http_requests_total", "Total HTTP requests");
-    
-    private static readonly Histogram _requestDuration = 
-        Metrics.CreateHistogram("http_request_duration_seconds", 
+
+    private static readonly Histogram _requestDuration =
+        Metrics.CreateHistogram("http_request_duration_seconds",
             "HTTP request duration");
-    
-    private static readonly Gauge _activeConnections = 
+
+    private static readonly Gauge _activeConnections =
         Metrics.CreateGauge("active_connections", "Active connections");
 
     public void RecordRequest()
@@ -226,18 +228,21 @@ app.MapHealthChecks("/health/live", new HealthCheckOptions
 ### Dashboards Recommandés
 
 **System Metrics:**
+
 - CPU Usage
 - Memory Usage
 - Disk I/O
 - Network Traffic
 
 **Application Metrics:**
+
 - Request Rate
 - Error Rate
 - Response Time (p50, p95, p99)
 - Active Connections
 
 **Business Metrics:**
+
 - New Users/Day
 - Posts Created/Hour
 - Comments/Minute
@@ -320,38 +325,38 @@ public class CorrelationIdMiddleware
 
 ```yaml
 groups:
-- name: dotnetniger_alerts
-  rules:
-  - alert: HighErrorRate
-    expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
-    for: 5m
-    labels:
-      severity: critical
-    annotations:
-      summary: "High error rate detected"
-      description: "Error rate is {{ $value }} errors/sec"
+  - name: dotnetniger_alerts
+    rules:
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate detected"
+          description: "Error rate is {{ $value }} errors/sec"
 
-  - alert: HighResponseTime
-    expr: http_request_duration_seconds{quantile="0.99"} > 2
-    for: 5m
-    labels:
-      severity: warning
-    annotations:
-      summary: "High response time detected"
-      description: "99th percentile is {{ $value }}s"
+      - alert: HighResponseTime
+        expr: http_request_duration_seconds{quantile="0.99"} > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time detected"
+          description: "99th percentile is {{ $value }}s"
 ```
 
 ## Performance Monitoring
 
 ### Key Metrics
 
-| Metric | Target | Critical |
-|--------|--------|----------|
-| Response Time (p95) | < 200ms | > 1s |
-| Error Rate | < 0.1% | > 1% |
-| Throughput | > 100 req/s | < 10 req/s |
-| CPU Usage | < 70% | > 90% |
-| Memory Usage | < 80% | > 95% |
+| Metric              | Target      | Critical   |
+| ------------------- | ----------- | ---------- |
+| Response Time (p95) | < 200ms     | > 1s       |
+| Error Rate          | < 0.1%      | > 1%       |
+| Throughput          | > 100 req/s | < 10 req/s |
+| CPU Usage           | < 70%       | > 90%      |
+| Memory Usage        | < 80%       | > 95%      |
 
 ### Monitoring Checklist
 

@@ -215,7 +215,7 @@ DotnetNiger/
 │   ├── 📄 06-API.md                # API endpoints documentation
 │   └── 📄 08-DEPLOYMENT.md         # Deployment guide
 │
-└── 📁 .vscode/                     # VS Code configuration 
+└── 📁 .vscode/                     # VS Code configuration
     ├── 📄 extensions.json
     ├── 📄 launch.json
     └── 📄 tasks.json
@@ -225,72 +225,75 @@ DotnetNiger/
 
 ### Configuration du projet
 
-| Fichier | Description |
-|---------|-------------|
-| `.editorconfig` | Configuration IDE unifiée |
-| `.gitignore` | Fichiers à ignorer par Git |
+| Fichier         | Description                   |
+| --------------- | ----------------------------- |
+| `.editorconfig` | Configuration IDE unifiée     |
+| `.gitignore`    | Fichiers à ignorer par Git    |
 | `.dockerignore` | Fichiers à ignorer par Docker |
-| `VERSION` | Version du projet |
+| `VERSION`       | Version du projet             |
 
 ### Configuration des services
 
-| Service | Config |
-|---------|--------|
-| Gateway | `appsettings.json` + `Configuration/yarp-routes.json` |
-| Identity | `appsettings.json` + Migration DB |
-| Community | `appsettings.json` + Migration DB |
+| Service   | Config                                                |
+| --------- | ----------------------------------------------------- |
+| Gateway   | `appsettings.json` + `Configuration/yarp-routes.json` |
+| Identity  | `appsettings.json` + Migration DB                     |
+| Community | `appsettings.json` + Migration DB                     |
 
 ## 📚 Documentation
 
-| Fichier | Objectif | Location |
-|---------|----------|----------|
-| README.md | Vue d'ensemble du projet | Root |
-| SETUP.md | Guide d'installation | Root |
-| ARCHITECTURE.md | Architecture détaillée | Root |
-| API.md | Documentation API complète | Root |
-| CONTRIBUTING.md | Guide pour contributeurs | Root |
-| DEPLOYMENT.md | Guide de déploiement | Root |
-| TESTING.md | Guide des tests | Root |
-| SECURITY.md | Politique de sécurité | Root |
-| CHANGELOG.md | Historique des versions | Root |
-| FAQ.md | Questions fréquentes | Root |
-| DOCUMENTATION-STRUCTURE.md | Classification documentation | Root |
-| PROJECT_STRUCTURE.md | Structure complète (ce fichier) | Root |
-| **Dossier `/docs/`** | **PUBLIC documentation (8 files)** | **GitHub visible** |
-| 00-INDEX.md | Documentation index | /docs/ |
-| 01-SETUP.md | Installation guide | /docs/ |
-| 02-QUICK-START.md | 5-minute quickstart | /docs/ |
-| 03-ARCHITECTURE.md | Architecture overview | /docs/ |
-| 04-TECHNICAL-STACK.md | Tech stack (.NET 8.0 LTS) | /docs/ |
-| 05-PROJECT-STRUCTURE.md | Project structure detail | /docs/ |
-| 06-API.md | API endpoints | /docs/ |
-| 08-DEPLOYMENT.md | Deployment guide | /docs/ |
-| **Dossier `/devteam/`** | **PRIVATE documentation (23 files)** | **Gitignored - Team only** |
-| 00-DEVTEAM-INDEX.md | Team documentation index | /devteam/ |
-| ONBOARDING.md | Developer onboarding | /devteam/ |
-| CODE-STANDARDS.md | Coding standards | /devteam/ |
-| TESTING-GUIDE.md | Testing strategies | /devteam/ |
-| Endpoints (6 files) | Identity, Community, Gateway endpoints | /devteam/ |
-| MODELS-STRUCTURE.md | Database models | /devteam/ |
-| MONITORING.md | Monitoring & logging | /devteam/ |
-| PERFORMANCE-TUNING.md | Performance optimization | /devteam/ |
-| SECRETS-MANAGEMENT.md | Secrets management | /devteam/ |
-| And 10+ more files | Supporting documentation | /devteam/ |
+| Fichier                    | Objectif                               | Location                   |
+| -------------------------- | -------------------------------------- | -------------------------- |
+| README.md                  | Vue d'ensemble du projet               | Root                       |
+| SETUP.md                   | Guide d'installation                   | Root                       |
+| ARCHITECTURE.md            | Architecture détaillée                 | Root                       |
+| API.md                     | Documentation API complète             | Root                       |
+| CONTRIBUTING.md            | Guide pour contributeurs               | Root                       |
+| DEPLOYMENT.md              | Guide de déploiement                   | Root                       |
+| TESTING.md                 | Guide des tests                        | Root                       |
+| SECURITY.md                | Politique de sécurité                  | Root                       |
+| CHANGELOG.md               | Historique des versions                | Root                       |
+| FAQ.md                     | Questions fréquentes                   | Root                       |
+| DOCUMENTATION-STRUCTURE.md | Classification documentation           | Root                       |
+| PROJECT_STRUCTURE.md       | Structure complète (ce fichier)        | Root                       |
+| **Dossier `/docs/`**       | **PUBLIC documentation (8 files)**     | **GitHub visible**         |
+| 00-INDEX.md                | Documentation index                    | /docs/                     |
+| 01-SETUP.md                | Installation guide                     | /docs/                     |
+| 02-QUICK-START.md          | 5-minute quickstart                    | /docs/                     |
+| 03-ARCHITECTURE.md         | Architecture overview                  | /docs/                     |
+| 04-TECHNICAL-STACK.md      | Tech stack (.NET 8.0 LTS)              | /docs/                     |
+| 05-PROJECT-STRUCTURE.md    | Project structure detail               | /docs/                     |
+| 06-API.md                  | API endpoints                          | /docs/                     |
+| 08-DEPLOYMENT.md           | Deployment guide                       | /docs/                     |
+| **Dossier `/devteam/`**    | **PRIVATE documentation (23 files)**   | **Gitignored - Team only** |
+| 00-DEVTEAM-INDEX.md        | Team documentation index               | /devteam/                  |
+| ONBOARDING.md              | Developer onboarding                   | /devteam/                  |
+| CODE-STANDARDS.md          | Coding standards                       | /devteam/                  |
+| TESTING-GUIDE.md           | Testing strategies                     | /devteam/                  |
+| Endpoints (6 files)        | Identity, Community, Gateway endpoints | /devteam/                  |
+| MODELS-STRUCTURE.md        | Database models                        | /devteam/                  |
+| MONITORING.md              | Monitoring & logging                   | /devteam/                  |
+| PERFORMANCE-TUNING.md      | Performance optimization               | /devteam/                  |
+| SECRETS-MANAGEMENT.md      | Secrets management                     | /devteam/                  |
+| And 10+ more files         | Supporting documentation               | /devteam/                  |
 
 ## 🔑 Points clés
 
 ### Structure Clean Architecture
+
 - **Api** - Couche présentation (Controllers, Middleware)
 - **Application** - Logique métier (Services, DTOs)
 - **Domain** - Entités métier (Models, Interfaces)
 - **Infrastructure** - Détails techniques (Data, Repositories)
 
 ### Services
+
 - **Gateway** - Point d'entrée, routing, aggregation
 - **Identity** - Authentification, utilisateurs
 - **Community** - Posts, commentaires, interactions
 
 ### Patterns utilisés
+
 - Repository Pattern
 - Dependency Injection
 - Middleware Pipeline
@@ -298,6 +301,7 @@ DotnetNiger/
 - Caching Strategy
 
 ### Technologies
+
 - .NET 8.0 LTS
 - YARP (Reverse Proxy)
 - SQL Server 2022
@@ -308,6 +312,7 @@ DotnetNiger/
 ## 🚀 Commandes utiles
 
 ### Setup initial
+
 ```bash
 git clone https://github.com/akaletekoffilevis/DotnetNiger.git
 cd DotnetNiger
@@ -316,6 +321,7 @@ docker-compose up
 ```
 
 ### Développement
+
 ```bash
 dotnet build
 dotnet run
@@ -323,6 +329,7 @@ dotnet test
 ```
 
 ### Docker
+
 ```bash
 docker-compose up -d
 docker-compose ps
@@ -330,6 +337,7 @@ docker-compose logs -f gateway
 ```
 
 ### Gestion des migrations
+
 ```bash
 dotnet ef migrations add InitialCreate
 dotnet ef database update

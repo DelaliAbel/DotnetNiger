@@ -283,16 +283,16 @@ Root/
 
 ## 📊 Statistiques
 
-| Item | Count |
-|------|-------|
-| Services | 3 |
-| Controllers | 7+ |
-| Services (Business Logic) | 12+ |
-| DTOs | 15+ |
-| Entities | 8+ |
-| Repositories | 5+ |
-| Total .cs files | 100+ |
-| Documentation files | 19 |
+| Item                      | Count |
+| ------------------------- | ----- |
+| Services                  | 3     |
+| Controllers               | 7+    |
+| Services (Business Logic) | 12+   |
+| DTOs                      | 15+   |
+| Entities                  | 8+    |
+| Repositories              | 5+    |
+| Total .cs files           | 100+  |
+| Documentation files       | 19    |
 
 ---
 

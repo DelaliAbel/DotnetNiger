@@ -243,12 +243,12 @@ public interface IUserRepository
 public class UserRepository : IUserRepository
 {
     private readonly ApplicationDbContext _context;
-    
+
     public async Task<User?> GetByIdAsync(int id)
     {
         return await _context.Users.FindAsync(id);
     }
-    
+
     // ...autres méthodes
 }
 ```
@@ -268,7 +268,7 @@ public class UserService : IUserService
     private readonly IUserRepository _userRepository;
     private readonly IMapper _mapper;
     private readonly ILogger<UserService> _logger;
-    
+
     public UserService(
         IUserRepository userRepository,
         IMapper mapper,
@@ -278,15 +278,15 @@ public class UserService : IUserService
         _mapper = mapper;
         _logger = logger;
     }
-    
+
     public async Task<UserDto> GetUserAsync(int id)
     {
         _logger.LogInformation("Récupération de l'utilisateur {UserId}", id);
         var user = await _userRepository.GetByIdAsync(id);
-        
+
         if (user == null)
             throw new NotFoundException($"Utilisateur {id} non trouvé");
-            
+
         return _mapper.Map<UserDto>(user);
     }
 }
@@ -312,13 +312,13 @@ var app = builder.Build();
 // Custom Exceptions
 public class NotFoundException : ApplicationException
 {
-    public NotFoundException(string message) 
+    public NotFoundException(string message)
         : base(message, 404) { }
 }
 
 public class UnauthorizedException : ApplicationException
 {
-    public UnauthorizedException(string message) 
+    public UnauthorizedException(string message)
         : base(message, 401) { }
 }
 
@@ -448,10 +448,10 @@ Chaque service peut être déployé indépendamment :
 services:
   gateway:
     replicas: 3
-    
+
   identity:
     replicas: 2
-    
+
   community:
     replicas: 3
 ```
@@ -489,7 +489,7 @@ ENTRYPOINT ["dotnet", "DotnetNiger.Gateway.dll"]
 ### Orchestration
 
 ```yaml
-version: '3.8'
+version: "3.8"
 services:
   gateway:
     image: dotnetniger-gateway:latest

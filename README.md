@@ -9,7 +9,7 @@
 
 ## 📋 Vue d'ensemble
 
-DotnetNiger est une plateforme communautaire moderne construite avec une architecture microservices .NET 8.0. Elle fournit des fonctionnalités de réseau social, forums de discussion et partage de contenu pour la communauté  DotnetNiger.
+DotnetNiger est une plateforme communautaire moderne construite avec une architecture microservices .NET 8.0. Elle fournit des fonctionnalités de réseau social, forums de discussion et partage de contenu pour la communauté DotnetNiger.
 
 > ⚠️ **Note:** Ce projet est actuellement en développement actif et n'est pas encore en production.
 
@@ -101,24 +101,24 @@ curl -X POST http://localhost:5075/api/auth/login \
 
 ## 📚 Documentation
 
-|             Document             |             Description               |
-|----------------------------------|---------------------------------------|
-| [📖 Index](docs/00-INDEX.md) | Navigation de la documentation |
-| [⚙️ Setup](docs/01-SETUP.md) | Guide d'installation détaillé |
-| [🚀 Quick Start](docs/02-QUICK-START.md) | Démarrage en 5 minutes |
-| [🏛️ Architecture](docs/03-ARCHITECTURE.md) | Architecture et design patterns |
-| [🛠️ Technical Stack](docs/04-TECHNICAL-STACK.md) | Technologies utilisées |
-| [📁 Project Structure](docs/05-PROJECT-STRUCTURE.md) | Organisation du code |
-| [🔌 API](docs/06-API.md) | Documentation API complète |
-| [📊 Monitoring](docs/07-MONITORING.md) | Logs et métriques |
-| [🤝 Contributing](./CONTRIBUTING.md) | Guide de contribution |
-| [📏 Code Standards](docs/08-CODE-STANDARDS.md) | Standards de code |
-| [🧪 Testing](docs/09-TESTING.md) | Guide de tests |
-| [❓ FAQ](./FAQ.md) | Questions fréquentes |
-| [📝 Changelog](./CHANGELOG.md) | Historique des versions |
-| [🔒 Security](./SECURITY.md) | Politique de sécurité |
-| [🤝 Code of Conduct](./CODE_OF_CONDUCT.md) | Code de conduite |
-| [📄 License](LICENSE.md) | Licence MIT |
+| Document                                             | Description                     |
+| ---------------------------------------------------- | ------------------------------- |
+| [📖 Index](docs/00-INDEX.md)                         | Navigation de la documentation  |
+| [⚙️ Setup](docs/01-SETUP.md)                         | Guide d'installation détaillé   |
+| [🚀 Quick Start](docs/02-QUICK-START.md)             | Démarrage en 5 minutes          |
+| [🏛️ Architecture](docs/03-ARCHITECTURE.md)           | Architecture et design patterns |
+| [🛠️ Technical Stack](docs/04-TECHNICAL-STACK.md)     | Technologies utilisées          |
+| [📁 Project Structure](docs/05-PROJECT-STRUCTURE.md) | Organisation du code            |
+| [🔌 API](docs/06-API.md)                             | Documentation API complète      |
+| [📊 Monitoring](docs/07-MONITORING.md)               | Logs et métriques               |
+| [🤝 Contributing](./CONTRIBUTING.md)                 | Guide de contribution           |
+| [📏 Code Standards](docs/08-CODE-STANDARDS.md)       | Standards de code               |
+| [🧪 Testing](docs/09-TESTING.md)                     | Guide de tests                  |
+| [❓ FAQ](./FAQ.md)                                   | Questions fréquentes            |
+| [📝 Changelog](./CHANGELOG.md)                       | Historique des versions         |
+| [🔒 Security](./SECURITY.md)                         | Politique de sécurité           |
+| [🤝 Code of Conduct](./CODE_OF_CONDUCT.md)           | Code de conduite                |
+| [📄 License](LICENSE.md)                             | Licence MIT                     |
 
 ## 🛠️ Stack Technique
 
@@ -193,11 +193,12 @@ Copyright (c) 2026 DotnetNiger
 
 - 📦 **Repository:** [github.com/akaletekoffilevis/DotnetNiger](https://github.com/akaletekoffilevis/DotnetNiger.git)
 - 💬 **Discussions:** [GitHub Discussions](https://github.com/akaletekoffilevis/DotnetNiger/discussions)
-- 📧 **Contact:**  abdallyacali@hotmail.com
+- 📧 **Contact:** abdallyacali@hotmail.com
 
 ## 🎯 Roadmap
 
 ### Version 1.0.0 (En cours)
+
 - [ ] Architecture microservices
 - [ ] Services Identity & Community
 - [ ] API Gateway
@@ -207,6 +208,7 @@ Copyright (c) 2026 DotnetNiger
 - [ ] Déploiement initial
 
 ### Version 1.1.0 (Futur)
+
 - [ ] Real-time notifications (SignalR)
 - [ ] Advanced search (Elasticsearch)
 - [ ] File upload service
@@ -216,6 +218,7 @@ Copyright (c) 2026 DotnetNiger
 ## ⭐ Support
 
 Si vous trouvez ce projet intéressant ou utile :
+
 - ⭐ Donnez une étoile sur GitHub
 - 🐛 Signalez des bugs via les [Issues](https://github.com/akaletekoffilevis/DotnetNiger/issues)
 - 💡 Proposez des features via les [Discussions](https://github.com/akaletekoffilevis/DotnetNiger/discussions)
