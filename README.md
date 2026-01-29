@@ -57,7 +57,7 @@ DotnetNiger est une plateforme communautaire moderne construite avec une archite
 
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - [SQL Server 2022](https://www.microsoft.com/sql-server/sql-server-downloads) ou [Docker](https://www.docker.com/products/docker-desktop)
-- [Visual Studio Code](https://code.visualstudio.com/) (recommandé)
+- [Visual Studio Code](https://code.visualstudio.com/) (recommandé) ou vscode
 
 ### Installation Rapide
 
