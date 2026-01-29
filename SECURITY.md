@@ -20,9 +20,9 @@ Si vous découvrez une vulnérabilité de sécurité, veuillez **NE PAS** l'ouvr
 ## Soutien aux versions
 
 | Version | Supported |
-|---------|-----------|
-| 1.0.x | ✅ Yes |
-| < 1.0 | ❌ No |
+| ------- | --------- |
+| 1.0.x   | ✅ Yes    |
+| < 1.0   | ❌ No     |
 
 ## Dépendances de sécurité
 
@@ -46,16 +46,19 @@ DotnetNiger utilise plusieurs outils de sécurité :
 ## Bonnes pratiques
 
 ### Authentification
+
 - Utiliser HTTPS en production
 - Valider tous les JWT tokens
 - Implémenter rate limiting
 
 ### Données
+
 - Chiffrer les données sensibles en transit et au repos
 - Valider toutes les entrées utilisateur
 - Utiliser des requêtes paramétrées
 
 ### Secrets
+
 - Ne jamais commiter les secrets en Git
 - Utiliser un gestionnaire de secrets
 - Rotationner régulièrement les clés

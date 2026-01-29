@@ -27,6 +27,7 @@ Content-Type: application/json
 ```
 
 **Response:**
+
 ```json
 {
   "accessToken": "eyJhbGc...",
@@ -42,6 +43,7 @@ Content-Type: application/json
 ### Authentification
 
 #### 1. Register
+
 ```http
 POST /api/auth/register
 Content-Type: application/json
@@ -55,6 +57,7 @@ Content-Type: application/json
 ```
 
 **Response:** `201 Created`
+
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -65,6 +68,7 @@ Content-Type: application/json
 ```
 
 #### 2. Login
+
 ```http
 POST /api/auth/login
 Content-Type: application/json
@@ -76,6 +80,7 @@ Content-Type: application/json
 ```
 
 **Response:** `200 OK`
+
 ```json
 {
   "accessToken": "eyJhbGc...",
@@ -85,6 +90,7 @@ Content-Type: application/json
 ```
 
 #### 3. Refresh Token
+
 ```http
 POST /api/auth/refresh
 Content-Type: application/json
@@ -95,6 +101,7 @@ Content-Type: application/json
 ```
 
 **Response:** `200 OK`
+
 ```json
 {
   "accessToken": "eyJhbGc...",
@@ -104,6 +111,7 @@ Content-Type: application/json
 ```
 
 #### 4. Logout
+
 ```http
 POST /api/auth/logout
 Authorization: Bearer <token>
@@ -114,12 +122,14 @@ Authorization: Bearer <token>
 ### Profils Utilisateurs
 
 #### Get Profile
+
 ```http
 GET /api/users/profile
 Authorization: Bearer <token>
 ```
 
 **Response:** `200 OK`
+
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -134,6 +144,7 @@ Authorization: Bearer <token>
 ```
 
 #### Update Profile
+
 ```http
 PUT /api/users/profile
 Authorization: Bearer <token>
@@ -156,6 +167,7 @@ Content-Type: application/json
 ### Posts
 
 #### Create Post
+
 ```http
 POST /api/posts
 Authorization: Bearer <token>
@@ -169,6 +181,7 @@ Content-Type: application/json
 ```
 
 **Response:** `201 Created`
+
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440000",
@@ -183,12 +196,14 @@ Content-Type: application/json
 ```
 
 #### Get Posts
+
 ```http
 GET /api/posts?skip=0&take=20&sortBy=createdAt&sortOrder=desc
 Authorization: Bearer <token>
 ```
 
 **Response:** `200 OK`
+
 ```json
 {
   "data": [
@@ -211,6 +226,7 @@ Authorization: Bearer <token>
 ```
 
 #### Get Post Detail
+
 ```http
 GET /api/posts/{postId}
 Authorization: Bearer <token>
@@ -219,6 +235,7 @@ Authorization: Bearer <token>
 **Response:** `200 OK`
 
 #### Update Post
+
 ```http
 PUT /api/posts/{postId}
 Authorization: Bearer <token>
@@ -233,6 +250,7 @@ Content-Type: application/json
 **Response:** `200 OK`
 
 #### Delete Post
+
 ```http
 DELETE /api/posts/{postId}
 Authorization: Bearer <token>
@@ -243,6 +261,7 @@ Authorization: Bearer <token>
 ### Comments
 
 #### Add Comment
+
 ```http
 POST /api/posts/{postId}/comments
 Authorization: Bearer <token>
@@ -255,6 +274,7 @@ Content-Type: application/json
 ```
 
 **Response:** `201 Created`
+
 ```json
 {
   "id": "550e8400-e29b-41d4-a716-446655440002",
@@ -266,6 +286,7 @@ Content-Type: application/json
 ```
 
 #### Get Comments
+
 ```http
 GET /api/posts/{postId}/comments?skip=0&take=10
 Authorization: Bearer <token>
@@ -276,12 +297,14 @@ Authorization: Bearer <token>
 ### Interactions
 
 #### Like Post
+
 ```http
 POST /api/posts/{postId}/like
 Authorization: Bearer <token>
 ```
 
 **Response:** `200 OK`
+
 ```json
 {
   "liked": true,
@@ -290,6 +313,7 @@ Authorization: Bearer <token>
 ```
 
 #### Unlike Post
+
 ```http
 DELETE /api/posts/{postId}/like
 Authorization: Bearer <token>
@@ -300,12 +324,14 @@ Authorization: Bearer <token>
 ### Follow/Unfollow
 
 #### Follow User
+
 ```http
 POST /api/users/{userId}/follow
 Authorization: Bearer <token>
 ```
 
 **Response:** `200 OK`
+
 ```json
 {
   "following": true,
@@ -314,6 +340,7 @@ Authorization: Bearer <token>
 ```
 
 #### Get Followers
+
 ```http
 GET /api/users/{userId}/followers?skip=0&take=20
 Authorization: Bearer <token>
@@ -324,6 +351,7 @@ Authorization: Bearer <token>
 ### Feed
 
 #### Get Personal Feed
+
 ```http
 GET /api/feed?skip=0&take=20
 Authorization: Bearer <token>
@@ -338,11 +366,13 @@ Authorization: Bearer <token>
 ### Health
 
 #### Gateway Health
+
 ```http
 GET /health
 ```
 
 **Response:** `200 OK`
+
 ```json
 {
   "status": "Healthy",
@@ -356,6 +386,7 @@ GET /health
 ### Swagger
 
 #### Aggregated Swagger
+
 ```http
 GET /swagger/ui
 GET /swagger/v1/swagger.json
@@ -364,6 +395,7 @@ GET /swagger/v1/swagger.json
 ### Metrics
 
 #### Prometheus Metrics
+
 ```http
 GET /metrics
 ```
@@ -375,6 +407,7 @@ GET /metrics
 ## ⚠️ Error Responses
 
 ### 400 Bad Request
+
 ```json
 {
   "error": "Bad Request",
@@ -386,6 +419,7 @@ GET /metrics
 ```
 
 ### 401 Unauthorized
+
 ```json
 {
   "error": "Unauthorized",
@@ -394,6 +428,7 @@ GET /metrics
 ```
 
 ### 403 Forbidden
+
 ```json
 {
   "error": "Forbidden",
@@ -402,6 +437,7 @@ GET /metrics
 ```
 
 ### 404 Not Found
+
 ```json
 {
   "error": "Not Found",
@@ -410,6 +446,7 @@ GET /metrics
 ```
 
 ### 429 Too Many Requests
+
 ```json
 {
   "error": "Too Many Requests",
@@ -419,6 +456,7 @@ GET /metrics
 ```
 
 ### 500 Internal Server Error
+
 ```json
 {
   "error": "Internal Server Error",
@@ -432,6 +470,7 @@ GET /metrics
 ## 🧪 Testing avec cURL
 
 ### Register
+
 ```bash
 curl -X POST http://localhost:5000/api/auth/register \
   -H "Content-Type: application/json" \
@@ -444,6 +483,7 @@ curl -X POST http://localhost:5000/api/auth/register \
 ```
 
 ### Login
+
 ```bash
 curl -X POST http://localhost:5000/api/auth/login \
   -H "Content-Type: application/json" \
@@ -454,6 +494,7 @@ curl -X POST http://localhost:5000/api/auth/login \
 ```
 
 ### Create Post
+
 ```bash
 curl -X POST http://localhost:5000/api/posts \
   -H "Authorization: Bearer <token>" \

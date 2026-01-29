@@ -9,7 +9,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    
+
     services:
       mssql:
         image: mcr.microsoft.com/mssql/server:2022-latest
@@ -62,7 +62,7 @@ jobs:
 
   code-quality:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v3
 
@@ -79,7 +79,7 @@ jobs:
 
   security:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v3
 

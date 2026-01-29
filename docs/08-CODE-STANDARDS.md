@@ -7,6 +7,7 @@ Standards et conventions de code pour DotnetNiger.
 ### SOLID Principles
 
 **S - Single Responsibility**
+
 ```csharp
 // ❌ Mauvais
 public class UserService
@@ -34,6 +35,7 @@ public class TokenService
 ```
 
 **O - Open/Closed**
+
 ```csharp
 // ✅ Ouvert à l'extension, fermé à la modification
 public interface INotificationService
@@ -53,6 +55,7 @@ public class SmsNotificationService : INotificationService
 ```
 
 **L - Liskov Substitution**
+
 ```csharp
 // ✅ Les sous-classes doivent être substituables
 public abstract class Repository<T>
@@ -70,6 +73,7 @@ public class UserRepository : Repository<User>
 ```
 
 **I - Interface Segregation**
+
 ```csharp
 // ❌ Interface trop large
 public interface IUserService
@@ -101,6 +105,7 @@ public interface IUserReportService
 ```
 
 **D - Dependency Inversion**
+
 ```csharp
 // ✅ Dépendre des abstractions
 public class PostService
@@ -246,7 +251,7 @@ public async Task<PostDto> CreateAsync(CreatePostDto dto)
 public void UpdatePost(int id, string title, string content) { }
 
 // ❌ Trop de paramètres
-public void UpdatePost(int id, string title, string content, string category, 
+public void UpdatePost(int id, string title, string content, string category,
     DateTime date, bool isPublished, string tags, string author) { }
 
 // ✅ Utiliser un DTO
@@ -343,10 +348,10 @@ public async Task<Post> UpdateAsync(int id, UpdatePostDto dto)
 {
     if (id <= 0)
         throw new ArgumentException("Invalid ID", nameof(id));
-    
+
     if (dto == null)
         throw new ArgumentNullException(nameof(dto));
-    
+
     if (string.IsNullOrWhiteSpace(dto.Title))
         throw new ValidationException("Title is required");
 
@@ -377,7 +382,7 @@ public ValueTask<bool> ExistsAsync(int id)
 {
     if (_cache.Contains(id))
         return new ValueTask<bool>(true);
-    
+
     return ExistsInDbAsync(id);
 }
 ```
@@ -393,7 +398,7 @@ services.AddScoped<IPostRepository, PostRepository>();
 public class PostService
 {
     private readonly IPostRepository _repository;
-    
+
     public PostService(IPostRepository repository)
     {
         _repository = repository ?? throw new ArgumentNullException(nameof(repository));
@@ -454,7 +459,7 @@ public void UpdateEmail(string email)
 {
     if (!IsValidEmail(email))
         throw new ValidationException("Invalid email");
-    
+
     // Update logic
 }
 

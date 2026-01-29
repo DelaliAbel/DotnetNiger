@@ -236,6 +236,7 @@ Authorization: Bearer eyJhbGc...
 ## 📊 Données Partagées
 
 Chaque service a sa **propre base de données**:
+
 - Pas de partage direct
 - Communication via API Gateway
 - Event-sourcing optionnel
@@ -253,6 +254,7 @@ L3: Database
 ### Pagination
 
 Toutes les listes sont paginées:
+
 ```csharp
 // Request
 GET /api/posts?skip=0&take=20
