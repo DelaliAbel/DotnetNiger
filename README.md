@@ -1,6 +1,6 @@
 # DotnetNiger
 
-> Plateforme communautaire open-source pour la communauté tech nigérienne, construite avec .NET 8.0 LTS
+> Plateforme communautaire open-source pour la communauté DotnetNiger, construite avec .NET 8.0 LTS
 
 [![.NET Version](https://img.shields.io/badge/.NET-8.0%20LTS-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download/dotnet/8.0)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](docs/18-LICENSE.md)
