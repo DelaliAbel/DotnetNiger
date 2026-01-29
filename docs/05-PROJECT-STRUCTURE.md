@@ -10,9 +10,6 @@ DotnetNiger/
 ├── 📁 DotnetNiger.Gateway/           # 🚪 API Gateway
 ├── 📁 DotnetNiger.Identity/          # 🔐 Service Identity
 ├── 📁 DotnetNiger.Community/         # 👥 Service Community
-├── 📁 scripts/                       # 🛠️ Scripts utilitaires
-│   ├── verify-clean.ps1              # Vérification nettoyage
-│   └── push-initial.ps1              # Push initial GitHub
 ├── docker-compose.yml                # 🐳 Orchestration
 ├── DotnetNiger.slnx                  # 📦 Solution file
 ├── VERSION                           # 🏷️ Version courante
@@ -236,14 +233,6 @@ DotnetNiger.Community/
 └── DotnetNiger.Community.http
 ```
 
-## 🛠️ Scripts
-
-```
-scripts/
-├── verify-clean.ps1               # Vérification pré-push
-└── push-initial.ps1               # Automatisation du push
-```
-
 ## 📚 Documentation
 
 ```
@@ -256,18 +245,17 @@ docs/
 ├── 05-PROJECT-STRUCTURE.md        # 📂 Structure (ce fichier)
 ├── 06-API.md                      # 📡 Documentation API
 ├── 07-INTEGRATION.md              # 🔗 Intégrations
-├── 08-DEPLOYMENT.md               # 🚀 Déploiement
-├── 09-DOCKER.md                   # 🐳 Docker
-├── 10-MONITORING.md               # 📊 Monitoring
-├── 11-CONTRIBUTING.md             # 👨‍💻 Contribution
-├── 12-CODE-STANDARDS.md           # 📋 Standards
-├── 13-TESTING.md                  # 🧪 Testing
-├── 14-ONBOARDING.md               # 👋 Onboarding
-├── 15-FAQ.md                      # ❓ FAQ
-├── 16-CHANGELOG.md                # 📝 Changelog
-├── 17-SECURITY.md                 # 🔒 Sécurité
-├── 18-CODE-OF-CONDUCT.md          # 👨‍⚖️ Code de conduite
-└── 19-LICENSE.md                  # ⚖️ Licence
+├── 08-DOCKER.md                   # 🐳 Docker
+├── 09-MONITORING.md               # 📊 Monitoring
+├── 10-CONTRIBUTING.md             # 👨‍💻 Contribution
+├── 11-CODE-STANDARDS.md           # 📋 Standards
+├── 12-TESTING.md                  # 🧪 Testing
+├── 13-ONBOARDING.md               # 👋 Onboarding
+├── 14-FAQ.md                      # ❓ FAQ
+├── 15-CHANGELOG.md                # 📝 Changelog
+├── 16-SECURITY.md                 # 🔒 Sécurité
+├── 17-CODE-OF-CONDUCT.md          # 👨‍⚖️ Code de conduite
+└── 18-LICENSE.md                  # ⚖️ Licence
 ```
 
 ## 🔧 Fichiers de Configuration

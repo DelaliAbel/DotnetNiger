@@ -27,10 +27,6 @@ bld/
 .idea/
 *.sln.iml
 
-# Private team documentation (Never commit!)
-devteam/
-*.private/
-
 # NuGet
 *.nuget.props
 *.nuget.targets

@@ -5,7 +5,6 @@ Documentation détaillée de tous les endpoints.
 ## 🌐 Base URLs
 
 - **Development:** `http://localhost:5000`
-- **Production:** `https://api.dotnetniger.com`
 
 ## 🔐 Authentication
 
