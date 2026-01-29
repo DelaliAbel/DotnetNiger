@@ -31,7 +31,7 @@ git checkout -b feature/ma-fonctionnalite
 ### Prérequis
 
 - .NET 9 SDK
-- Node.js 20+ (pour Prettier et outils de formatage)
+- Node.js 14+ (recommandé: 20+) (pour Prettier et outils de formatage)
 - Visual Studio 2022 ou VS Code
 - Docker (optionnel, pour tester avec docker-compose)
 - Git

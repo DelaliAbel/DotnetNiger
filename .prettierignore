@@ -50,6 +50,7 @@ coverage/
 # Database migrations (EF Core)
 **/Migrations/**
 
-# Keep existing formatting for certain files
+# Keep existing formatting for specific license and changelog files
+# These files follow their own formatting conventions
 LICENSE.md
 CHANGELOG.md
