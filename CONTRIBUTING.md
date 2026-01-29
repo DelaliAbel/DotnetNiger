@@ -29,10 +29,36 @@ git checkout -b feature/ma-fonctionnalite
 ```
 
 ### Prérequis
+
 - .NET 9 SDK
+- Node.js 14+ (recommandé: 20+) (pour Prettier et outils de formatage)
 - Visual Studio 2022 ou VS Code
 - Docker (optionnel, pour tester avec docker-compose)
 - Git
+
+### Installation des dépendances
+
+```bash
+# Installer les dépendances .NET
+dotnet restore
+
+# Installer les dépendances Node.js (pour Prettier)
+npm install
+```
+
+### Formatage automatique avec Prettier
+
+Le projet utilise Prettier pour le formatage automatique des fichiers (Markdown, JSON, YAML, etc.).
+
+```bash
+# Formater tous les fichiers
+npm run format
+
+# Vérifier le formatage sans modifier les fichiers
+npm run format:check
+```
+
+**Important** : Avant de soumettre une pull request, assurez-vous que tous vos fichiers sont formatés avec Prettier. Le workflow CI vérifiera automatiquement le formatage.
 
 ## 🐛 Signaler un bug
 
@@ -49,6 +75,7 @@ Avant de soumettre un rapport de bug :
 Décrivez clairement et concisément ce qui est cassé.
 
 **Étapes pour reproduire**
+
 1. Allez à...
 2. Cliquez sur...
 3. Observez le comportement...
@@ -60,13 +87,16 @@ Décrivez ce qui devrait se passer.
 Décrivez ce qui se passe réellement.
 
 **Environnement**
+
 - OS: [ex: Windows 11]
 - .NET Version: [ex: 9.0.0]
 - IDE: [ex: Visual Studio 2022]
 
 **Logs d'erreur**
 ```
+
 Coller les logs pertinents ici
+
 ```
 
 **Captures d'écran**
@@ -128,6 +158,7 @@ Utiliser le format Conventional Commits :
 ```
 
 Exemples :
+
 ```
 feat(gateway): ajouter middleware de rate limiting
 fix(identity): corriger validation du token JWT
@@ -137,6 +168,7 @@ test(gateway): ajouter tests pour le cache
 ```
 
 Types courants :
+
 - `feat` - Nouvelle fonctionnalité
 - `fix` - Correction de bug
 - `docs` - Documentation
@@ -153,12 +185,12 @@ Types courants :
 public class UserService
 {
     private readonly ILogger<UserService> _logger;
-    
+
     public UserService(ILogger<UserService> logger)
     {
         _logger = logger;
     }
-    
+
     /// <summary>
     /// Récupère un utilisateur par ID
     /// </summary>
@@ -210,24 +242,24 @@ public class UserServiceTests
 {
     private IUserRepository _userRepository;
     private UserService _userService;
-    
+
     [TestInitialize]
     public void Setup()
     {
         _userRepository = new Mock<IUserRepository>().Object;
         _userService = new UserService(_userRepository);
     }
-    
+
     [TestMethod]
     public async Task GetUserById_WithValidId_ReturnsUser()
     {
         // Arrange
         var userId = 1;
         var expectedUser = new User { Id = userId, Name = "John Doe" };
-        
+
         // Act
         var result = await _userService.GetUserByIdAsync(userId);
-        
+
         // Assert
         Assert.IsNotNull(result);
         Assert.AreEqual(expectedUser.Id, result.Id);
@@ -260,13 +292,14 @@ Chaque PR sera examinée par au moins un mainteneur :
 1. **Vérification de la qualité du code**
 2. **Tests et couverture**
 3. **Documentation
-**
+   **
 4. **Conformité avec les guidelines**
 5. **Performance et sécurité**
 
 ### Feedback
 
 Les commentaires de revue auront pour objectif d'être :
+
 - ✅ Constructifs et respectueux
 - ✅ Spécifiques et actionnables
 - ✅ Éducatifs quand approprié

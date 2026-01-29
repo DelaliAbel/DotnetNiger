@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build outputs
+bin/
+obj/
+dist/
+build/
+out/
+
+# .NET specific
+*.dll
+*.exe
+*.pdb
+*.cache
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile
+.dockerignore
+
+# Other
+*.min.js
+*.min.css
+coverage/
+*.generated.*
+
+# Database migrations (EF Core)
+**/Migrations/**
+
+# Keep existing formatting for specific license and changelog files
+# These files follow their own formatting conventions
+LICENSE.md
+CHANGELOG.md

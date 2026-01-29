@@ -1,0 +1,20 @@
+{
+  "name": "dotnet-niger",
+  "version": "1.0.0",
+  "description": "Plateforme communautaire open-source pour la communauté tech nigérienne",
+  "private": true,
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.2.4"
+  },
+  "keywords": [
+    "dotnet",
+    "community",
+    "niger"
+  ],
+  "author": "DotnetNiger",
+  "license": "MIT"
+}

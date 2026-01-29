@@ -5,6 +5,7 @@ Lancez DotnetNiger en 5 minutes!
 ## Option 1: Docker Compose (Recommandé)
 
 ### Prérequis
+
 - Docker & Docker Compose installés
 - 4GB RAM disponible
 
@@ -58,6 +59,7 @@ curl -X POST http://localhost:5000/api/auth/login \
 ## Option 2: Local Development
 
 ### Prérequis
+
 - .NET 8.0 SDK ou supérieur
 - SQL Server 2022 (ou Express)
 - Redis 7+
@@ -107,11 +109,13 @@ Community:  http://localhost:5002/swagger
 ## Arrêter les Services
 
 ### Docker
+
 ```bash
 docker-compose down
 ```
 
 ### Local
+
 ```
 Ctrl+C dans chaque terminal
 ```
@@ -121,18 +125,21 @@ Ctrl+C dans chaque terminal
 ## Troubleshooting
 
 ### Ports occupés
+
 ```bash
 # Trouver le processus qui utilise le port 5000
 netstat -ano | findstr :5000
 ```
 
 ### BD non accessible
+
 ```bash
 # Vérifier la connexion SQL Server
 sqlcmd -S localhost -U sa -P YourPassword
 ```
 
 ### Redis non disponible
+
 ```bash
 # Vérifier Redis
 redis-cli ping

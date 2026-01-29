@@ -5,16 +5,19 @@ Guide complet de configuration pour DotnetNiger.
 ## 📋 Prérequis
 
 ### Système
+
 - Windows 10/11, macOS 11+, ou Linux (Ubuntu 20.04+)
 - 8GB RAM minimum, 16GB recommandé
 - 20GB espace disque
 
 ### Logiciels
+
 - **.NET SDK 8.0 LTS** - [Télécharger](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 - **Git 2.40+** - [Télécharger](https://git-scm.com/download)
 - **Docker & Docker Compose** - [Télécharger](https://www.docker.com/products/docker-desktop)
 
 ### Bases de Données & Caching
+
 - **SQL Server 2022** (ou Microsoft SQL Server Express)
 - **Redis 7+**
 
@@ -96,6 +99,7 @@ docker-compose up -d
 ```
 
 Vérifier le statut:
+
 ```bash
 docker-compose ps
 ```
@@ -103,18 +107,21 @@ docker-compose ps
 #### Localement
 
 Terminal 1 - Gateway:
+
 ```bash
 cd DotnetNiger.Gateway
 dotnet run
 ```
 
 Terminal 2 - Identity:
+
 ```bash
 cd DotnetNiger.Identity
 dotnet run
 ```
 
 Terminal 3 - Community:
+
 ```bash
 cd DotnetNiger.Community
 dotnet run
@@ -211,7 +218,7 @@ Log.Logger = new LoggerConfiguration()
 ### Personnaliser docker-compose.yml
 
 ```yaml
-version: '3.8'
+version: "3.8"
 
 services:
   gateway:
@@ -276,6 +283,7 @@ curl http://localhost:5002/health
 ```
 
 Réponse attendue:
+
 ```json
 {
   "status": "Healthy",
@@ -292,6 +300,7 @@ Réponse attendue:
 **Problème:** "Address already in use"
 
 **Solution:**
+
 ```bash
 # Windows
 netstat -ano | findstr :5000
@@ -307,6 +316,7 @@ kill -9 <PID>
 **Problème:** "Cannot connect to database"
 
 **Solution:**
+
 1. Vérifier SQL Server est lancé
 2. Vérifier la chaîne de connexion
 3. Vérifier les identifiants
@@ -320,6 +330,7 @@ sqlcmd -S localhost -U sa -P YourPassword123!
 **Problème:** "Connection refused to Redis"
 
 **Solution:**
+
 ```bash
 redis-cli ping  # Doit retourner PONG
 ```
@@ -329,6 +340,7 @@ redis-cli ping  # Doit retourner PONG
 **Problème:** "Unable to apply migrations"
 
 **Solution:**
+
 ```bash
 # Réinitialiser la BD
 dotnet ef database drop --force
