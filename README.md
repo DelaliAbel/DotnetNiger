@@ -101,8 +101,8 @@ curl -X POST http://localhost:5075/api/auth/login \
 
 ## 📚 Documentation
 
-| Document | Description |
-|----------|-------------|
+|             Document             |             Description               |
+|----------------------------------|---------------------------------------|
 | [📖 Index](docs/00-INDEX.md) | Navigation de la documentation |
 | [⚙️ Setup](docs/01-SETUP.md) | Guide d'installation détaillé |
 | [🚀 Quick Start](docs/02-QUICK-START.md) | Démarrage en 5 minutes |
