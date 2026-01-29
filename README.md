@@ -9,14 +9,14 @@
 
 ## 📋 Vue d'ensemble
 
-DotnetNiger est une plateforme communautaire moderne construite avec une architecture microservices .NET 8.0. Elle fournit des fonctionnalités de réseau social, forums de discussion et partage de contenu pour la communauté tech nigérienne.
+DotnetNiger est une plateforme communautaire moderne construite avec une architecture microservices .NET 8.0. Elle fournit des fonctionnalités de réseau social, forums de discussion et partage de contenu pour la communauté  DotnetNiger.
 
 > ⚠️ **Note:** Ce projet est actuellement en développement actif et n'est pas encore en production.
 
 ### Fonctionnalités Principales
 
 - 🔐 **Authentication JWT** - Système d'authentification sécurisé avec tokens JWT
-- 👥 **Gestion Utilisateurs** - Inscription, profils, rôles (Admin, Moderator, Member)
+- 👥 **Gestion Utilisateurs** - Inscription, profils, rôles (Admin(Super Admin), Member)(Auto Attribut)
 - 📝 **Posts & Commentaires** - Création et partage de contenu
 - ❤️ **Système de Likes** - Interactions sociales
 - 👤 **Follow/Unfollow** - Réseau social
@@ -34,14 +34,14 @@ DotnetNiger est une plateforme communautaire moderne construite avec une archite
 │        JWT Validation • Rate Limiting • CORS            │
 └────────────────┬────────────────────────┬───────────────┘
                  │                        │
-        ┌────────▼─────────┐     ┌───────▼────────┐
-        │  Identity (5075) │     │ Community (5269)│
+        ┌────────▼─────────┐     ┌───────▼──────────┐
+        │  Identity (5075) │     │ Community (5269) │
         │  Authentication  │     │   Social Features│
         │  Authorization   │     │   Posts, Likes   │
         │  User Management │     │   Comments       │
         └──────────────────┘     └──────────────────┘
                  │                        │
-        ┌────────▼────────────────────────▼───────────┐
+        ┌────────▼────────────────────────▼────────────┐
         │           SQL Server 2022                    │
         │        (PostgreSQL 16+ supporté)             │
         └──────────────────────────────────────────────┘
@@ -101,8 +101,8 @@ curl -X POST http://localhost:5075/api/auth/login \
 
 ## 📚 Documentation
 
-| Document | Description |
-|----------|-------------|
+|             Document             |             Description               |
+|----------------------------------|---------------------------------------|
 | [📖 Index](docs/00-INDEX.md) | Navigation de la documentation |
 | [⚙️ Setup](docs/01-SETUP.md) | Guide d'installation détaillé |
 | [🚀 Quick Start](docs/02-QUICK-START.md) | Démarrage en 5 minutes |
@@ -124,7 +124,7 @@ curl -X POST http://localhost:5075/api/auth/login \
 
 - **Framework:** .NET 8.0 LTS (C# 12)
 - **API Gateway:** YARP (Yet Another Reverse Proxy)
-- **Database:** SQL Server 2022 / PostgreSQL 16+
+- **Database:** SQL Server 2022 / PostgreSQL 16+ / Sqlite (Test Local)
 - **ORM:** Entity Framework Core 8.0
 - **Cache:** Redis
 - **Authentication:** JWT Bearer
@@ -191,7 +191,7 @@ Copyright (c) 2026 DotnetNiger
 
 ## 🌐 Liens
 
-- 📦 **Repository:** [github.com/akaletekoffilevis/DotnetNiger](https://github.com/akaletekoffilevis/DotnetNiger)
+- 📦 **Repository:** [github.com/akaletekoffilevis/DotnetNiger](https://github.com/akaletekoffilevis/DotnetNiger.git)
 - 💬 **Discussions:** [GitHub Discussions](https://github.com/akaletekoffilevis/DotnetNiger/discussions)
 - 📧 **Contact:**  abdallyacali@hotmail.com
 
@@ -223,4 +223,4 @@ Si vous trouvez ce projet intéressant ou utile :
 
 ---
 
-**Made with ❤️ for the Niger tech community**
+**Made with ❤️ for the DotnetNiger Community**

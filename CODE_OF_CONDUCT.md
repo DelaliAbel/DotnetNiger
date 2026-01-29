@@ -30,7 +30,7 @@ Les mainteneurs de projet ont le droit et la responsabilité de supprimer, modif
 
 ## Application
 
-Les instances de comportement abusif, de harcèlement ou autrement inacceptable peuvent être signalées en contactant l'équipe du projet à [contact@dotnetniger.local]. Toutes les plaintes seront examinées et enquêtées et aboutiront à une réponse jugée nécessaire et appropriée aux circonstances. L'équipe du projet s'engage à maintenir la confidentialité concernant le rapporteur d'un incident.
+Les instances de comportement abusif, de harcèlement ou autrement inacceptable peuvent être signalées en contactant l'équipe du projet à [abdallyacali@hotmail.com]. Toutes les plaintes seront examinées et enquêtées et aboutiront à une réponse jugée nécessaire et appropriée aux circonstances. L'équipe du projet s'engage à maintenir la confidentialité concernant le rapporteur d'un incident.
 
 Les mainteneurs de projet qui ne respectent pas ou n'appliquent pas le Code of Conduct de bonne foi peuvent faire face à des répercussions temporaires ou permanentes déterminées par d'autres membres de la direction du projet.
 
