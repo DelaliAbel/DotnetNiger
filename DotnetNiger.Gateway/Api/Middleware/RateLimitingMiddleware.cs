@@ -18,7 +18,7 @@ public class RateLimitingMiddleware
     {
         // Rate limiting sera implémenté plus tard avec Redis
         // Pour l'instant, on laisse passer toutes les requêtes
-
+        
         await _next(context);
     }
 }

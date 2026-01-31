@@ -1,4 +1,6 @@
+using DotnetNiger.Identity.Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
+
 
 namespace DotnetNiger.Identity.Api.Controllers
 {
