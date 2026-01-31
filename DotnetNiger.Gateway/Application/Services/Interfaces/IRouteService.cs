@@ -1,4 +1,4 @@
-namespace DotnetNiger.Gateway.Application.Services;
+namespace DotnetNiger.Gateway.Application.Services.Interfaces;
 
 /// <summary>
 /// Interface pour le service de routage

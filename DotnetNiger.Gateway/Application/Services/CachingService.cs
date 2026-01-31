@@ -1,4 +1,5 @@
 using System.Text.Json;
+using DotnetNiger.Gateway.Application.Services.Interfaces;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace DotnetNiger.Gateway.Application.Services;

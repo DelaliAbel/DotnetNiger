@@ -78,7 +78,7 @@ public class SwaggerAggregatorController : ControllerBase
 
         var result = new
         {
-            openapi = "3.0.1",
+            openapi = "3",
             info = new
             {
                 title = "DotnetNiger Gateway - Tous les services",
