@@ -5,7 +5,7 @@ namespace DotnetNiger.Gateway.Application.Exceptions;
 /// </summary>
 public class RouteNotFoundException : GatewayException
 {
-    public RouteNotFoundException(string path) 
+    public RouteNotFoundException(string path)
         : base($"Route not found: {path}", 404)
     {
     }
