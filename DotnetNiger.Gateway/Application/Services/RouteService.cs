@@ -1,3 +1,5 @@
+using DotnetNiger.Gateway.Application.Services.Interfaces;
+
 namespace DotnetNiger.Gateway.Application.Services;
 
 /// <summary>
@@ -16,7 +18,7 @@ public class RouteService : IRouteService
     {
         if (path.StartsWith("/identity", StringComparison.OrdinalIgnoreCase))
             return "identity";
-        
+
         if (path.StartsWith("/community", StringComparison.OrdinalIgnoreCase))
             return "community";
 

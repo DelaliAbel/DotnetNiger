@@ -1,5 +1,3 @@
-using System;
-
 namespace DotnetNiger.Community.Application.DTOs.Responses;
 
 public class ProjectDto

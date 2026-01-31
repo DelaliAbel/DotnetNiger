@@ -1,5 +1,5 @@
-using Microsoft.AspNetCore.Mvc;
 using DotnetNiger.Community.Domain.Entities;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Community.Controllers
 {

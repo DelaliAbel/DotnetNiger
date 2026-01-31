@@ -1,4 +1,4 @@
-namespace DotnetNiger.Identity
+namespace DotnetNiger.Identity.Domain.Entities
 {
     public class WeatherForecast
     {

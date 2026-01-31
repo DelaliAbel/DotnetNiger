@@ -210,12 +210,7 @@ DotnetNiger/
 │   ├── 📄 01-SETUP.md              # Installation guide
 │   ├── 📄 02-QUICK-START.md        # 5-minute quickstart
 │   ├── 📄 03-ARCHITECTURE.md       # Architecture overview
-│   ├── 📄 04-TECHNICAL-STACK.md    # Tech stack (.NET 8.0 LTS)
-│   ├── 📄 05-PROJECT-STRUCTURE.md  # Project structure detail
-│   ├── 📄 06-API.md                # API endpoints documentation
-│   └── 📄 08-DEPLOYMENT.md         # Deployment guide
-│
-└── 📁 .vscode/                     # VS Code configuration
+│   ├── 📄 04-TECHNICAL-STACK.md    # └── 📁 .vscode/                     # VS Code configuration
     ├── 📄 extensions.json
     ├── 📄 launch.json
     └── 📄 tasks.json

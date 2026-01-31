@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace DotnetNiger.Community.Application.DTOs.Responses;
 
 public class EventDto

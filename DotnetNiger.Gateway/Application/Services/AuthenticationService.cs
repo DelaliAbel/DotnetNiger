@@ -1,3 +1,5 @@
+using DotnetNiger.Gateway.Application.Services.Interfaces;
+
 namespace DotnetNiger.Gateway.Application.Services;
 
 /// <summary>

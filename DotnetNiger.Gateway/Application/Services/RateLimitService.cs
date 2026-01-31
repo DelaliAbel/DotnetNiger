@@ -1,3 +1,5 @@
+using DotnetNiger.Gateway.Application.Services.Interfaces;
+
 namespace DotnetNiger.Gateway.Application.Services;
 
 /// <summary>
@@ -16,7 +18,7 @@ public class RateLimitService : IRateLimitService
     public Task<bool> IsRequestAllowedAsync(string clientId, string endpoint)
     {
         var key = $"{clientId}:{endpoint}";
-        
+
         if (_requestCounts.TryGetValue(key, out var count))
         {
             // Limite de 100 requêtes par minute (exemple)
@@ -29,7 +31,7 @@ public class RateLimitService : IRateLimitService
     public Task IncrementRequestCountAsync(string clientId, string endpoint)
     {
         var key = $"{clientId}:{endpoint}";
-        
+
         if (_requestCounts.ContainsKey(key))
             _requestCounts[key]++;
         else

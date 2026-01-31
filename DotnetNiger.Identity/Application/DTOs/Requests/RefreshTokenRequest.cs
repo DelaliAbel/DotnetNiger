@@ -4,6 +4,6 @@ namespace DotnetNiger.Identity.Application.DTOs.Requests;
 
 public class RefreshTokenRequest
 {
-	[Required]
-	public string RefreshToken { get; set; } = string.Empty;
+    [Required]
+    public string RefreshToken { get; set; } = string.Empty;
 }

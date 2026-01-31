@@ -1,7 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using System.Net.Http;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace DotnetNiger.Gateway.Api.Controllers;
 
@@ -40,7 +38,7 @@ public class SwaggerAggregatorController : ControllerBase
             {
                 var json = await client.GetStringAsync(url);
                 var doc = JsonDocument.Parse(json);
-                
+
                 // Agréger les paths
                 if (doc.RootElement.TryGetProperty("paths", out var paths))
                 {
@@ -78,7 +76,7 @@ public class SwaggerAggregatorController : ControllerBase
 
         var result = new
         {
-            openapi = "3.0.1",
+            openapi = "3.0.0",
             info = new
             {
                 title = "DotnetNiger Gateway - Tous les services",
