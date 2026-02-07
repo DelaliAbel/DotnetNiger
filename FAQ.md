@@ -15,7 +15,7 @@ docker-compose up
 
 ### Q: Quelle version de .NET est requise ?
 
-**A:** .NET 9 SDK ou supérieur. Vérifiez avec `dotnet --version`.
+**A:** .NET 8 SDK. Vérifiez avec `dotnet --version`.
 
 ### Q: Comment accéder à la documentation API ?
 
