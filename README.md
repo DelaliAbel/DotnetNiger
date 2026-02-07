@@ -3,9 +3,8 @@
 > Plateforme communautaire open-source pour la communauté DotnetNiger, construite avec .NET 8.0 LTS
 
 [![.NET Version](https://img.shields.io/badge/.NET-8.0%20LTS-512BD4?logo=dotnet)](https://dotnet.microsoft.com/download/dotnet/8.0)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](docs/18-LICENSE.md)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE.md)
 [![Status](https://img.shields.io/badge/Status-In%20Development-yellow.svg)](https://github.com/akaletekoffilevis/DotnetNiger)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](docs/10-CONTRIBUTING.md)
 
 ## 📋 Vue d'ensemble
 
@@ -101,24 +100,15 @@ curl -X POST http://localhost:5075/api/auth/login \
 
 ## 📚 Documentation
 
-| Document                                             | Description                     |
-| ---------------------------------------------------- | ------------------------------- |
-| [📖 Index](docs/00-INDEX.md)                         | Navigation de la documentation  |
-| [⚙️ Setup](docs/01-SETUP.md)                         | Guide d'installation détaillé   |
-| [🚀 Quick Start](docs/02-QUICK-START.md)             | Démarrage en 5 minutes          |
-| [🏛️ Architecture](docs/03-ARCHITECTURE.md)           | Architecture et design patterns |
-| [🛠️ Technical Stack](docs/04-TECHNICAL-STACK.md)     | Technologies utilisées          |
-| [📁 Project Structure](docs/05-PROJECT-STRUCTURE.md) | Organisation du code            |
-| [🔌 API](docs/06-API.md)                             | Documentation API complète      |
-| [📊 Monitoring](docs/07-MONITORING.md)               | Logs et métriques               |
-| [🤝 Contributing](./CONTRIBUTING.md)                 | Guide de contribution           |
-| [📏 Code Standards](docs/08-CODE-STANDARDS.md)       | Standards de code               |
-| [🧪 Testing](docs/09-TESTING.md)                     | Guide de tests                  |
-| [❓ FAQ](./FAQ.md)                                   | Questions fréquentes            |
-| [📝 Changelog](./CHANGELOG.md)                       | Historique des versions         |
-| [🔒 Security](./SECURITY.md)                         | Politique de sécurité           |
-| [🤝 Code of Conduct](./CODE_OF_CONDUCT.md)           | Code de conduite                |
-| [📄 License](LICENSE.md)                             | Licence MIT                     |
+| Document                        | Description                    |
+| ------------------------------- | ------------------------------ |
+| [Index](docs/INDEX.md)          | Navigation documentation       |
+| [Setup](docs/SETUP.md)          | Installation et demarrage      |
+| [Architecture](docs/ARCHITECTURE.md) | Vue d'ensemble des services |
+| [API](docs/API.md)              | Endpoints et auth              |
+| [Changelog](CHANGELOG.md)       | Historique des versions        |
+| [Security](SECURITY.md)         | Politique de securite          |
+| [License](LICENSE.md)           | Licence MIT                    |
 
 ## 🛠️ Stack Technique
 
@@ -144,7 +134,7 @@ Nous accueillons les contributions ! Voici comment commencer :
 5. **Push** vers votre fork : `git push origin feat/ma-fonctionnalite`
 6. **Créer une Pull Request** vers la branche `dev`
 
-📖 Voir le [Guide de Contribution](./CONTRIBUTING.md) pour les détails complets.
+Ce guide suffit pour une premiere contribution.
 
 ### Workflow Git
 

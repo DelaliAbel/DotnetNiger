@@ -12,13 +12,11 @@ et ce projet adhère à [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Gateway API centralisée avec YARP
 - Service d'identité avec JWT
 - Service communautaire
-- Documentation complète
-- Guide de configuration (SETUP.md)
-- Guide de contribution (CONTRIBUTING.md)
-- Architecture documentation (ARCHITECTURE.md)
+- Documentation simplifiee (INDEX, SETUP, ARCHITECTURE, API)
 
 ### Changed
-- Mise à jour de la documentation README
+- Simplification et renommage des docs
+- Mise a jour des liens README
 
 ### Fixed
 - Résolution des erreurs Swagger pour les schémas manquants
@@ -66,12 +64,10 @@ et ce projet adhère à [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 #### Documentation
 - [x] README.md
-- [x] SETUP.md
-- [x] ARCHITECTURE.md
-- [x] CONTRIBUTING.md
-- [x] API.md
-- [x] DEPLOYMENT.md
-- [x] CODE_OF_CONDUCT.md
+- [x] docs/SETUP.md
+- [x] docs/ARCHITECTURE.md
+- [x] docs/API.md
+- [x] docs/INDEX.md
 - [x] LICENSE (MIT)
 
 ### Security

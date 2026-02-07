@@ -29,6 +29,7 @@ echo ""
 
 # Déterminer le mode
 MODE="watch"
+VERBOSE=""
 if [ "$1" == "run" ]; then
     MODE="run"
 elif [ "$1" == "build" ]; then
@@ -100,7 +101,7 @@ cleanup() {
 }
 
 # Capturer Ctrl+C
-trap cleanup INT TERM
+trap cleanup INT TERM EXIT
 
 # Lancer Gateway
 echo -e "${BLUE}[Gateway]${NC} Démarrage..."

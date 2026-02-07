@@ -85,11 +85,13 @@ function Stop-Services {
     Write-Host "🛑 Arrêt des services..." -ForegroundColor Red
     
     # Arrêter tous les jobs
-    Get-Job | Stop-Job
-    Get-Job | Remove-Job
+    Get-Job -ErrorAction SilentlyContinue | Stop-Job -ErrorAction SilentlyContinue
+    Get-Job -ErrorAction SilentlyContinue | Remove-Job -ErrorAction SilentlyContinue
     
     # Tuer tous les processus dotnet watch
-    Get-Process | Where-Object { $_.ProcessName -eq "dotnet" -and $_.CommandLine -like "*watch*" } | Stop-Process -Force -ErrorAction SilentlyContinue
+    Get-CimInstance Win32_Process -Filter "Name = 'dotnet.exe'" -ErrorAction SilentlyContinue |
+        Where-Object { $_.CommandLine -like "*dotnet*watch*" } |
+        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
     
     Write-Host "✓ Services arrêtés" -ForegroundColor Green
 }
@@ -102,7 +104,7 @@ $null = Register-EngineEvent -SourceIdentifier PowerShell.Exiting -Action {
 try {
     # Construire la commande selon le mode
     $dotnetCmd = if ($mode -eq "run") { "run" } else { "watch run" }
-    $verbosity = if ($Dev) { "--verbosity detailed" } else "" }
+    $verbosity = if ($Dev) { "--verbosity detailed" } else { "" }
     
     # Lancer Gateway
     Write-Host "[Gateway] Démarrage..." -ForegroundColor Blue

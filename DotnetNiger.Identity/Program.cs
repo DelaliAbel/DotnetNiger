@@ -1,8 +1,11 @@
 
 
 using Microsoft.OpenApi.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+var connectionString = builder.Configuration.GetConnectionString("DotnetNigerIdentityContextConnection") ?? throw new InvalidOperationException("Connection string 'DotnetNigerIdentityContextConnection' not found.");
 
 // Add services to the container.
 builder.Services.AddControllers();
