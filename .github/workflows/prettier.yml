@@ -26,3 +26,13 @@ jobs:
 
       - name: Check formatting
         run: npm run format:check
+
+      - name: Run Prettier
+        run: |
+          npx prettier --write .
+
+      - name: Commit changes
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git diff --quiet || (git add . && git commit -m "style: Apply Prettier formatting [skip ci]" && git push)
