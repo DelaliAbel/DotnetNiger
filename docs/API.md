@@ -61,15 +61,16 @@ Content-Type: application/json
 - 404 Not Found
 - 429 Too Many Requests
 - 500 Internal Server Error
-}
-```
+  }
+
+````
 
 #### Get Followers
 
 ```http
 GET /api/users/{userId}/followers?skip=0&take=20
 Authorization: Bearer <token>
-```
+````
 
 **Response:** `200 OK`
 

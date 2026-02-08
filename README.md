@@ -100,15 +100,15 @@ curl -X POST http://localhost:5075/api/auth/login \
 
 ## 📚 Documentation
 
-| Document                        | Description                    |
-| ------------------------------- | ------------------------------ |
-| [Index](docs/INDEX.md)          | Navigation documentation       |
-| [Setup](docs/SETUP.md)          | Installation et demarrage      |
+| Document                             | Description                 |
+| ------------------------------------ | --------------------------- |
+| [Index](docs/INDEX.md)               | Navigation documentation    |
+| [Setup](docs/SETUP.md)               | Installation et demarrage   |
 | [Architecture](docs/ARCHITECTURE.md) | Vue d'ensemble des services |
-| [API](docs/API.md)              | Endpoints et auth              |
-| [Changelog](CHANGELOG.md)       | Historique des versions        |
-| [Security](SECURITY.md)         | Politique de securite          |
-| [License](LICENSE.md)           | Licence MIT                    |
+| [API](docs/API.md)                   | Endpoints et auth           |
+| [Changelog](CHANGELOG.md)            | Historique des versions     |
+| [Security](SECURITY.md)              | Politique de securite       |
+| [License](LICENSE.md)                | Licence MIT                 |
 
 ## 🛠️ Stack Technique
 
