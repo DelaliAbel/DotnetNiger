@@ -216,4 +216,4 @@ Si vous trouvez ce projet intéressant ou utile :
 
 ---
 
-**Made with ❤️ for the DotnetNiger Community**
+**Made with ❤️ by the DotnetNiger Community**
