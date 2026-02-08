@@ -183,7 +183,7 @@ Copyright (c) 2026 DotnetNiger
 
 - 📦 **Repository:** [github.com/akaletekoffilevis/DotnetNiger](https://github.com/akaletekoffilevis/DotnetNiger.git)
 - 💬 **Discussions:** [GitHub Discussions](https://github.com/akaletekoffilevis/DotnetNiger/discussions)
-- 📧 **Contact:** abdallyacali@hotmail.com
+- 📧 **Contact:** <abdallyacali@hotmail.com>
 
 ## 🎯 Roadmap
 
