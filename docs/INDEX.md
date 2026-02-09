@@ -16,5 +16,5 @@ Documentation courte et utile pour lancer et comprendre le projet.
 
 ## Notes utiles
 
-- Scripts: run.ps1 (Windows) et run.sh (Linux/Mac)
+- Scripts: run.ps1 (Windows) et run.sh (Linux/Mac/Windows)
 - Ports par defaut: Gateway 5000, Identity 5075, Community 5269

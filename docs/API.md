@@ -1,6 +1,6 @@
 # API
 
-Base URL (dev): http://localhost:5000
+Base URL (dev): <http://localhost:5000>
 
 ## Auth
 
@@ -61,7 +61,6 @@ Content-Type: application/json
 - 404 Not Found
 - 429 Too Many Requests
 - 500 Internal Server Error
-  }
 
 ````
 
