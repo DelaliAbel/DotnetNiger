@@ -251,13 +251,13 @@ DotnetNiger/
 
 **Rôle:** Point d'entrée centraliser, routage, agrégation API.
 
-| Aspect | Détail |
-|--------|--------|
-| **Port** | Configurable (appsettings) |
-| **Technologie** | YARP (Yet Another Reverse Proxy) |
+| Aspect              | Détail                                                             |
+| ------------------- | ------------------------------------------------------------------ |
+| **Port**            | Configurable (appsettings)                                         |
+| **Technologie**     | YARP (Yet Another Reverse Proxy)                                   |
 | **Responsabilités** | Routage → Identity, Community; Agrégation Swagger; Filtres globaux |
-| **Controllers** | SwaggerAggregatorController |
-| **Infrastructure** | CircuitBreaker, Caching, HttpClients, Monitoring |
+| **Controllers**     | SwaggerAggregatorController                                        |
+| **Infrastructure**  | CircuitBreaker, Caching, HttpClients, Monitoring                   |
 
 **Routes YARP** (Configuration/yarp-routes.json):
 
@@ -270,11 +270,11 @@ DotnetNiger/
 
 **Rôle:** Authentification, gestion des utilisateurs, émission de tokens.
 
-| Aspect | Détail |
-|--------|--------|
-| **DB** | SQL Server (DotnetNigerIdentityDbContext) |
-| **Cache** | Redis (tokens, sessions) |
-| **Port** | Configurable |
+| Aspect    | Détail                                    |
+| --------- | ----------------------------------------- |
+| **DB**    | SQL Server (DotnetNigerIdentityDbContext) |
+| **Cache** | Redis (tokens, sessions)                  |
+| **Port**  | Configurable                              |
 
 **Entities principales:**
 
@@ -288,14 +288,14 @@ DotnetNiger/
 
 **Controllers:**
 
-| Endpoint | Responsabilité |
-|----------|-----------------|
-| `/api/auth` | Login, Register, Logout |
-| `/api/users` | CRUD user, profile |
-| `/api/tokens` | Refresh token, validate |
-| `/api/roles` | Gestion des rôles |
-| `/api/admin` | Opérations admin |
-| `/api/social-links` | Réseaux sociaux |
+| Endpoint            | Responsabilité          |
+| ------------------- | ----------------------- |
+| `/api/auth`         | Login, Register, Logout |
+| `/api/users`        | CRUD user, profile      |
+| `/api/tokens`       | Refresh token, validate |
+| `/api/roles`        | Gestion des rôles       |
+| `/api/admin`        | Opérations admin        |
+| `/api/social-links` | Réseaux sociaux         |
 
 **Services clés:**
 
@@ -314,11 +314,11 @@ DotnetNiger/
 
 **Rôle:** Fonctionnalités sociales, posts, événements, projects.
 
-| Aspect | Détail |
-|--------|--------|
-| **DB** | SQL Server (CommunityDbContext) |
+| Aspect    | Détail                               |
+| --------- | ------------------------------------ |
+| **DB**    | SQL Server (CommunityDbContext)      |
 | **Cache** | Redis (posts populaires, recherches) |
-| **Port** | Configurable |
+| **Port**  | Configurable                         |
 
 **Entities principales:**
 
@@ -330,19 +330,19 @@ DotnetNiger/
 
 **Controllers:**
 
-| Endpoint | Responsabilité |
-|----------|-----------------|
-| `/api/posts` | CRUD posts, likes, engagement |
-| `/api/comments` | CRUD comments |
-| `/api/events` | Gestion événements |
-| `/api/projects` | Gestion projets |
-| `/api/partners` | Partenaires |
-| `/api/resources` | Ressources, docs |
-| `/api/categories` | Catégories |
-| `/api/tags` | Tags, hashtags |
-| `/api/teams` | Équipes, membres |
-| `/api/search` | Recherche full-text |
-| `/api/stats` | Statistiques, analytics |
+| Endpoint          | Responsabilité                |
+| ----------------- | ----------------------------- |
+| `/api/posts`      | CRUD posts, likes, engagement |
+| `/api/comments`   | CRUD comments                 |
+| `/api/events`     | Gestion événements            |
+| `/api/projects`   | Gestion projets               |
+| `/api/partners`   | Partenaires                   |
+| `/api/resources`  | Ressources, docs              |
+| `/api/categories` | Catégories                    |
+| `/api/tags`       | Tags, hashtags                |
+| `/api/teams`      | Équipes, membres              |
+| `/api/search`     | Recherche full-text           |
+| `/api/stats`      | Statistiques, analytics       |
 
 **Services clés:**
 
@@ -554,10 +554,10 @@ var userInfo = await _identityClient.GetUserAsync(userId);
 
 ### Bases de données
 
-| Service | Base | Context | Migrations |
-|---------|------|---------|-----------|
-| **Identity** | `DotnetNigerIdentity` | `DotnetNigerIdentityDbContext` | EF Core |
-| **Community** | `DotnetNigerCommunity` | `CommunityDbContext` | EF Core |
+| Service       | Base                   | Context                        | Migrations |
+| ------------- | ---------------------- | ------------------------------ | ---------- |
+| **Identity**  | `DotnetNigerIdentity`  | `DotnetNigerIdentityDbContext` | EF Core    |
+| **Community** | `DotnetNigerCommunity` | `CommunityDbContext`           | EF Core    |
 
 **Isolation:**
 
