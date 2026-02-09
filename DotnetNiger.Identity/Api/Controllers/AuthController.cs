@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using DotnetNiger.Identity.Application.DTOs.Requests;
 using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Services.Interfaces;
@@ -8,9 +9,10 @@ namespace DotnetNiger.Identity.Api.Controllers;
 
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/v{version:apiVersion}/auth")]
 public class AuthController : ControllerBase
 {
+	// Endpoints publics pour l'authentification.
 	private readonly IAuthService _authService;
 
 	public AuthController(IAuthService authService)

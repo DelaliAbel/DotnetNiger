@@ -16,12 +16,14 @@ using Swashbuckle.AspNetCore.SwaggerUI;
 var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DotnetNigerIdentityContextConnection") ?? throw new InvalidOperationException("Connection string 'DotnetNigerIdentityContextConnection' not found.");
 
+// Chargement de la configuration JWT.
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
     ?? throw new InvalidOperationException("JWT configuration section 'Jwt' not found.");
 
 // Add services to the container.
 builder.Services.AddControllers(options =>
 {
+    // Gestion centralisee des erreurs metier.
     options.Filters.Add<ExceptionFilter>();
 });
 
@@ -78,6 +80,32 @@ builder.Services.AddSwaggerGen(options =>
         Title = "Identity Service API",
         Version = "v1",
         Description = "API pour l'authentification et la gestion des identités de DotnetNiger"
+    });
+
+    // Support du bouton Authorize pour JWT.
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "Entrez 'Bearer' suivi de votre token JWT.",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
     });
 });
 

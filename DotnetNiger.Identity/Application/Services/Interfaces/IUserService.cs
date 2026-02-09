@@ -4,5 +4,6 @@ namespace DotnetNiger.Identity.Application.Services.Interfaces;
 
 public interface IUserService
 {
+	// Profil utilisateur courant.
 	Task<UserDto> GetProfileAsync(Guid userId);
 }

@@ -13,6 +13,7 @@ namespace DotnetNiger.Identity.Application.Services;
 
 public class TokenService : ITokenService
 {
+	// Rotation et reemission des tokens.
 	private readonly DotnetNigerIdentityDbContext _dbContext;
 	private readonly UserManager<ApplicationUser> _userManager;
 	private readonly JwtTokenGenerator _jwtTokenGenerator;
@@ -60,6 +61,7 @@ public class TokenService : ITokenService
 			throw new UserNotFoundException();
 		}
 
+		// Rotation du refresh token pour limiter la reutilisation.
 		storedToken.RevokedAt = DateTime.UtcNow;
 		var newRefreshTokenValue = _refreshTokenGenerator.GenerateToken();
 		var newRefreshToken = new RefreshToken

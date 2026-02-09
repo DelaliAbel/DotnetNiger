@@ -5,5 +5,6 @@ namespace DotnetNiger.Identity.Application.Services.Interfaces;
 
 public interface ITokenService
 {
+	// Rafraichissement du token.
 	Task<AuthDto> RefreshAsync(RefreshTokenRequest request);
 }

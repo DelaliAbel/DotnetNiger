@@ -10,6 +10,7 @@ namespace DotnetNiger.Identity.Infrastructure.Security;
 
 public class JwtTokenGenerator
 {
+	// Generation du token d'acces JWT.
 	private readonly JwtOptions _options;
 	private readonly UserManager<ApplicationUser> _userManager;
 

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Asp.Versioning;
 using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -8,10 +9,11 @@ namespace DotnetNiger.Identity.Api.Controllers;
 
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/v{version:apiVersion}/users")]
 [Authorize]
 public class UsersController : ControllerBase
 {
+	// Endpoints proteges pour le profil utilisateur.
 	private readonly IUserService _userService;
 
 	public UsersController(IUserService userService)

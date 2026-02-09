@@ -6,6 +6,7 @@ namespace DotnetNiger.Identity.Api.Filters;
 
 public class ExceptionFilter : IExceptionFilter
 {
+	// Conversion des exceptions metier en ProblemDetails.
 	public void OnException(ExceptionContext context)
 	{
 		if (context.Exception is IdentityException identityException)

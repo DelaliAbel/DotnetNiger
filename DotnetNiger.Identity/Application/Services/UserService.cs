@@ -10,6 +10,7 @@ namespace DotnetNiger.Identity.Application.Services;
 
 public class UserService : IUserService
 {
+	// Lecture du profil utilisateur.
 	private readonly UserManager<ApplicationUser> _userManager;
 	private readonly DotnetNigerIdentityDbContext _dbContext;
 

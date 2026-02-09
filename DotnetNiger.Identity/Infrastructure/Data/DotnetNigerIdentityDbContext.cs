@@ -8,6 +8,7 @@ namespace DotnetNiger.Identity.Infrastructure.Data;
 public class DotnetNigerIdentityDbContext
     : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
 {
+    // Contexte Identity et entites metier.
     public DotnetNigerIdentityDbContext(DbContextOptions<DotnetNigerIdentityDbContext> options)
         : base(options)
     {
@@ -22,6 +23,7 @@ public class DotnetNigerIdentityDbContext
     {
         base.OnModelCreating(builder);
 
+        // Liaisons utilisateur -> entites metier.
         builder.Entity<RefreshToken>()
             .HasOne(token => token.User)
             .WithMany(user => user.RefreshTokens)

@@ -13,6 +13,7 @@ namespace DotnetNiger.Identity.Application.Services;
 
 public class AuthService : IAuthService
 {
+	// Logique de login/inscription.
 	private readonly UserManager<ApplicationUser> _userManager;
 	private readonly DotnetNigerIdentityDbContext _dbContext;
 	private readonly JwtTokenGenerator _jwtTokenGenerator;
