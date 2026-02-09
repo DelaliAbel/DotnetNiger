@@ -1,5 +1,7 @@
 using System.Text;
 using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
+using DotnetNiger.Identity.Api.Extensions;
 using DotnetNiger.Identity.Api.Filters;
 using DotnetNiger.Identity.Application.Services;
 using DotnetNiger.Identity.Application.Services.Interfaces;
@@ -10,11 +12,9 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerUI;
 
 var builder = WebApplication.CreateBuilder(args);
-var connectionString = builder.Configuration.GetConnectionString("DotnetNigerIdentityContextConnection") ?? throw new InvalidOperationException("Connection string 'DotnetNigerIdentityContextConnection' not found.");
+var connectionString = builder.Configuration.GetConnectionString("DotnetNigerIdentityDbContext") ?? throw new InvalidOperationException("Connection string 'DotnetNigerIdentityContextConnection' not found.");
 
 // Chargement de la configuration JWT.
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
@@ -32,6 +32,11 @@ builder.Services.AddApiVersioning(options =>
     options.DefaultApiVersion = new ApiVersion(1, 0);
     options.AssumeDefaultVersionWhenUnspecified = true;
     options.ReportApiVersions = true;
+}).AddApiExplorer(options =>
+{
+    // Format de groupe: v1, v1.0, etc.
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
 });
 
 builder.Services.AddDbContext<DotnetNigerIdentityDbContext>(options =>
@@ -73,41 +78,8 @@ builder.Services.AddAuthorization();
 
 // Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "Identity Service API",
-        Version = "v1",
-        Description = "API pour l'authentification et la gestion des identités de DotnetNiger"
-    });
-
-    // Support du bouton Authorize pour JWT.
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Description = "Entrez 'Bearer' suivi de votre token JWT.",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT"
-    });
-
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
-});
+builder.Services.AddSwaggerGen();
+builder.Services.ConfigureOptions<ConfigureSwaggerOptions>();
 
 var app = builder.Build();
 
@@ -117,7 +89,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Identity Service v1");
+        var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+        foreach (var description in provider.ApiVersionDescriptions)
+        {
+            options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", $"Identity Service {description.GroupName}");
+        }
+
         options.RoutePrefix = "swagger";
         options.DocumentTitle = "Identity Service - API Documentation";
         options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
