@@ -1,3 +1,4 @@
+// Filtre API Identity: ExceptionFilter
 using DotnetNiger.Identity.Application.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;

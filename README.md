@@ -79,6 +79,13 @@ cd ../DotnetNiger.Community
 dotnet ef database update
 cd ..
 
+# 4.b (Optionnel) Seed admin (une seule fois)
+# PowerShell
+# $env:SEED_ADMIN="true"
+# $env:ADMIN_EMAIL="admin@dotnetniger.com"
+# $env:ADMIN_PASSWORD="AdminPassword@2006"
+# $env:ADMIN_USERNAME="admin"
+
 # 5. Lancer tous les services
 .\run.ps1          # Windows
 ./run.sh           # Linux/Mac
@@ -96,6 +103,11 @@ curl -X POST http://localhost:5075/api/auth/register \
 curl -X POST http://localhost:5075/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"Test@123"}'
+
+## ⚙️ Configuration rapide (Identity)
+
+- Admin seed: variables d'environnement `SEED_ADMIN`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_USERNAME`
+- Email provider: voir la section Email dans [docs/API.md](docs/API.md)
 ```
 
 ## 📚 Documentation

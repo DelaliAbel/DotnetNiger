@@ -13,10 +13,16 @@ et ce projet adhère à [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - Service d'identité avec JWT
 - Service communautaire
 - Documentation simplifiee (INDEX, SETUP, ARCHITECTURE, API)
+- Identity: profil (update), change password, change email
+- Identity: social links
+- Identity: roles, permissions, admin endpoints
+- Email provider configurable (SMTP, SendGrid, Mailgun)
+- Seed admin configurable via variables d'environnement
 
 ### Changed
 - Simplification et renommage des docs
 - Mise a jour des liens README
+- Ajout de la config Email et notes de seed admin
 
 ### Fixed
 - Résolution des erreurs Swagger pour les schémas manquants

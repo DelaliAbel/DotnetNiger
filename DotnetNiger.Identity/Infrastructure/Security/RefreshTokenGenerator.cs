@@ -1,3 +1,4 @@
+// Composant securite Identity: RefreshTokenGenerator
 using System.Security.Cryptography;
 
 namespace DotnetNiger.Identity.Infrastructure.Security;

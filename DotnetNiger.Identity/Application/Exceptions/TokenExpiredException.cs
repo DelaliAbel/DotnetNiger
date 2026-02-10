@@ -1,3 +1,4 @@
+// Exception metier Identity: TokenExpiredException
 namespace DotnetNiger.Identity.Application.Exceptions;
 
 public class TokenExpiredException : IdentityException

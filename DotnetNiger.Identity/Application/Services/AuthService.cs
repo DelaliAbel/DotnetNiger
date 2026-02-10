@@ -1,7 +1,9 @@
+// Service applicatif Identity: AuthService
 using DotnetNiger.Identity.Application.DTOs.Requests;
 using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Exceptions;
 using DotnetNiger.Identity.Application.Services.Interfaces;
+using DotnetNiger.Identity.Application.Validators;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure.Data;
 using DotnetNiger.Identity.Infrastructure.Security;
@@ -11,6 +13,7 @@ using Microsoft.Extensions.Options;
 
 namespace DotnetNiger.Identity.Application.Services;
 
+// Service d'authentification et de gestion des tokens.
 public class AuthService : IAuthService
 {
 	// Logique de login/inscription.
@@ -20,6 +23,7 @@ public class AuthService : IAuthService
 	private readonly RefreshTokenGenerator _refreshTokenGenerator;
 	private readonly JwtOptions _jwtOptions;
 	private readonly IEmailService _emailService;
+	private readonly ILoginHistoryService _loginHistoryService;
 
 	public AuthService(
 		UserManager<ApplicationUser> userManager,
@@ -27,7 +31,8 @@ public class AuthService : IAuthService
 		JwtTokenGenerator jwtTokenGenerator,
 		RefreshTokenGenerator refreshTokenGenerator,
 		IOptions<JwtOptions> jwtOptions,
-		IEmailService emailService)
+		IEmailService emailService,
+		ILoginHistoryService loginHistoryService)
 	{
 		_userManager = userManager;
 		_dbContext = dbContext;
@@ -35,10 +40,12 @@ public class AuthService : IAuthService
 		_refreshTokenGenerator = refreshTokenGenerator;
 		_jwtOptions = jwtOptions.Value;
 		_emailService = emailService;
+		_loginHistoryService = loginHistoryService;
 	}
 
 	public async Task<AuthDto> RegisterAsync(RegisterRequest request)
 	{
+		RegisterRequestValidator.ValidateAndThrow(request);
 		var existingByEmail = await _userManager.FindByEmailAsync(request.Email);
 		if (existingByEmail != null)
 		{
@@ -68,13 +75,16 @@ public class AuthService : IAuthService
 			throw new IdentityException(message, 400);
 		}
 
+		var confirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+		await _emailService.SendAsync(user.Email ?? string.Empty, "Verify email", $"Your verification token: {confirmationToken}");
+
 		var tokenDto = await CreateTokenAsync(user);
 		var userDto = await MapUserAsync(user);
 
 		return new AuthDto
 		{
 			Success = true,
-			Message = "Registration successful.",
+			Message = "Registration successful. Please verify your email.",
 			User = userDto,
 			Token = tokenDto
 		};
@@ -82,20 +92,35 @@ public class AuthService : IAuthService
 
 	public async Task<AuthDto> LoginAsync(LoginRequest request)
 	{
+		LoginRequestValidator.ValidateAndThrow(request);
 		var user = await _userManager.FindByEmailAsync(request.Email);
 		if (user == null)
 		{
 			throw new InvalidCredentialsException();
 		}
 
+		if (!user.IsActive)
+		{
+			await _loginHistoryService.RecordAsync(user.Id, false, "User disabled.");
+			throw new IdentityException("User is disabled.", 403);
+		}
+
+		if (!user.EmailConfirmed)
+		{
+			await _loginHistoryService.RecordAsync(user.Id, false, "Email not verified.");
+			throw new IdentityException("Email is not verified.", 403);
+		}
+
 		var passwordValid = await _userManager.CheckPasswordAsync(user, request.Password);
 		if (!passwordValid)
 		{
+			await _loginHistoryService.RecordAsync(user.Id, false, "Invalid credentials.");
 			throw new InvalidCredentialsException();
 		}
 
 		user.LastLoginAt = DateTime.UtcNow;
 		await _userManager.UpdateAsync(user);
+		await _loginHistoryService.RecordAsync(user.Id, true, string.Empty);
 
 		var tokenDto = await CreateTokenAsync(user);
 		var userDto = await MapUserAsync(user);
@@ -107,6 +132,30 @@ public class AuthService : IAuthService
 			User = userDto,
 			Token = tokenDto
 		};
+	}
+
+	public async Task<string?> RequestEmailVerificationAsync(RequestEmailVerificationRequest request)
+	{
+		var email = request.Email?.Trim();
+		if (string.IsNullOrWhiteSpace(email))
+		{
+			throw new IdentityException("Email is required.", 400);
+		}
+
+		var user = await _userManager.FindByEmailAsync(email);
+		if (user == null)
+		{
+			return null;
+		}
+
+		if (user.EmailConfirmed)
+		{
+			return null;
+		}
+
+		var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+		await _emailService.SendAsync(email, "Verify email", $"Your verification token: {token}");
+		return token;
 	}
 
 	public async Task<string?> RequestPasswordResetAsync(ForgotPasswordRequest request)
@@ -130,6 +179,7 @@ public class AuthService : IAuthService
 
 	public async Task ResetPasswordAsync(ResetPasswordRequest request)
 	{
+		ResetPasswordRequestValidator.ValidateAndThrow(request);
 		var email = request.Email?.Trim();
 		if (string.IsNullOrWhiteSpace(email))
 		{

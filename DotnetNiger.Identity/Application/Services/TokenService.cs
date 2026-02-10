@@ -1,3 +1,4 @@
+// Service applicatif Identity: TokenService
 using DotnetNiger.Identity.Application.DTOs.Requests;
 using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Exceptions;
@@ -114,5 +115,28 @@ public class TokenService : ITokenService
 				TokenType = "Bearer"
 			}
 		};
+	}
+
+	public async Task LogoutAsync(Guid userId, RefreshTokenRequest request)
+	{
+		if (string.IsNullOrWhiteSpace(request.RefreshToken))
+		{
+			throw new IdentityException("Refresh token is required.", 400);
+		}
+
+		var storedToken = await _dbContext.RefreshTokens
+			.FirstOrDefaultAsync(token => token.Token == request.RefreshToken);
+		if (storedToken == null || storedToken.UserId != userId)
+		{
+			throw new InvalidCredentialsException();
+		}
+
+		if (storedToken.RevokedAt != null)
+		{
+			return;
+		}
+
+		storedToken.RevokedAt = DateTime.UtcNow;
+		await _dbContext.SaveChangesAsync();
 	}
 }

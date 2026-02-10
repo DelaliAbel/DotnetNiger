@@ -42,6 +42,30 @@ cd ..
 - appsettings.Development.json dans chaque service
 - ConnectionStrings pour Identity et Community
 
+### Admin seed (Identity)
+
+Le seed admin est optionnel et ne s'execute qu'une seule fois.
+
+PowerShell:
+
+```powershell
+$env:SEED_ADMIN="true"
+$env:ADMIN_EMAIL="admin@dotnetniger.com"
+$env:ADMIN_PASSWORD="AdminPassword@2006"
+$env:ADMIN_USERNAME="admin"
+```
+
+Pour desactiver apres creation:
+
+```powershell
+$env:SEED_ADMIN="false"
+```
+
+### Email provider
+
+Choisir `smtp`, `sendgrid`, ou `mailgun` via la config Email.
+Exemples dans [docs/API.md](./API.md).
+
 ## Verification
 
 ```bash

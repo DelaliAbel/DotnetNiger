@@ -1,3 +1,4 @@
+// Exception metier Identity: IdentityException
 namespace DotnetNiger.Identity.Application.Exceptions;
 
 public class IdentityException : Exception

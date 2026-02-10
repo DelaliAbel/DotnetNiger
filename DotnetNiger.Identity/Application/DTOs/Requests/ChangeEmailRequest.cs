@@ -1,7 +1,9 @@
+// DTO request Identity: ChangeEmailRequest
 using System.ComponentModel.DataAnnotations;
 
 namespace DotnetNiger.Identity.Application.DTOs.Requests;
 
+// Requete de changement d'email.
 public class ChangeEmailRequest
 {
 	[Required]

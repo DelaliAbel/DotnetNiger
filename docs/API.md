@@ -215,6 +215,52 @@ GET /metrics
 
 ---
 
+## 📧 Email Configuration
+
+### SMTP
+
+```json
+"Email": {
+  "Enabled": true,
+  "Provider": "smtp",
+  "Smtp": {
+    "Host": "smtp.example.com",
+    "Port": 587,
+    "Username": "smtp_user",
+    "Password": "smtp_password",
+    "From": "no-reply@dotnetniger.com",
+    "EnableSsl": true
+  }
+}
+```
+
+### SendGrid
+
+```json
+"Email": {
+  "Enabled": true,
+  "Provider": "sendgrid",
+  "SendGrid": {
+    "ApiKey": "SG.xxxxxx",
+    "From": "no-reply@dotnetniger.com"
+  }
+}
+```
+
+### Mailgun
+
+```json
+"Email": {
+  "Enabled": true,
+  "Provider": "mailgun",
+  "Mailgun": {
+    "ApiKey": "key-xxxxxx",
+    "Domain": "mg.dotnetniger.com",
+    "From": "no-reply@dotnetniger.com"
+  }
+}
+```
+
 ## 🧪 Testing avec cURL
 
 ### Register

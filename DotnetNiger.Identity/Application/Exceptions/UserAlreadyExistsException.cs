@@ -1,3 +1,4 @@
+// Exception metier Identity: UserAlreadyExistsException
 namespace DotnetNiger.Identity.Application.Exceptions;
 
 public class UserAlreadyExistsException : IdentityException

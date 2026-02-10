@@ -1,3 +1,4 @@
+// Exception metier Identity: UserNotFoundException
 namespace DotnetNiger.Identity.Application.Exceptions;
 
 public class UserNotFoundException : IdentityException

@@ -1,7 +1,9 @@
+// DTO request Identity: ResetPasswordRequest
 using System.ComponentModel.DataAnnotations;
 
 namespace DotnetNiger.Identity.Application.DTOs.Requests;
 
+// Requete de reinitialisation de mot de passe.
 public class ResetPasswordRequest
 {
 	[Required]

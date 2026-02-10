@@ -1,3 +1,4 @@
+// Composant securite Identity: JwtOptions
 namespace DotnetNiger.Identity.Infrastructure.Security;
 
 public class JwtOptions

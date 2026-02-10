@@ -1,19 +1,30 @@
+// Composant Identity: Program
 using System.Text;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using DotnetNiger.Identity.Api.Extensions;
 using DotnetNiger.Identity.Api.Filters;
-using DotnetNiger.Identity.Application.Services;
-using DotnetNiger.Identity.Application.Services.Interfaces;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure.Data;
+using DotnetNiger.Identity.Infrastructure.External;
 using DotnetNiger.Identity.Infrastructure.Security;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+// Configuration Serilog avec sinks definis dans appsettings.
+builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+    loggerConfiguration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext());
+// Configuration principale du service Identity.
 var connectionString = builder.Configuration.GetConnectionString("DotnetNigerIdentityDbContext") ?? throw new InvalidOperationException("Connection string 'DotnetNigerIdentityContextConnection' not found.");
 
 // Chargement de la configuration JWT.
@@ -25,6 +36,7 @@ builder.Services.AddControllers(options =>
 {
     // Gestion centralisee des erreurs metier.
     options.Filters.Add<ExceptionFilter>();
+    options.Filters.Add<ValidateModelFilter>();
 });
 
 builder.Services.AddApiVersioning(options =>
@@ -52,19 +64,29 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     .AddDefaultTokenProviders();
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+builder.Services.Configure<FileUploadOptions>(builder.Configuration.GetSection("FileUpload"));
 builder.Services.AddScoped<JwtTokenGenerator>();
 builder.Services.AddScoped<RefreshTokenGenerator>();
+builder.Services.AddHttpClient();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddDistributedMemoryCache();
 
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<ITokenService, TokenService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddScoped<ISocialLinkService, SocialLinkService>();
-builder.Services.AddScoped<IRoleService, RoleService>();
-builder.Services.AddScoped<IPermissionService, PermissionService>();
-builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddEmailProviders();
+builder.Services.AddIdentityApplicationServices();
+builder.Services.AddHostedService<AvatarCleanupService>();
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+builder.Services.AddAuthentication(options =>
+    {
+        options.DefaultAuthenticateScheme = "Smart";
+        options.DefaultChallengeScheme = "Smart";
+    })
+    .AddPolicyScheme("Smart", "Smart", options =>
+    {
+        options.ForwardDefaultSelector = context =>
+            context.Request.Headers.ContainsKey("X-API-Key")
+                ? "ApiKey"
+                : JwtBearerDefaults.AuthenticationScheme;
+    })
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
@@ -77,9 +99,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = jwtOptions.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key))
         };
-    });
+    })
+    .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>("ApiKey", options => { });
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("ApiKeyOnly", policy =>
+        policy.RequireAuthenticatedUser()
+            .RequireClaim("scope", "api_key"));
+});
 
 // Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
@@ -87,6 +115,26 @@ builder.Services.AddSwaggerGen();
 builder.Services.ConfigureOptions<ConfigureSwaggerOptions>();
 
 var app = builder.Build();
+
+var fileUploadOptions = app.Services.GetRequiredService<IOptions<FileUploadOptions>>().Value;
+if (string.Equals(fileUploadOptions.Provider, "Local", StringComparison.OrdinalIgnoreCase))
+{
+    var uploadRoot = Path.Combine(app.Environment.ContentRootPath, fileUploadOptions.RootPath);
+    Directory.CreateDirectory(uploadRoot);
+    var publicBasePath = string.IsNullOrWhiteSpace(fileUploadOptions.PublicBasePath)
+        ? "/uploads"
+        : fileUploadOptions.PublicBasePath;
+    if (!publicBasePath.StartsWith('/'))
+    {
+        publicBasePath = "/" + publicBasePath;
+    }
+
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(uploadRoot),
+        RequestPath = publicBasePath
+    });
+}
 
 // await SeedAdminAsync(app); //appel de la fonction pour cree l'admin
 
@@ -111,10 +159,18 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseErrorHandling();
+// Journalisation structuree des requetes HTTP.
+app.UseSerilogRequestLogging();
+app.UseRequestLogging();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
+
+public partial class Program
+{
+}
 
 // creation de l'admin
 // static async Task SeedAdminAsync(WebApplication app)

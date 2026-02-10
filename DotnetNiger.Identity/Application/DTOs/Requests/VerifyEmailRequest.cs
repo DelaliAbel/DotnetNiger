@@ -1,7 +1,9 @@
+// DTO request Identity: VerifyEmailRequest
 using System.ComponentModel.DataAnnotations;
 
 namespace DotnetNiger.Identity.Application.DTOs.Requests;
 
+// Requete de verification d'email.
 public class VerifyEmailRequest
 {
 	[Required]

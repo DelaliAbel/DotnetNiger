@@ -1,7 +1,10 @@
+// Service applicatif Identity: UserService
+using System.ComponentModel.DataAnnotations;
 using DotnetNiger.Identity.Application.DTOs.Requests;
 using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Exceptions;
 using DotnetNiger.Identity.Application.Services.Interfaces;
+using DotnetNiger.Identity.Application.Validators;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
@@ -9,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Identity.Application.Services;
 
+// Service de gestion du profil et du compte.
 public class UserService : IUserService
 {
 	// Lecture du profil utilisateur.
@@ -34,6 +38,7 @@ public class UserService : IUserService
 
 	public async Task<UserDto> UpdateProfileAsync(Guid userId, UpdateProfileRequest request)
 	{
+		UpdateProfileRequestValidator.ValidateAndThrow(request);
 		var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
 		if (user == null)
 		{
@@ -46,6 +51,54 @@ public class UserService : IUserService
 		user.Country = request.Country ?? string.Empty;
 		user.City = request.City ?? string.Empty;
 
+		var result = await _userManager.UpdateAsync(user);
+		if (!result.Succeeded)
+		{
+			var message = string.Join(" ", result.Errors.Select(error => error.Description));
+			throw new IdentityException(message, 400);
+		}
+
+		return await MapUserAsync(user);
+	}
+
+	public async Task<UserDto> UpdateAvatarAsync(Guid userId, string avatarUrl)
+	{
+		if (string.IsNullOrWhiteSpace(avatarUrl))
+		{
+			throw new IdentityException("AvatarUrl is required.", 400);
+		}
+
+		if (!new UrlAttribute().IsValid(avatarUrl))
+		{
+			throw new IdentityException("AvatarUrl is invalid.", 400);
+		}
+
+		var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+		if (user == null)
+		{
+			throw new UserNotFoundException();
+		}
+
+		user.AvatarUrl = avatarUrl;
+		var result = await _userManager.UpdateAsync(user);
+		if (!result.Succeeded)
+		{
+			var message = string.Join(" ", result.Errors.Select(error => error.Description));
+			throw new IdentityException(message, 400);
+		}
+
+		return await MapUserAsync(user);
+	}
+
+	public async Task<UserDto> ClearAvatarAsync(Guid userId)
+	{
+		var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+		if (user == null)
+		{
+			throw new UserNotFoundException();
+		}
+
+		user.AvatarUrl = string.Empty;
 		var result = await _userManager.UpdateAsync(user);
 		if (!result.Succeeded)
 		{

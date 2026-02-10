@@ -1,3 +1,4 @@
+// Composant securite Identity: JwtTokenGenerator
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
