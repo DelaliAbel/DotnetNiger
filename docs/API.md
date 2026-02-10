@@ -28,8 +28,26 @@ Content-Type: application/json
 - POST /api/auth/login
 - POST /api/auth/refresh
 - POST /api/auth/logout
-- GET /api/users/profile
-- PUT /api/users/profile
+- GET /api/users/me
+- PUT /api/users/me
+- GET /api/social-links
+- POST /api/social-links
+- DELETE /api/social-links/{id}
+- GET /api/roles
+- POST /api/roles
+- DELETE /api/roles/{id}
+- POST /api/roles/assign
+- POST /api/roles/remove
+- GET /api/roles/user/{userId}
+- GET /api/permissions
+- POST /api/permissions
+- DELETE /api/permissions/{id}
+- POST /api/permissions/assign
+- POST /api/permissions/remove
+- GET /api/permissions/role/{roleId}
+- GET /api/admin/users
+- GET /api/admin/users/{userId}
+- PUT /api/admin/users/{userId}/status
 
 ## Community
 
