@@ -28,8 +28,13 @@ Content-Type: application/json
 - POST /api/auth/login
 - POST /api/auth/refresh
 - POST /api/auth/logout
+- POST /api/auth/forgot-password
+- POST /api/auth/reset-password
+- POST /api/auth/verify-email
 - GET /api/users/me
 - PUT /api/users/me
+- POST /api/users/me/change-password
+- POST /api/users/me/change-email
 - GET /api/social-links
 - POST /api/social-links
 - DELETE /api/social-links/{id}
