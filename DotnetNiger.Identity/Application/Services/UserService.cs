@@ -1,3 +1,4 @@
+using DotnetNiger.Identity.Application.DTOs.Requests;
 using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Exceptions;
 using DotnetNiger.Identity.Application.Services.Interfaces;
@@ -28,6 +29,86 @@ public class UserService : IUserService
 			throw new UserNotFoundException();
 		}
 
+		return await MapUserAsync(user);
+	}
+
+	public async Task<UserDto> UpdateProfileAsync(Guid userId, UpdateProfileRequest request)
+	{
+		var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+		if (user == null)
+		{
+			throw new UserNotFoundException();
+		}
+
+		user.FullName = request.FullName ?? string.Empty;
+		user.Bio = request.Bio ?? string.Empty;
+		user.AvatarUrl = request.AvatarUrl ?? string.Empty;
+		user.Country = request.Country ?? string.Empty;
+		user.City = request.City ?? string.Empty;
+
+		var result = await _userManager.UpdateAsync(user);
+		if (!result.Succeeded)
+		{
+			var message = string.Join(" ", result.Errors.Select(error => error.Description));
+			throw new IdentityException(message, 400);
+		}
+
+		return await MapUserAsync(user);
+	}
+
+	public async Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request)
+	{
+		var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+		if (user == null)
+		{
+			throw new UserNotFoundException();
+		}
+
+		var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+		if (!result.Succeeded)
+		{
+			var message = string.Join(" ", result.Errors.Select(error => error.Description));
+			throw new IdentityException(message, 400);
+		}
+	}
+
+	public async Task ChangeEmailAsync(Guid userId, ChangeEmailRequest request)
+	{
+		var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+		if (user == null)
+		{
+			throw new UserNotFoundException();
+		}
+
+		var passwordValid = await _userManager.CheckPasswordAsync(user, request.CurrentPassword);
+		if (!passwordValid)
+		{
+			throw new InvalidCredentialsException();
+		}
+
+		var newEmail = request.NewEmail?.Trim();
+		if (string.IsNullOrWhiteSpace(newEmail))
+		{
+			throw new IdentityException("Email is required.", 400);
+		}
+
+		var existing = await _userManager.FindByEmailAsync(newEmail);
+		if (existing != null && existing.Id != user.Id)
+		{
+			throw new IdentityException("Email already in use.", 409);
+		}
+
+		var token = await _userManager.GenerateChangeEmailTokenAsync(user, newEmail);
+		var result = await _userManager.ChangeEmailAsync(user, newEmail, token);
+		if (!result.Succeeded)
+		{
+			var message = string.Join(" ", result.Errors.Select(error => error.Description));
+			throw new IdentityException(message, 400);
+		}
+	}
+
+	private async Task<UserDto> MapUserAsync(ApplicationUser user)
+	{
 		var roles = await _userManager.GetRolesAsync(user);
 		var socialLinks = await _dbContext.SocialLinks
 			.Where(link => link.UserId == user.Id)
