@@ -42,6 +42,69 @@ cd ..
 - appsettings.Development.json dans chaque service
 - ConnectionStrings pour Identity et Community
 
+### Secrets (Identity)
+
+Eviter les secrets dans les fichiers. Utiliser des variables d'environnement ou user-secrets.
+
+Exemples:
+
+```bash
+dotnet user-secrets set "Jwt:Key" "<jwt-secret>" --project DotnetNiger.Identity
+dotnet user-secrets set "Email:Smtp:Password" "<smtp-password>" --project DotnetNiger.Identity
+```
+
+Equivalent env vars:
+
+```bash
+Jwt__Key=<jwt-secret>
+Email__Smtp__Password=<smtp-password>
+```
+
+### File upload (avatar)
+
+Le service Identity supporte 2 providers:
+
+- `Local` (par defaut): stockage local et publication via `/uploads`
+- `Azure`: stockage via Azure Blob Storage
+
+Si `Provider = Local`, les fichiers sont servis par Identity sur `/uploads` et proxifies par le Gateway (meme chemin).
+
+Le job de cleanup supprime les avatars orphelins (non references en base) selon la frequence definie par `CleanupIntervalMinutes`.
+
+Exemple (Local):
+
+```json
+"FileUpload": {
+	"Provider": "Local",
+	"RootPath": "uploads",
+	"PublicBasePath": "/uploads",
+	"MaxAvatarBytes": 2000000,
+	"AllowedAvatarContentTypes": ["image/jpeg", "image/png", "image/webp"],
+	"AllowedAvatarExtensions": [".jpg", ".jpeg", ".png", ".webp"],
+	"CleanupEnabled": false,
+	"CleanupIntervalMinutes": 1440,
+	"CleanupOrphanDays": 7,
+	"Azure": {
+		"ConnectionString": "",
+		"Container": "dotnetniger-uploads",
+		"PublicBaseUrl": ""
+	}
+}
+```
+
+Exemple (Azure):
+
+```json
+"FileUpload": {
+	"Provider": "Azure",
+	"Azure": {
+		"ConnectionString": "<azure-connection-string>",
+		"Container": "dotnetniger-uploads",
+		"PublicBaseUrl": ""
+	}
+}
+```
+
 ### Admin seed (Identity)
 
 Le seed admin est optionnel et ne s'execute qu'une seule fois.
