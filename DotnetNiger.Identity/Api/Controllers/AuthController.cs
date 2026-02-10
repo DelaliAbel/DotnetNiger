@@ -14,10 +14,12 @@ public class AuthController : ControllerBase
 {
 	// Endpoints publics pour l'authentification.
 	private readonly IAuthService _authService;
+	private readonly IWebHostEnvironment _environment;
 
-	public AuthController(IAuthService authService)
+	public AuthController(IAuthService authService, IWebHostEnvironment environment)
 	{
 		_authService = authService;
+		_environment = environment;
 	}
 
 	[HttpPost("register")]
@@ -34,5 +36,34 @@ public class AuthController : ControllerBase
 	{
 		var result = await _authService.LoginAsync(request);
 		return Ok(result);
+	}
+
+	[HttpPost("forgot-password")]
+	[AllowAnonymous]
+	public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+	{
+		var token = await _authService.RequestPasswordResetAsync(request);
+		if (_environment.IsDevelopment())
+		{
+			return Ok(new { message = "Reset token generated.", token });
+		}
+
+		return Ok(new { message = "If the email exists, a reset link was sent." });
+	}
+
+	[HttpPost("reset-password")]
+	[AllowAnonymous]
+	public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+	{
+		await _authService.ResetPasswordAsync(request);
+		return Ok(new { message = "Password reset successful." });
+	}
+
+	[HttpPost("verify-email")]
+	[AllowAnonymous]
+	public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest request)
+	{
+		await _authService.VerifyEmailAsync(request);
+		return Ok(new { message = "Email verified." });
 	}
 }

@@ -46,7 +46,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
     {
         options.User.RequireUniqueEmail = true;
     })
-    .AddRoles<IdentityRole<Guid>>()
+    .AddRoles<Role>()
     .AddEntityFrameworkStores<DotnetNigerIdentityDbContext>()
     .AddSignInManager<SignInManager<ApplicationUser>>()
     .AddDefaultTokenProviders();
@@ -58,6 +58,11 @@ builder.Services.AddScoped<RefreshTokenGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<ISocialLinkService, SocialLinkService>();
+builder.Services.AddScoped<IRoleService, RoleService>();
+builder.Services.AddScoped<IPermissionService, PermissionService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -82,6 +87,8 @@ builder.Services.AddSwaggerGen();
 builder.Services.ConfigureOptions<ConfigureSwaggerOptions>();
 
 var app = builder.Build();
+
+// await SeedAdminAsync(app); //appel de la fonction pour cree l'admin
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -108,3 +115,52 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
+
+// creation de l'admin
+// static async Task SeedAdminAsync(WebApplication app)
+// {
+//     using var scope = app.Services.CreateScope();
+//     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
+//     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+//     var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+//     var seedAdminEnabled = config.GetValue("SEED_ADMIN", true);
+//     if (!seedAdminEnabled)
+//     {
+//         return;
+//     }
+
+//     const string adminRoleName = "Admin";
+//     var adminEmail = config["ADMIN_EMAIL"] ?? "admin@dotnetniger.com";
+//     var adminPassword = config["ADMIN_PASSWORD"] ?? "AdminPassword@2006";
+//     var adminUsername = config["ADMIN_USERNAME"] ?? "admin";
+
+//     var roleExists = await roleManager.RoleExistsAsync(adminRoleName);
+//     if (!roleExists)
+//     {
+//         await roleManager.CreateAsync(new Role(adminRoleName));
+//     }
+
+//     var adminUser = await userManager.FindByEmailAsync(adminEmail);
+//     if (adminUser == null)
+//     {
+//         adminUser = new ApplicationUser
+//         {
+//             UserName = adminUsername,
+//             Email = adminEmail,
+//             EmailConfirmed = true,
+//             IsActive = true
+//         };
+
+//         var createResult = await userManager.CreateAsync(adminUser, adminPassword);
+//         if (!createResult.Succeeded)
+//         {
+//             return;
+//         }
+//     }
+
+//     var isInRole = await userManager.IsInRoleAsync(adminUser, adminRoleName);
+//     if (!isInRole)
+//     {
+//         await userManager.AddToRoleAsync(adminUser, adminRoleName);
+//     }
+// }

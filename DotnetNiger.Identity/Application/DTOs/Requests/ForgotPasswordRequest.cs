@@ -2,11 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DotnetNiger.Identity.Application.DTOs.Requests;
 
-public class VerifyEmailRequest
+public class ForgotPasswordRequest
 {
 	[Required]
 	public string Email { get; set; } = string.Empty;
-
-	[Required]
-	public string Token { get; set; } = string.Empty;
 }

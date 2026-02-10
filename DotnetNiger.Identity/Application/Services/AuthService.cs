@@ -19,19 +19,22 @@ public class AuthService : IAuthService
 	private readonly JwtTokenGenerator _jwtTokenGenerator;
 	private readonly RefreshTokenGenerator _refreshTokenGenerator;
 	private readonly JwtOptions _jwtOptions;
+	private readonly IEmailService _emailService;
 
 	public AuthService(
 		UserManager<ApplicationUser> userManager,
 		DotnetNigerIdentityDbContext dbContext,
 		JwtTokenGenerator jwtTokenGenerator,
 		RefreshTokenGenerator refreshTokenGenerator,
-		IOptions<JwtOptions> jwtOptions)
+		IOptions<JwtOptions> jwtOptions,
+		IEmailService emailService)
 	{
 		_userManager = userManager;
 		_dbContext = dbContext;
 		_jwtTokenGenerator = jwtTokenGenerator;
 		_refreshTokenGenerator = refreshTokenGenerator;
 		_jwtOptions = jwtOptions.Value;
+		_emailService = emailService;
 	}
 
 	public async Task<AuthDto> RegisterAsync(RegisterRequest request)
@@ -104,6 +107,69 @@ public class AuthService : IAuthService
 			User = userDto,
 			Token = tokenDto
 		};
+	}
+
+	public async Task<string?> RequestPasswordResetAsync(ForgotPasswordRequest request)
+	{
+		var email = request.Email?.Trim();
+		if (string.IsNullOrWhiteSpace(email))
+		{
+			throw new IdentityException("Email is required.", 400);
+		}
+
+		var user = await _userManager.FindByEmailAsync(email);
+		if (user == null)
+		{
+			return null;
+		}
+
+		var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+		await _emailService.SendAsync(email, "Reset password", $"Your reset token: {token}");
+		return token;
+	}
+
+	public async Task ResetPasswordAsync(ResetPasswordRequest request)
+	{
+		var email = request.Email?.Trim();
+		if (string.IsNullOrWhiteSpace(email))
+		{
+			throw new IdentityException("Email is required.", 400);
+		}
+
+		var user = await _userManager.FindByEmailAsync(email);
+		if (user == null)
+		{
+			throw new IdentityException("Invalid reset request.", 400);
+		}
+
+		var result = await _userManager.ResetPasswordAsync(user, request.Token, request.NewPassword);
+		if (!result.Succeeded)
+		{
+			var message = string.Join(" ", result.Errors.Select(error => error.Description));
+			throw new IdentityException(message, 400);
+		}
+	}
+
+	public async Task VerifyEmailAsync(VerifyEmailRequest request)
+	{
+		var email = request.Email?.Trim();
+		if (string.IsNullOrWhiteSpace(email))
+		{
+			throw new IdentityException("Email is required.", 400);
+		}
+
+		var user = await _userManager.FindByEmailAsync(email);
+		if (user == null)
+		{
+			throw new IdentityException("Invalid verification request.", 400);
+		}
+
+		var result = await _userManager.ConfirmEmailAsync(user, request.Token);
+		if (!result.Succeeded)
+		{
+			var message = string.Join(" ", result.Errors.Select(error => error.Description));
+			throw new IdentityException(message, 400);
+		}
 	}
 
 	private async Task<TokenDto> CreateTokenAsync(ApplicationUser user)
