@@ -41,7 +41,7 @@ public static class TestUserFactory
 			{
 				await roleManager.CreateAsync(new Role(role));
 			}
-+
+
 			await userManager.AddToRoleAsync(user, role);
 		}
 
