@@ -81,7 +81,7 @@ cd ..
 
 # 5. Lancer tous les services
 .\run.ps1          # Windows
-./run.sh           # Linux/Mac
+./run.sh           # Linux/Mac/Windows
 ```
 
 ### Tester l'API

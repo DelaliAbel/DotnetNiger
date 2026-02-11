@@ -136,7 +136,7 @@ if (string.Equals(fileUploadOptions.Provider, "Local", StringComparison.OrdinalI
     });
 }
 
-// await SeedAdminAsync(app); //appel de la fonction pour cree l'admin
+// await SeedAdminAsync(app); //appel de la fonction pour cree l'admin/
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -168,10 +168,6 @@ app.UseAuthorization();
 app.MapControllers();
 app.Run();
 
-public partial class Program
-{
-}
-
 // creation de l'admin
 // static async Task SeedAdminAsync(WebApplication app)
 // {
@@ -187,7 +183,7 @@ public partial class Program
 
 //     const string adminRoleName = "Admin";
 //     var adminEmail = config["ADMIN_EMAIL"] ?? "admin@dotnetniger.com";
-//     var adminPassword = config["ADMIN_PASSWORD"] ?? "AdminPassword@2006";
+//     var adminPassword = config["ADMIN_PASSWORD"] ?? "Admin2026@DotnetNiger";
 //     var adminUsername = config["ADMIN_USERNAME"] ?? "admin";
 
 //     var roleExists = await roleManager.RoleExistsAsync(adminRoleName);
