@@ -554,10 +554,10 @@ var userInfo = await _identityClient.GetUserAsync(userId);
 
 ### Bases de données
 
-| Service       | Dev (SQLite)                                        | Prod (SQL/PG)              | Context                        | Migrations |
-| ------------- | --------------------------------------------------- | -------------------------- | ------------------------------ | ---------- |
-| **Identity**  | `Infrastructure/Data/DotnetNigerIdentityDb.db`      | `DotnetNigerIdentity`      | `DotnetNigerIdentityDbContext` | EF Core    |
-| **Community** | `Infrastructure/Data/CommunityDb.db`                | `DotnetNigerCommunity`     | `CommunityDbContext`           | EF Core    |
+| Service       | Dev (SQLite)                                   | Prod (SQL/PG)          | Context                        | Migrations |
+| ------------- | ---------------------------------------------- | ---------------------- | ------------------------------ | ---------- |
+| **Identity**  | `Infrastructure/Data/DotnetNigerIdentityDb.db` | `DotnetNigerIdentity`  | `DotnetNigerIdentityDbContext` | EF Core    |
+| **Community** | `Infrastructure/Data/CommunityDb.db`           | `DotnetNigerCommunity` | `CommunityDbContext`           | EF Core    |
 
 **Repères rapides :**
 

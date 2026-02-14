@@ -1,193 +1,221 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Dotnet Niger Identity Client</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css" />
-</head>
-<body>
-  <div class="app-shell">
-    <aside class="sidebar">
-      <header class="brand">
-        <p class="eyebrow">Dotnet Niger · Identity</p>
-        <h1>Client Interactif</h1>
-        <p class="muted">Configurez l'URL, vos clés et choisissez un endpoint pour envoyer une requête en quelques clics.</p>
-      </header>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dotnet Niger Identity Client</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <header class="brand">
+          <p class="eyebrow">Dotnet Niger · Identity</p>
+          <h1>Client Interactif</h1>
+          <p class="muted">
+            Configurez l'URL, vos clés et choisissez un endpoint pour envoyer une requête en
+            quelques clics.
+          </p>
+        </header>
 
-      <section class="block">
-        <div class="field">
-          <label for="baseUrl">Base URL</label>
-          <input id="baseUrl" type="text" value="http://localhost:5075" autocomplete="off" />
-        </div>
-        <div class="field two-cols">
-          <div>
-            <label for="apiVersion">Version API</label>
-            <input id="apiVersion" type="text" value="1.0" autocomplete="off" />
-          </div>
-          <div>
-            <label for="timeout">Timeout (s)</label>
-            <input id="timeout" type="number" min="5" max="120" value="30" />
-          </div>
-        </div>
-        <div class="field">
-          <label for="bearerToken">Bearer token</label>
-          <textarea id="bearerToken" rows="2" placeholder="eyJhbGciOi..."></textarea>
-        </div>
-        <div class="field">
-          <label for="refreshToken">Refresh token</label>
-          <textarea id="refreshToken" rows="2" placeholder="stockez ici le refresh token pour le réutiliser"></textarea>
-        </div>
-        <div class="field">
-          <label for="apiKey">API key (X-API-Key)</label>
-          <input id="apiKey" type="text" placeholder="copiez votre clé API" autocomplete="off" />
-        </div>
-      </section>
-
-      <section class="block">
-        <div class="section-heading">
-          <div>
-            <h2>Profils rapides</h2>
-            <p class="muted">Sauvegardez vos URLs et secrets (localStorage uniquement).</p>
-          </div>
-        </div>
-        <div class="field">
-          <label for="profileSelect">Profil</label>
-          <div class="profile-row">
-            <select id="profileSelect"></select>
-            <button type="button" id="deleteProfile" class="ghost" title="Supprimer le profil">Suppr.</button>
-          </div>
-        </div>
-        <div class="field">
-          <label for="profileName">Nom du profil</label>
-          <input id="profileName" type="text" placeholder="ex: Dev-local" autocomplete="off" />
-        </div>
-        <div class="actions compact">
-          <button type="button" id="saveProfile">Enregistrer</button>
-          <button type="button" id="loadProfile" class="ghost">Charger</button>
-        </div>
-      </section>
-
-      <section class="block endpoints-block">
-        <div class="section-heading">
-          <div>
-            <h2>Endpoints Identity</h2>
-            <p class="muted">Filtrez par nom, description ou chemin. Sélectionnez pour pré-remplir la requête.</p>
-          </div>
-          <input id="endpointSearch" type="search" placeholder="Rechercher" autocomplete="off" />
-        </div>
-        <div id="endpointList" class="endpoint-list" aria-live="polite"></div>
-      </section>
-    </aside>
-
-    <main class="workspace">
-      <section class="panel request-panel">
-        <div class="panel-header">
-          <div>
-            <h2 id="selectedEndpointTitle">Choisissez un endpoint</h2>
-            <p id="endpointDescription" class="muted">Les champs se rempliront automatiquement après votre sélection.</p>
-          </div>
-          <div id="authBadge" class="auth-badge" aria-live="polite"></div>
-        </div>
-
-        <form id="requestForm" novalidate>
-          <div class="grid two-cols">
-            <div class="field">
-              <label for="method">Méthode</label>
-              <select id="method">
-                <option>GET</option>
-                <option>POST</option>
-                <option>PUT</option>
-                <option>DELETE</option>
-                <option>PATCH</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="pathInput">Chemin relatif</label>
-              <input id="pathInput" type="text" placeholder="/api/v{version}/..." autocomplete="off" />
-            </div>
-          </div>
-
-          <div class="field" id="pathParamContainer" hidden>
-            <label>Paramètres de chemin</label>
-            <div id="pathParams" class="pill-group"></div>
-          </div>
-
+        <section class="block">
           <div class="field">
-            <div class="field-header">
-              <label>Query params</label>
-              <button type="button" id="addQueryParam" class="ghost">Ajouter</button>
+            <label for="baseUrl">Base URL</label>
+            <input id="baseUrl" type="text" value="http://localhost:5075" autocomplete="off" />
+          </div>
+          <div class="field two-cols">
+            <div>
+              <label for="apiVersion">Version API</label>
+              <input id="apiVersion" type="text" value="1.0" autocomplete="off" />
             </div>
-            <div id="queryParams" class="kv-grid"></div>
+            <div>
+              <label for="timeout">Timeout (s)</label>
+              <input id="timeout" type="number" min="5" max="120" value="30" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="bearerToken">Bearer token</label>
+            <textarea id="bearerToken" rows="2" placeholder="eyJhbGciOi..."></textarea>
+          </div>
+          <div class="field">
+            <label for="refreshToken">Refresh token</label>
+            <textarea
+              id="refreshToken"
+              rows="2"
+              placeholder="stockez ici le refresh token pour le réutiliser"
+            ></textarea>
+          </div>
+          <div class="field">
+            <label for="apiKey">API key (X-API-Key)</label>
+            <input id="apiKey" type="text" placeholder="copiez votre clé API" autocomplete="off" />
+          </div>
+        </section>
+
+        <section class="block">
+          <div class="section-heading">
+            <div>
+              <h2>Profils rapides</h2>
+              <p class="muted">Sauvegardez vos URLs et secrets (localStorage uniquement).</p>
+            </div>
+          </div>
+          <div class="field">
+            <label for="profileSelect">Profil</label>
+            <div class="profile-row">
+              <select id="profileSelect"></select>
+              <button type="button" id="deleteProfile" class="ghost" title="Supprimer le profil">
+                Suppr.
+              </button>
+            </div>
+          </div>
+          <div class="field">
+            <label for="profileName">Nom du profil</label>
+            <input id="profileName" type="text" placeholder="ex: Dev-local" autocomplete="off" />
+          </div>
+          <div class="actions compact">
+            <button type="button" id="saveProfile">Enregistrer</button>
+            <button type="button" id="loadProfile" class="ghost">Charger</button>
+          </div>
+        </section>
+
+        <section class="block endpoints-block">
+          <div class="section-heading">
+            <div>
+              <h2>Endpoints Identity</h2>
+              <p class="muted">
+                Filtrez par nom, description ou chemin. Sélectionnez pour pré-remplir la requête.
+              </p>
+            </div>
+            <input id="endpointSearch" type="search" placeholder="Rechercher" autocomplete="off" />
+          </div>
+          <div id="endpointList" class="endpoint-list" aria-live="polite"></div>
+        </section>
+      </aside>
+
+      <main class="workspace">
+        <section class="panel request-panel">
+          <div class="panel-header">
+            <div>
+              <h2 id="selectedEndpointTitle">Choisissez un endpoint</h2>
+              <p id="endpointDescription" class="muted">
+                Les champs se rempliront automatiquement après votre sélection.
+              </p>
+            </div>
+            <div id="authBadge" class="auth-badge" aria-live="polite"></div>
           </div>
 
-          <div class="field">
-            <div class="field-header">
-              <label>Headers</label>
-              <button type="button" id="addHeader" class="ghost">Ajouter</button>
-            </div>
-            <div id="headerParams" class="kv-grid"></div>
-          </div>
-
-          <div class="field">
-            <div class="field-header">
-              <label for="bodyMode">Corps de requête</label>
-              <div class="body-mode-picker">
-                <select id="bodyMode">
-                  <option value="json">JSON</option>
-                  <option value="none">Aucun</option>
-                  <option value="file">Fichier</option>
+          <form id="requestForm" novalidate>
+            <div class="grid two-cols">
+              <div class="field">
+                <label for="method">Méthode</label>
+                <select id="method">
+                  <option>GET</option>
+                  <option>POST</option>
+                  <option>PUT</option>
+                  <option>DELETE</option>
+                  <option>PATCH</option>
                 </select>
-                <button type="button" id="resetBody" class="ghost">Réinitialiser</button>
+              </div>
+              <div class="field">
+                <label for="pathInput">Chemin relatif</label>
+                <input
+                  id="pathInput"
+                  type="text"
+                  placeholder="/api/v{version}/..."
+                  autocomplete="off"
+                />
               </div>
             </div>
-            <div id="jsonBody" class="body-wrapper">
-              <textarea id="bodyInput" rows="12" spellcheck="false" placeholder="{\n  \"email\": \"user@example.com\"\n}"></textarea>
+
+            <div class="field" id="pathParamContainer" hidden>
+              <label>Paramètres de chemin</label>
+              <div id="pathParams" class="pill-group"></div>
             </div>
-            <div id="fileBody" class="file-wrapper" hidden>
-              <label class="file-label" for="fileInput">Déposez un fichier ou cliquez pour parcourir</label>
-              <input id="fileInput" type="file" />
-              <p class="note" id="fileHint"></p>
+
+            <div class="field">
+              <div class="field-header">
+                <label>Query params</label>
+                <button type="button" id="addQueryParam" class="ghost">Ajouter</button>
+              </div>
+              <div id="queryParams" class="kv-grid"></div>
             </div>
-          </div>
 
-          <div class="actions">
-            <button type="submit" id="sendButton">Envoyer la requête</button>
-            <button type="button" id="copyRequest" class="ghost">Copier la requête cURL</button>
-          </div>
-        </form>
-        <p id="feedback" role="status" aria-live="polite"></p>
-      </section>
+            <div class="field">
+              <div class="field-header">
+                <label>Headers</label>
+                <button type="button" id="addHeader" class="ghost">Ajouter</button>
+              </div>
+              <div id="headerParams" class="kv-grid"></div>
+            </div>
 
-      <section class="panel response-panel">
-        <div class="panel-header">
-          <div>
-            <h2>Réponse</h2>
-            <p class="muted">Status, durée et taille sont affichés automatiquement.</p>
-          </div>
-          <div class="response-meta" id="responseMeta"></div>
-        </div>
-        <div class="response-tabs">
-          <button type="button" data-tab="body" class="tab active">Body</button>
-          <button type="button" data-tab="headers" class="tab">Headers</button>
-          <button type="button" data-tab="history" class="tab">Historique</button>
-        </div>
-        <div class="response-content">
-          <pre id="responseBody" class="response-view" aria-live="polite"></pre>
-          <pre id="responseHeaders" class="response-view" hidden></pre>
-          <div id="responseHistory" class="response-view" hidden></div>
-        </div>
-        <div class="response-actions">
-          <button type="button" id="copyResponse" class="ghost">Copier le body</button>
-          <button type="button" id="clearResponse" class="ghost">Effacer</button>
-        </div>
-      </section>
-    </main>
-  </div>
+            <div class="field">
+              <div class="field-header">
+                <label for="bodyMode">Corps de requête</label>
+                <div class="body-mode-picker">
+                  <select id="bodyMode">
+                    <option value="json">JSON</option>
+                    <option value="none">Aucun</option>
+                    <option value="file">Fichier</option>
+                  </select>
+                  <button type="button" id="resetBody" class="ghost">Réinitialiser</button>
+                </div>
+              </div>
+              <div id="jsonBody" class="body-wrapper">
+                <textarea
+                  id="bodyInput"
+                  rows="12"
+                  spellcheck="false"
+                  placeholder="{ email : user@example.com }"
+                ></textarea>
+              </div>
+              <div id="fileBody" class="file-wrapper" hidden>
+                <label class="file-label" for="fileInput"
+                  >Déposez un fichier ou cliquez pour parcourir</label
+                >
+                <input id="fileInput" type="file" />
+                <p class="note" id="fileHint"></p>
+              </div>
+            </div>
 
-  <script type="module" src="./app.js"></script>
-</body>
+            <div class="actions">
+              <button type="submit" id="sendButton">Envoyer la requête</button>
+              <button type="button" id="copyRequest" class="ghost">Copier la requête cURL</button>
+            </div>
+          </form>
+          <p id="feedback" role="status" aria-live="polite"></p>
+        </section>
+
+        <section class="panel response-panel">
+          <div class="panel-header">
+            <div>
+              <h2>Réponse</h2>
+              <p class="muted">Status, durée et taille sont affichés automatiquement.</p>
+            </div>
+            <div class="response-meta" id="responseMeta"></div>
+          </div>
+          <div class="response-tabs">
+            <button type="button" data-tab="body" class="tab active">Body</button>
+            <button type="button" data-tab="headers" class="tab">Headers</button>
+            <button type="button" data-tab="history" class="tab">Historique</button>
+          </div>
+          <div class="response-content">
+            <pre id="responseBody" class="response-view" aria-live="polite"></pre>
+            <pre id="responseHeaders" class="response-view" hidden></pre>
+            <div id="responseHistory" class="response-view" hidden></div>
+          </div>
+          <div class="response-actions">
+            <button type="button" id="copyResponse" class="ghost">Copier le body</button>
+            <button type="button" id="clearResponse" class="ghost">Effacer</button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
 </html>
