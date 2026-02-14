@@ -3,6 +3,7 @@ using System;
 using DotnetNiger.Identity.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DotnetNiger.Identity.Migrations
 {
     [DbContext(typeof(DotnetNigerIdentityDbContext))]
-    partial class DotnetNigerIdentityDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260211001603_DeuxiemeMigrations")]
+    partial class DeuxiemeMigrations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.23");

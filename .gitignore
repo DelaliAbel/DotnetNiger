@@ -126,4 +126,4 @@ local.settings.json
 *.pfx
 !.gitkeep
 
-#
+.fake

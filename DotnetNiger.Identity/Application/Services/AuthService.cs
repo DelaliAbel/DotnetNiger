@@ -76,6 +76,7 @@ public class AuthService : IAuthService
 		}
 
 		var confirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
 		await _emailService.SendAsync(user.Email ?? string.Empty, "Verify email", $"Your verification token: {confirmationToken}");
 
 		var tokenDto = await CreateTokenAsync(user);
@@ -154,7 +155,8 @@ public class AuthService : IAuthService
 		}
 
 		var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-		await _emailService.SendAsync(email, "Verify email", $"Your verification token: {token}");
+		// await _emailService.SendAsync(email, "Verify email", $"Your verification token: {token}");
+
 		return token;
 	}
 

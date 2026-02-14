@@ -15,13 +15,13 @@ public class DiagnosticsController : ControllerBase
 	[AllowAnonymous]
 	public IActionResult Ping()
 	{
-		return Ok(new { status = "ok" });
+		return Ok(new { status = "Ping Ok" });
 	}
 
 	[HttpGet("health")]
 	[AllowAnonymous]
 	public IActionResult Health()
 	{
-		return Ok(new { status = "healthy" });
+		return Ok(new { status = "Healthy Ok" });
 	}
 }
