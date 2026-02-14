@@ -41,7 +41,7 @@ DotnetNiger est une plateforme communautaire moderne construite avec une archite
         └──────────────────┘     └──────────────────┘
                  │                        │
         ┌────────▼────────────────────────▼────────────┐
-        │           SQL Server 2022                    │
+        │   SQLite (Dev) / SQL Server 2022 (Prod)      │
         │        (PostgreSQL 16+ supporté)             │
         └──────────────────────────────────────────────┘
                  │
@@ -118,6 +118,10 @@ curl -X POST http://localhost:5075/api/auth/register \
 curl -X POST http://localhost:5075/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"Test@123"}'
+
+## ⚙️ Configuration rapide (Identity)
+
+- Email provider: voir la section Email dans [docs/API.md](docs/API.md)
 ```
 
 ## 📚 Documentation
@@ -136,7 +140,7 @@ curl -X POST http://localhost:5075/api/auth/login \
 
 - **Framework:** .NET 8.0 LTS (C# 12)
 - **API Gateway:** YARP (Yet Another Reverse Proxy)
-- **Database:** SQL Server 2022 / PostgreSQL 16+ / Sqlite (Test Local)
+- **Database:** SQLite (dev par défaut) / SQL Server 2022 / PostgreSQL 16+
 - **ORM:** Entity Framework Core 8.0
 - **Cache:** Redis
 - **Authentication:** JWT Bearer

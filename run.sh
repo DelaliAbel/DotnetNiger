@@ -23,7 +23,7 @@ IDENTITY_PORT=5075
 COMMUNITY_PORT=5269
 
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-echo -e "${BLUE}   DotnetNiger - Gestion des services${NC}"
+echo -e "${BLUE}   DotnetNiger - Gestion des services   ${NC}"
 echo -e "${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
 
