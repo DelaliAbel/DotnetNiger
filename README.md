@@ -55,34 +55,55 @@ DotnetNiger est une plateforme communautaire moderne construite avec une archite
 ### Prérequis
 
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [SQL Server 2022](https://www.microsoft.com/sql-server/sql-server-downloads) ou [Docker](https://www.docker.com/products/docker-desktop)
-- [Visual Studio Code](https://code.visualstudio.com/) (recommandé) ou vscode
+- Git
+- [Visual Studio Code](https://code.visualstudio.com/) (recommandé)
+- Base SQLite locale déjà fournie (aucune config à faire). Docker/SQL Server uniquement si vous voulez tester une autre base.
 
-### Installation Rapide
+### Installation rapide (local, DB SQLite déjà incluse)
+
+1) Cloner le repo officiel (pas de fork) et entrer dans le dossier :
 
 ```bash
-# 1. Cloner le repository
 git clone https://github.com/akaletekoffilevis/DotnetNiger.git
 cd DotnetNiger
-
-# 2. Restaurer les packages
-dotnet restore
-
-# 3. Configurer la base de données (SQL Server via Docker)
-docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=YourStrong@Passw0rd" \
-  -p 1433:1433 -d mcr.microsoft.com/mssql/server:2022-latest
-
-# 4. Appliquer les migrations
-cd DotnetNiger.Identity
-dotnet ef database update
-cd ../DotnetNiger.Community
-dotnet ef database update
-cd ..
-
-# 5. Lancer tous les services
-.\run.ps1          # Windows
-./run.sh           # Linux/Mac
 ```
+
+2) Vérifier la branche courante (vous êtes sur `main` après le clone) :
+
+```bash
+git branch -a
+```
+
+3) Créer et passer sur `dev` si elle n'existe pas localement (cas courant juste après le clone) :
+
+```bash
+git checkout -b dev origin/main
+```
+
+4) Si `dev` existe déjà côté remote :
+
+```bash
+git checkout dev
+git pull
+```
+
+5) Restaurer les dépendances :
+
+```bash
+dotnet restore
+```
+
+6) Lancer les services (DB SQLite déjà prête, pas de migration à faire) :
+
+```bash
+./run.sh      # Linux/Mac (ou Windows via Git Bash)
+./run.ps1     # Windows (PowerShell)
+```
+
+Accès après démarrage (ports par service) :
+- Gateway : http://localhost:5000/swagger et http://localhost:5000/health
+- Identity : http://localhost:5075/swagger
+- Community : http://localhost:5269/swagger
 
 ### Tester l'API
 
@@ -140,6 +161,8 @@ Ce guide suffit pour une premiere contribution.
 
 - **`dev`** - Branche de développement (développez ici !)
 - **`main`** - Branche de production (releases uniquement)
+- Si seule `main` est présente après le clone : `git checkout -b dev origin/main`
+- Rappel commandes de base : `git status`, `git pull`, `git add .`, `git commit -m "feat: ..."`, `git push origin dev`
 
 ### Format des Commits
 
@@ -168,38 +191,56 @@ docs: update API documentation
 ## 📄 Licence
 
 Ce projet est sous licence MIT. Voir [LICENSE.md](LICENSE.md) pour les détails.
-
+- [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- SQLite (embarque avec .NET, rien a installer pour le dev local)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop) seulement si vous voulez tester SQL Server/Redis en conteneurs
+- [Visual Studio Code](https://code.visualstudio.com/) (recommandé) ou vscode
 ```
-Copyright (c) 2026 DotnetNiger
+
+### Installation rapide (SQLite local, recommande)
+
+```bash
+# 1. Cloner puis passer en branche dev (cree a partir de main si elle n'existe pas encore)
+git clone https://github.com/akaletekoffilevis/DotnetNiger.git
+cd DotnetNiger
+git checkout -b dev origin/main   # si seule main existe
+# (si dev existe deja): git checkout dev && git pull
+
+# 2. Restaurer les packages
+dotnet restore
+
+# 3. Utiliser SQLite en local (fichiers .db stockes dans ./data)
+mkdir -p data                           # PowerShell: mkdir data
+export ConnectionStrings__DotnetNigerIdentityContextConnection="Data Source=./data/identity.db"   # bash
+$env:ConnectionStrings__DotnetNigerIdentityContextConnection="Data Source=./data/identity.db"     # PowerShell
+
+# 4. Appliquer les migrations EF Core avec SQLite
+dotnet ef database update --project DotnetNiger.Identity
+# Quand les migrations Community seront presentes:
+# dotnet ef database update --project DotnetNiger.Community
+
+# 5. Lancer les services
+./run.sh           # Linux/Mac
+.\run.ps1          # Windows
 ```
 
-## 👥 Auteur
+### Variante (SQL Server via Docker)
 
-- **Créateur & Mainteneur:** [@akaletekoffilevis](https://github.com/akaletekoffilevis)
+Si vous preferez SQL Server au lieu de SQLite local:
 
-> Ce projet est actuellement géré par son créateur en attendant sa mise en production et l'ouverture à la communauté.
-
-## 🌐 Liens
-
-- 📦 **Repository:** [github.com/akaletekoffilevis/DotnetNiger](https://github.com/akaletekoffilevis/DotnetNiger.git)
-- 💬 **Discussions:** [GitHub Discussions](https://github.com/akaletekoffilevis/DotnetNiger/discussions)
-- 📧 **Contact:** abdallyacali@hotmail.com
-
-## 🎯 Roadmap
-
-### Version 1.0.0 (En cours)
-
-- [ ] Architecture microservices
-- [ ] Services Identity & Community
-- [ ] API Gateway
-- [ ] Documentation complète
-- [ ] Tests d'intégration complets
-- [ ] CI/CD pipeline
-- [ ] Déploiement initial
+```bash
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=YourStrong@Passw0rd" \
+  -p 1433:1433 -d mcr.microsoft.com/mssql/server:2022-latest
+export ConnectionStrings__DotnetNigerIdentityContextConnection="Server=localhost,1433;Database=DotnetNiger.Identity;User ID=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True"
+$env:ConnectionStrings__DotnetNigerIdentityContextConnection="Server=localhost,1433;Database=DotnetNiger.Identity;User ID=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True"
+dotnet ef database update --project DotnetNiger.Identity
+```
 
 ### Version 1.1.0 (Futur)
-
-- [ ] Real-time notifications (SignalR)
+- **`dev`** - Branche de developpement (developpez ici !)
+- **`main`** - Branche de production (releases uniquement)
+- Creation rapide de `dev` quand seul `main` existe apres un clone: `git checkout -b dev origin/main && git push -u origin dev`
+- Basculement quotidien: `git checkout dev && git pull`
 - [ ] Advanced search (Elasticsearch)
 - [ ] File upload service
 - [ ] Email service (SendGrid)
