@@ -125,3 +125,6 @@ local.settings.json
 *.crt
 *.pfx
 !.gitkeep
+
+# Folder
+Dotnet.Identity.Client.Tests/
