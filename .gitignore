@@ -93,8 +93,8 @@ __pycache__/
 *$py.class
 
 # Package manager locks (optionnel)
-# package-lock.json
-# yarn.lock
+package-lock.json
+yarn.lock
 
 # macOS
 .DS_Store
@@ -125,3 +125,6 @@ local.settings.json
 *.crt
 *.pfx
 !.gitkeep
+
+# Folder
+Dotnet.Identity.Client.Tests/
