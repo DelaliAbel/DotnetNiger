@@ -2,6 +2,8 @@
 
 Base URL (dev): <http://localhost:5000>
 
+> Les exemples suivants utilisent la configuration locale par défaut (bases SQLite générées par `dotnet ef database update`, aucune dépendance Docker obligatoire).
+
 ## Auth
 
 Tous les endpoints (sauf auth) exigent:

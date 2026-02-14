@@ -38,10 +38,10 @@
 └─────────┬──────────┘  └──────────┬───────────┘
           │                        │
           v                        v
- ┌────────────────┐       ┌────────────────┐
- │  SQL Server    │       │  SQL Server    │
- │  (Identity DB) │       │ (Community DB) │
- └────────────────┘       └────────────────┘
+ ┌────────────────────────────┐   ┌────────────────────────────┐
+ │ Dev: SQLite (fichiers .db) │   │ Dev: SQLite (fichiers .db) │
+ │ Prod: SQL Server / Postgres│   │ Prod: SQL Server / Postgres│
+ └────────────────────────────┘   └────────────────────────────┘
           |                        |
           └────────────┬───────────┘
                        |
@@ -554,10 +554,16 @@ var userInfo = await _identityClient.GetUserAsync(userId);
 
 ### Bases de données
 
-| Service       | Base                   | Context                        | Migrations |
-| ------------- | ---------------------- | ------------------------------ | ---------- |
-| **Identity**  | `DotnetNigerIdentity`  | `DotnetNigerIdentityDbContext` | EF Core    |
-| **Community** | `DotnetNigerCommunity` | `CommunityDbContext`           | EF Core    |
+| Service       | Dev (SQLite)                                        | Prod (SQL/PG)              | Context                        | Migrations |
+| ------------- | --------------------------------------------------- | -------------------------- | ------------------------------ | ---------- |
+| **Identity**  | `Infrastructure/Data/DotnetNigerIdentityDb.db`      | `DotnetNigerIdentity`      | `DotnetNigerIdentityDbContext` | EF Core    |
+| **Community** | `Infrastructure/Data/CommunityDb.db`                | `DotnetNigerCommunity`     | `CommunityDbContext`           | EF Core    |
+
+**Repères rapides :**
+
+- Le mode développement n'exige aucun serveur : les fichiers `.db` sont créés/écrasés par `dotnet ef database update`.
+- Pour SQL Server ou PostgreSQL, mettez à jour les `ConnectionStrings` (appsettings/variables d'environnement) et relancez les migrations.
+- Les scripts CI/CD peuvent cibler SQL Server tandis que les développeurs restent sur SQLite.
 
 **Isolation:**
 
@@ -617,6 +623,8 @@ Structure commune à tous les services:
   "AllowedHosts": "*"
 }
 ```
+
+> En développement, `DotnetNigerIdentityDbContext` et `CommunityDbContext` pointent sur des fichiers SQLite (`Data Source=Infrastructure/Data/*.db`). Remplacez ces valeurs par votre serveur SQL/PG pour les environnements supérieurs.
 
 ### YARP Configuration (Gateway)
 

@@ -6,14 +6,24 @@ Guide court pour installer et demarrer DotnetNiger.
 
 - .NET SDK 8.0
 - Git
-- Docker Desktop (recommande) ou SQL Server 2022 + Redis 7
+- **Aucun SGBD externe requis en local** : EF Core crée des fichiers SQLite (Identity + Community) dans `Infrastructure/Data`
+- (Optionnel) Docker Desktop + SQL Server 2022 + Redis 7 si vous souhaitez reproduire l'environnement de production
 
-## Demarrage rapide (Docker)
+## Demarrage rapide (SQLite locale par defaut)
 
 ```bash
 git clone https://github.com/akaletekoffilevis/DotnetNiger.git
 cd DotnetNiger
-docker-compose up -d
+dotnet restore
+
+cd DotnetNiger.Identity
+dotnet ef database update   # cree DotnetNigerIdentityDb.db (SQLite)
+cd ..\DotnetNiger.Community
+dotnet ef database update   # cree CommunityDb.db (SQLite)
+cd ..
+
+./run.sh     # Linux/Mac
+./run.ps1    # Windows
 ```
 
 Acces:
@@ -22,25 +32,29 @@ Acces:
 - http://localhost:5075/swagger
 - http://localhost:5269/swagger
 
-## Demarrage local
+Supprimer les fichiers `*.db` pour repartir d'une base propre. Chaque service gère son fichier SQLite, aucune instance SQL Server n'est lancée.
+
+## Demarrage via Docker (optionnel)
 
 ```bash
-dotnet restore
-
-cd DotnetNiger.Identity
-dotnet ef database update
-cd ..\DotnetNiger.Community
-dotnet ef database update
-cd ..
-
-./run.sh     # Linux/Mac
-./run.ps1    # Windows
+docker-compose up -d    # SqlServer + Redis + services si vous avez configure les connexions
 ```
+
+Vous pouvez aussi ne lancer que les dependances:
+
+```bash
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=YourStrong@Passw0rd" \
+	-p 1433:1433 -d mcr.microsoft.com/mssql/server:2022-latest
+docker run -p 6379:6379 -d redis:7
+```
+
+Pensez ensuite a mettre a jour les `ConnectionStrings` pour basculer de SQLite vers SQL Server.
 
 ## Configuration
 
 - appsettings.Development.json dans chaque service
-- ConnectionStrings pour Identity et Community
+- `DotnetNiger.Identity` et `DotnetNiger.Community` pointent sur SQLite (fichiers `.db`).
+- Pour utiliser SQL Server/PosgreSQL, editez `ConnectionStrings` ou utilisez des variables d'environnement.
 
 ### Secrets (Identity)
 

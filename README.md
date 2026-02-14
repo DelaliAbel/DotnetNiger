@@ -41,7 +41,7 @@ DotnetNiger est une plateforme communautaire moderne construite avec une archite
         └──────────────────┘     └──────────────────┘
                  │                        │
         ┌────────▼────────────────────────▼────────────┐
-        │           SQL Server 2022                    │
+        │   SQLite (Dev) / SQL Server 2022 (Prod)      │
         │        (PostgreSQL 16+ supporté)             │
         └──────────────────────────────────────────────┘
                  │
@@ -55,10 +55,11 @@ DotnetNiger est une plateforme communautaire moderne construite avec une archite
 ### Prérequis
 
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [SQL Server 2022](https://www.microsoft.com/sql-server/sql-server-downloads) ou [Docker](https://www.docker.com/products/docker-desktop)
-- [Visual Studio Code](https://code.visualstudio.com/) (recommandé)
+- Git + [Visual Studio Code](https://code.visualstudio.com/) (recommandé)
+- **Aucun serveur SQL requis en local** : EF Core utilise les fichiers SQLite embarqués (`DotnetNiger.Identity/Infrastructure/Data/*.db`).
+- (Optionnel) [Docker Desktop](https://www.docker.com/products/docker-desktop) si vous souhaitez lancer SQL Server/Redis comme en prod.
 
-### Installation Rapide
+### Installation Rapide (SQLite locale)
 
 ```bash
 # 1. Cloner le repository
@@ -68,21 +69,29 @@ cd DotnetNiger
 # 2. Restaurer les packages
 dotnet restore
 
-# 3. Configurer la base de données (SQL Server via Docker)ou utiliser le sqlite predefinit
-docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=YourStrong@Passw0rd" \
-  -p 1433:1433 -d mcr.microsoft.com/mssql/server:2022-latest
-
-# 4. Appliquer les migrations
+# 3. Créer/mettre à jour les bases SQLite (Identity + Community)
 cd DotnetNiger.Identity
 dotnet ef database update
 cd ../DotnetNiger.Community
 dotnet ef database update
 cd ..
 
-# 5. Lancer tous les services
+# 4. Lancer tous les services (Gateway + APIs)
 .\run.ps1          # Windows
-./run.sh           # Linux/Mac
+./run.sh           # Linux/Mac/Windows
 ```
+
+Les fichiers SQLite sont versionnés par environnement local; aucun service externe n'est nécessaire. Supprimez-les pour repartir de zéro.
+
+#### Optionnel : stack Docker (SQL Server + Redis)
+
+```bash
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=YourStrong@Passw0rd" \
+  -p 1433:1433 -d mcr.microsoft.com/mssql/server:2022-latest
+docker run -p 6379:6379 -d redis:7
+```
+
+Adaptez ensuite les `ConnectionStrings` aux instances Docker si vous simulez un environnement proche de la production.
 
 ### Tester l'API
 
@@ -118,7 +127,7 @@ curl -X POST http://localhost:5075/api/auth/login \
 
 - **Framework:** .NET 8.0 LTS (C# 12)
 - **API Gateway:** YARP (Yet Another Reverse Proxy)
-- **Database:** SQL Server 2022 / PostgreSQL 16+ / Sqlite (Test Local)
+- **Database:** SQLite (dev par défaut) / SQL Server 2022 / PostgreSQL 16+
 - **ORM:** Entity Framework Core 8.0
 - **Cache:** Redis
 - **Authentication:** JWT Bearer
