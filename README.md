@@ -61,39 +61,39 @@ DotnetNiger est une plateforme communautaire moderne construite avec une archite
 
 ### Installation rapide (local, DB SQLite déjà incluse)
 
-1) Cloner le repo officiel (pas de fork) et entrer dans le dossier :
+1. Cloner le repo officiel (pas de fork) et entrer dans le dossier :
 
 ```bash
 git clone https://github.com/akaletekoffilevis/DotnetNiger.git
 cd DotnetNiger
 ```
 
-2) Vérifier la branche courante (vous êtes sur `main` après le clone) :
+2. Vérifier la branche courante (vous êtes sur `main` après le clone) :
 
 ```bash
 git branch -a
 ```
 
-3) Créer et passer sur `dev` si elle n'existe pas localement (cas courant juste après le clone) :
+3. Créer et passer sur `dev` si elle n'existe pas localement (cas courant juste après le clone) :
 
 ```bash
 git checkout -b dev origin/main
 ```
 
-4) Si `dev` existe déjà côté remote :
+4. Si `dev` existe déjà côté remote :
 
 ```bash
 git checkout dev
 git pull
 ```
 
-5) Restaurer les dépendances :
+5. Restaurer les dépendances :
 
 ```bash
 dotnet restore
 ```
 
-6) Lancer les services (DB SQLite déjà prête, pas de migration à faire) :
+6. Lancer les services (DB SQLite déjà prête, pas de migration à faire) :
 
 ```bash
 ./run.sh      # Linux/Mac (ou Windows via Git Bash)
@@ -101,6 +101,7 @@ dotnet restore
 ```
 
 Accès après démarrage (ports par service) :
+
 - Gateway : http://localhost:5000/swagger et http://localhost:5000/health
 - Identity : http://localhost:5075/swagger
 - Community : http://localhost:5269/swagger
@@ -191,11 +192,13 @@ docs: update API documentation
 ## 📄 Licence
 
 Ce projet est sous licence MIT. Voir [LICENSE.md](LICENSE.md) pour les détails.
+
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - SQLite (embarque avec .NET, rien a installer pour le dev local)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop) seulement si vous voulez tester SQL Server/Redis en conteneurs
 - [Visual Studio Code](https://code.visualstudio.com/) (recommandé) ou vscode
-```
+
+````
 
 ### Installation rapide (SQLite local, recommande)
 
@@ -222,7 +225,7 @@ dotnet ef database update --project DotnetNiger.Identity
 # 5. Lancer les services
 ./run.sh           # Linux/Mac
 .\run.ps1          # Windows
-```
+````
 
 ### Variante (SQL Server via Docker)
 
@@ -237,6 +240,7 @@ dotnet ef database update --project DotnetNiger.Identity
 ```
 
 ### Version 1.1.0 (Futur)
+
 - **`dev`** - Branche de developpement (developpez ici !)
 - **`main`** - Branche de production (releases uniquement)
 - Creation rapide de `dev` quand seul `main` existe apres un clone: `git checkout -b dev origin/main && git push -u origin dev`

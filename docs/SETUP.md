@@ -34,6 +34,7 @@ dotnet restore
 ```
 
 Acces apres demarrage (ports) :
+
 - Gateway : http://localhost:5000/swagger et http://localhost:5000/health
 - Identity : http://localhost:5075/swagger
 - Community : http://localhost:5269/swagger
