@@ -23,10 +23,10 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationS
         IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        TimeProvider timeProvider,
+        ISystemClock clock,
         DotnetNigerIdentityDbContext dbContext,
         UserManager<ApplicationUser> userManager)
-        : base(options, logger, encoder, timeProvider)
+        : base(options, logger, encoder, clock)
     {
         _dbContext = dbContext;
         _userManager = userManager;
