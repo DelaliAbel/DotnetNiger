@@ -6,8 +6,8 @@ using DotnetNiger.Identity.Infrastructure.Data;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System;
 
 namespace DotnetNiger.Identity.Infrastructure.Security;
 
@@ -18,14 +18,15 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationS
     private readonly DotnetNigerIdentityDbContext _dbContext;
     private readonly UserManager<ApplicationUser> _userManager;
 
+
     public ApiKeyAuthenticationHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        ISystemClock clock,
+        TimeProvider timeProvider,
         DotnetNigerIdentityDbContext dbContext,
         UserManager<ApplicationUser> userManager)
-        : base(options, logger, encoder, clock)
+        : base(options, logger, encoder, timeProvider)
     {
         _dbContext = dbContext;
         _userManager = userManager;
