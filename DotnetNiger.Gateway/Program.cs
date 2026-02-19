@@ -1,10 +1,29 @@
 ﻿using Microsoft.OpenApi.Models;
-using DotnetNiger.Gateway.Api.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Enregistrer tous les services du Gateway
-builder.Services.AddGatewayServices(builder.Configuration);
+// Ajouter HttpClient
+builder.Services.AddHttpClient();
+
+// Ajouter Controllers pour l'agrégateur
+builder.Services.AddControllers();
+
+// Ajouter les services pour Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    // Document pour le Gateway lui-même
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "DotnetNiger API Gateway",
+        Version = "v1",
+        Description = "Gateway d'agrégation pour tous les services microservices DotnetNiger. Ce document affiche les endpoints du Gateway."
+    });
+});
+
+// Ajouter le reverse proxy
+builder.Services.AddReverseProxy()
+    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
 var app = builder.Build();
 
@@ -36,14 +55,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Activer CORS
-app.UseCors("AllowAll");
-
 app.UseAuthorization();
 
 app.MapControllers();
 
-// Routes du reverse proxy
 app.MapReverseProxy();
 
 app.Run();
