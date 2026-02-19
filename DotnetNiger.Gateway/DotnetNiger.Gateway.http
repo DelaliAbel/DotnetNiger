@@ -1,0 +1,279 @@
+### Gateway - Tests des Redirections et Communications Inter-Services
+
+# Variables
+@baseUrl = http://localhost:5000
+@identityUrl = http://localhost:5000/identity
+@communityUrl = http://localhost:5000/community
+
+### ==========================================
+### 1. HEALTH CHECK - Gateway Status
+### ==========================================
+
+GET {{baseUrl}}/api/gateway/status
+
+### Gateway Statistics
+GET {{baseUrl}}/api/gateway/stats
+
+### ==========================================
+### 2. SWAGGER ENDPOINTS
+### ==========================================
+
+# Swagger UI Gateway
+GET {{baseUrl}}/swagger
+
+# Swagger JSON du Gateway
+GET {{baseUrl}}/swagger/v1/swagger.json
+
+# Swagger Agrégé (tous les services)
+GET {{baseUrl}}/swagger-aggregated/v1/swagger.json
+
+# Swagger Identity Service (via Gateway)
+GET {{baseUrl}}/swagger/identity/index.html
+
+# Swagger Community Service (via Gateway)
+GET {{baseUrl}}/swagger/community/index.html
+
+### ==========================================
+### 3. IDENTITY SERVICE - Redirection Simple
+### ==========================================
+
+# Récupérer les rôles disponibles
+GET {{identityUrl}}/api/roles
+
+# Récupérer un utilisateur par ID
+GET {{identityUrl}}/api/users/123
+
+### ==========================================
+### 4. IDENTITY SERVICE - Authentication Flow
+### ==========================================
+
+# Enregistrement d'un nouvel utilisateur
+POST {{identityUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "johndoe",
+  "email": "john@example.com",
+  "password": "Password123!",
+  "fullName": "John Doe"
+}
+
+### ==========================================
+### Login et obtention du token
+### ==========================================
+
+POST {{identityUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "Password123!"
+}
+
+### Sauvegarder le token dans @token après login
+
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+### ==========================================
+### Récupérer l'utilisateur actuel (via Gateway)
+### ==========================================
+
+GET {{baseUrl}}/api/gateway/identity/users/me
+Authorization: Bearer {{token}}
+
+### ==========================================
+### Valider le token
+### ==========================================
+
+POST {{identityUrl}}/api/tokens/validate
+Content-Type: application/json
+
+{
+  "token": "{{token}}"
+}
+
+### ==========================================
+### Rafraîchir le token
+### ==========================================
+
+POST {{identityUrl}}/api/tokens/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "your-refresh-token"
+}
+
+### ==========================================
+### 5. COMMUNITY SERVICE - Posts Management
+### ==========================================
+
+# Récupérer tous les posts (avec pagination)
+GET {{communityUrl}}/api/posts?page=1&pageSize=10
+
+### Récupérer un post spécifique
+GET {{communityUrl}}/api/posts/post-123
+
+### Créer un nouveau post (via Gateway)
+POST {{baseUrl}}/api/gateway/community/posts/create
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Découvrez les meilleures pratiques .NET",
+  "content": "Cet article parle des meilleures pratiques pour développer en .NET...",
+  "tags": ["dotnet", "csharp", "best-practices"]
+}
+
+### ==========================================
+### 6. COMMUNITY SERVICE - Events Management
+### ==========================================
+
+# Récupérer tous les événements (via Gateway)
+GET {{baseUrl}}/api/gateway/community/events
+
+### Récupérer un événement spécifique
+GET {{communityUrl}}/api/events/event-123
+
+### Créer un nouvel événement
+POST {{communityUrl}}/api/events
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "DotNet Community Meetup",
+  "description": "Un meetup pour les développeurs .NET du Niger",
+  "location": "Niamey",
+  "startDate": "2026-03-15T10:00:00Z",
+  "endDate": "2026-03-15T12:00:00Z",
+  "tags": ["meetup", "dotnet"]
+}
+
+### ==========================================
+### 7. COMMUNITY SERVICE - Projects
+### ==========================================
+
+# Récupérer tous les projets (via Gateway)
+GET {{baseUrl}}/api/gateway/community/projects
+
+### Récupérer un projet spécifique
+GET {{communityUrl}}/api/projects/project-123
+
+### ==========================================
+### 8. COMMUNITY SERVICE - Categories & Resources
+### ==========================================
+
+# Récupérer toutes les catégories
+GET {{communityUrl}}/api/categories
+
+# Récupérer toutes les ressources
+GET {{communityUrl}}/api/resources
+
+### ==========================================
+### 9. SEARCH - Recherche Globale via Gateway
+### ==========================================
+
+# Rechercher du contenu à travers les services
+GET {{baseUrl}}/api/gateway/search?query=dotnet
+
+### Recherche plus spécifique
+GET {{baseUrl}}/api/gateway/search?query=microservices%20architecture
+
+### ==========================================
+### 10. COMMENTS & INTERACTIONS
+### ==========================================
+
+# Ajouter un commentaire à un post
+POST {{communityUrl}}/api/comments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "postId": "post-123",
+  "content": "Excellent article ! Très utile.",
+  "rating": 5
+}
+
+### Récupérer les commentaires d'un post
+GET {{communityUrl}}/api/comments?postId=post-123
+
+### ==========================================
+### 11. TAGS MANAGEMENT
+### ==========================================
+
+# Récupérer tous les tags
+GET {{communityUrl}}/api/tags
+
+### Récupérer les posts avec un tag spécifique
+GET {{communityUrl}}/api/tags/dotnet/posts
+
+### ==========================================
+### 12. TEAM MANAGEMENT
+### ==========================================
+
+# Récupérer l'équipe
+GET {{communityUrl}}/api/team
+
+### Ajouter un membre à l'équipe
+POST {{communityUrl}}/api/team/members
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "userId": "user-123",
+  "role": "developer",
+  "joinDate": "2026-02-19"
+}
+
+### ==========================================
+### 13. PARTNERS MANAGEMENT
+### ==========================================
+
+# Récupérer les partenaires
+GET {{communityUrl}}/api/partners
+
+### ==========================================
+### 14. GATEWAY AGGREGATION - Combined Data
+### ==========================================
+
+# Récupérer les posts avec cache (via Gateway)
+GET {{baseUrl}}/api/gateway/community/posts
+
+### Récupérer les événements avec cache (via Gateway)
+GET {{baseUrl}}/api/gateway/community/events
+
+### ==========================================
+### 15. HEALTH CHECK ENDPOINTS
+### ==========================================
+
+# Status du Gateway
+GET {{baseUrl}}/api/gateway/status
+
+# Vérifier la disponibilité d'Identity
+GET {{identityUrl}}/api/health
+
+# Vérifier la disponibilité de Community
+GET {{communityUrl}}/api/health
+
+### ==========================================
+### NOTES ET CONSEILS
+### ==========================================
+
+# 1. Avant de tester, lancez les trois services:
+#    - Gateway sur port 5000
+#    - Identity sur port 5075
+#    - Community sur port 5269
+
+# 2. Pour tester l'authentification:
+#    - D'abord, enregistrez un nouvel utilisateur avec /auth/register
+#    - Puis loggez-vous avec /auth/login
+#    - Copiez le token reçu et l'utiliser dans Authorization: Bearer <token>
+
+# 3. Les routes avec {{token}} nécessitent une authentification JWT valide
+
+# 4. Les routes utilisent le pattern /identity ou /community pour router vers les bons services
+
+# 5. Le Gateway ajoute aussi des fonctionnalités comme:
+#    - Caching automatique des requêtes
+#    - Rate limiting pour prévenir l'abus
+#    - Métriques et monitoring
+#    - Agrégation de Swagger
