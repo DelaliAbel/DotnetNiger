@@ -1,6 +1,7 @@
 ﻿using Microsoft.OpenApi.Models;
 using DotnetNiger.Gateway.Configuration;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Ajouter HttpClient
@@ -9,6 +10,18 @@ builder.Services.AddHttpClient();
 // Ajouter Controllers pour l'agrégateur
 builder.Services.AddControllers();
 
+
+
+//-----AjouterPourLaCommunicationExterne--------
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsePolicy",
+        builder => builder.AllowAnyOrigin()
+        .AllowAnyMethod()
+        .AllowAnyHeader());
+}
+);
+//-----------------------------
 
 // Ajouter les services pour Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -64,7 +77,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-// app.UseHttpsRedirection();
+ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
