@@ -128,3 +128,5 @@ local.settings.json
 
 # Folder
 Dotnet.Identity.Client.Tests/
+
+HEALTH_REPORTS.md
