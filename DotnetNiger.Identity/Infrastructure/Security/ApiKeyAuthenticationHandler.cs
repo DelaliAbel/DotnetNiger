@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using System;
 
 namespace DotnetNiger.Identity.Infrastructure.Security;
 
@@ -18,15 +17,13 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationS
     private readonly DotnetNigerIdentityDbContext _dbContext;
     private readonly UserManager<ApplicationUser> _userManager;
 
-
     public ApiKeyAuthenticationHandler(
         IOptionsMonitor<AuthenticationSchemeOptions> options,
         ILoggerFactory logger,
         UrlEncoder encoder,
-        ISystemClock clock,
         DotnetNigerIdentityDbContext dbContext,
         UserManager<ApplicationUser> userManager)
-        : base(options, logger, encoder, clock)
+        : base(options, logger, encoder)
     {
         _dbContext = dbContext;
         _userManager = userManager;
@@ -42,13 +39,17 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<AuthenticationS
         var rawKey = values.ToString();
         if (string.IsNullOrWhiteSpace(rawKey))
         {
-            return AuthenticateResult.Fail("Missing API key.");
+            return AuthenticateResult.Fail("Cle API manquante.");
         }
 
-        var hashedKey = ApiKeyHasher.Hash(rawKey.Trim());
-        var apiKey = await _dbContext.ApiKeys
+        // Recherche par verification HMAC sur toutes les cles actives.
+        var trimmedKey = rawKey.Trim();
+        var activeKeys = await _dbContext.ApiKeys
             .Include(key => key.User)
-            .FirstOrDefaultAsync(key => key.Key == hashedKey);
+            .Where(key => key.IsActive)
+            .ToListAsync();
+
+        var apiKey = activeKeys.FirstOrDefault(key => ApiKeyHasher.Verify(trimmedKey, key.Key));
 
         if (apiKey == null)
         {
