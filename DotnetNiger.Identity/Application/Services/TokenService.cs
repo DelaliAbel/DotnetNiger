@@ -2,10 +2,13 @@
 using DotnetNiger.Identity.Application.DTOs.Requests;
 using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Exceptions;
+using DotnetNiger.Identity.Application.Mappers;
 using DotnetNiger.Identity.Application.Services.Interfaces;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure.Data;
+using DotnetNiger.Identity.Infrastructure.Repositories;
 using DotnetNiger.Identity.Infrastructure.Security;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -16,35 +19,39 @@ public class TokenService : ITokenService
 {
 	// Rotation et reemission des tokens.
 	private readonly DotnetNigerIdentityDbContext _dbContext;
+	private readonly IRefreshTokenRepository _refreshTokenRepository;
 	private readonly UserManager<ApplicationUser> _userManager;
 	private readonly JwtTokenGenerator _jwtTokenGenerator;
 	private readonly RefreshTokenGenerator _refreshTokenGenerator;
 	private readonly JwtOptions _jwtOptions;
+	private readonly IHttpContextAccessor _httpContextAccessor;
 
 	public TokenService(
 		DotnetNigerIdentityDbContext dbContext,
+		IRefreshTokenRepository refreshTokenRepository,
 		UserManager<ApplicationUser> userManager,
 		JwtTokenGenerator jwtTokenGenerator,
 		RefreshTokenGenerator refreshTokenGenerator,
-		IOptions<JwtOptions> jwtOptions)
+		IOptions<JwtOptions> jwtOptions,
+		IHttpContextAccessor httpContextAccessor)
 	{
 		_dbContext = dbContext;
+		_refreshTokenRepository = refreshTokenRepository;
 		_userManager = userManager;
 		_jwtTokenGenerator = jwtTokenGenerator;
 		_refreshTokenGenerator = refreshTokenGenerator;
 		_jwtOptions = jwtOptions.Value;
+		_httpContextAccessor = httpContextAccessor;
 	}
 
-	public async Task<AuthDto> RefreshAsync(RefreshTokenRequest request)
+	public async Task<AuthDto> RefreshAsync(RefreshTokenRequest request, CancellationToken ct = default)
 	{
 		if (string.IsNullOrWhiteSpace(request.RefreshToken))
 		{
 			throw new IdentityException("Refresh token is required.", 400);
 		}
 
-		var storedToken = await _dbContext.RefreshTokens
-			.Include(token => token.User)
-			.FirstOrDefaultAsync(token => token.Token == request.RefreshToken);
+		var storedToken = await _refreshTokenRepository.GetByTokenAsync(request.RefreshToken);
 
 		if (storedToken == null || storedToken.RevokedAt != null)
 		{
@@ -56,57 +63,37 @@ public class TokenService : ITokenService
 			throw new TokenExpiredException();
 		}
 
-		var user = storedToken.User;
+		var user = await _userManager.FindByIdAsync(storedToken.UserId.ToString());
 		if (user == null)
 		{
 			throw new UserNotFoundException();
 		}
 
 		// Rotation du refresh token pour limiter la reutilisation.
-		storedToken.RevokedAt = DateTime.UtcNow;
+		await _refreshTokenRepository.RevokeAsync(storedToken);
 		var newRefreshTokenValue = _refreshTokenGenerator.GenerateToken();
+		var hashedToken = RefreshTokenGenerator.HashToken(newRefreshTokenValue);
+
+		var httpContext = _httpContextAccessor.HttpContext;
 		var newRefreshToken = new RefreshToken
 		{
 			UserId = user.Id,
-			Token = newRefreshTokenValue,
-			ExpiresAt = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenDays)
+			Token = hashedToken,
+			ExpiresAt = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenDays),
+			IpAddress = httpContext?.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
+			UserAgent = httpContext?.Request.Headers.UserAgent.ToString() ?? string.Empty
 		};
 
-		_dbContext.RefreshTokens.Add(newRefreshToken);
-		await _dbContext.SaveChangesAsync();
+		await _refreshTokenRepository.AddAsync(newRefreshToken);
 
 		var accessToken = await _jwtTokenGenerator.GenerateAccessTokenAsync(user);
-		var roles = await _userManager.GetRolesAsync(user);
-		var socialLinks = await _dbContext.SocialLinks
-			.Where(link => link.UserId == user.Id)
-			.Select(link => new SocialLinkDto
-			{
-				Id = link.Id,
-				Platform = link.Platform,
-				Url = link.Url
-			})
-			.ToListAsync();
+		var userDto = await UserMapper.ToUserDtoAsync(user, _userManager, _dbContext);
 
 		return new AuthDto
 		{
 			Success = true,
 			Message = "Token refreshed.",
-			User = new UserDto
-			{
-				Id = user.Id,
-				Username = user.UserName ?? string.Empty,
-				Email = user.Email ?? string.Empty,
-				FullName = user.FullName,
-				Bio = user.Bio,
-				AvatarUrl = user.AvatarUrl,
-				Country = user.Country ?? string.Empty,
-				City = user.City ?? string.Empty,
-				IsActive = user.IsActive,
-				CreatedAt = user.CreatedAt,
-				LastLoginAt = user.LastLoginAt,
-				Roles = roles.ToList(),
-				SocialLinks = socialLinks
-			},
+			User = userDto,
 			Token = new TokenDto
 			{
 				AccessToken = accessToken,
@@ -117,15 +104,14 @@ public class TokenService : ITokenService
 		};
 	}
 
-	public async Task LogoutAsync(Guid userId, RefreshTokenRequest request)
+	public async Task LogoutAsync(Guid userId, RefreshTokenRequest request, CancellationToken ct = default)
 	{
 		if (string.IsNullOrWhiteSpace(request.RefreshToken))
 		{
 			throw new IdentityException("Refresh token is required.", 400);
 		}
 
-		var storedToken = await _dbContext.RefreshTokens
-			.FirstOrDefaultAsync(token => token.Token == request.RefreshToken);
+		var storedToken = await _refreshTokenRepository.GetByTokenAsync(request.RefreshToken);
 		if (storedToken == null || storedToken.UserId != userId)
 		{
 			throw new InvalidCredentialsException();
@@ -136,7 +122,6 @@ public class TokenService : ITokenService
 			return;
 		}
 
-		storedToken.RevokedAt = DateTime.UtcNow;
-		await _dbContext.SaveChangesAsync();
+		await _refreshTokenRepository.RevokeAsync(storedToken);
 	}
 }

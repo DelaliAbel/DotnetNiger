@@ -7,7 +7,7 @@ namespace DotnetNiger.Identity.Application.Services.Interfaces;
 public interface ITokenService
 {
 	// Rafraichissement du token.
-	Task<AuthDto> RefreshAsync(RefreshTokenRequest request);
+	Task<AuthDto> RefreshAsync(RefreshTokenRequest request, CancellationToken ct = default);
 	// Revocation d'un refresh token.
-	Task LogoutAsync(Guid userId, RefreshTokenRequest request);
+	Task LogoutAsync(Guid userId, RefreshTokenRequest request, CancellationToken ct = default);
 }

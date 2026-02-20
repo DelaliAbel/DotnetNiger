@@ -2,7 +2,7 @@
 using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Services.Interfaces;
 using DotnetNiger.Identity.Domain.Entities;
-using DotnetNiger.Identity.Infrastructure.Data;
+using DotnetNiger.Identity.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,18 +11,18 @@ namespace DotnetNiger.Identity.Application.Services;
 // Service de journalisation des connexions.
 public class LoginHistoryService : ILoginHistoryService
 {
-	private readonly DotnetNigerIdentityDbContext _dbContext;
+	private readonly ILoginHistoryRepository _loginHistoryRepository;
 	private readonly IHttpContextAccessor _httpContextAccessor;
 
 	public LoginHistoryService(
-		DotnetNigerIdentityDbContext dbContext,
+		ILoginHistoryRepository loginHistoryRepository,
 		IHttpContextAccessor httpContextAccessor)
 	{
-		_dbContext = dbContext;
+		_loginHistoryRepository = loginHistoryRepository;
 		_httpContextAccessor = httpContextAccessor;
 	}
 
-	public async Task RecordAsync(Guid userId, bool success, string? failureReason)
+	public async Task RecordAsync(Guid userId, bool success, string? failureReason, CancellationToken ct = default)
 	{
 		var context = _httpContextAccessor.HttpContext;
 		var ip = context?.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
@@ -34,20 +34,22 @@ public class LoginHistoryService : ILoginHistoryService
 			Success = success,
 			FailureReason = failureReason ?? string.Empty,
 			IpAddress = ip,
-			UserAgent = userAgent
+			UserAgent = userAgent,
+			// TODO: Implementer la geolocalisation IP (ex: MaxMind GeoIP2) pour remplir Country et City.
+			Country = string.Empty,
+			City = string.Empty
 		};
 
-		_dbContext.LoginHistories.Add(history);
-		await _dbContext.SaveChangesAsync();
+		await _loginHistoryRepository.AddAsync(history);
 	}
 
-	public async Task<PaginatedDto<LoginHistoryDto>> GetUserHistoryAsync(Guid userId, int skip, int take)
+	public async Task<PaginatedDto<LoginHistoryDto>> GetUserHistoryAsync(Guid userId, int skip, int take, CancellationToken ct = default)
 	{
-		var query = _dbContext.LoginHistories
+		var query = _loginHistoryRepository.Query()
 			.AsNoTracking()
 			.Where(history => history.UserId == userId);
 
-		var total = await query.CountAsync();
+		var total = await query.CountAsync(ct);
 		var items = await query
 			.OrderByDescending(history => history.LoginAt)
 			.Skip(skip)
@@ -63,7 +65,7 @@ public class LoginHistoryService : ILoginHistoryService
 				Country = history.Country,
 				City = history.City
 			})
-			.ToListAsync();
+			.ToListAsync(ct);
 
 		return new PaginatedDto<LoginHistoryDto>
 		{

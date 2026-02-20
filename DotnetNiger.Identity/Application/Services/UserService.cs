@@ -3,9 +3,11 @@ using System.ComponentModel.DataAnnotations;
 using DotnetNiger.Identity.Application.DTOs.Requests;
 using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Exceptions;
+using DotnetNiger.Identity.Application.Mappers;
 using DotnetNiger.Identity.Application.Services.Interfaces;
 using DotnetNiger.Identity.Application.Validators;
 using DotnetNiger.Identity.Domain.Entities;
+using DotnetNiger.Identity.Infrastructure.Caching;
 using DotnetNiger.Identity.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -18,38 +20,55 @@ public class UserService : IUserService
 	// Lecture du profil utilisateur.
 	private readonly UserManager<ApplicationUser> _userManager;
 	private readonly DotnetNigerIdentityDbContext _dbContext;
+	private readonly ICacheService _cache;
+	private static readonly TimeSpan ProfileCacheTtl = TimeSpan.FromMinutes(10);
 
-	public UserService(UserManager<ApplicationUser> userManager, DotnetNigerIdentityDbContext dbContext)
+	public UserService(
+		UserManager<ApplicationUser> userManager,
+		DotnetNigerIdentityDbContext dbContext,
+		ICacheService cache)
 	{
 		_userManager = userManager;
 		_dbContext = dbContext;
+		_cache = cache;
 	}
 
-	public async Task<UserDto> GetProfileAsync(Guid userId)
+	private static string ProfileCacheKey(Guid userId) => $"user:profile:{userId}";
+
+	public async Task<UserDto> GetProfileAsync(Guid userId, CancellationToken ct = default)
 	{
-		var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+		var cacheKey = ProfileCacheKey(userId);
+		var cached = await _cache.GetAsync<UserDto>(cacheKey);
+		if (cached is not null)
+		{
+			return cached;
+		}
+
+		var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
 		if (user == null)
 		{
 			throw new UserNotFoundException();
 		}
 
-		return await MapUserAsync(user);
+		var dto = await UserMapper.ToUserDtoAsync(user, _userManager, _dbContext);
+		await _cache.SetAsync(cacheKey, dto, ProfileCacheTtl);
+		return dto;
 	}
 
-	public async Task<UserDto> UpdateProfileAsync(Guid userId, UpdateProfileRequest request)
+	public async Task<UserDto> UpdateProfileAsync(Guid userId, UpdateProfileRequest request, CancellationToken ct = default)
 	{
 		UpdateProfileRequestValidator.ValidateAndThrow(request);
-		var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+		var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
 		if (user == null)
 		{
 			throw new UserNotFoundException();
 		}
 
-		user.FullName = request.FullName ?? string.Empty;
-		user.Bio = request.Bio ?? string.Empty;
-		user.AvatarUrl = request.AvatarUrl ?? string.Empty;
-		user.Country = request.Country ?? string.Empty;
-		user.City = request.City ?? string.Empty;
+		if (request.FullName is not null) user.FullName = request.FullName;
+		if (request.Bio is not null) user.Bio = request.Bio;
+		if (request.AvatarUrl is not null) user.AvatarUrl = request.AvatarUrl;
+		if (request.Country is not null) user.Country = request.Country;
+		if (request.City is not null) user.City = request.City;
 
 		var result = await _userManager.UpdateAsync(user);
 		if (!result.Succeeded)
@@ -58,10 +77,12 @@ public class UserService : IUserService
 			throw new IdentityException(message, 400);
 		}
 
-		return await MapUserAsync(user);
+		var dto = await UserMapper.ToUserDtoAsync(user, _userManager, _dbContext);
+		await _cache.RemoveAsync(ProfileCacheKey(userId));
+		return dto;
 	}
 
-	public async Task<UserDto> UpdateAvatarAsync(Guid userId, string avatarUrl)
+	public async Task<UserDto> UpdateAvatarAsync(Guid userId, string avatarUrl, CancellationToken ct = default)
 	{
 		if (string.IsNullOrWhiteSpace(avatarUrl))
 		{
@@ -73,7 +94,7 @@ public class UserService : IUserService
 			throw new IdentityException("AvatarUrl is invalid.", 400);
 		}
 
-		var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+		var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
 		if (user == null)
 		{
 			throw new UserNotFoundException();
@@ -87,12 +108,14 @@ public class UserService : IUserService
 			throw new IdentityException(message, 400);
 		}
 
-		return await MapUserAsync(user);
+		var dto = await UserMapper.ToUserDtoAsync(user, _userManager, _dbContext);
+		await _cache.RemoveAsync(ProfileCacheKey(userId));
+		return dto;
 	}
 
-	public async Task<UserDto> ClearAvatarAsync(Guid userId)
+	public async Task<UserDto> ClearAvatarAsync(Guid userId, CancellationToken ct = default)
 	{
-		var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+		var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
 		if (user == null)
 		{
 			throw new UserNotFoundException();
@@ -106,12 +129,14 @@ public class UserService : IUserService
 			throw new IdentityException(message, 400);
 		}
 
-		return await MapUserAsync(user);
+		var dto = await UserMapper.ToUserDtoAsync(user, _userManager, _dbContext);
+		await _cache.RemoveAsync(ProfileCacheKey(userId));
+		return dto;
 	}
 
-	public async Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request)
+	public async Task ChangePasswordAsync(Guid userId, ChangePasswordRequest request, CancellationToken ct = default)
 	{
-		var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+		var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
 		if (user == null)
 		{
 			throw new UserNotFoundException();
@@ -125,9 +150,9 @@ public class UserService : IUserService
 		}
 	}
 
-	public async Task ChangeEmailAsync(Guid userId, ChangeEmailRequest request)
+	public async Task ChangeEmailAsync(Guid userId, ChangeEmailRequest request, CancellationToken ct = default)
 	{
-		var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId);
+		var user = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
 		if (user == null)
 		{
 			throw new UserNotFoundException();
@@ -158,36 +183,5 @@ public class UserService : IUserService
 			var message = string.Join(" ", result.Errors.Select(error => error.Description));
 			throw new IdentityException(message, 400);
 		}
-	}
-
-	private async Task<UserDto> MapUserAsync(ApplicationUser user)
-	{
-		var roles = await _userManager.GetRolesAsync(user);
-		var socialLinks = await _dbContext.SocialLinks
-			.Where(link => link.UserId == user.Id)
-			.Select(link => new SocialLinkDto
-			{
-				Id = link.Id,
-				Platform = link.Platform,
-				Url = link.Url
-			})
-			.ToListAsync();
-
-		return new UserDto
-		{
-			Id = user.Id,
-			Username = user.UserName ?? string.Empty,
-			Email = user.Email ?? string.Empty,
-			FullName = user.FullName,
-			Bio = user.Bio,
-			AvatarUrl = user.AvatarUrl,
-			Country = user.Country ?? string.Empty,
-			City = user.City ?? string.Empty,
-			IsActive = user.IsActive,
-			CreatedAt = user.CreatedAt,
-			LastLoginAt = user.LastLoginAt,
-			Roles = roles.ToList(),
-			SocialLinks = socialLinks
-		};
 	}
 }

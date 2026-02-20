@@ -1,16 +1,19 @@
 // Service applicatif Identity: AdminService
 using System.Security.Claims;
 using System.Security.Cryptography;
+using DotnetNiger.Identity.Application.DTOs.Requests;
 using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Exceptions;
 using DotnetNiger.Identity.Application.Services.Interfaces;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure.Data;
+using DotnetNiger.Identity.Infrastructure.External;
 using DotnetNiger.Identity.Infrastructure.Security;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace DotnetNiger.Identity.Application.Services;
 
@@ -20,15 +23,21 @@ public class AdminService : IAdminService
 	private readonly UserManager<ApplicationUser> _userManager;
 	private readonly DotnetNigerIdentityDbContext _dbContext;
 	private readonly IHttpContextAccessor _httpContextAccessor;
+	private readonly IOptionsMonitor<FileUploadOptions> _fileUploadOptions;
+	private readonly IConfiguration _configuration;
 
 	public AdminService(
 		UserManager<ApplicationUser> userManager,
 		DotnetNigerIdentityDbContext dbContext,
-		IHttpContextAccessor httpContextAccessor)
+		IHttpContextAccessor httpContextAccessor,
+		IOptionsMonitor<FileUploadOptions> fileUploadOptions,
+		IConfiguration configuration)
 	{
 		_userManager = userManager;
 		_dbContext = dbContext;
 		_httpContextAccessor = httpContextAccessor;
+		_fileUploadOptions = fileUploadOptions;
+		_configuration = configuration;
 	}
 
 	public async Task<PaginatedDto<UserSummaryDto>> GetUsersAsync(
@@ -453,6 +462,60 @@ public class AdminService : IAdminService
 
 		_dbContext.AdminActionLogs.Add(log);
 		await _dbContext.SaveChangesAsync();
+	}
+
+	public Task<FileUploadSettingsDto> GetFileUploadSettingsAsync()
+	{
+		var options = _fileUploadOptions.CurrentValue;
+		var dto = new FileUploadSettingsDto
+		{
+			Provider = options.Provider,
+			MaxAvatarBytes = options.MaxAvatarBytes,
+			CleanupEnabled = options.CleanupEnabled,
+			CleanupIntervalMinutes = options.CleanupIntervalMinutes,
+			CleanupOrphanDays = options.CleanupOrphanDays
+		};
+		return Task.FromResult(dto);
+	}
+
+	public async Task<FileUploadSettingsDto> UpdateFileUploadSettingsAsync(UpdateFileUploadSettingsRequest request)
+	{
+		var section = _configuration.GetSection("FileUpload");
+		var options = _fileUploadOptions.CurrentValue;
+
+		if (request.CleanupEnabled.HasValue)
+		{
+			options.CleanupEnabled = request.CleanupEnabled.Value;
+			section["CleanupEnabled"] = request.CleanupEnabled.Value.ToString();
+		}
+
+		if (request.CleanupIntervalMinutes.HasValue)
+		{
+			options.CleanupIntervalMinutes = request.CleanupIntervalMinutes.Value;
+			section["CleanupIntervalMinutes"] = request.CleanupIntervalMinutes.Value.ToString();
+		}
+
+		if (request.CleanupOrphanDays.HasValue)
+		{
+			options.CleanupOrphanDays = request.CleanupOrphanDays.Value;
+			section["CleanupOrphanDays"] = request.CleanupOrphanDays.Value.ToString();
+		}
+
+		var adminId = GetAdminUserId();
+		await LogAdminActionAsync(
+			"UpdateFileUploadSettings",
+			"Settings",
+			"FileUpload",
+			$"CleanupEnabled={options.CleanupEnabled}, IntervalMin={options.CleanupIntervalMinutes}, OrphanDays={options.CleanupOrphanDays}");
+
+		return new FileUploadSettingsDto
+		{
+			Provider = options.Provider,
+			MaxAvatarBytes = options.MaxAvatarBytes,
+			CleanupEnabled = options.CleanupEnabled,
+			CleanupIntervalMinutes = options.CleanupIntervalMinutes,
+			CleanupOrphanDays = options.CleanupOrphanDays
+		};
 	}
 
 	private Guid? GetAdminUserId()

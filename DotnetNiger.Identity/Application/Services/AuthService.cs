@@ -2,13 +2,15 @@
 using DotnetNiger.Identity.Application.DTOs.Requests;
 using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Exceptions;
+using DotnetNiger.Identity.Application.Mappers;
 using DotnetNiger.Identity.Application.Services.Interfaces;
 using DotnetNiger.Identity.Application.Validators;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure.Data;
+using DotnetNiger.Identity.Infrastructure.Repositories;
 using DotnetNiger.Identity.Infrastructure.Security;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace DotnetNiger.Identity.Application.Services;
@@ -16,34 +18,39 @@ namespace DotnetNiger.Identity.Application.Services;
 // Service d'authentification et de gestion des tokens.
 public class AuthService : IAuthService
 {
-	// Logique de login/inscription.
 	private readonly UserManager<ApplicationUser> _userManager;
 	private readonly DotnetNigerIdentityDbContext _dbContext;
+	private readonly IRefreshTokenRepository _refreshTokenRepository;
 	private readonly JwtTokenGenerator _jwtTokenGenerator;
 	private readonly RefreshTokenGenerator _refreshTokenGenerator;
 	private readonly JwtOptions _jwtOptions;
 	private readonly IEmailService _emailService;
 	private readonly ILoginHistoryService _loginHistoryService;
+	private readonly IHttpContextAccessor _httpContextAccessor;
 
 	public AuthService(
 		UserManager<ApplicationUser> userManager,
 		DotnetNigerIdentityDbContext dbContext,
+		IRefreshTokenRepository refreshTokenRepository,
 		JwtTokenGenerator jwtTokenGenerator,
 		RefreshTokenGenerator refreshTokenGenerator,
 		IOptions<JwtOptions> jwtOptions,
 		IEmailService emailService,
-		ILoginHistoryService loginHistoryService)
+		ILoginHistoryService loginHistoryService,
+		IHttpContextAccessor httpContextAccessor)
 	{
 		_userManager = userManager;
 		_dbContext = dbContext;
+		_refreshTokenRepository = refreshTokenRepository;
 		_jwtTokenGenerator = jwtTokenGenerator;
 		_refreshTokenGenerator = refreshTokenGenerator;
 		_jwtOptions = jwtOptions.Value;
 		_emailService = emailService;
 		_loginHistoryService = loginHistoryService;
+		_httpContextAccessor = httpContextAccessor;
 	}
 
-	public async Task<AuthDto> RegisterAsync(RegisterRequest request)
+	public async Task<AuthDto> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
 	{
 		RegisterRequestValidator.ValidateAndThrow(request);
 		var existingByEmail = await _userManager.FindByEmailAsync(request.Email);
@@ -77,10 +84,12 @@ public class AuthService : IAuthService
 
 		var confirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
-		await _emailService.SendAsync(user.Email ?? string.Empty, "Verify email", $"Your verification token: {confirmationToken}");
+
+		var verifyUrl = $"/api/auth/verify-email?email={Uri.EscapeDataString(user.Email ?? string.Empty)}&token={Uri.EscapeDataString(confirmationToken)}";
+		await _emailService.SendAsync(user.Email ?? string.Empty, "Verify email", $"Please verify your email by clicking: {verifyUrl}");
 
 		var tokenDto = await CreateTokenAsync(user);
-		var userDto = await MapUserAsync(user);
+		var userDto = await UserMapper.ToUserDtoAsync(user, _userManager, _dbContext);
 
 		return new AuthDto
 		{
@@ -91,7 +100,7 @@ public class AuthService : IAuthService
 		};
 	}
 
-	public async Task<AuthDto> LoginAsync(LoginRequest request)
+	public async Task<AuthDto> LoginAsync(LoginRequest request, CancellationToken ct = default)
 	{
 		LoginRequestValidator.ValidateAndThrow(request);
 		var user = await _userManager.FindByEmailAsync(request.Email);
@@ -124,7 +133,7 @@ public class AuthService : IAuthService
 		await _loginHistoryService.RecordAsync(user.Id, true, string.Empty);
 
 		var tokenDto = await CreateTokenAsync(user);
-		var userDto = await MapUserAsync(user);
+		var userDto = await UserMapper.ToUserDtoAsync(user, _userManager, _dbContext);
 
 		return new AuthDto
 		{
@@ -135,7 +144,7 @@ public class AuthService : IAuthService
 		};
 	}
 
-	public async Task<string?> RequestEmailVerificationAsync(RequestEmailVerificationRequest request)
+	public async Task<string?> RequestEmailVerificationAsync(RequestEmailVerificationRequest request, CancellationToken ct = default)
 	{
 		var email = request.Email?.Trim();
 		if (string.IsNullOrWhiteSpace(email))
@@ -155,12 +164,13 @@ public class AuthService : IAuthService
 		}
 
 		var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-		// await _emailService.SendAsync(email, "Verify email", $"Your verification token: {token}");
+		var verifyUrl = $"/api/auth/verify-email?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(token)}";
+		await _emailService.SendAsync(email, "Verify email", $"Please verify your email by clicking: {verifyUrl}");
 
 		return token;
 	}
 
-	public async Task<string?> RequestPasswordResetAsync(ForgotPasswordRequest request)
+	public async Task<string?> RequestPasswordResetAsync(ForgotPasswordRequest request, CancellationToken ct = default)
 	{
 		var email = request.Email?.Trim();
 		if (string.IsNullOrWhiteSpace(email))
@@ -179,7 +189,7 @@ public class AuthService : IAuthService
 		return token;
 	}
 
-	public async Task ResetPasswordAsync(ResetPasswordRequest request)
+	public async Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken ct = default)
 	{
 		ResetPasswordRequestValidator.ValidateAndThrow(request);
 		var email = request.Email?.Trim();
@@ -202,7 +212,7 @@ public class AuthService : IAuthService
 		}
 	}
 
-	public async Task VerifyEmailAsync(VerifyEmailRequest request)
+	public async Task VerifyEmailAsync(VerifyEmailRequest request, CancellationToken ct = default)
 	{
 		var email = request.Email?.Trim();
 		if (string.IsNullOrWhiteSpace(email))
@@ -228,16 +238,21 @@ public class AuthService : IAuthService
 	{
 		var accessToken = await _jwtTokenGenerator.GenerateAccessTokenAsync(user);
 		var refreshTokenValue = _refreshTokenGenerator.GenerateToken();
+		var hashedToken = RefreshTokenGenerator.HashToken(refreshTokenValue);
+
+		var httpContext = _httpContextAccessor.HttpContext;
 		var refreshToken = new RefreshToken
 		{
 			UserId = user.Id,
-			Token = refreshTokenValue,
-			ExpiresAt = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenDays)
+			Token = hashedToken,
+			ExpiresAt = DateTime.UtcNow.AddDays(_jwtOptions.RefreshTokenDays),
+			IpAddress = httpContext?.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
+			UserAgent = httpContext?.Request.Headers.UserAgent.ToString() ?? string.Empty
 		};
 
-		_dbContext.RefreshTokens.Add(refreshToken);
-		await _dbContext.SaveChangesAsync();
+		await _refreshTokenRepository.AddAsync(refreshToken);
 
+		// On retourne le token brut au client ; seul le hash est stocke en base.
 		return new TokenDto
 		{
 			AccessToken = accessToken,
@@ -247,34 +262,4 @@ public class AuthService : IAuthService
 		};
 	}
 
-	private async Task<UserDto> MapUserAsync(ApplicationUser user)
-	{
-		var roles = await _userManager.GetRolesAsync(user);
-		var socialLinks = await _dbContext.SocialLinks
-			.Where(link => link.UserId == user.Id)
-			.Select(link => new SocialLinkDto
-			{
-				Id = link.Id,
-				Platform = link.Platform,
-				Url = link.Url
-			})
-			.ToListAsync();
-
-		return new UserDto
-		{
-			Id = user.Id,
-			Username = user.UserName ?? string.Empty,
-			Email = user.Email ?? string.Empty,
-			FullName = user.FullName,
-			Bio = user.Bio,
-			AvatarUrl = user.AvatarUrl,
-			Country = user.Country ?? string.Empty,
-			City = user.City ?? string.Empty,
-			IsActive = user.IsActive,
-			CreatedAt = user.CreatedAt,
-			LastLoginAt = user.LastLoginAt,
-			Roles = roles.ToList(),
-			SocialLinks = socialLinks
-		};
-	}
 }

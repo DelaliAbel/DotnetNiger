@@ -1,4 +1,5 @@
 // Contrat applicatif Identity: IAdminService
+using DotnetNiger.Identity.Application.DTOs.Requests;
 using DotnetNiger.Identity.Application.DTOs.Responses;
 
 namespace DotnetNiger.Identity.Application.Services.Interfaces;
@@ -6,6 +7,8 @@ namespace DotnetNiger.Identity.Application.Services.Interfaces;
 // Contrat pour les operations d'administration.
 public interface IAdminService
 {
+	Task<FileUploadSettingsDto> GetFileUploadSettingsAsync();
+	Task<FileUploadSettingsDto> UpdateFileUploadSettingsAsync(UpdateFileUploadSettingsRequest request);
 	Task<PaginatedDto<UserSummaryDto>> GetUsersAsync(
 		string? search,
 		bool? isActive,
