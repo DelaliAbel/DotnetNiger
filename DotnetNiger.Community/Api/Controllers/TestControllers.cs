@@ -17,4 +17,14 @@ public class TestController : ControllerBase
     {
         return Ok(new[] { new { Id = 2, Title = "Health Ok" } });
     }
+
+    // [HttpGet("admin")]
+    // public IActionResult GetAdmin()
+    // {
+    //     return Ok(new[] {
+    //          new { Id = 3, Title = "Mahamadou GARBA ZAKOU" }, 
+    //          new { Id = 4, Title = "Kofi" }, 
+    //          new { Id = 5, Title = "Moudi" }  
+    //          });
+    // }
 }

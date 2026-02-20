@@ -117,6 +117,17 @@ builder.Services.AddAuthorization(options =>
             .RequireClaim("scope", "api_key"));
 });
 
+//-----AjouterPourLaCommunicationExterne--------
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("CorsePolicy",
+        builder => builder.AllowAnyOrigin()
+        .AllowAnyMethod()
+        .AllowAnyHeader());
+}
+);
+//-----------------------------------------------
+
 // Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
