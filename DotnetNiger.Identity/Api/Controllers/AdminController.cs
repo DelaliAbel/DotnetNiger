@@ -213,4 +213,21 @@ public class AdminController : ControllerBase
 			take);
 		return Ok(result);
 	}
+
+	// --- Settings endpoints ---
+
+	[HttpGet("settings/file-upload")]
+	public async Task<ActionResult<FileUploadSettingsDto>> GetFileUploadSettings()
+	{
+		var settings = await _adminService.GetFileUploadSettingsAsync();
+		return Ok(settings);
+	}
+
+	[HttpPut("settings/file-upload")]
+	public async Task<ActionResult<FileUploadSettingsDto>> UpdateFileUploadSettings(
+		[FromBody] UpdateFileUploadSettingsRequest request)
+	{
+		var settings = await _adminService.UpdateFileUploadSettingsAsync(request);
+		return Ok(settings);
+	}
 }

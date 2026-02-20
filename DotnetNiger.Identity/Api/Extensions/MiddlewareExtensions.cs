@@ -12,8 +12,8 @@ public static class MiddlewareExtensions
 		return app.UseMiddleware<RequestLoggingMiddleware>();
 	}
 
-	public static IApplicationBuilder UseErrorHandling(this IApplicationBuilder app)
+	public static IApplicationBuilder UseJwtEnrichment(this IApplicationBuilder app)
 	{
-		return app.UseMiddleware<ErrorHandlingMiddleware>();
+		return app.UseMiddleware<JwtMiddleware>();
 	}
 }

@@ -6,6 +6,7 @@ using DotnetNiger.Identity.Api.Extensions;
 using DotnetNiger.Identity.Api.Filters;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure.Data;
+using DotnetNiger.Identity.Infrastructure.Data.Seeds;
 using DotnetNiger.Identity.Infrastructure.External;
 using DotnetNiger.Identity.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication;
@@ -25,11 +26,18 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
         .ReadFrom.Services(services)
         .Enrich.FromLogContext());
 // Configuration principale du service Identity.
-var connectionString = builder.Configuration.GetConnectionString("DotnetNigerIdentityDbContext") ?? throw new InvalidOperationException("Connection string 'DotnetNigerIdentityContextConnection' not found.");
+var connectionString = builder.Configuration.GetConnectionString("DotnetNigerIdentityDbContext") ?? throw new InvalidOperationException("Connection string 'DotnetNigerIdentityDbContext' introuvable.");
 
 // Chargement de la configuration JWT.
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
-    ?? throw new InvalidOperationException("JWT configuration section 'Jwt' not found.");
+    ?? throw new InvalidOperationException("Section de configuration 'Jwt' introuvable.");
+
+// Verification que la cle JWT a ete configuree (via variable d'environnement ou user-secrets).
+if (string.IsNullOrWhiteSpace(jwtOptions.Key) || jwtOptions.Key.StartsWith("__") || jwtOptions.Key.Length < 32)
+{
+    throw new InvalidOperationException(
+        "La cle JWT n'est pas configuree. Definissez la variable d'environnement Jwt__Key ou utilisez dotnet user-secrets. Minimum 32 caracteres.");
+}
 
 // Add services to the container.
 builder.Services.AddControllers(options =>
@@ -73,7 +81,7 @@ builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddEmailProviders();
 builder.Services.AddIdentityApplicationServices();
-// builder.Services.AddHostedService<AvatarCleanupService>();
+builder.Services.AddHostedService<AvatarCleanupService>();
 
 builder.Services.AddAuthentication(options =>
     {
@@ -136,7 +144,7 @@ if (string.Equals(fileUploadOptions.Provider, "Local", StringComparison.OrdinalI
     });
 }
 
-// await SeedAdminAsync(app); //appel de la fonction pour cree l'admin/
+await SeedAdminAsync(app);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -159,60 +167,25 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseErrorHandling();
 // Journalisation structuree des requetes HTTP.
 app.UseSerilogRequestLogging();
 app.UseRequestLogging();
 app.UseAuthentication();
+app.UseJwtEnrichment();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();
 
-// creation de l'admin
-// static async Task SeedAdminAsync(WebApplication app)
-// {
-//     using var scope = app.Services.CreateScope();
-//     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<Role>>();
-//     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
-//     var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-//     var seedAdminEnabled = config.GetValue("SEED_ADMIN", true);
-//     if (!seedAdminEnabled)
-//     {
-//         return;
-//     }
+// Seeding complet: roles, permissions, admin.
+static async Task SeedAdminAsync(WebApplication app)
+{
+    var config = app.Services.GetRequiredService<IConfiguration>();
+    var seedEnabled = config.GetValue("SEED_ADMIN", true);
+    if (!seedEnabled)
+    {
+        return;
+    }
 
-//     const string adminRoleName = "Admin";
-//     var adminEmail = config["ADMIN_EMAIL"] ?? "admin@dotnetniger.com";
-//     var adminPassword = config["ADMIN_PASSWORD"] ?? "Admin2026@DotnetNiger";
-//     var adminUsername = config["ADMIN_USERNAME"] ?? "admin";
-
-//     var roleExists = await roleManager.RoleExistsAsync(adminRoleName);
-//     if (!roleExists)
-//     {
-//         await roleManager.CreateAsync(new Role(adminRoleName));
-//     }
-
-//     var adminUser = await userManager.FindByEmailAsync(adminEmail);
-//     if (adminUser == null)
-//     {
-//         adminUser = new ApplicationUser
-//         {
-//             UserName = adminUsername,
-//             Email = adminEmail,
-//             EmailConfirmed = true,
-//             IsActive = true
-//         };
-
-//         var createResult = await userManager.CreateAsync(adminUser, adminPassword);
-//         if (!createResult.Succeeded)
-//         {
-//             return;
-//         }
-//     }
-
-//     var isInRole = await userManager.IsInRoleAsync(adminUser, adminRoleName);
-//     if (!isInRole)
-//     {
-//         await userManager.AddToRoleAsync(adminUser, adminRoleName);
-//     }
-// }
+    var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Seed");
+    await DefaultRolesSeeder.SeedAsync(app.Services, logger);
+}
