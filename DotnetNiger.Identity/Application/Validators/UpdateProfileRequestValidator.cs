@@ -15,12 +15,12 @@ public static class UpdateProfileRequestValidator
 			throw new IdentityException("Profile update request is required.", 400);
 		}
 
-		if (request.FullName.Length > 100)
+		if (request.FullName is { Length: > 100 })
 		{
 			throw new IdentityException("Full name is too long.", 400);
 		}
 
-		if (request.Bio.Length > 500)
+		if (request.Bio is { Length: > 500 })
 		{
 			throw new IdentityException("Bio is too long.", 400);
 		}
