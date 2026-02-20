@@ -72,7 +72,7 @@ public class UsersControllerTests
 		var expectedUser = new UserDto { Id = userId, AvatarUrl = expectedUrl };
 
 		userService
-			.Setup(service => service.GetProfileAsync(userId))
+			.Setup(service => service.GetProfileAsync(userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(currentProfile);
 
 		fileUploadService
@@ -80,7 +80,7 @@ public class UsersControllerTests
 			.ReturnsAsync("/uploads/avatars/test.png");
 
 		userService
-			.Setup(service => service.UpdateAvatarAsync(userId, expectedUrl))
+			.Setup(service => service.UpdateAvatarAsync(userId, expectedUrl, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(expectedUser);
 
 		var controller = CreateController(userId, options, userService.Object, fileUploadService.Object);
@@ -91,7 +91,7 @@ public class UsersControllerTests
 		var okResult = result.Result as OkObjectResult;
 		okResult.Should().NotBeNull();
 		okResult!.Value.Should().BeEquivalentTo(expectedUser);
-		userService.Verify(service => service.UpdateAvatarAsync(userId, expectedUrl), Times.Once);
+		userService.Verify(service => service.UpdateAvatarAsync(userId, expectedUrl, It.IsAny<CancellationToken>()), Times.Once);
 	}
 
 	[Fact]
@@ -129,7 +129,7 @@ public class UsersControllerTests
 		var previousUrl = "http://localhost/uploads/avatars/old.png";
 
 		userService
-			.Setup(service => service.GetProfileAsync(userId))
+			.Setup(service => service.GetProfileAsync(userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new UserDto { Id = userId, AvatarUrl = previousUrl });
 
 		fileUploadService
@@ -137,7 +137,7 @@ public class UsersControllerTests
 			.ReturnsAsync("/uploads/avatars/new.png");
 
 		userService
-			.Setup(service => service.UpdateAvatarAsync(userId, It.IsAny<string>()))
+			.Setup(service => service.UpdateAvatarAsync(userId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new UserDto { Id = userId, AvatarUrl = "http://localhost/uploads/avatars/new.png" });
 
 		var controller = CreateController(userId, options, userService.Object, fileUploadService.Object);
@@ -157,7 +157,7 @@ public class UsersControllerTests
 		var fileUploadService = new Mock<IFileUploadService>();
 
 		userService
-			.Setup(service => service.GetProfileAsync(userId))
+			.Setup(service => service.GetProfileAsync(userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new UserDto { Id = userId, AvatarUrl = "" });
 
 		var controller = CreateController(userId, options, userService.Object, fileUploadService.Object);
@@ -165,7 +165,7 @@ public class UsersControllerTests
 		var result = await controller.DeleteAvatar();
 
 		result.Should().BeOfType<NoContentResult>();
-		userService.Verify(service => service.ClearAvatarAsync(It.IsAny<Guid>()), Times.Never);
+		userService.Verify(service => service.ClearAvatarAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
 		fileUploadService.Verify(service => service.DeleteAsync(It.IsAny<string>()), Times.Never);
 	}
 
@@ -179,11 +179,11 @@ public class UsersControllerTests
 		var avatarUrl = "http://localhost/uploads/avatars/old.png";
 
 		userService
-			.Setup(service => service.GetProfileAsync(userId))
+			.Setup(service => service.GetProfileAsync(userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new UserDto { Id = userId, AvatarUrl = avatarUrl });
 
 		userService
-			.Setup(service => service.ClearAvatarAsync(userId))
+			.Setup(service => service.ClearAvatarAsync(userId, It.IsAny<CancellationToken>()))
 			.ReturnsAsync(new UserDto { Id = userId, AvatarUrl = "" });
 
 		var controller = CreateController(userId, options, userService.Object, fileUploadService.Object);
@@ -191,7 +191,7 @@ public class UsersControllerTests
 		var result = await controller.DeleteAvatar();
 
 		result.Should().BeOfType<NoContentResult>();
-		userService.Verify(service => service.ClearAvatarAsync(userId), Times.Once);
+		userService.Verify(service => service.ClearAvatarAsync(userId, It.IsAny<CancellationToken>()), Times.Once);
 		fileUploadService.Verify(service => service.DeleteAsync(avatarUrl), Times.Once);
 	}
 

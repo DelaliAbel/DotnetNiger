@@ -22,7 +22,7 @@ public class IdentityWebApplicationFactory : WebApplicationFactory<Program>
 			{
 				["Jwt:Issuer"] = "DotnetNiger.Identity",
 				["Jwt:Audience"] = "DotnetNiger.Identity.Client",
-				["Jwt:Key"] = "test-secret-key-1234567890",
+				["Jwt:Key"] = "test-secret-key-1234567890-extra-padding-for-32!",
 				["Email:Enabled"] = "false",
 				["FileUpload:CleanupEnabled"] = "false"
 			};
