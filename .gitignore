@@ -128,3 +128,8 @@ local.settings.json
 
 # Folder
 Dotnet.Identity.Client.Tests/
+
+# Health report (contient des infos sensibles sur l'architecture)
+docs/HEALTH_REPORT.md
+
+.fake
