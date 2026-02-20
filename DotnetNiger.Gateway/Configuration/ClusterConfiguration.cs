@@ -11,6 +11,15 @@ namespace DotnetNiger.Gateway.Configuration
             {
                 new ClusterConfig
                 {
+                    ClusterId = "identity-cluster",
+                    Destinations = new Dictionary<string, DestinationConfig>
+                    {
+                        {"identity-destination", new DestinationConfig {Address = "http://localhost:5075" } }
+                    }
+                },
+
+                new ClusterConfig
+                {
                     ClusterId = "community-cluster",
                     Destinations = new Dictionary<string, DestinationConfig>
                     {
