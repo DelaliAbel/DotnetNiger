@@ -1,63 +1,68 @@
-# Setup
+# Setup — DotnetNiger
 
-Guide court pour installer et demarrer DotnetNiger.
+Guide rapide pour installer, configurer et démarrer DotnetNiger avec sécurité centralisée (Gateway).
 
-## Prerequis
+## Prérequis
 
-- .NET SDK 8.0
+- .NET SDK 8.0+
 - Git
-- SQLite déjà fournie avec le projet (aucune config). Docker uniquement si vous voulez tester SQL Server/Redis.
+- SQLite (par défaut, aucune config requise)
+- Docker (optionnel, pour SQL Server/Redis)
 
-## Demarrage rapide (local, DB incluse)
+## Démarrage rapide (mode dev, tout local)
 
 ```bash
-# 1. Cloner et entrer dans le dossier (repo officiel)
+# 1. Cloner le repo
 git clone https://github.com/akaletekoffilevis/DotnetNiger.git
 cd DotnetNiger
 
-# 2. Vérifier la branche courante (après clone vous êtes sur main)
-git branch -a
-
-# 3. Créer et basculer sur dev si elle n'existe pas localement
-git checkout -b dev origin/main
-
-# 4. Si dev existe déjà côté remote
+# 2. Basculer sur la branche dev
 git checkout dev
 git pull
 
-# 5. Installer les dépendances
+# 3. Installer les dépendances
 dotnet restore
 
-# 6. Lancer (base SQLite déjà prête, aucune migration à faire)
-./run.sh       # Linux/Mac (ou Windows via Git Bash)
+# 4. Lancer (SQLite déjà prête, aucune migration à faire)
+./run.sh       # Linux/Mac/WSL
 ./run.ps1      # Windows (PowerShell)
 ```
 
-Acces apres demarrage (ports) :
+Accès après démarrage :
 
 - Gateway : http://localhost:5000/swagger et http://localhost:5000/health
 - Identity : http://localhost:5075/swagger
 - Community : http://localhost:5269/swagger
 
-## Variante Docker (SQL Server)
+## Variante Docker (SQL Server/Redis)
 
 ```bash
 docker-compose up -d
+# Adapter la variable de connexion si besoin :
 export ConnectionStrings__DotnetNigerIdentityContextConnection="Server=localhost,1433;Database=DotnetNiger.Identity;User ID=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True"
 $env:ConnectionStrings__DotnetNigerIdentityContextConnection="Server=localhost,1433;Database=DotnetNiger.Identity;User ID=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True"
 dotnet ef database update --project DotnetNiger.Identity
 ```
 
-## Configuration
+## Configuration & Sécurité
 
-- appsettings.Development.json dans chaque service
-- ConnectionStrings: SQLite locale par défaut déjà fournie; SQL Server optionnel via Docker si besoin
+- Modifier `appsettings.Development.json` pour vos secrets locaux (clé JWT, string SQL, etc)
+- **Ne jamais commiter de secrets** (utiliser variables d’environnement en prod)
+- CORS : Identity accepte uniquement Gateway
+- JWT : généré et validé via Gateway
+- Rate limiting : actif sur Gateway
 
-## Verification
+## Vérification
 
 ```bash
 curl http://localhost:5000/health
 ```
+
+## Bonnes pratiques
+
+- Toujours passer par le Gateway (http://localhost:5000)
+- Ne jamais exposer Identity/Community directement
+- Respecter la Clean Architecture pour toute contribution
 
 ## Depannage rapide
 

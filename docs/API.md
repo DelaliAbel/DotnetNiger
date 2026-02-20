@@ -4,41 +4,78 @@ Base URL (dev): <http://localhost:5000>
 
 > Les exemples suivants utilisent la configuration locale par défaut (bases SQLite générées par `dotnet ef database update`, aucune dépendance Docker obligatoire).
 
-## Auth
+# API Reference — DotnetNiger
 
-Tous les endpoints (sauf auth) exigent:
+Base URL (dev): <http://localhost:5000>
 
-```
-Authorization: Bearer <token>
-```
+> Tous les appels API passent par le Gateway (reverse proxy YARP). La sécurité (JWT, CORS, rate limiting) est centralisée.
 
-Alternative via API key:
+## 🔒 Authentification & Flux JWT
 
-```
-X-API-Key: <api_key>
-```
+1. Le client s’inscrit ou se connecte via le Gateway (`/api/v1/auth/login` ou `/register`)
+2. Gateway transmet à Identity, qui vérifie les identifiants
+3. Identity génère un JWT signé et le renvoie (via Gateway)
+4. Le client stocke le JWT et l’utilise dans tous les appels suivants :
+   - `Authorization: Bearer <token>`
+5. Gateway valide le JWT à chaque requête avant de router vers Identity ou Community
 
-Login example:
+**CORS** : Seules les requêtes du Gateway sont acceptées par Identity (politique restrictive)
 
-```http
-POST /api/v1/auth/login
-Content-Type: application/json
+**Rate limiting** : Limitation des requêtes côté Gateway (protection brute-force, DoS)
 
-{
-  "email": "user@example.com",
-  "password": "Password123!"
-}
-```
+**API Key** : Alternative pour intégrations (header `X-API-Key`)
 
-## Identity
+## 🔗 Endpoints principaux
 
-- POST /api/v1/auth/register
-- POST /api/v1/auth/login
+### Auth (Identity)
+
+- `POST /api/v1/auth/register` — Inscription
+- `POST /api/v1/auth/login` — Connexion
+- `POST /api/v1/tokens/refresh` — Refresh token
+- `POST /api/v1/tokens/logout` — Déconnexion
+
+### Utilisateur (Identity)
+
+- `GET /api/v1/users/me` — Profil courant
+- `PUT /api/v1/users/me` — Modifier profil
+- `POST /api/v1/users/me/avatar` — Upload avatar
+- `GET /api/v1/users/me/avatar` — Récupérer avatar
+- `DELETE /api/v1/users/me/avatar` — Supprimer avatar
+
+### Admin (Identity)
+
+- `GET /api/v1/admin/users` — Liste utilisateurs (filtres)
+- `GET /api/v1/admin/users/{userId}` — Détail utilisateur
+- `PUT /api/v1/admin/users/{userId}/status` — Activer/désactiver
+- `GET /api/v1/admin/api-keys` — Liste API keys
+- `POST /api/v1/admin/api-keys/{apiKeyId}/rotate` — Rotation clé
+- `DELETE /api/v1/admin/api-keys/{apiKeyId}` — Révocation clé
+- `POST /api/v1/admin/users/{userId}/api-keys/revoke-all` — Révoquer toutes les clés
+- `GET /api/v1/admin/audit-logs` — Logs d’audit
+
+### Gateway
+
+- `GET /health` — Health check
+- `GET /swagger/v1/swagger.json` — Swagger Gateway
+- `GET /swagger-aggregated/v1/swagger.json` — Swagger agrégé
+
+### Exemples d’appels
+
+```bash
+# Inscription
+curl -X POST http://localhost:5000/api/v1/auth/register \
 - POST /api/v1/auth/forgot-password
 - POST /api/v1/auth/reset-password
+
+# Login
+curl -X POST http://localhost:5000/api/v1/auth/login \
 - POST /api/v1/auth/verify-email
 - POST /api/v1/auth/request-email-verification
+
+# Appel protégé (avec JWT)
+curl -X GET http://localhost:5000/api/v1/users/me \
 - POST /api/v1/tokens/refresh
+```
 - POST /api/v1/tokens/logout
 - GET /api/v1/users/me
 - PUT /api/v1/users/me
