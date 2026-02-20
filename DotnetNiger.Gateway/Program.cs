@@ -1,4 +1,5 @@
 ﻿using Microsoft.OpenApi.Models;
+using DotnetNiger.Gateway.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,6 +8,7 @@ builder.Services.AddHttpClient();
 
 // Ajouter Controllers pour l'agrégateur
 builder.Services.AddControllers();
+
 
 // Ajouter les services pour Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -22,8 +24,17 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // Ajouter le reverse proxy
+// builder.Services.AddReverseProxy()
+//     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+
+// ======================MesAjoutPourProxy======================================
+//builder.Services.AddReverseProxy()
+//    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 builder.Services.AddReverseProxy()
-    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+   .LoadFromMemory(RouteConfiguration.GetRoutes(), ClusterConfiguration.GetClusters());
+
+// =============================================================
+
 
 var app = builder.Build();
 
@@ -53,7 +64,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
