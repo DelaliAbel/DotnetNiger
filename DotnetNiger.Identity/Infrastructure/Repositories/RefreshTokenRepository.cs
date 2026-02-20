@@ -1,6 +1,7 @@
 // Repository Identity: RefreshTokenRepository
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure.Data;
+using DotnetNiger.Identity.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Identity.Infrastructure.Repositories;
@@ -15,7 +16,8 @@ public class RefreshTokenRepository : BaseRepository<RefreshToken>, IRefreshToke
 
 	public Task<RefreshToken?> GetByTokenAsync(string token)
 	{
-		return DbContext.RefreshTokens.FirstOrDefaultAsync(item => item.Token == token);
+		var hash = RefreshTokenGenerator.HashToken(token);
+		return DbContext.RefreshTokens.FirstOrDefaultAsync(item => item.Token == hash);
 	}
 
 	public async Task RevokeAsync(RefreshToken refreshToken)
