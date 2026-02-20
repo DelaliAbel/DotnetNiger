@@ -10,4 +10,5 @@ public class Category
 
     // Relations
     public ICollection<PostCategory> PostCategories { get; set; } = new List<PostCategory>();
+    public ICollection<ResourceCategory> ResourceCategories { get; set; } = new List<ResourceCategory>();
 }
