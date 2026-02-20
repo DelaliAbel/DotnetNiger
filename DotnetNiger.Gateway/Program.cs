@@ -1,9 +1,13 @@
-﻿using Microsoft.OpenApi.Models;
+﻿using DotnetNiger.Gateway.Api.Extensions;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Ajouter HttpClient
 builder.Services.AddHttpClient();
+
+// Ajouter Les Services du Gateway
+builder.Services.AddGatewayServices();
 
 // Ajouter Controllers pour l'agrégateur
 builder.Services.AddControllers();
@@ -52,6 +56,9 @@ if (app.Environment.IsDevelopment())
         options.EnableFilter();
     });
 }
+
+app.UseGatewayMiddlewares();
+
 
 app.UseHttpsRedirection();
 
