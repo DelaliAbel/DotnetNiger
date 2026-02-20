@@ -9,14 +9,12 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpClient();
 
 // Ajouter Les Services du Gateway
-builder.Services.AddGatewayServices();
+builder.Services.AddGatewayServices(builder.Configuration);
 
 // Ajouter Controllers pour l'agrégateur
 builder.Services.AddControllers();
 
-
-
-//-----AjouterPourLaCommunicationExterne--------
+//-----Ajouter Pour La Communication Externe--------
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsePolicy",
@@ -25,6 +23,7 @@ builder.Services.AddCors(options =>
         .AllowAnyHeader());
 }
 );
+
 //-----------------------------
 
 // Ajouter les services pour Swagger
@@ -44,9 +43,10 @@ builder.Services.AddSwaggerGen(options =>
 // builder.Services.AddReverseProxy()
 //     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
-// ======================MesAjoutPourProxy======================================
+// ======================Mes Ajout Pour Proxy======================================
 //builder.Services.AddReverseProxy()
 //    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+
 builder.Services.AddReverseProxy()
    .LoadFromMemory(RouteConfiguration.GetRoutes(), ClusterConfiguration.GetClusters());
 
@@ -82,14 +82,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseGatewayMiddlewares();
-
-
- app.UseHttpsRedirection();
-
+app.UseHttpsRedirection();
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.MapReverseProxy();
-
 app.Run();
