@@ -22,3 +22,43 @@
       --space-4: 24px;
       --space-5: 32px;
 }
+.body-regular{
+      font-size: 16px;
+      font-weight: var(--regular);
+}
+.body-small{
+      font-size: 14px;
+      font-weight: var(--regular);
+}
+.H3{
+      font-size: 24px;
+      font-weight: var(--semi-bold);
+}
+.H5{
+      font-size: 16px;
+      font-weight: var(--semi-bold);
+}
+.H4{
+      font-size: 18px;
+      font-weight: var(--semi-bold);
+}
+.H2{
+      font-size: 36px;
+      font-weight: var(--bold);
+}
+.Buttom{
+      font-size: 14px;
+      font-weight: var(--semi-bold);
+}
+.Badge{
+      font-size: 11px;
+      font-weight: var(--bold);
+}
+.Link{
+      font-size: 13px;
+      font-weight: var(--regular);
+}
+.Sous-Titre{
+      font-size: 18px;
+      font-weight: var(--regular);
+}
