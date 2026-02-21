@@ -1,0 +1,128 @@
+﻿<nav class="bg-white shadow-lg sticky w-full z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+            <!-- Logo / Marque -->
+            <div class="flex items-center">
+                <NavLink href="/" class="flex items-center space-x-2">
+                    <img src="Logo.svg" alt="logo dotnet.niger" class="w-9 h-9">
+                </NavLink>
+            </div>
+
+            <!-- Navigation Desktop (à droite) -->
+            <div class="hidden md:flex items-center space-x-8">
+                <NavLink href="/" class="text-secondary hover:text-hover transition duration-150 ease-in-out" Match="NavLinkMatch.All">
+                    <span class="text-sm font-normal">Accueil</span>
+                </NavLink>
+                <NavLink href="/communaute" class="text-secondary hover:text-hover transition duration-150 ease-in-out">
+                    <span class="text-sm font-normal">Communauté</span>
+                </NavLink>
+                <NavLink href="/ressources" class="text-secondary hover:text-hover transition duration-150 ease-in-out">
+                    <span class="text-sm font-normal">Ressources</span>
+                </NavLink>
+                <NavLink href="/partenaires" class="text-secondary hover:text-hover transition duration-150 ease-in-out">
+                    <span class="text-sm font-normal">Partenaires</span>
+                </NavLink>
+                <NavLink href="/evenements" class="text-secondary hover:text-hover transition duration-150 ease-in-out">
+                    <span class="text-sm font-normal">Événements</span>
+                </NavLink>
+                <NavLink href="/blog" class="text-secondary hover:text-hover transition duration-150 ease-in-out">
+                    <span class="text-sm font-normal">Blog</span>
+                </NavLink>
+                <NavLink href="/propos" class="text-secondary hover:text-hover transition duration-150 ease-in-out">
+                    <span class="text-sm font-normal">À Propos</span>
+                </NavLink>
+                <NavLink href="/contact" class="text-secondary hover:text-hover transition duration-150 ease-in-out">
+                    <span class="text-sm font-normal">Contact</span>
+                </NavLink>
+                
+                <button class="bg-secondary text-white px-3 py-2 rounded-lg hover:bg-hover transition duration-150 ease-in-out">
+                    <span class="text-sm text-white font-semibold">Connexion</span> 
+                </button>
+            </div>
+
+            <!-- Bouton menu mobile -->
+            <div class="md:hidden flex items-center">
+                <button @onclick="ToggleMobileMenu" class="text-secondary hover:text-hover focus:outline-none">
+                        @if (!mobileMenuOpen)
+                        {
+                            <i class="bi bi-list text-[40px]"></i>
+                        }
+                        else
+                        {
+                            <i class="bi bi-x text-[40px]"></i>
+                        }
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menu Mobile -->
+    @if (mobileMenuOpen)
+    {
+        <div class="md:hidden bg-white border-t border-gray-200">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <NavLink href="/" class="block px-3 py-2 text-secondary hover:text-hover transition duration-150 ease-in-out" Match="NavLinkMatch.All" @onclick="CloseMobileMenu">
+                    <span class="text-sm font-normal">Accueil</span>
+                </NavLink>
+                <NavLink href="/communaute" class="block px-3 py-2 text-secondary hover:text-hover transition duration-150 ease-in-out" @onclick="CloseMobileMenu">
+                    <span class="text-sm font-normal">Communauté</span>
+                </NavLink>
+                <NavLink href="/ressources" class="block px-3 py-2 text-secondary hover:text-hover transition duration-150 ease-in-out" @onclick="CloseMobileMenu">
+                    <span class="text-sm font-normal">Ressources</span>
+                </NavLink>
+                <NavLink href="/partenaires" class="block px-3 py-2 text-secondary hover:text-hover transition duration-150 ease-in-out" @onclick="CloseMobileMenu">
+                    <span class="text-sm font-normal">Partenaires</span>
+                </NavLink>
+                <NavLink href="/evenements" class="block px-3 py-2 text-secondary hover:text-hover transition duration-150 ease-in-out" @onclick="CloseMobileMenu">
+                    <span class="text-sm font-normal">Événements</span>
+                </NavLink>
+                <NavLink href="/blog" class="block px-3 py-2 text-secondary hover:text-hover transition duration-150 ease-in-out" @onclick="CloseMobileMenu">
+                    <span class="text-sm font-normal">Blog</span>
+                </NavLink>
+                <NavLink href="/propos" class="block px-3 py-2 text-secondary hover:text-hover transition duration-150 ease-in-out" @onclick="CloseMobileMenu">
+                    <span class="text-sm font-normal">À Propos</span>
+                </NavLink>
+                <NavLink href="/contact" class="block px-3 py-2 text-secondary hover:text-hover transition duration-150 ease-in-out" @onclick="CloseMobileMenu">
+                    <span class="text-sm font-normal">Contact</span>
+                </NavLink>
+                
+                
+                
+                <div class="px-3 py-2">
+                    <button class="w-full flex justify-center items-center bg-secondary text-white px-3 py-2 rounded-lg hover:bg-hover transition duration-150 ease-in-out" @onclick="CloseMobileMenu">
+                    <span class="text-sm text-white font-semibold">Connexion</span> 
+                </button>
+                </div>
+            </div>
+        </div>
+    }
+</nav>
+
+@code {
+    private bool dropdownOpen = false;
+    private bool mobileMenuOpen = false;
+    private bool mobileDropdownOpen = false;
+
+    private void ToggleDropdown()
+    {
+        dropdownOpen = !dropdownOpen;
+    }
+
+    private void ToggleMobileMenu()
+    {
+        mobileMenuOpen = !mobileMenuOpen;
+        // Fermer le dropdown mobile quand on ouvre/ferme le menu principal
+        if (!mobileMenuOpen) mobileDropdownOpen = false;
+    }
+
+    private void ToggleMobileDropdown()
+    {
+        mobileDropdownOpen = !mobileDropdownOpen;
+    }
+
+    private void CloseMobileMenu()
+    {
+        mobileMenuOpen = false;
+        mobileDropdownOpen = false;
+    }
+}

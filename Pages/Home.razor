@@ -1,7 +1,32 @@
-﻿@page "/"
+@page "/"
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Accueil - .NET Niger</PageTitle>
+<div class="relative min-h-screen bg-[url('/Images/Fond.jpeg')] bg-cover bg-center">
 
-<h1>Hello, world!</h1>
+  <!-- Overlay sombre optionnel -->
+  <div class="absolute inset-0 bg-[#FFFFFF]/40"></div>
 
-Welcome to your new app.
+  <!-- Contenu -->
+  <div class="relative block items-center justify-center min-h-screen px-4">
+
+      <h1 class="text-4xl font-bold mb-4">
+        Bienvenue sur mon site
+      </h1>
+
+      <p class="text-gray-700 mb-6">
+        Construisons ensemble des solutions modernes et performantes.
+      </p>
+
+      <div class="flex gap-4 justify-center">
+        <button class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition">
+          Commencer
+        </button>
+
+        <button class="border border-blue-600 text-blue-600 px-6 py-2 rounded-lg hover:bg-blue-50 transition">
+          En savoir plus
+        </button>
+      </div>
+
+    </div>
+
+</div>
