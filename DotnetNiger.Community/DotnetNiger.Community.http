@@ -1,6 +1,10 @@
-@DotnetNiger.Community_HostAddress = http://localhost:5257
+@DotnetNiger.Community_HostAddress = https://localhost:7269
 
 GET {{DotnetNiger.Community_HostAddress}}/weatherforecast/
 Accept: application/json
+
+###
+
+GET {{DotnetNiger.Community_HostAddress}}/api/team/couranDaga
 
 ###

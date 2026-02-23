@@ -44,7 +44,9 @@ builder.Services.AddSwaggerGen(options =>
 //builder.Services.AddReverseProxy()
 //    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 builder.Services.AddReverseProxy()
-   .LoadFromMemory(RouteConfiguration.GetRoutes(), ClusterConfiguration.GetClusters());
+   .LoadFromMemory(RouteConfiguration.GetRoutes(), ClusterConfiguration.GetClusters())
+   //.LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
+   ;
 
 // =============================================================
 
