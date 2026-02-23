@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using DotnetNiger.Community.Application.Services;
+using DotnetNiger.Community.Domain.Entities;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
@@ -9,6 +11,13 @@ namespace DotnetNiger.Community.Api.Controllers;
 [Route("api/[controller]")]
 public class PostsController : ControllerBase
 {
+    private readonly IPostService _postService;
+
+    public PostsController(IPostService postService)
+    {
+        _postService = postService;
+    }
+
     /// <summary>
     /// Récupérer tous les posts avec pagination
     /// </summary>
@@ -16,18 +25,26 @@ public class PostsController : ControllerBase
     /// <param name="pageSize">Nombre de posts par page (par défaut 10)</param>
     /// <returns>Liste paginée des posts</returns>
     [HttpGet]
-    public IActionResult GetPosts([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetPosts([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         if (page < 1 || pageSize < 1 || pageSize > 100)
             return BadRequest(new { message = "Paramètres de pagination invalides" });
 
-        return Ok(new
+        try
         {
-            page = page,
-            pageSize = pageSize,
-            total = 0,
-            data = new List<object>()
-        });
+            var posts = await _postService.GetAllPublishedPostsAsync(page, pageSize);
+            return Ok(new
+            {
+                page = page,
+                pageSize = pageSize,
+                total = posts.Count(),
+                data = posts
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Erreur lors de la récupération des posts", error = ex.Message });
+        }
     }
 
     /// <summary>
@@ -36,12 +53,23 @@ public class PostsController : ControllerBase
     /// <param name="id">ID du post</param>
     /// <returns>Détails du post</returns>
     [HttpGet("{id}")]
-    public IActionResult GetPostById(string id)
+    public async Task<IActionResult> GetPostById(string id)
     {
-        if (string.IsNullOrEmpty(id))
-            return BadRequest(new { message = "ID du post requis" });
+        if (!Guid.TryParse(id, out var postId))
+            return BadRequest(new { message = "ID du post invalide" });
 
-        return NotFound(new { message = "Post non trouvé" });
+        try
+        {
+            var post = await _postService.GetPostByIdAsync(postId);
+            if (post == null)
+                return NotFound(new { message = "Post non trouvé" });
+
+            return Ok(post);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Erreur lors de la récupération du post", error = ex.Message });
+        }
     }
 
     /// <summary>
@@ -50,12 +78,32 @@ public class PostsController : ControllerBase
     /// <param name="request">Données du post</param>
     /// <returns>Post créé</returns>
     [HttpPost]
-    public IActionResult CreatePost([FromBody] CreatePostRequest request)
+    public async Task<IActionResult> CreatePost([FromBody] CreatePostRequest request)
     {
         if (request == null || string.IsNullOrEmpty(request.Title))
             return BadRequest(new { message = "Titre requis" });
 
-        return CreatedAtAction(nameof(GetPostById), new { id = "new-id" }, new { id = "new-id" });
+        try
+        {
+            var post = new Post
+            {
+                Id = Guid.NewGuid(),
+                Title = request.Title,
+                Content = request.Content,
+                Slug = request.Title.ToLower().Replace(" ", "-"),
+                AuthorId = Guid.NewGuid(),
+                PostType = "Blog",
+                IsPublished = false,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            var createdPost = await _postService.CreatePostAsync(post);
+            return CreatedAtAction(nameof(GetPostById), new { id = createdPost.Id }, createdPost);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Erreur lors de la création du post", error = ex.Message });
+        }
     }
 
     /// <summary>
@@ -65,12 +113,30 @@ public class PostsController : ControllerBase
     /// <param name="request">Données à mettre à jour</param>
     /// <returns>Post mis à jour</returns>
     [HttpPut("{id}")]
-    public IActionResult UpdatePost(string id, [FromBody] UpdatePostRequest request)
+    public async Task<IActionResult> UpdatePost(string id, [FromBody] UpdatePostRequest request)
     {
-        if (string.IsNullOrEmpty(id))
-            return BadRequest(new { message = "ID du post requis" });
+        if (!Guid.TryParse(id, out var postId))
+            return BadRequest(new { message = "ID du post invalide" });
 
-        return Ok(new { message = "Post mis à jour" });
+        try
+        {
+            var post = await _postService.GetPostByIdAsync(postId);
+            if (post == null)
+                return NotFound(new { message = "Post non trouvé" });
+
+            if (!string.IsNullOrEmpty(request.Title))
+                post.Title = request.Title;
+            if (!string.IsNullOrEmpty(request.Content))
+                post.Content = request.Content;
+
+            post.UpdatedAt = DateTime.UtcNow;
+            var updatedPost = await _postService.UpdatePostAsync(post);
+            return Ok(updatedPost);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Erreur lors de la mise à jour du post", error = ex.Message });
+        }
     }
 
     /// <summary>
@@ -79,12 +145,23 @@ public class PostsController : ControllerBase
     /// <param name="id">ID du post</param>
     /// <returns>Confirmation de suppression</returns>
     [HttpDelete("{id}")]
-    public IActionResult DeletePost(string id)
+    public async Task<IActionResult> DeletePost(string id)
     {
-        if (string.IsNullOrEmpty(id))
-            return BadRequest(new { message = "ID du post requis" });
+        if (!Guid.TryParse(id, out var postId))
+            return BadRequest(new { message = "ID du post invalide" });
 
-        return Ok(new { message = "Post supprimé" });
+        try
+        {
+            var deleted = await _postService.DeletePostAsync(postId);
+            if (!deleted)
+                return NotFound(new { message = "Post non trouvé" });
+
+            return Ok(new { message = "Post supprimé avec succès" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Erreur lors de la suppression du post", error = ex.Message });
+        }
     }
 }
 

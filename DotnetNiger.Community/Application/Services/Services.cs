@@ -227,6 +227,16 @@ public class CommentService : ICommentService
         _commentRepository = commentRepository;
     }
 
+    public async Task<IEnumerable<Comment>> GetAllCommentsAsync()
+    {
+        return await _commentRepository.GetAllAsync();
+    }
+
+    public async Task<Comment?> GetCommentByIdAsync(Guid id)
+    {
+        return await _commentRepository.GetByIdAsync(id);
+    }
+
     public async Task<IEnumerable<Comment>> GetCommentsByPostIdAsync(Guid postId)
     {
         return await _commentRepository.GetByPostIdAsync(postId);
@@ -237,6 +247,12 @@ public class CommentService : ICommentService
         comment.Id = Guid.NewGuid();
         comment.CreatedAt = DateTime.UtcNow;
         return await _commentRepository.AddAsync(comment);
+    }
+
+    public async Task<Comment> UpdateCommentAsync(Comment comment)
+    {
+        comment.UpdatedAt = DateTime.UtcNow;
+        return await _commentRepository.UpdateAsync(comment);
     }
 
     public async Task<bool> DeleteCommentAsync(Guid id)

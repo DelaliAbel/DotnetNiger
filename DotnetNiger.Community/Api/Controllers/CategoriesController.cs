@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
+using DotnetNiger.Community.Application.Services;
+using DotnetNiger.Community.Domain.Entities;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
@@ -9,14 +11,29 @@ namespace DotnetNiger.Community.Api.Controllers;
 [Route("api/[controller]")]
 public class CategoriesController : ControllerBase
 {
+    private readonly ICategoryService _categoryService;
+
+    public CategoriesController(ICategoryService categoryService)
+    {
+        _categoryService = categoryService;
+    }
+
     /// <summary>
     /// Récupérer toutes les catégories
     /// </summary>
     /// <returns>Liste des catégories</returns>
     [HttpGet]
-    public IActionResult GetCategories()
+    public async Task<IActionResult> GetCategories()
     {
-        return Ok(new { data = new List<object>() });
+        try
+        {
+            var categories = await _categoryService.GetAllCategoriesAsync();
+            return Ok(new { data = categories });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Erreur lors de la récupération des catégories", error = ex.Message });
+        }
     }
 
     /// <summary>
@@ -25,12 +42,23 @@ public class CategoriesController : ControllerBase
     /// <param name="id">ID de la catégorie</param>
     /// <returns>Détails de la catégorie</returns>
     [HttpGet("{id}")]
-    public IActionResult GetCategoryById(string id)
+    public async Task<IActionResult> GetCategoryById(string id)
     {
-        if (string.IsNullOrEmpty(id))
-            return BadRequest(new { message = "ID de la catégorie requis" });
+        if (!Guid.TryParse(id, out var categoryId))
+            return BadRequest(new { message = "ID de la catégorie invalide" });
 
-        return NotFound(new { message = "Catégorie non trouvée" });
+        try
+        {
+            var category = await _categoryService.GetCategoryByIdAsync(categoryId);
+            if (category == null)
+                return NotFound(new { message = "Catégorie non trouvée" });
+
+            return Ok(category);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Erreur lors de la récupération de la catégorie", error = ex.Message });
+        }
     }
 
     /// <summary>
@@ -39,12 +67,85 @@ public class CategoriesController : ControllerBase
     /// <param name="request">Données de la catégorie</param>
     /// <returns>Catégorie créée</returns>
     [HttpPost]
-    public IActionResult CreateCategory([FromBody] CreateCategoryRequest request)
+    public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryRequest request)
     {
         if (request == null || string.IsNullOrEmpty(request.Name))
             return BadRequest(new { message = "Nom requis" });
 
-        return CreatedAtAction(nameof(GetCategoryById), new { id = "new-id" }, new { id = "new-id" });
+        try
+        {
+            var category = new Category
+            {
+                Id = Guid.NewGuid(),
+                Name = request.Name,
+                Slug = request.Name.ToLower().Replace(" ", "-"),
+                Description = request.Description ?? string.Empty
+            };
+
+            var createdCategory = await _categoryService.CreateCategoryAsync(category);
+            return CreatedAtAction(nameof(GetCategoryById), new { id = createdCategory.Id }, createdCategory);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Erreur lors de la création de la catégorie", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Mettre à jour une catégorie
+    /// </summary>
+    /// <param name="id">ID de la catégorie</param>
+    /// <param name="request">Données à mettre à jour</param>
+    /// <returns>Catégorie mise à jour</returns>
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateCategory(string id, [FromBody] UpdateCategoryRequest request)
+    {
+        if (!Guid.TryParse(id, out var categoryId))
+            return BadRequest(new { message = "ID de la catégorie invalide" });
+
+        try
+        {
+            var category = await _categoryService.GetCategoryByIdAsync(categoryId);
+            if (category == null)
+                return NotFound(new { message = "Catégorie non trouvée" });
+
+            if (!string.IsNullOrEmpty(request.Name))
+                category.Name = request.Name;
+            if (request.Description != null)
+                category.Description = request.Description;
+
+            var updatedCategory = await _categoryService.UpdateCategoryAsync(category);
+            return Ok(updatedCategory);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Erreur lors de la mise à jour de la catégorie", error = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Supprimer une catégorie
+    /// </summary>
+    /// <param name="id">ID de la catégorie</param>
+    /// <returns>Confirmation de suppression</returns>
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteCategory(string id)
+    {
+        if (!Guid.TryParse(id, out var categoryId))
+            return BadRequest(new { message = "ID de la catégorie invalide" });
+
+        try
+        {
+            var deleted = await _categoryService.DeleteCategoryAsync(categoryId);
+            if (!deleted)
+                return NotFound(new { message = "Catégorie non trouvée" });
+
+            return Ok(new { message = "Catégorie supprimée avec succès" });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Erreur lors de la suppression de la catégorie", error = ex.Message });
+        }
     }
 }
 
@@ -55,6 +156,17 @@ public class CreateCategoryRequest
 {
     /// <summary>Nom de la catégorie</summary>
     public string Name { get; set; } = string.Empty;
+    /// <summary>Description de la catégorie</summary>
+    public string? Description { get; set; }
+}
+
+/// <summary>
+/// DTO pour mettre à jour une catégorie
+/// </summary>
+public class UpdateCategoryRequest
+{
+    /// <summary>Nom de la catégorie</summary>
+    public string? Name { get; set; }
     /// <summary>Description de la catégorie</summary>
     public string? Description { get; set; }
 }
