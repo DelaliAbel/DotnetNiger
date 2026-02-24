@@ -38,7 +38,9 @@ builder.Services.AddSwaggerGen(options =>
 
 // Ajouter le reverse proxy (configuration en mémoire)
 builder.Services.AddReverseProxy()
-   .LoadFromMemory(RouteConfiguration.GetRoutes(), ClusterConfiguration.GetClusters());
+   .LoadFromMemory(RouteConfiguration.GetRoutes(), ClusterConfiguration.GetClusters())
+   //.LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
+   ;
 
 
 var app = builder.Build();
