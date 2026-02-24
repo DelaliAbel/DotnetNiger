@@ -56,7 +56,7 @@ namespace DotnetNiger.Gateway.Configuration
                     {
                         new Dictionary<string, string>
                         {
-                           
+
                             {"PathPattern", "{**catch-all}" }
                         }
                     }
@@ -74,7 +74,24 @@ namespace DotnetNiger.Gateway.Configuration
                         new Dictionary<string, string>
                         {
                             {"PathPattern", "/swagger/{**catch-all}" }
-                         
+
+                        }
+                    }
+                },
+                // Route pour les fichiers uploadés (Identity)
+                new RouteConfig
+                {
+                    RouteId = "identity-uploads",
+                    ClusterId = "identity-cluster",
+                    Match = new RouteMatch
+                    {
+                        Path = "/uploads/{**catch-all}"
+                    },
+                    Transforms = new List<IReadOnlyDictionary<string, string>>
+                    {
+                        new Dictionary<string, string>
+                        {
+                            {"PathPattern", "/uploads/{**catch-all}" }
                         }
                     }
                 }

@@ -3,9 +3,9 @@ using DotnetNiger.Gateway.Application.Services.Interfaces;
 namespace DotnetNiger.Gateway.Application.Services;
 
 /// <summary>
-/// Forward les requêtes aux microservices
+/// Forward les requêtes aux microservices.
 /// </summary>
-public class RequestForwardingService : IRequestForwardingService
+public sealed class RequestForwardingService : IRequestForwardingService
 {
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<RequestForwardingService> _logger;

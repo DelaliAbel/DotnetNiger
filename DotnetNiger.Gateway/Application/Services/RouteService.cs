@@ -3,9 +3,9 @@ using DotnetNiger.Gateway.Application.Services.Interfaces;
 namespace DotnetNiger.Gateway.Application.Services;
 
 /// <summary>
-/// Détermine la route vers le service approprié
+/// Détermine la route vers le service approprié.
 /// </summary>
-public class RouteService : IRouteService
+public sealed class RouteService : IRouteService
 {
     private readonly ILogger<RouteService> _logger;
 

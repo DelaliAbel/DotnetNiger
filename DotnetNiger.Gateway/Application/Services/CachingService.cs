@@ -4,9 +4,9 @@ using Microsoft.Extensions.Caching.Memory;
 namespace DotnetNiger.Gateway.Application.Services;
 
 /// <summary>
-/// Gère le cache des réponses
+/// Gère le cache des réponses.
 /// </summary>
-public class CachingService : ICachingService
+public sealed class CachingService : ICachingService
 {
     private readonly IMemoryCache _cache;
     private readonly ILogger<CachingService> _logger;

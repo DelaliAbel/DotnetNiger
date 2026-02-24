@@ -14,17 +14,14 @@ builder.Services.AddGatewayServices(builder.Configuration);
 // Ajouter Controllers pour l'agrégateur
 builder.Services.AddControllers();
 
-//-----Ajouter Pour La Communication Externe--------
+// Configurer CORS pour les clients externes
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("CorsePolicy",
-        builder => builder.AllowAnyOrigin()
+    options.AddPolicy("CorsPolicy", policy => policy
+        .AllowAnyOrigin()
         .AllowAnyMethod()
         .AllowAnyHeader());
-}
-);
-
-//-----------------------------
+});
 
 // Ajouter les services pour Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -39,18 +36,9 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// Ajouter le reverse proxy
-// builder.Services.AddReverseProxy()
-//     .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
-
-// ======================Mes Ajout Pour Proxy======================================
-//builder.Services.AddReverseProxy()
-//    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
-
+// Ajouter le reverse proxy (configuration en mémoire)
 builder.Services.AddReverseProxy()
    .LoadFromMemory(RouteConfiguration.GetRoutes(), ClusterConfiguration.GetClusters());
-
-// =============================================================
 
 
 var app = builder.Build();
@@ -82,8 +70,18 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseGatewayMiddlewares();
+app.UseCors("CorsPolicy");
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+
+// Health check endpoint
+app.MapGet("/health", () => Results.Ok(new
+{
+    status = "healthy",
+    service = "DotnetNiger.Gateway",
+    timestamp = DateTime.UtcNow
+})).WithTags("Health");
+
 app.MapReverseProxy();
 app.Run();

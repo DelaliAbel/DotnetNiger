@@ -3,9 +3,9 @@ using DotnetNiger.Gateway.Application.Services.Interfaces;
 namespace DotnetNiger.Gateway.Application.Services;
 
 /// <summary>
-/// Collecte les métriques
+/// Collecte les métriques.
 /// </summary>
-public class MetricsService : IMetricsService
+public sealed class MetricsService : IMetricsService
 {
     private readonly ILogger<MetricsService> _logger;
 
