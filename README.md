@@ -67,7 +67,7 @@ curl -X GET http://localhost:5000/api/v1/users/me \
 
 ## 📚 Documentation
 
-| Document                             | Description                 |
+| Document | Description |
 
 ## 🛠️ Stack Technique
 
@@ -205,8 +205,8 @@ curl -X POST http://localhost:5075/api/auth/login \
 
 ## 📚 Documentation
 
-| Document                          | Description                 |
-| --------------------------------- | --------------------------- |
+| Document                             | Description                 |
+| ------------------------------------ | --------------------------- |
 | [Index](docs/INDEX.md)               | Navigation documentation    |
 | [Setup](docs/SETUP.md)               | Installation et demarrage   |
 | [Architecture](docs/ARCHITECTURE.md) | Vue d'ensemble des services |

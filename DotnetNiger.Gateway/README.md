@@ -12,7 +12,7 @@ Le **DotnetNiger API Gateway** est un reverse proxy construit avec **YARP** (Yet
 ✅ **Rate Limiting** - Protection contre les abus  
 ✅ **Authentification** - Support des tokens JWT  
 ✅ **Métriques et Monitoring** - Suivi des performances  
-✅ **Swagger Agrégé** - Documentation unifiée de tous les services  
+✅ **Swagger Agrégé** - Documentation unifiée de tous les services
 
 ## Architecture de Routage
 
@@ -35,6 +35,7 @@ Client → Gateway (5000)
 ### Démarrage Rapide
 
 #### 1. Lancer les Services (Terminal 1)
+
 ```bash
 # Identity Service
 cd DotnetNiger.Identity
@@ -47,12 +48,14 @@ dotnet run --launch-profile http
 ```
 
 #### 2. Lancer le Gateway (Terminal 3)
+
 ```bash
 cd DotnetNiger.Gateway
 dotnet run --launch-profile http
 ```
 
 Le Gateway sera accessible à:
+
 - **API**: http://localhost:5000
 - **Swagger UI**: http://localhost:5000/swagger
 - **Swagger Agrégé**: http://localhost:5000/swagger-aggregated
@@ -73,6 +76,7 @@ docker run -p 5000:8080 \
 ## Configuration
 
 ### appsettings.json
+
 ```json
 {
   "ReverseProxy": {
@@ -108,11 +112,11 @@ docker run -p 5000:8080 \
 
 ### Ports
 
-| Service | Port | Notes |
-|---------|------|-------|
-| Gateway | 5000 | Service principal |
-| Identity | 5075 | Authentification et gestion des utilisateurs |
-| Community | 5269 | Contenu et interactions |
+| Service   | Port | Notes                                        |
+| --------- | ---- | -------------------------------------------- |
+| Gateway   | 5000 | Service principal                            |
+| Identity  | 5075 | Authentification et gestion des utilisateurs |
+| Community | 5269 | Contenu et interactions                      |
 
 ## Endpoints Gateway
 
@@ -123,6 +127,7 @@ GET http://localhost:5000/api/gateway/status
 ```
 
 ### Routage vers Identity
+
 ```bash
 # Via Gateway (se termine en erreur si non authentifié via YARP)
 GET  /identity/api/users/me
@@ -131,6 +136,7 @@ GET  /identity/api/roles
 ```
 
 ### Routage vers Community
+
 ```bash
 GET  /community/api/posts?page=1&pageSize=10
 GET  /community/api/events
@@ -138,6 +144,7 @@ GET  /community/api/projects
 ```
 
 ### Endpoints d'Agrégation du Gateway
+
 ```bash
 # Récupérer les posts avec cache automatique
 GET  /api/gateway/community/posts
@@ -154,6 +161,7 @@ GET  /api/gateway/identity/users/me
 ```
 
 ### Documentation
+
 ```bash
 # Gateway Swagger
 GET  /swagger
@@ -169,6 +177,7 @@ GET  /swagger/community/v1/swagger.json
 ## Clients API Typés
 
 ### IIdentityApiClient
+
 ```csharp
 var user = await _identityClient.GetCurrentUserAsync(token);
 var roles = await _identityClient.GetRolesAsync();
@@ -176,6 +185,7 @@ var auth = await _identityClient.AuthenticateAsync(loginRequest);
 ```
 
 ### ICommunityApiClient
+
 ```csharp
 var posts = await _communityClient.GetPostsAsync(page: 1, pageSize: 10);
 var events = await _communityClient.GetEventsAsync();
@@ -185,21 +195,27 @@ var search = await _communityClient.SearchAsync("dotnet");
 ## Services Disponibles
 
 ### IRequestForwardingService
+
 Relaie les requêtes HTTP vers les services microservices
 
 ### IRouteService
+
 Détermine le service cible basé sur le chemin
 
 ### IAuthenticationService
+
 Gère l'authentification et la validation des tokens JWT
 
 ### ICachingService
+
 Met en cache les réponses (défaut: 1 heure)
 
 ### IRateLimitService
+
 Limite les requêtes par client (défaut: 100/minute)
 
 ### IMetricsService
+
 Collecte les métriques de performance
 
 ## Tests
@@ -288,30 +304,36 @@ CACHE_EXPIRATION_MINUTES=60
 ## Dépannage
 
 ### Les requêtes ne passent pas
+
 - ✓ Vérifiez que Identity et Community s'exécutent sur les bons ports
 - ✓ Vérifiez les logs du gateway: `grep -i "forwarding\|error" app.log`
 - ✓ Testez: `curl http://localhost:5075/` (Identity accessible?)
 
 ### Swagger ne s'affiche pas
+
 - ✓ Vérifiez: `ASPNETCORE_ENVIRONMENT=Development`
 - ✓ Vérifiez que les services répondent à `/swagger/v1/swagger.json`
 
 ### Rate limiting trop strict
+
 - ✓ Modifiez `RateLimit:MaxRequestsPerMinute` dans `appsettings.json`
 
 ### Erreurs de timeout
+
 - ✓ Augmentez `Services:Identity:Timeout` et `Services:Community:Timeout`
 - ✓ Vérifiez la connectivité réseau
 
 ## Performance et Production
 
 ### Optimisations Activées
+
 - ✓ Caching en mémoire (défaut: 1 heure)
 - ✓ Connection pooling pour HttpClient
 - ✓ YARP load balancing
 - ✓ Compression de réponses
 
 ### Monitoring
+
 - Métriques collectées dans `IMetricsService`
 - Logs structurés disponibles
 - Health checks pour les services downstream
@@ -332,6 +354,7 @@ Voir → [GATEWAY_ROUTING.md](../docs/GATEWAY_ROUTING.md)
 ## Contribution
 
 Pour contribuer au Gateway:
+
 1. Créer une branche: `git checkout -b feature/ma-feature`
 2. Committer: `git commit -am 'Ajouter ma feature'`
 3. Pousser: `git push origin feature/ma-feature`

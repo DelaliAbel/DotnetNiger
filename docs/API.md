@@ -76,6 +76,7 @@ curl -X POST http://localhost:5000/api/v1/auth/login \
 curl -X GET http://localhost:5000/api/v1/users/me \
 - POST /api/v1/tokens/refresh
 ```
+
 - POST /api/v1/tokens/logout
 - GET /api/v1/users/me
 - PUT /api/v1/users/me

@@ -780,14 +780,11 @@ var userInfo = await _identityClient.GetUserAsync(userId);
 
 **Repères rapides :**
 
-
 **Isolation:**
-
 
 ### Cache (Redis)
 
 Utilisé pour:
-
 
 Configuration: `appsettings.json` (`Redis:ConnectionString`)
 
@@ -801,7 +798,6 @@ CommunityDbContextFactory.cs
 ```
 
 Pour migrations, seeding, et tests.
-
 
 ## Configuration
 
@@ -865,40 +861,31 @@ Structure commune à tous les services:
 
 ### Environnements
 
-  - Logs verbeux
-  - CORS ouvert
-  - SQL Server local
-  - Swagger activé
+- Logs verbeux
+- CORS ouvert
+- SQL Server local
+- Swagger activé
 
-  - Logs minimaux
-  - CORS restreint
-  - SQL Server cloud/distant
-  - Swagger désactivé (optionnel)
-
+- Logs minimaux
+- CORS restreint
+- SQL Server cloud/distant
+- Swagger désactivé (optionnel)
 
 ## Points clefs et patterns
 
 ✅ **Microservices independants**
 
-
 ✅ **Clean Architecture**
-
 
 ✅ **Gateway centralisée**
 
-
 ✅ **Communication asynchrone capable**
-
 
 ✅ **Repository Pattern**
 
-
 ✅ **Dependency Injection**
 
-
 ✅ **Extensibilité**
-
-
 
 ## Portes par défaut (development)
 
@@ -911,7 +898,6 @@ Redis:       localhost:6379
 ```
 
 > Configurable dans `launchSettings.json` et docker-compose.
-
 
 ## Prochaines étapes pour orientation
 
