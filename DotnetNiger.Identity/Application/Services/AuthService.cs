@@ -27,7 +27,6 @@ public class AuthService : IAuthService
 	private readonly IEmailService _emailService;
 	private readonly ILoginHistoryService _loginHistoryService;
 	private readonly IHttpContextAccessor _httpContextAccessor;
-
 	public AuthService(
 		UserManager<ApplicationUser> userManager,
 		DotnetNigerIdentityDbContext dbContext,
@@ -82,8 +81,9 @@ public class AuthService : IAuthService
 			throw new IdentityException(message, 400);
 		}
 
-		var confirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        await _userManager.AddToRoleAsync(user, "Member");
 
+		var confirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
 		var verifyUrl = $"/api/auth/verify-email?email={Uri.EscapeDataString(user.Email ?? string.Empty)}&token={Uri.EscapeDataString(confirmationToken)}";
 		await _emailService.SendAsync(user.Email ?? string.Empty, "Verify email", $"Please verify your email by clicking: {verifyUrl}");

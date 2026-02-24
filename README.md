@@ -1,3 +1,82 @@
+## 📋 Vue d'ensemble
+
+DotnetNiger est une plateforme communautaire moderne basée sur une architecture microservices .NET 8.0. Elle propose un réseau social, forums, gestion de contenu, et une sécurité centralisée via une API Gateway.
+
+> ⚠️ **Note :** Ce projet est en développement actif (février 2026).
+
+### Fonctionnalités Clés
+
+- 🔐 **API Gateway (YARP)** : Point d'entrée unique, reverse proxy, centralisation de la sécurité, validation JWT, CORS, rate limiting, logging, agrégation Swagger
+- 👥 **Service Identity** : Authentification JWT, inscription/login, refresh token, gestion des rôles/permissions, endpoints admin, audit
+- 📝 **Service Community** : Posts, commentaires, likes, feed utilisateur (en cours)
+- 📊 **Monitoring** : Serilog, Prometheus, logs structurés, health endpoints
+- 🐳 **Docker Ready** : Déploiement containerisé, support SQL Server/Redis
+
+## 🔒 Sécurité & Flux d'authentification
+
+1. **Le client** s'inscrit ou se connecte via le Gateway (`/api/v1/auth/login` ou `/register`)
+2. **Gateway** transmet la requête à Identity, qui vérifie les identifiants
+3. **Identity** génère un JWT signé et le renvoie (via Gateway)
+4. **Le client** stocke le JWT et l'utilise dans tous les appels suivants :
+
+- `Authorization: Bearer <token>`
+
+5. **Gateway** valide le JWT à chaque requête avant de router vers Identity ou Community
+
+**CORS** : Seules les requêtes du Gateway sont acceptées par Identity (politique restrictive)
+**Rate limiting** : Limitation des requêtes côté Gateway (protection brute-force, DoS)
+
+**Logging** : Toutes les requêtes sont journalisées (Serilog, logs structurés)
+
+**Agrégation** : SwaggerAggregator combine la documentation des microservices
+
+## 🏗️ Architecture
+
+## 🚀 Quick Start
+
+### Prérequis
+
+### Installation rapide (local, DB SQLite déjà incluse)
+
+1. Cloner le repo officiel (pas de fork) et entrer dans le dossier :
+   Accès après démarrage (ports par service) :
+
+- **Gateway** : http://localhost:5000/swagger et http://localhost:5000/health
+- **Identity** : http://localhost:5075/swagger
+- **Community** : http://localhost:5269/swagger
+
+### Tester l'API (exemples)
+
+```bash
+# Inscription (via Gateway)
+curl -X POST http://localhost:5000/api/v1/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"Test@123"}'
+# Login (via Gateway)
+curl -X POST http://localhost:5000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"Test@123"}'
+# Appel protégé (avec JWT)
+curl -X GET http://localhost:5000/api/v1/users/me \
+  -H "Authorization: Bearer <token>"
+```
+
+## ⚙️ Configuration rapide (Identity)
+
+- Email provider: voir la section Email dans [docs/API.md](docs/API.md)
+
+## 📚 Documentation
+
+| Document                             | Description                 |
+
+## 🛠️ Stack Technique
+
+## 📊 Statut du Projet
+
+## 📄 Licence
+
+Ce projet est sous licence MIT. Voir [LICENSE.md](LICENSE.md) pour les détails.
+
 # DotnetNiger
 
 > Plateforme communautaire open-source pour la communauté DotnetNiger, construite avec .NET 8.0 LTS
@@ -126,8 +205,8 @@ curl -X POST http://localhost:5075/api/auth/login \
 
 ## 📚 Documentation
 
-| Document                             | Description                 |
-| ------------------------------------ | --------------------------- |
+| Document                          | Description                 |
+| --------------------------------- | --------------------------- |
 | [Index](docs/INDEX.md)               | Navigation documentation    |
 | [Setup](docs/SETUP.md)               | Installation et demarrage   |
 | [Architecture](docs/ARCHITECTURE.md) | Vue d'ensemble des services |
@@ -249,12 +328,21 @@ dotnet ef database update --project DotnetNiger.Identity
 - **`main`** - Branche de production (releases uniquement)
 - Creation rapide de `dev` quand seul `main` existe apres un clone: `git checkout -b dev origin/main && git push -u origin dev`
 - Basculement quotidien: `git checkout dev && git pull`
+
 - [ ] Advanced search (Elasticsearch)
 - [ ] File upload service
 - [ ] Email service (SendGrid)
 - [ ] Admin dashboard
 
-## ⭐ Support
+⭐ Support
+
+---
+
+---
+
+```
+
+```
 
 Si vous trouvez ce projet intéressant ou utile :
 

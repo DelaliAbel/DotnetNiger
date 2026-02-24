@@ -40,29 +40,67 @@ public class UsersController : ControllerBase
 		_logger = logger;
 	}
 
-	[HttpGet("me")]
-	public async Task<ActionResult<UserDto>> Me()
+	// Factorized user validation
+	private Guid RequireUserId()
 	{
 		var userId = GetUserId();
 		if (userId == null)
 		{
-			return Unauthorized();
+			throw new IdentityException("Authentication required. Please login.", 401);
 		}
+		return userId.Value;
+	}
 
-		var profile = await _userService.GetProfileAsync(userId.Value);
+	// Factorized avatar validation
+	private void ValidateAvatar(IFormFile avatar)
+	{
+		if (avatar == null || avatar.Length <= 0)
+		{
+			throw new IdentityException("Aucun fichier avatar n'a été fourni. Veuillez sélectionner une image.", 400);
+		}
+		if (avatar.Length > _fileUploadOptions.MaxAvatarBytes)
+		{
+			throw new IdentityException($"L'image est trop volumineuse ({avatar.Length} octets). Taille maximale autorisée : {_fileUploadOptions.MaxAvatarBytes} octets.", 400);
+		}
+		if (!_fileUploadOptions.AllowedAvatarContentTypes.Contains(avatar.ContentType, StringComparer.OrdinalIgnoreCase))
+		{
+			throw new IdentityException($"Le type de fichier '{avatar.ContentType}' n'est pas autorisé. Types acceptés : {string.Join(", ", _fileUploadOptions.AllowedAvatarContentTypes)}.", 400);
+		}
+		var extension = GetAvatarExtension(avatar.ContentType, avatar.FileName);
+		if (string.IsNullOrWhiteSpace(extension))
+		{
+			throw new IdentityException("L'extension de l'image est invalide. Extensions acceptées : .jpg, .png, .webp.", 400);
+		}
+		if (!_fileUploadOptions.AllowedAvatarExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
+		{
+			throw new IdentityException($"L'extension '{extension}' n'est pas autorisée. Extensions acceptées : {string.Join(", ", _fileUploadOptions.AllowedAvatarExtensions)}.", 400);
+		}
+	}
+
+	[HttpGet("me")]
+	public async Task<ActionResult<UserDto>> Me()
+	{
+		var userId = RequireUserId();
+		var profile = await _userService.GetProfileAsync(userId);
+		if (profile == null)
+		{
+			_logger.LogWarning("Profil utilisateur introuvable pour {UserId}", userId);
+			return NotFound(new { message = "Profil utilisateur introuvable." });
+		}
 		return Ok(profile);
 	}
 
 	[HttpPut("me")]
 	public async Task<ActionResult<UserDto>> UpdateMe([FromBody] UpdateProfileRequest request)
 	{
-		var userId = GetUserId();
-		if (userId == null)
+		var userId = RequireUserId();
+		var profile = await _userService.UpdateProfileAsync(userId, request);
+		if (profile == null)
 		{
-			return Unauthorized();
+			_logger.LogWarning("Échec de la mise à jour du profil pour {UserId}", userId);
+			return StatusCode(500, new { message = "Impossible de mettre à jour le profil utilisateur." });
 		}
-
-		var profile = await _userService.UpdateProfileAsync(userId.Value, request);
+		_logger.LogInformation("User {UserId} updated profile.", userId);
 		return Ok(profile);
 	}
 
@@ -71,13 +109,13 @@ public class UsersController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	public async Task<ActionResult<AvatarInfoDto>> GetAvatar()
 	{
-		var userId = GetUserId();
-		if (userId == null)
+		var userId = RequireUserId();
+		var profile = await _userService.GetProfileAsync(userId);
+		if (profile == null)
 		{
-			return Unauthorized();
+			_logger.LogWarning("Profil utilisateur introuvable pour {UserId}", userId);
+			return NotFound(new { message = "Profil utilisateur introuvable." });
 		}
-
-		var profile = await _userService.GetProfileAsync(userId.Value);
 		var metadata = await _avatarMetadataService.GetMetadataAsync(profile.AvatarUrl);
 		return Ok(metadata);
 	}
@@ -85,27 +123,35 @@ public class UsersController : ControllerBase
 	[HttpPost("me/change-password")]
 	public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
 	{
-		var userId = GetUserId();
-		if (userId == null)
+		var userId = RequireUserId();
+		try
 		{
-			return Unauthorized();
+			await _userService.ChangePasswordAsync(userId, request);
+			_logger.LogInformation("User {UserId} changed password.", userId);
+			return NoContent();
 		}
-
-		await _userService.ChangePasswordAsync(userId.Value, request);
-		return NoContent();
+		catch (IdentityException ex)
+		{
+			_logger.LogWarning(ex, "Erreur lors du changement de mot de passe pour {UserId}", userId);
+			return StatusCode(ex.StatusCode, new { message = ex.Message });
+		}
 	}
 
 	[HttpPost("me/change-email")]
 	public async Task<IActionResult> ChangeEmail([FromBody] ChangeEmailRequest request)
 	{
-		var userId = GetUserId();
-		if (userId == null)
+		var userId = RequireUserId();
+		try
 		{
-			return Unauthorized();
+			await _userService.ChangeEmailAsync(userId, request);
+			_logger.LogInformation("User {UserId} changed email.", userId);
+			return NoContent();
 		}
-
-		await _userService.ChangeEmailAsync(userId.Value, request);
-		return NoContent();
+		catch (IdentityException ex)
+		{
+			_logger.LogWarning(ex, "Erreur lors du changement d'email pour {UserId}", userId);
+			return StatusCode(ex.StatusCode, new { message = ex.Message });
+		}
 	}
 
 	[HttpPost("me/avatar")]
@@ -115,56 +161,30 @@ public class UsersController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	public async Task<ActionResult<UserDto>> UploadAvatar([FromForm] IFormFile avatar)
 	{
-		var userId = GetUserId();
-		if (userId == null)
+		var userId = RequireUserId();
+		try
 		{
-			return Unauthorized();
+			ValidateAvatar(avatar);
+			var currentProfile = await _userService.GetProfileAsync(userId);
+			var previousAvatarUrl = currentProfile.AvatarUrl;
+			var extension = GetAvatarExtension(avatar.ContentType, avatar.FileName);
+			var fileName = $"avatars/{userId}/{Guid.NewGuid():N}{extension}";
+			await using var stream = avatar.OpenReadStream();
+			var relativeUrl = await _fileUploadService.UploadAsync(stream, fileName, avatar.ContentType);
+			var absoluteUrl = BuildAbsoluteUrl(relativeUrl);
+			var profile = await _userService.UpdateAvatarAsync(userId, absoluteUrl);
+			_logger.LogInformation("User {UserId} uploaded avatar.", userId);
+			if (!string.IsNullOrWhiteSpace(previousAvatarUrl) && !string.Equals(previousAvatarUrl, absoluteUrl, StringComparison.OrdinalIgnoreCase))
+			{
+				await TryDeleteAsync(previousAvatarUrl, "upload");
+			}
+			return Ok(profile);
 		}
-
-		var currentProfile = await _userService.GetProfileAsync(userId.Value);
-		var previousAvatarUrl = currentProfile.AvatarUrl;
-
-		if (avatar == null || avatar.Length <= 0)
+		catch (IdentityException ex)
 		{
-			throw new IdentityException("Avatar file is required.", 400);
+			_logger.LogWarning(ex, "Erreur lors de l'upload d'avatar pour {UserId}", userId);
+			return StatusCode(ex.StatusCode, new { message = ex.Message });
 		}
-
-		if (avatar.Length > _fileUploadOptions.MaxAvatarBytes)
-		{
-			throw new IdentityException("Avatar file is too large.", 400);
-		}
-
-		if (!_fileUploadOptions.AllowedAvatarContentTypes
-			.Contains(avatar.ContentType, StringComparer.OrdinalIgnoreCase))
-		{
-			throw new IdentityException("Avatar content type is not allowed.", 400);
-		}
-
-		var extension = GetAvatarExtension(avatar.ContentType, avatar.FileName);
-		if (string.IsNullOrWhiteSpace(extension))
-		{
-			throw new IdentityException("Avatar extension is invalid.", 400);
-		}
-
-		if (!_fileUploadOptions.AllowedAvatarExtensions
-			.Contains(extension, StringComparer.OrdinalIgnoreCase))
-		{
-			throw new IdentityException("Avatar extension is not allowed.", 400);
-		}
-		var fileName = $"avatars/{userId}/{Guid.NewGuid():N}{extension}";
-
-		await using var stream = avatar.OpenReadStream();
-		var relativeUrl = await _fileUploadService.UploadAsync(stream, fileName, avatar.ContentType);
-		var absoluteUrl = BuildAbsoluteUrl(relativeUrl);
-		var profile = await _userService.UpdateAvatarAsync(userId.Value, absoluteUrl);
-
-		if (!string.IsNullOrWhiteSpace(previousAvatarUrl) &&
-			!string.Equals(previousAvatarUrl, absoluteUrl, StringComparison.OrdinalIgnoreCase))
-		{
-			await TryDeleteAsync(previousAvatarUrl, "upload");
-		}
-
-		return Ok(profile);
 	}
 
 	[HttpDelete("me/avatar")]
@@ -172,21 +192,29 @@ public class UsersController : ControllerBase
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	public async Task<IActionResult> DeleteAvatar()
 	{
-		var userId = GetUserId();
-		if (userId == null)
+		var userId = RequireUserId();
+		var currentProfile = await _userService.GetProfileAsync(userId);
+		if (currentProfile == null)
 		{
-			return Unauthorized();
+			_logger.LogWarning("Profil utilisateur introuvable pour {UserId}", userId);
+			return NotFound(new { message = "Profil utilisateur introuvable." });
 		}
-
-		var currentProfile = await _userService.GetProfileAsync(userId.Value);
 		if (string.IsNullOrWhiteSpace(currentProfile.AvatarUrl))
 		{
 			return NoContent();
 		}
-
-		await _userService.ClearAvatarAsync(userId.Value);
-		await TryDeleteAsync(currentProfile.AvatarUrl, "delete");
-		return NoContent();
+		try
+		{
+			await _userService.ClearAvatarAsync(userId);
+			await TryDeleteAsync(currentProfile.AvatarUrl, "delete");
+			_logger.LogInformation("User {UserId} deleted avatar.", userId);
+			return NoContent();
+		}
+		catch (IdentityException ex)
+		{
+			_logger.LogWarning(ex, "Erreur lors de la suppression d'avatar pour {UserId}", userId);
+			return StatusCode(ex.StatusCode, new { message = ex.Message });
+		}
 	}
 
 	private Guid? GetUserId()

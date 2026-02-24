@@ -57,7 +57,7 @@ namespace DotnetNiger.Identity.Migrations
 
                     b.HasIndex("AdminUserId");
 
-                    b.ToTable("AdminActionLogs", (string)null);
+                    b.ToTable("AdminActionLogs");
                 });
 
             modelBuilder.Entity("DotnetNiger.Identity.Domain.Entities.ApiKey", b =>
@@ -93,7 +93,7 @@ namespace DotnetNiger.Identity.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("ApiKeys", (string)null);
+                    b.ToTable("ApiKeys");
                 });
 
             modelBuilder.Entity("DotnetNiger.Identity.Domain.Entities.ApplicationUser", b =>
@@ -227,7 +227,7 @@ namespace DotnetNiger.Identity.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("LoginHistories", (string)null);
+                    b.ToTable("LoginHistories");
                 });
 
             modelBuilder.Entity("DotnetNiger.Identity.Domain.Entities.Permission", b =>
@@ -252,7 +252,7 @@ namespace DotnetNiger.Identity.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("Permissions", (string)null);
+                    b.ToTable("Permissions");
                 });
 
             modelBuilder.Entity("DotnetNiger.Identity.Domain.Entities.RefreshToken", b =>
@@ -289,7 +289,7 @@ namespace DotnetNiger.Identity.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("RefreshTokens", (string)null);
+                    b.ToTable("RefreshTokens");
                 });
 
             modelBuilder.Entity("DotnetNiger.Identity.Domain.Entities.Role", b =>
@@ -331,7 +331,7 @@ namespace DotnetNiger.Identity.Migrations
 
                     b.HasIndex("PermissionId");
 
-                    b.ToTable("RolePermissions", (string)null);
+                    b.ToTable("RolePermissions");
                 });
 
             modelBuilder.Entity("DotnetNiger.Identity.Domain.Entities.SocialLink", b =>
@@ -358,7 +358,7 @@ namespace DotnetNiger.Identity.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("SocialLinks", (string)null);
+                    b.ToTable("SocialLinks");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>

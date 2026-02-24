@@ -9,5 +9,6 @@ public enum PlatformType
     Twitter,
     LinkedIn,
     GitHub,
-    Facebook
+    Facebook,
+    Whatsapp
 }

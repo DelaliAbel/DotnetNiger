@@ -80,7 +80,7 @@ public static class DefaultRolesSeeder
             //     + "Definissez ADMIN_PASSWORD et eventuellement ADMIN_EMAIL.");
 
         var existingAdmin = await userManager.FindByEmailAsync(adminEmail);
-        if (existingAdmin is not null)
+        if (existingAdmin is not null)  
         {
             logger.LogInformation("Compte admin '{Email}' existe deja.", adminEmail);
             return;

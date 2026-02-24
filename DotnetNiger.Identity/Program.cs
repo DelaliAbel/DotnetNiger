@@ -19,12 +19,14 @@ using Microsoft.IdentityModel.Tokens;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
 // Configuration Serilog avec sinks definis dans appsettings.
 builder.Host.UseSerilog((context, services, loggerConfiguration) =>
     loggerConfiguration
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
         .Enrich.FromLogContext());
+
 // Configuration principale du service Identity.
 var connectionString = builder.Configuration.GetConnectionString("DotnetNigerIdentityDbContext") ?? throw new InvalidOperationException("Connection string 'DotnetNigerIdentityDbContext' introuvable.");
 
@@ -120,10 +122,10 @@ builder.Services.AddAuthorization(options =>
 //-----AjouterPourLaCommunicationExterne--------
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("CorsePolicy",
-        builder => builder.AllowAnyOrigin()
-        .AllowAnyMethod()
-        .AllowAnyHeader());
+    options.AddPolicy("GatewayOnly", policy =>
+        policy.AllowAnyOrigin() // Remplace par l’URL réelle du Gateway si besoin [WithOrigins("http://localhost:5000")
+              .AllowAnyHeader()
+              .AllowAnyMethod());
 }
 );
 //-----------------------------------------------
@@ -178,6 +180,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("GatewayOnly");
 // Journalisation structuree des requetes HTTP.
 app.UseSerilogRequestLogging();
 app.UseRequestLogging();
@@ -191,7 +194,7 @@ app.Run();
 static async Task SeedAdminAsync(WebApplication app)
 {
     var config = app.Services.GetRequiredService<IConfiguration>();
-    var seedEnabled = config.GetValue("SEED_ADMIN", true);
+    var seedEnabled = config.GetValue("SEED_ADMIN", false);
     if (!seedEnabled)
     {
         return;

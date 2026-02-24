@@ -78,12 +78,20 @@ public class AdminController : ControllerBase
 		return Ok(profile);
 	}
 
+    [HttpDelete("users/{userId:guid}")]
+	public async Task<IActionResult> DeleteUser(Guid userId)
+	{
+		await _adminService.DeleteUserAsync(userId);
+		return NoContent();
+	}
+
 	[HttpPut("users/{userId:guid}/status")]
 	public async Task<IActionResult> UpdateUserStatus(Guid userId, [FromBody] UpdateUserStatusRequest request)
 	{
 		await _adminService.SetUserActiveAsync(userId, request.IsActive);
 		return NoContent();
 	}
+
 
 	[HttpGet("users/{userId:guid}/login-history")]
 	public async Task<ActionResult<PaginatedDto<LoginHistoryDto>>> GetUserLoginHistory(

@@ -9,7 +9,6 @@ namespace DotnetNiger.Identity.Application.Mappers;
 
 /// <summary>
 /// Mapping centralise entre entites domaine et DTOs.
-/// Remplace le code MapUserAsync duplique dans AuthService, UserService et TokenService.
 /// </summary>
 public static class UserMapper
 {
