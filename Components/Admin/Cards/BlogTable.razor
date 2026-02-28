@@ -14,6 +14,8 @@
                         </tr>
                   </thead>
                   <tbody class="divide-y divide-gray-200">
+                        @for(int i = 0;i < 5;i++){
+
                         <tr class="hover:bg-gray-50 transition">
                               <td class="px-6 py-4 text-sm text-text font-medium">Introduction à Blazor WebAssembly</td>
                               <td class="px-6 py-4 text-sm text-text">Abdoul Malik</td>
@@ -43,9 +45,35 @@
                                     </div>
                               </td>
                         </tr>
+                        }
                   </tbody>
             </table>
       </div>
+      <div class="flex h-16 bg-gray-100 justify-end items-center px-6">
+            <div class="flex w-auto h-[40px] gap-[32px] justify-center items-center">
+            <div>
+                  <button class="flex w-[98px] h-[40px] justify-center items-center bg-secondary rounded-lg">
+                        <span class="Button">Prec</span>
+                  </button>
+            </div>
+            <div>
+                  <button class="flex w-[38px] h-[40px] justify-center items-center bg-secondary rounded-lg">
+                        <span class="Button">1</span>
+                  </button>
+            </div>
+            <div>
+                  <button class="flex w-[38px] h-[40px] justify-center items-center bg-secondary rounded-lg">
+                        <span class="Button">2</span>
+                  </button>
+            </div>
+            <div>
+                  <button class="flex w-[98px] h-[40px] justify-center items-center bg-secondary rounded-lg">
+                        <span class="Button">Suiv</span>
+                  </button>
+            </div>
+      </div>
+      </div>
+      
 </div>
 @code {
 

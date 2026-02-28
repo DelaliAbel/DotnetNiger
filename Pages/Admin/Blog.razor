@@ -1,6 +1,7 @@
 @page "/admin/blog"
 @using DotnetNiger.UI.Components.Admin.Cards
 @using DotnetNiger.UI.Models.Responses
+@inject NavigationManager NavigationManager
 
 <div class="min-h-screen bg-gray-50 p-6 overflow-y-scroll">
     <!-- Header Section -->
@@ -8,7 +9,8 @@
         <div class="flex items-center justify-between mb-6">
             <h1 class="text-4xl font-bold text-gray-900">Blog</h1>
             <button
-                class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-semibold flex items-center gap-2 transition">
+                @onclick='() => NavigationManager.NavigateTo("/admin/blog/create")'
+                class="bg-red-500 hover:bg-red-600 text-white px-6 py-3 rounded-lg Button flex items-center gap-2 transition">
                 <i class="fas fa-plus"></i>
                 Nouveau
             </button>
@@ -30,8 +32,8 @@
                     class="px-4 py-3 border border-gray-300 rounded-lg bg-white cursor-pointer hover:border-gray-400 focus:outline-none ">
                 <option value="">Type de Post </option>
                     <option value="Tutorial">Tutorial</option>
-                    <option value="PostDtoostDtoption>
-                    <option value=" Interview">Interview</option>
+                    <option value="Article">Article</option>
+                    <option value="Interview">Interview</option>
                 </select>
 
                 <select 
@@ -62,8 +64,9 @@
         <!-- Table View -->
         @if (viewMode == "list")
         {
-            <BlogTable/>
-
+            <BlogTable/>    
+        }else{
+            <BlogCard/>
         }
     </div>
 
