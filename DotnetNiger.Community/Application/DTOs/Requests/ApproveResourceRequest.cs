@@ -7,5 +7,5 @@ public class ApproveResourceRequest
     [Required]
     public Guid ResourceId { get; set; }
 
-    public bool IsApproved { get; set; } = true;
+    public bool IsApproved { get; set; } = false;
 }

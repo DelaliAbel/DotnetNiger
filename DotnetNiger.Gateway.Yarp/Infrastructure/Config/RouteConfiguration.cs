@@ -1,7 +1,7 @@
 ﻿using Yarp.ReverseProxy.Configuration;
 
 
-namespace DotnetNiger.Gateway.Configuration
+namespace DotnetNiger.Gateway.Infrastructure.Config
 {
     public static class RouteConfiguration
     {

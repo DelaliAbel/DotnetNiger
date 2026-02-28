@@ -1,7 +1,7 @@
-﻿using DotnetNiger.Gateway.Infrastructure.HttpClients;
+﻿
 using Yarp.ReverseProxy.Configuration;
 
-namespace DotnetNiger.Gateway.Configuration
+namespace DotnetNiger.Gateway.Infrastructure.Config
 {
     public static class ClusterConfiguration
     {
@@ -26,7 +26,7 @@ namespace DotnetNiger.Gateway.Configuration
                         {"community-destination", new DestinationConfig {Address = "http://localhost:5269" } }
                     }
                 }
-            }; 
+            };
         }
     }
 }

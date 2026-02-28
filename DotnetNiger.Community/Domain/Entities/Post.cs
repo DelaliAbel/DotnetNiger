@@ -6,7 +6,7 @@ public class Post
     public string Title { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty; // Markdown ou HTML
-    public string Excerpt { get; set; } = string.Empty;
+    public string Excerpt { get; set; } = string.Empty; // description
     public string CoverImageUrl { get; set; } = string.Empty;
     public Guid AuthorId { get; set; } // Référence Identity API
     public string PostType { get; set; } = string.Empty; // Blog, News, Interview, Update
