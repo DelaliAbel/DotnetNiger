@@ -1,0 +1,520 @@
+@page "/admin/ressources"
+@using DotnetNiger.UI.Models.Responses
+@inject NavigationManager Navigation
+
+<div class="p-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <span class="H3">Ressources</span>
+        <button @onclick="OpenDrawer" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg flex items-center gap-2">
+            <i class="fas fa-plus Button"></i>
+            Nouveau
+        </button>
+    </div>
+    @if (IsOpen)
+{
+    <!-- Overlay -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 z-40"
+         @onclick="CloseDrawer">
+    </div>
+
+    <!-- Drawer -->
+    <div class="fixed top-0 right-0 h-screen 
+                w-full sm:w-4/5 md:w-3/5 lg:w-2/5 
+                bg-white shadow-2xl z-50 
+                transform transition-transform duration-300 ease-in-out
+                @(IsOpen ? "translate-x-0" : "translate-x-full")">
+
+        <div class="flex flex-col h-full">
+
+            <!-- Header -->
+            <div class="flex justify-between items-center 
+                        px-6 py-4 border-b">
+                <h2 class="text-xl font-semibold">
+                    Créer un événement
+                </h2>
+
+                <button @onclick="CloseDrawer"
+                        class="text-gray-500 hover:text-black text-2xl">
+                    &times;
+                </button>
+            </div>
+
+            <!-- Body (Scrollable) -->
+            <div class="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">
+                        Titre
+                    </label>
+                    <input type="text"
+                           class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">
+                        Date
+                    </label>
+                    <input type="date"
+                           class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">
+                        Lieu
+                    </label>
+                    <input type="text"
+                           class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">
+                        Description
+                    </label>
+                    <textarea rows="4"
+                              class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium mb-1">
+                        Image URL
+                    </label>
+                    <input type="text"
+                           class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                </div>
+
+            </div>
+
+            <!-- Footer fixe -->
+            <div class="border-t px-6 py-4 flex justify-end space-x-4 bg-white">
+                <button @onclick="CloseDrawer"
+                        class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">
+                    Annuler
+                </button>
+
+                <button class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition">
+                    Créer
+                </button>
+            </div>
+
+        </div>
+    </div>
+}
+
+
+    <!-- Filters and Search -->
+    <div class="flex gap-4 mb-6">
+        <!-- Search Bar -->
+        <div class="flex-1 relative">
+            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <input 
+                type="text" 
+                placeholder="Rechercher un événement..." 
+                @bind="searchQuery"
+                @bind:event="oninput"
+                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+        </div>
+
+        <!-- Status Filter -->
+        <select @bind="selectedStatus" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Tous</option>
+            <option value="published">Publié</option>
+            <option value="pending">Attente</option>
+            <option value="archived">Archivé</option>
+        </select>
+
+        <!-- Type Filter -->
+        <select @bind="selectedType" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <option value="">Type</option>
+            <option value="Cours">Cours</option>
+            <option value="Article">Article</option>
+            <option value="outil">Outil</option>
+            <option value="Livre">Livre</option>
+        </select>
+    </div>
+
+    <!-- View Toggle -->
+    <div class="flex gap-2 mb-6">
+        <button 
+            @onclick="() => isListView = true"
+            class="@(isListView ? "bg-black text-white" : "bg-white text-black border border-gray-300") px-4 py-2 rounded-lg flex items-center gap-2">
+            <i class="fas fa-list text-2xl"></i>
+        </button>
+        <button 
+            @onclick="() => isListView = false"
+            class="@(!isListView ? "bg-black text-white" : "bg-white text-black border border-gray-300") px-4 py-2 rounded-lg flex items-center gap-2">
+            <i class="fas fa-th text-2xl"></i>
+        </button>
+    </div>
+
+    @if (isListView)
+    {
+        <!-- List View (Table) -->
+        <div class="bg-white rounded-lg shadow overflow-hidden">
+            <table class="w-full">
+                <thead class="bg-gray-50 border-b">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Titre</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Auteur</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Catégorie</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Type</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Statut</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var resource in filteredResources)
+                    {
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-6 py-4 text-sm">@resource.Title</td>
+                            <td class="px-6 py-4 text-sm">@resource.Author</td>
+                            <td class="px-6 py-4 text-sm">@resource.Category</td>
+                            <td class="px-6 py-4 text-sm">@resource.ResourceType</td>
+                            <td class="px-6 py-4 text-sm whitespace-nowrap">@resource.PublishedDate.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="px-6 py-4 text-sm">
+                                @if (resource.Status == "published")
+                                {
+                                    <span class="flex items-center gap-2">
+                                        <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+                                        Publié
+                                    </span>
+                                }
+                                else if (resource.Status == "archived")
+                                {
+                                    <span class="flex items-center gap-2">
+                                        <span class="w-3 h-3 bg-red-500 rounded-full"></span>
+                                        Archivé
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="flex items-center gap-2">
+                                        <span class="w-3 h-3 bg-orange-500 rounded-full"></span>
+                                        Attente
+                                    </span>
+                                }
+                            </td>
+                            <td class="px-6 py-4 text-sm">
+                                <div class="flex gap-2">
+                                    <button @onclick="() => ViewResource(resource.Id)" class="text-gray-600 hover:text-blue-600" title="Voir">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button @onclick="() => EditResource(resource.Id)" class="text-gray-600 hover:text-blue-600" title="Éditer">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button @onclick="() => DeleteResource(resource.Id)" class="text-gray-600 hover:text-red-600" title="Supprimer">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <!-- Grid View (Cards) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach (var resource in filteredResources)
+            {
+                <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+                    <!-- Card Image/Header -->
+                    <div class="relative h-48 bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
+                        <!-- Status Badge -->
+                        <div class="absolute top-4 left-4">
+                            @if (resource.Status == "published")
+                            {
+                                <span class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-check text-white text-sm"></i>
+                                </span>
+                            }
+                            else if (resource.Status == "archived")
+                            {
+                                <span class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-archive text-white text-sm"></i>
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-clock text-white text-sm"></i>
+                                </span>
+                            }
+                        </div>
+
+                        <!-- Menu Dropdown -->
+                        <div class="absolute top-4 right-4">
+                            <button @onclick="() => ToggleMenu(resource.Id)" class="text-white hover:bg-white/20 rounded-full p-2">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            @if (openMenuId == resource.Id)
+                            {
+                                <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10">
+                                    <button @onclick="() => ViewResource(resource.Id)" class="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2">
+                                        <i class="fas fa-eye"></i> Voir
+                                    </button>
+                                    <button @onclick="() => EditResource(resource.Id)" class="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2">
+                                        <i class="fas fa-edit"></i> Éditer
+                                    </button>
+                                    <button @onclick="() => DeleteResource(resource.Id)" class="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 flex items-center gap-2">
+                                        <i class="fas fa-trash"></i> Supprimer
+                                    </button>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Resource Type Icon -->
+                        <div class="text-white text-6xl">
+                            @if (resource.ResourceType == "Cours")
+                            {
+                                <i class="fas fa-graduation-cap"></i>
+                            }
+                            else if (resource.ResourceType == "Article")
+                            {
+                                <i class="fas fa-newspaper"></i>
+                            }
+                            else if (resource.ResourceType == "outil")
+                            {
+                                <i class="fas fa-tools"></i>
+                            }
+                            else if (resource.ResourceType == "Livre")
+                            {
+                                <i class="fas fa-book"></i>
+                            }
+                            else
+                            {
+                                <i class="fas fa-file"></i>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Card Content -->
+                    <div class="p-4">
+                        <h3 class="text-lg font-bold mb-2 line-clamp-1">@resource.Title</h3>
+                        <p class="text-gray-600 text-sm mb-4 line-clamp-3">
+                            @if (!string.IsNullOrEmpty(resource.Description))
+                            {
+                                @resource.Description
+                            }
+                            else
+                            {
+                                <text>Lorem, ipsum dolor sit amet consectetur adipisicing elit. Haque, architecto. Eligendi beatae inventore dolorum sequi laudantium dicta aut reiciendis! Non</text>
+                            }
+                        </p>
+                        <div class="flex justify-between items-center text-sm text-gray-700">
+                            <span class="font-medium">@resource.Author</span>
+                            <span>@resource.PublishedDate.ToString("dd/MM/yyyy")</span>
+                        </div>
+                        <div class="mt-2 text-xs text-gray-500">
+                            <span class="bg-gray-100 px-2 py-1 rounded">@resource.Category</span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Pagination -->
+    <div class="flex justify-center items-center gap-2 mt-6">
+        <button 
+            @onclick="PreviousPage" 
+            disabled="@(currentPage == 1)"
+            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+            <i class="fas fa-arrow-left"></i>
+            Préc
+        </button>
+
+        @for (int i = 1; i <= totalPages; i++)
+        {
+            var pageNum = i;
+            <button 
+                @onclick="() => GoToPage(pageNum)"
+                class="@(currentPage == pageNum ? "bg-black text-white" : "bg-white text-black border border-gray-300") px-4 py-2 rounded-lg hover:bg-gray-100">
+                @pageNum
+            </button>
+        }
+
+        <button 
+            @onclick="NextPage"
+            disabled="@(currentPage == totalPages)"
+            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+            Suiv
+            <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
+</div>
+
+@code {
+    private bool isListView = true;
+    private string searchQuery = string.Empty;
+    private string selectedStatus = string.Empty;
+    private string selectedType = string.Empty;
+    private int currentPage = 1;
+    private int pageSize = 7;
+    private int totalPages = 2;
+    private Guid? openMenuId = null;
+
+    private bool IsOpen = false;
+
+    void OpenDrawer()
+    {
+        IsOpen = true;
+    }
+
+    void CloseDrawer()
+    {
+        IsOpen = false;
+    }
+
+    // Sample data - Replace with actual API call
+    private List<ResourceItem> resources = new()
+    {
+        new ResourceItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Introduction à .Net",
+            Author = "Ali Mahamane",
+            Category = "Formation",
+            ResourceType = "Cours",
+            PublishedDate = new DateTime(2025, 1, 15, 12, 30, 0),
+            Status = "published",
+            Description = "Un cours complet sur le framework .NET pour les débutants"
+        },
+        new ResourceItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Introduction à .Net",
+            Author = "Ali Mahamane",
+            Category = "Documentation",
+            ResourceType = "Article",
+            PublishedDate = new DateTime(2025, 1, 15, 12, 30, 0),
+            Status = "pending",
+            Description = "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Haque, architecto."
+        },
+        new ResourceItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Introduction à .Net",
+            Author = "Ali Mahamane",
+            Category = "Bibliothèque",
+            ResourceType = "outil",
+            PublishedDate = new DateTime(2025, 1, 15, 12, 30, 0),
+            Status = "pending",
+            Description = "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Haque, architecto."
+        },
+        new ResourceItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Introduction à .Net",
+            Author = "Ali Mahamane",
+            Category = "Outil",
+            ResourceType = "Livre",
+            PublishedDate = new DateTime(2025, 1, 15, 12, 30, 0),
+            Status = "archived",
+            Description = "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Haque, architecto."
+        },
+        new ResourceItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Introduction à .Net",
+            Author = "Ali Mahamane",
+            Category = "Documentation",
+            ResourceType = "Cours",
+            PublishedDate = new DateTime(2025, 1, 15, 12, 30, 0),
+            Status = "published",
+            Description = "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Haque, architecto."
+        },
+        new ResourceItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Introduction à .Net",
+            Author = "Ali Mahamane",
+            Category = "Documentation",
+            ResourceType = "Article",
+            PublishedDate = new DateTime(2025, 1, 15, 12, 30, 0),
+            Status = "archived",
+            Description = "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Haque, architecto."
+        },
+        new ResourceItem
+        {
+            Id = Guid.NewGuid(),
+            Title = "Introduction à .Net",
+            Author = "Ali Mahamane",
+            Category = "Formation",
+            ResourceType = "Livre",
+            PublishedDate = new DateTime(2025, 1, 15, 12, 30, 0),
+            Status = "published",
+            Description = "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Haque, architecto."
+        }
+    };
+
+    private IEnumerable<ResourceItem> filteredResources => resources
+        .Where(r => string.IsNullOrEmpty(searchQuery) || 
+                   r.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                   r.Author.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .Where(r => string.IsNullOrEmpty(selectedStatus) || r.Status == selectedStatus)
+        .Where(r => string.IsNullOrEmpty(selectedType) || r.ResourceType == selectedType)
+        .Skip((currentPage - 1) * pageSize)
+        .Take(pageSize);
+
+    private void NavigateToCreate()
+    {
+        Navigation.NavigateTo("/admin/ressources/nouveau");
+    }
+
+    private void ToggleMenu(Guid resourceId)
+    {
+        openMenuId = openMenuId == resourceId ? null : resourceId;
+    }
+
+    private void ViewResource(Guid resourceId)
+    {
+        openMenuId = null;
+        Console.WriteLine($"View resource: {resourceId}");
+    }
+
+    private void EditResource(Guid resourceId)
+    {
+        openMenuId = null;
+        Console.WriteLine($"Edit resource: {resourceId}");
+    }
+
+    private void DeleteResource(Guid resourceId)
+    {
+        openMenuId = null;
+        Console.WriteLine($"Delete resource: {resourceId}");
+    }
+
+    private void PreviousPage()
+    {
+        if (currentPage > 1) currentPage--;
+    }
+
+    private void NextPage()
+    {
+        if (currentPage < totalPages) currentPage++;
+    }
+
+    private void GoToPage(int page)
+    {
+        currentPage = page;
+    }
+
+    // Local model for UI purposes
+    public class ResourceItem
+    {
+        public Guid Id { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public string Author { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public string ResourceType { get; set; } = string.Empty;
+        public DateTime PublishedDate { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+    }
+}

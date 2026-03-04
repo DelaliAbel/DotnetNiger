@@ -1,0 +1,50 @@
+@inject IJSRuntime JS
+
+<textarea id="myEditor"></textarea>
+<button @onclick="GetContent" class="mt-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+    Récupérer le contenu
+</button>
+
+@if (!string.IsNullOrEmpty(content))
+{
+    <div class="mt-4 p-4 bg-gray-100 rounded">
+        <h3>Contenu récupéré :</h3>
+        <p>@((MarkupString)content)</p>
+    </div>
+}
+
+@code {
+    private string content = string.Empty;
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("initTinyMCE", "myEditor");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Error initializing TinyMCE: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task GetContent()
+    {
+        try
+        {
+            content = await JS.InvokeAsync<string>("getTinyMCEContent", "myEditor");
+            if (string.IsNullOrEmpty(content))
+            {
+                content = "No content available";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error getting TinyMCE content: {ex.Message}");
+            content = "Error retrieving content";
+        }
+    }
+}

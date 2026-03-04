@@ -1,42 +1,43 @@
-
-<aside class="w-64 h-screen sticky bg-secondary text-white flex-shrink-0 hidden md:flex flex-col">
-      <div class="h-16 flex justify-center items-center text-2xl font-bold bg-active">
+﻿
+<aside class="sticky hidden h-screen w-64 flex-shrink-0 flex-col bg-secondary text-white md:flex">
+      <div class="flex h-16 items-center justify-center bg-active text-2xl font-bold">
         <div class="flex items-center justify-center">
-          <i class="fa-solid fa-code text-indigo-400 mr-2"></i> <span>Dotnet Niger</span>
+          <i class="fa-solid fa-code mr-2 text-indigo-400"></i> <span>Dotnet Niger</span>
         </div>
             
       </div>
 
-      <nav class="flex-1 mt-4 px-4 space-y-2">
-            <NavLink href="/admin/dashboard" class="flex items-center p-3 rounded-lg hover:bg-hover transition"
+      <nav class="mt-4 flex-1 space-y-2 px-4">
+            <NavLink href="/admin/dashboard" class="flex items-center rounded-lg p-3 transition hover:bg-hover"
                      ActiveClass="bg-active">
-                  <i class="bi bi-people-fill text-2xl w-8"></i> Dashboard
+                  <i class="fas fa-gauge w-8 text-2xl"></i> Dashboard
             </NavLink>
 
-            <NavLink href="/admin/users" class="flex items-center p-3 rounded-lg hover:bg-hover transition"
+            <NavLink href="/admin/users" class="flex items-center rounded-lg p-3 transition hover:bg-hover"
                      ActiveClass="bg-active">
-                  <i class="bi bi-people-fill text-2xl w-8"></i> Utilisateurs
+                     <i class="fas fa-user w-8 text-2xl"></i>
+                   Utilisateurs
             </NavLink>
 
-            <NavLink href="/admin/blog" class="flex items-center p-3 rounded-lg hover:bg-hover transition"
+            <NavLink href="/admin/blog" class="flex items-center rounded-lg p-3 transition hover:bg-hover"
                      ActiveClass="bg-active">
-                  <i class="bi bi-file-text-fill text-2xl w-8"></i> Blog
+                  <i class="fas fa-newspaper w-8 text-2xl"></i> Blog
             </NavLink>
 
-            <NavLink href="/admin/events" class="flex items-center p-3 rounded-lg hover:bg-hover transition"
+            <NavLink href="/admin/events" class="flex items-center rounded-lg p-3 transition hover:bg-hover"
                      ActiveClass="bg-active">
-                  <i class="bi bi-calendar-event-fill text-2xl w-8"></i> Événements
+                  <i class="fas fa-calendar w-8 text-2xl"></i> Événements
             </NavLink>
 
-            <NavLink href="/admin/ressources" class="flex items-center p-3 rounded-lg hover:bg-hover transition"
+            <NavLink href="/admin/ressources" class="flex items-center rounded-lg p-3 transition hover:bg-hover"
                      ActiveClass="bg-active">
-                  <i class="bi bi-folder-fill text-2xl w-8"></i> Ressources
+                  <i class="fas fa-folder w-8 text-2xl"></i> Ressources
             </NavLink>
       </nav>
 
-      <div class="p-4 border-t border-slate-700">
-            <NavLink href="/" class="flex items-center text-gray-400 hover:text-white transition">
-                  <i class="fa-solid fa-arrow-right-from-bracket mr-2"></i> Retour au site
+      <div class="border-t border-slate-700 p-4">
+            <NavLink href="/" class="flex items-center text-gray-400 transition hover:text-white">
+                  <i class="fas fa-arrow-right-from-bracket mr-2"></i> Retour au site
             </NavLink>
       </div>
 </aside>

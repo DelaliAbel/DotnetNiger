@@ -3,6 +3,25 @@
     "tailwindcss": "^3.4.19"
   },
   "dependencies": {
-    "fontawesome-free": "^1.0.4"
-  }
+    "tinymce": "^8.3.2"
+  },
+  "name": "dotnetniger.ui",
+  "version": "1.0.0",
+  "description": "",
+  "main": "tailwind.config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AbdoulRaouf2005/DotnetNiger.UI.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/AbdoulRaouf2005/DotnetNiger.UI/issues"
+  },
+  "homepage": "https://github.com/AbdoulRaouf2005/DotnetNiger.UI#readme"
 }
