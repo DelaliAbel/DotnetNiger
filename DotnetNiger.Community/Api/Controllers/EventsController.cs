@@ -102,6 +102,9 @@ public class EventsController : ControllerBase
         if (request == null || string.IsNullOrEmpty(request.Title))
             return BadRequest(new { message = "Titre requis" });
 
+        if (!this.TryGetCurrentUserId(out var currentUserId))
+            return Unauthorized(new { message = "Utilisateur non authentifie", details = "Claim user ou header X-User-Id requis" });
+
         try
         {
             var @event = new Event
@@ -114,7 +117,7 @@ public class EventsController : ControllerBase
                 EventType = "Physical",
                 StartDate = request.StartDate ?? DateTime.UtcNow.AddDays(7),
                 EndDate = request.EndDate ?? DateTime.UtcNow.AddDays(8),
-                CreatedBy = Guid.NewGuid(),
+                CreatedBy = currentUserId,
                 Capacity = 500,
                 IsPublished = false,
                 CreatedAt = DateTime.UtcNow

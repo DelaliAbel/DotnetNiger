@@ -1,10 +1,56 @@
 @DotnetNiger.Community_HostAddress = https://localhost:7269
+@AdminApiKey = REPLACE_WITH_REAL_ADMIN_KEY
+@AdminRole = admin
+@UserId = REPLACE_WITH_USER_GUID
 
 GET {{DotnetNiger.Community_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
 
-GET {{DotnetNiger.Community_HostAddress}}/api/team/couranDaga
+GET {{DotnetNiger.Community_HostAddress}}/api/team/active
+
+###
+
+GET {{DotnetNiger.Community_HostAddress}}/api/admin/dashboard
+X-Admin-Key: {{AdminApiKey}}
+X-Admin-Role: {{AdminRole}}
+Accept: application/json
+
+###
+
+GET {{DotnetNiger.Community_HostAddress}}/api/admin/moderation/comments?page=1&pageSize=20
+X-Admin-Key: {{AdminApiKey}}
+X-Admin-Role: {{AdminRole}}
+Accept: application/json
+
+###
+
+GET {{DotnetNiger.Community_HostAddress}}/api/admin/moderation/resources?page=1&pageSize=20
+X-Admin-Key: {{AdminApiKey}}
+X-Admin-Role: {{AdminRole}}
+Accept: application/json
+
+###
+
+PATCH {{DotnetNiger.Community_HostAddress}}/api/admin/moderation/comments/{{commentId}}
+X-Admin-Key: {{AdminApiKey}}
+X-Admin-Role: {{AdminRole}}
+Content-Type: application/json
+
+{
+	"isApproved": true
+}
+
+###
+
+PATCH {{DotnetNiger.Community_HostAddress}}/api/admin/moderation/resources/{{resourceId}}
+X-Admin-Key: {{AdminApiKey}}
+X-Admin-Role: {{AdminRole}}
+Content-Type: application/json
+
+{
+	"isApproved": true
+}
 
 ###

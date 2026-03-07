@@ -83,6 +83,9 @@ public class PostsController : ControllerBase
         if (request == null || string.IsNullOrEmpty(request.Title))
             return BadRequest(new { message = "Titre requis" });
 
+        if (!this.TryGetCurrentUserId(out var currentUserId))
+            return Unauthorized(new { message = "Utilisateur non authentifie", details = "Claim user ou header X-User-Id requis" });
+
         try
         {
             var post = new Post
@@ -91,7 +94,7 @@ public class PostsController : ControllerBase
                 Title = request.Title,
                 Content = request.Content,
                 Slug = request.Title.ToLower().Replace(" ", "-"),
-                AuthorId = Guid.NewGuid(),
+                AuthorId = currentUserId,
                 PostType = "Blog",
                 IsPublished = false,
                 CreatedAt = DateTime.UtcNow

@@ -1,3 +1,4 @@
+using DotnetNiger.Community.Application.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Community.Api.Controllers;
@@ -6,17 +7,17 @@ namespace DotnetNiger.Community.Api.Controllers;
 [Route("api/[controller]")]
 public class TeamController : ControllerBase
 {
+    private readonly ITeamMemberService _teamMemberService;
 
-    [HttpGet("couranDaga")]
-    public IActionResult GetAdmin()
+    public TeamController(ITeamMemberService teamMemberService)
     {
-        return Ok(new[] {
-             new { Id = 1, Title = "Mahamadou GARBA ZAKOU" }, 
-             new { Id = 2, Title = "Salif" }, 
-             new { Id = 3, Title = "Moudi" },  
-             new { Id = 6, Title = "Hamidou" },  
-             new { Id = 7, Title = "Kadri" },  
-             new { Id = 8, Title = "Mohamed" },  
-             });
+        _teamMemberService = teamMemberService;
+    }
+
+    [HttpGet("active")]
+    public async Task<IActionResult> GetActiveTeam()
+    {
+        var members = await _teamMemberService.GetActiveTeamMembersAsync();
+        return Ok(new { data = members });
     }
 }

@@ -75,13 +75,16 @@ public class CommentsController : ControllerBase
         if (!Guid.TryParse(request.PostId, out var postId))
             return BadRequest(new { message = "ID du post invalide" });
 
+        if (!this.TryGetCurrentUserId(out var currentUserId))
+            return Unauthorized(new { message = "Utilisateur non authentifie", details = "Claim user ou header X-User-Id requis" });
+
         try
         {
             var comment = new Comment
             {
                 Id = Guid.NewGuid(),
                 PostId = postId,
-                UserId = Guid.NewGuid(),
+                UserId = currentUserId,
                 Content = request.Content,
                 IsApproved = false,
                 CreatedAt = DateTime.UtcNow

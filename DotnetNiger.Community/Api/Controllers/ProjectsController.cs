@@ -101,6 +101,9 @@ public class ProjectsController : ControllerBase
         if (request == null || string.IsNullOrEmpty(request.Name))
             return BadRequest(new { message = "Nom du projet requis" });
 
+        if (!this.TryGetCurrentUserId(out var currentUserId))
+            return Unauthorized(new { message = "Utilisateur non authentifie", details = "Claim user ou header X-User-Id requis" });
+
         try
         {
             var project = new Project
@@ -110,7 +113,7 @@ public class ProjectsController : ControllerBase
                 Slug = request.Name.ToLower().Replace(" ", "-"),
                 Description = request.Description ?? string.Empty,
                 GitHubUrl = request.GitHubUrl ?? string.Empty,
-                OwnerId = Guid.NewGuid(),
+                OwnerId = currentUserId,
                 IsFeatured = false,
                 Stars = 0,
                 ContributorsCount = 0,

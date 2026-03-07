@@ -83,6 +83,9 @@ public class ResourcesController : ControllerBase
         if (request == null || string.IsNullOrEmpty(request.Title))
             return BadRequest(new { message = "Titre requis" });
 
+        if (!this.TryGetCurrentUserId(out var currentUserId))
+            return Unauthorized(new { message = "Utilisateur non authentifie", details = "Claim user ou header X-User-Id requis" });
+
         try
         {
             var resource = new Resource
@@ -94,7 +97,7 @@ public class ResourcesController : ControllerBase
                 Url = request.Url ?? string.Empty,
                 ResourceType = request.ResourceType ?? "Documentation",
                 Level = request.Level ?? "Beginner",
-                CreatedBy = Guid.NewGuid(),
+                CreatedBy = currentUserId,
                 IsApproved = false,
                 ViewCount = 0,
                 CreatedAt = DateTime.UtcNow
