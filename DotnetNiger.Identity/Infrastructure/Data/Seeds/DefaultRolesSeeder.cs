@@ -72,15 +72,11 @@ public static class DefaultRolesSeeder
         UserManager<ApplicationUser> userManager,
         ILogger logger)
     {
-        // Les credentials admin doivent etre fournis via variables d'environnement ou user-secrets.
         var adminEmail = Environment.GetEnvironmentVariable("ADMIN_EMAIL") ?? "admin@dotnetniger.com";
         var adminPassword = Environment.GetEnvironmentVariable("ADMIN_PASSWORD") ?? "Admin2026@DotnetNiger";
-            // ?? throw new InvalidOperationException(
-            //     "La variable d'environnement ADMIN_PASSWORD est requise pour le seeding admin. "
-            //     + "Definissez ADMIN_PASSWORD et eventuellement ADMIN_EMAIL.");
 
         var existingAdmin = await userManager.FindByEmailAsync(adminEmail);
-        if (existingAdmin is not null)  
+        if (existingAdmin is not null)
         {
             logger.LogInformation("Compte admin '{Email}' existe deja.", adminEmail);
             return;
