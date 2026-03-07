@@ -7,6 +7,7 @@ Documentation courte et utile pour lancer et comprendre le projet.
 - [SETUP](./SETUP.md) - Installation et demarrage
 - [ARCHITECTURE](./ARCHITECTURE.md) - Vue d'ensemble des services
 - [API](./API.md) - Endpoints et auth
+- [Gateway Setup](../GATEWAY_SETUP.md) - Configuration du gateway Ocelot
 - [Identity README](../DotnetNiger.Identity/README.md) - Guide du service Identity
 
 ## Parcours rapides

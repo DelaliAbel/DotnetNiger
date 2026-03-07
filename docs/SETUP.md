@@ -1,81 +1,78 @@
-# Setup — DotnetNiger
+# Setup DotnetNiger
 
-Guide rapide pour installer, configurer et démarrer DotnetNiger avec sécurité centralisée (Gateway).
+Guide court pour demarrer le projet en local avec le gateway Ocelot.
 
-## Prérequis
+## Prerequis
 
 - .NET SDK 8.0+
 - Git
-- SQLite (par défaut, aucune config requise)
-- Docker (optionnel, pour SQL Server/Redis)
+- PowerShell (Windows) ou bash (Linux/Mac)
 
-## Démarrage rapide (mode dev, tout local)
+## 1. Recuperer le code
 
 ```bash
-# 1. Cloner le repo
 git clone https://github.com/akaletekoffilevis/DotnetNiger.git
 cd DotnetNiger
+```
 
-# 2. Basculer sur la branche dev
-git checkout dev
-git pull
+## 2. Restaurer les packages
 
-# 3. Installer les dépendances
+```bash
 dotnet restore
-
-# 4. Lancer (SQLite déjà prête, aucune migration à faire)
-./run.sh       # Linux/Mac/WSL
-./run.ps1      # Windows (PowerShell)
 ```
 
-Accès après démarrage :
+## 3. Lancer les services
 
-- Gateway : http://localhost:5000/swagger et http://localhost:5000/health
-- Identity : http://localhost:5075/swagger
-- Community : http://localhost:5269/swagger
-
-## Variante Docker (SQL Server/Redis)
+Option scripts projet:
 
 ```bash
-docker-compose up -d
-# Adapter la variable de connexion si besoin :
-export ConnectionStrings__DotnetNigerIdentityContextConnection="Server=localhost,1433;Database=DotnetNiger.Identity;User ID=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True"
-$env:ConnectionStrings__DotnetNigerIdentityContextConnection="Server=localhost,1433;Database=DotnetNiger.Identity;User ID=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True"
-dotnet ef database update --project DotnetNiger.Identity
+./run.sh
+# ou
+./run.ps1
 ```
 
-## Configuration & Sécurité
-
-- Modifier `appsettings.Development.json` pour vos secrets locaux (clé JWT, string SQL, etc)
-- **Ne jamais commiter de secrets** (utiliser variables d’environnement en prod)
-- CORS : Identity accepte uniquement Gateway
-- JWT : généré et validé via Gateway
-- Rate limiting : actif sur Gateway
-
-## Vérification
+Option manuelle (3 terminaux):
 
 ```bash
-curl http://localhost:5000/health
+cd DotnetNiger.Identity && dotnet run
+cd DotnetNiger.Community && dotnet run
+cd DotnetNiger.Gateway && dotnet run
 ```
 
-## Bonnes pratiques
+## 4. Verifier les endpoints
 
-- Toujours passer par le Gateway (http://localhost:5000)
-- Ne jamais exposer Identity/Community directement
-- Respecter la Clean Architecture pour toute contribution
+- Gateway Swagger: `http://localhost:5000/swagger`
+- Gateway health: `http://localhost:5000/health`
+- Identity Swagger: `http://localhost:5075/swagger`
+- Community Swagger: `http://localhost:5269/swagger`
 
-## Depannage rapide
+## 5. Tester via Gateway
 
-- Port occupe: netstat -ano | findstr :5000
-- SQL Server: sqlcmd -S localhost -U sa -P YourPassword123!
-- Redis: redis-cli ping
+```bash
+curl -X POST http://localhost:5000/api/auth/login -H "Content-Type: application/json" -d "{\"email\":\"test@example.com\",\"password\":\"Test@123\"}"
+```
 
-## Regles dev (courtes)
+## Configuration utile
 
-- Controllers minces, logique dans Application
-- Valider les inputs, retourner des erreurs claires
-- Utiliser async/await partout
-- Aucun secret dans le code
-- DTOs pour requests et responses
-- Travailler sur la branche `dev`, merger vers `main` pour les releases
-- Rappel Git rapide: `git status`, `git pull`, `git add .`, `git commit -m "feat: ..."`, `git push origin dev`
+- `DotnetNiger.Gateway/ocelot.json`: routes Ocelot, auth, rate limit, qos, cache, swagger aggregation
+- `DotnetNiger.Gateway/appsettings*.json`: logs + JWT settings
+
+Variables JWT (optionnel, recommande hors dev):
+
+```bash
+Jwt__Key=your_very_long_secret_key_min_32_chars
+Jwt__Issuer=DotnetNiger.Identity
+Jwt__Audience=DotnetNiger.Identity.Client
+```
+
+## Depannage
+
+1. Gateway build OK mais swagger aggregate KO
+- Verifier que les downstream services tournent bien sur `5075` et `5269`.
+
+2. Reponse 401 sur routes protegees
+- Verifier `Authorization: Bearer <token>`.
+- Verifier coherence `Jwt__Key` entre Identity et Gateway.
+
+3. Reponse 429 (too many requests)
+- Limites appliquees par Ocelot (`RateLimitOptions` dans `ocelot.json`).
