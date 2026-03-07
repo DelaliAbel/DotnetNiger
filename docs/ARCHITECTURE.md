@@ -1,65 +1,119 @@
 # Architecture DotnetNiger
 
-Vue d'ensemble actuelle du projet DotnetNiger (microservices .NET 8) avec API Gateway Ocelot.
+Vue globale du projet DotnetNiger (.NET 8) avec API Gateway Ocelot.
 
-## Topologie
+## Derniere mise a jour
+
+- 2026-03-07
+
+## Topologie runtime
 
 ```text
-Client
-  |
-  v
+Client Web/Mobile
+       |
+       v
 Gateway (DotnetNiger.Gateway, Ocelot) :5000
-  |------------------------------|
-  v                              v
-Identity Service :5075      Community Service :5269
+       |
+       +--> Identity Service  :5075
+       |
+       +--> Community Service :5269
+```
+
+## Vue globale de l'arborescence
+
+```text
+DotnetNiger/
+├─ docs/
+├─ DotnetNiger.Gateway/
+│  ├─ Program.cs
+│  ├─ ocelot.json
+│  ├─ appsettings.json
+│  ├─ appsettings.Development.json
+│  ├─ Dockerfile
+│  ├─ DotnetNiger.Gateway.csproj
+│  ├─ README.md
+│  ├─ Properties/
+│  ├─ logs/
+│  ├─ bin/
+│  └─ obj/
+├─ DotnetNiger.Identity/
+│  ├─ Program.cs
+│  ├─ appsettings.json
+│  ├─ appsettings.Development.json
+│  ├─ Dockerfile
+│  ├─ DotnetNiger.Identity.csproj
+│  ├─ Api/
+│  ├─ Application/
+│  ├─ Domain/
+│  ├─ Infrastructure/
+│  ├─ Migrations/
+│  ├─ Properties/
+│  ├─ uploads/
+│  ├─ logs/
+│  ├─ bin/
+│  └─ obj/
+├─ DotnetNiger.Community/
+│  ├─ Program.cs
+│  ├─ appsettings.json
+│  ├─ appsettings.Development.json
+│  ├─ Dockerfile
+│  ├─ DotnetNiger.Community.csproj
+│  ├─ Api/
+│  ├─ Application/
+│  ├─ Domain/
+│  ├─ Infrastructure/
+│  ├─ Migrations/
+│  ├─ Properties/
+│  ├─ bin/
+│  └─ obj/
+├─ DotnetNiger.Identity.Tests/
+│  ├─ *.cs
+│  ├─ bin/
+│  └─ obj/
+├─ DotnetNiger.Identity.IntegrationTests/
+│  ├─ *.cs
+│  ├─ bin/
+│  └─ obj/
+├─ run.sh
+├─ docker-compose.yml
+└─ DotnetNiger.slnx
 ```
 
 ## Roles des services
 
 ### Gateway (`DotnetNiger.Gateway`)
 
-- Point d'entree unique
-- Routage HTTP via Ocelot (`ocelot.json`)
-- Validation JWT Bearer
-- Rate limiting (Ocelot)
-- QoS/circuit breaker/timeouts (Ocelot)
-- Cache de reponse par route (Ocelot)
-- Aggregation Swagger (Identity + Community)
+- Point d'entree unique pour les clients.
+- Routage HTTP via Ocelot (`ocelot.json`).
+- Validation JWT Bearer par route.
+- Rate limiting, QoS, cache de reponse par route.
+- Aggregation Swagger des services downstream.
 
 ### Identity (`DotnetNiger.Identity`)
 
-- Authentification et autorisation
-- Gestion utilisateurs, roles, permissions, tokens
-- Endpoints diagnostics/admin
+- Authentification et autorisation.
+- Gestion utilisateurs, roles, permissions, tokens.
+- Endpoints admin et diagnostics.
 
 ### Community (`DotnetNiger.Community`)
 
-- Endpoints communautaires: posts, comments, events, resources, etc.
+- Domaine communautaire: posts, comments, events, projects, resources.
+- Expose les endpoints metier via son API.
 
-## Principes de configuration
+## Configuration et conventions
 
-- Le bootstrap technique est dans `Program.cs` de chaque service.
-- Les regles de proxy Gateway sont centralisees dans `DotnetNiger.Gateway/ocelot.json`.
-- Les secrets/environnements sont geres via `appsettings*.json` et variables d'environnement.
-
-## Gateway Ocelot: elements cles
-
-Dans `ocelot.json`:
-
-- `Routes`: upstream/downstream mapping
-- `AuthenticationOptions`: protection Bearer route par route
-- `RateLimitOptions`: quotas par route
-- `QoSOptions`: resilience par route
-- `FileCacheOptions`: cache route par route
-- `SwaggerEndPoints`: sources swagger downstream
-- `GlobalConfiguration`: base URL, request id, options globales
+- Bootstrap de chaque service dans son `Program.cs`.
+- Routage gateway centralise dans `DotnetNiger.Gateway/ocelot.json`.
+- Configuration environnement via `appsettings*.json` + variables d'environnement.
+- Script principal local: `run.sh` (build, clean, init-db, run/watch, stop, status).
 
 ## Observabilite
 
-- Logging: Serilog
-- Correlation: `X-Request-ID` au niveau gateway
-- Health check: route gateway `/health` proxifiee vers Identity
+- Logging applicatif via Serilog.
+- Correlation ID au niveau gateway.
+- Endpoint de sante expose via le gateway et les services.
 
-## Evolution
+## Notes d'evolution
 
-Une implementation YARP existe dans `DotnetNiger.Gateway.Yarp`, mais le gateway actif documente ici est `DotnetNiger.Gateway` base sur Ocelot.
+- L'implementation active du gateway est Ocelot.
+- Les anciens scripts `init-shared-db.sh` et `start-all-services.sh` ont ete fusionnes dans `run.sh`.
