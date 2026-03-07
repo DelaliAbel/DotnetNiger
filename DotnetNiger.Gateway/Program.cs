@@ -1,54 +1,148 @@
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using MMLib.SwaggerForOcelot.DependencyInjection;
 using Ocelot.DependencyInjection;
 using Ocelot.Middleware;
+using Ocelot.Cache.CacheManager;
+using Serilog;
+using Serilog.Events;
 
+
+// Configuration Serilog pour le Gateway
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("Ocelot", LogEventLevel.Information)
+    .Enrich.FromLogContext()
+    .Enrich.WithProperty("Service", "Gateway")
+    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .WriteTo.File("logs/gateway-.log",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 7)
+    .CreateLogger();
+
+Log.Information("🚀 Démarrage du DotnetNiger API Gateway...");
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
-builder.Configuration
-      .SetBasePath(builder.Environment.ContentRootPath)
-      .AddOcelot(); // single ocelot.json file in read-only mode
+// Configuration Serilog
+builder.Host.UseSerilog();
 
-builder.Services.AddOcelot(builder.Configuration);
+    // Configuration Ocelot
+    builder.Configuration
+        .SetBasePath(builder.Environment.ContentRootPath)
+        .AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
 
-var app = builder.Build();
+    // Add services with Cache Manager
+    builder.Services.AddOcelot(builder.Configuration)
+        .AddCacheManager(x =>
+        {
+            x.WithDictionaryHandle();
+        });
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    builder.Logging.AddConsole();
-}
+    // Add API Explorer (required for Swagger)
+    builder.Services.AddEndpointsApiExplorer();
 
-app.UseHttpsRedirection();
 
-var summaries = new[]
-{
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+// Swagger generator (OBLIGATOIRE)
+builder.Services.AddSwaggerGen();
 
-app.MapGet("/hello", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    // Swagger for Ocelot
+    builder.Services.AddSwaggerForOcelot(builder.Configuration);
 
-// app.Run();
+    // CORS Configuration
+    builder.Services.AddCors(options =>
+    {
+        options.AddPolicy("AllowAll", policy =>
+            policy.AllowAnyOrigin()
+                   .AllowAnyMethod()
+                   .AllowAnyHeader());
+    });
 
-await app.UseOcelot();
-  await app.RunAsync();
+    // Configuration JWT pour la validation des tokens
+    var jwtKey = builder.Configuration["Jwt:Key"];
+    if (!string.IsNullOrWhiteSpace(jwtKey) && jwtKey.Length >= 32 && !jwtKey.StartsWith("__"))
+    {
+        builder.Services.AddAuthentication(options =>
+        {
+            options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+        })
+        .AddJwtBearer("Bearer", options =>
+        {
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "DotnetNiger.Identity",
+                ValidAudience = builder.Configuration["Jwt:Audience"] ?? "DotnetNiger.Identity.Client",
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+            };
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
+            options.Events = new JwtBearerEvents
+            {
+                OnMessageReceived = context =>
+                {
+                    if (context.Request.Headers.ContainsKey("Authorization"))
+                    {
+                        var authHeader = context.Request.Headers["Authorization"].ToString();
+                        if (authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                        {
+                            context.Token = authHeader.Substring("Bearer ".Length).Trim();
+                        }
+                    }
+                    return Task.CompletedTask;
+                },
+                OnAuthenticationFailed = context =>
+                {
+                    Log.Warning("JWT Authentication failed: {Error}", context.Exception.Message);
+                    return Task.CompletedTask;
+                }
+            };
+        });
+        Log.Information("✅ JWT Authentication configurée");
+    }
+    else
+    {
+        Log.Warning("⚠️ JWT Key non configurée ou invalide - l'authentification est désactivée");
+    }
+
+    var app = builder.Build();
+
+    // Middleware Pipeline
+    app.UseCors("AllowAll");
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseDeveloperExceptionPage();
+        app.Urls.Add("http://localhost:5000");
+    }
+
+    // Request/Response Logging Middleware (simple)
+    app.Use(async (context, next) =>
+    {
+        var requestId = context.Request.Headers["X-Request-ID"].FirstOrDefault() ?? Guid.NewGuid().ToString("N");
+        context.Response.Headers["X-Request-ID"] = requestId;
+
+        Log.Information("➡️ {Method} {Path}", context.Request.Method, context.Request.Path);
+
+        await next.Invoke();
+
+        Log.Information("⬅️ {StatusCode}", context.Response.StatusCode);
+    });
+
+    // Swagger for Ocelot UI
+    app.UseSwaggerForOcelotUI(options =>
+    {
+        options.PathToSwaggerGenerator = "/swagger/docs";
+    });
+
+    // Ocelot Middleware - gère toutes les routes depuis ocelot.json
+    await app.UseOcelot();
+
+    await app.RunAsync();
+
+
