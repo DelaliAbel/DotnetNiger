@@ -12,9 +12,9 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddControllers();
 
-// Configurer SQLite
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") 
-    ?? "Data Source=community.db";
+// Configurer SQLite avec la base partagée
+var connectionString = builder.Configuration.GetConnectionString("DotnetNigerDb")
+    ?? "Data Source=DotnetNiger.db";
 builder.Services.AddDbContext<CommunityDbContext>(options =>
     options.UseSqlite(connectionString)
 );

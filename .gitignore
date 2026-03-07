@@ -62,6 +62,11 @@ coverage/
 *.mdf
 *.ldf
 *.ndf
+*.db
+*.db-*
+DotnetNiger.db
+DotnetNiger.db-shm
+DotnetNiger.db-wal
 
 # OS files
 .DS_Store
