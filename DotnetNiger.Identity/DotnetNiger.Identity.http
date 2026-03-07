@@ -1,25 +1,118 @@
-@DotnetNiger.Identity_HostAddress = http://localhost:5075
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzODI5YmY2MS0xOGE0LTQ3YzEtOWNlNS1jMDhjMTZiODI5NmEiLCJqdGkiOiI2MDYxNjQ2Yi1hYmExLTQxZGQtYjJiMS1kYmY4YzhkZDQ3YmEiLCJodHRwOi8vc2NoZW1hcy54bWxzb2FwLm9yZy93cy8yMDA1LzA1L2lkZW50aXR5L2NsYWltcy9uYW1laWRlbnRpZmllciI6IjM4MjliZjYxLTE4YTQtNDdjMS05Y2U1LWMwOGMxNmI4Mjk2YSIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL25hbWUiOiJhZG1pbiIsImh0dHA6Ly9zY2hlbWFzLnhtbHNvYXAub3JnL3dzLzIwMDUvMDUvaWRlbnRpdHkvY2xhaW1zL2VtYWlsYWRkcmVzcyI6ImFkbWluQGRvdG5ldG5pZ2VyLmNvbSIsImh0dHA6Ly9zY2hlbWFzLm1pY3Jvc29mdC5jb20vd3MvMjAwOC8wNi9pZGVudGl0eS9jbGFpbXMvcm9sZSI6IkFkbWluIiwiZXhwIjoxNzcxODc4MzEyLCJpc3MiOiJEb3RuZXROaWdlci5JZGVudGl0eSIsImF1ZCI6IkRvdG5ldE5pZ2VyLklkZW50aXR5LkNsaWVudCJ9.bEsW-bjdjhxetpXVUY2Sj2gYA6rnTKtwPKJwwg72IX4
+# ==============================================================================
+# DOTNET NIGER - IDENTITY SERVICE API
+# Collection complète des endpoints (63 endpoints)
+# ==============================================================================
 
-# Login (copier le token depuis la reponse)
+@DotnetNiger.Identity_HostAddress = http://localhost:5075
+@token = 
+@userId = 
+@roleId = 
+@permissionId = 
+@exportRequestId = 
+
+# ==============================================================================
+# 1. AUTHENTICATION (8 endpoints)
+# ==============================================================================
+
+### Register
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Test@123456",
+  "fullName": "John Doe"
+}
+
+### Login (copier le token depuis la réponse)
 POST {{DotnetNiger.Identity_HostAddress}}/api/v1/auth/login
 Content-Type: application/json
 
 {
-	"email": "",
-	"password": ""
+  "email": "admin@dotnetniger.com",
+  "password": "Admin@123"
 }
 
-###
+### Refresh Token
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/auth/refresh
+Content-Type: application/json
 
-# Get profile
+{
+  "refreshToken": "your-refresh-token-here"
+}
+
+### Logout
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/auth/logout
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "refreshToken": "your-refresh-token-here"
+}
+
+### Forgot Password
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/auth/forgot-password
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
+
+### Reset Password
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "reset-token-from-email",
+  "newPassword": "NewPassword@123"
+}
+
+### Request Email Verification
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/auth/request-email-verification
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
+
+### Verify Email
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/auth/verify-email
+Content-Type: application/json
+
+{
+  "token": "verification-token-from-email"
+}
+
+# ==============================================================================
+# 2. USER PROFILE / ME (11 endpoints)
+# ==============================================================================
+
+### Get My Profile
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/me
+Authorization: Bearer {{token}}
+
+### Get My Profile (alias)
 GET {{DotnetNiger.Identity_HostAddress}}/api/v1/users/me
 Authorization: Bearer {{token}}
 
-###
+### Update My Profile
+PUT {{DotnetNiger.Identity_HostAddress}}/api/v1/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
 
-# Upload avatar
-POST {{DotnetNiger.Identity_HostAddress}}/api/v1/users/me/avatar
+{
+  "fullName": "John Updated",
+  "bio": "Senior Developer",
+  "country": "Niger",
+  "city": "Niamey"
+}
+
+### Get Avatar Info
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/users/me/avatar
+Authorization: Bearer {{token}}
+
+### Upload Avatar
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/me/avatar
 Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=boundary
 
@@ -30,24 +123,337 @@ Content-Type: image/png
 < ./avatar.png
 --boundary--
 
-###
-
-# Delete avatar
-DELETE {{DotnetNiger.Identity_HostAddress}}/api/v1/users/me/avatar
+### Delete Avatar
+DELETE {{DotnetNiger.Identity_HostAddress}}/api/v1/me/avatar
 Authorization: Bearer {{token}}
 
-###
+### Change Password
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/me/change-password
+Authorization: Bearer {{token}}
+Content-Type: application/json
 
-# Get avatar
-GET {{DotnetNiger.Identity_HostAddress}}/api/v1/users/me/avatar
+{
+  "currentPassword": "OldPassword@123",
+  "newPassword": "NewPassword@123"
+}
+
+### Get My Login History
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/me/login-history?skip=0&take=20
 Authorization: Bearer {{token}}
 
-###
+### Request Data Export (RGPD)
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/me/export-data/request
+Authorization: Bearer {{token}}
 
-GET {{DotnetNiger.Identity_HostAddress}}/api/test/test
+### Download Exported Data
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/me/export-data/download/{{exportRequestId}}
+Authorization: Bearer {{token}}
 
-###
+# ==============================================================================
+# 3. ADMIN - USER MANAGEMENT (10 endpoints)
+# ==============================================================================
 
-GET {{DotnetNiger.Identity_HostAddress}}/api/test/health
+### Get All Users (Admin)
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/users?skip=0&take=20&search=&isActive=true
+Authorization: Bearer {{token}}
+
+### Get User By Id (Admin)
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/users/{{userId}}
+Authorization: Bearer {{token}}
+
+### Create User (Admin)
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "email": "newuser@example.com",
+  "password": "User@123456",
+  "firstName": "Jane",
+  "lastName": "Doe",
+  "phoneNumber": "+22790123456",
+  "emailConfirmed": true,
+  "isActive": true
+}
+
+### Update User (Admin)
+PUT {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/users/{{userId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "firstName": "Jane Updated",
+  "lastName": "Doe Updated",
+  "phoneNumber": "+22790123456",
+  "isActive": true
+}
+
+### Update User Status (Admin)
+PUT {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/users/{{userId}}/status
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "isActive": false
+}
+
+### Delete User (Admin)
+DELETE {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/users/{{userId}}
+Authorization: Bearer {{token}}
+
+### Reset User Password (Admin)
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/users/{{userId}}/reset-password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "newPassword": "NewPassword@123"
+}
+
+### Force Logout User (Admin)
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/users/{{userId}}/force-logout
+Authorization: Bearer {{token}}
+
+### Unlock User Account (Admin)
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/users/{{userId}}/unlock
+Authorization: Bearer {{token}}
+
+### Get User Login History (Admin)
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/users/{{userId}}/login-history?skip=0&take=20
+Authorization: Bearer {{token}}
+
+# ==============================================================================
+# 4. ADMIN - ROLES MANAGEMENT (8 endpoints)
+# ==============================================================================
+
+### Get All Roles (Admin)
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/roles
+Authorization: Bearer {{token}}
+
+### Get Role By Id (Admin)
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/roles/{{roleId}}
+Authorization: Bearer {{token}}
+
+### Create Role (Admin)
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/roles
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Moderator"
+}
+
+### Update Role (Admin)
+PUT {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/roles/{{roleId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Moderator Updated"
+}
+
+### Delete Role (Admin)
+DELETE {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/roles/{{roleId}}
+Authorization: Bearer {{token}}
+
+### Assign Role to User (Admin)
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/users/{{userId}}/roles
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "roleName": "Moderator"
+}
+
+### Remove Role from User (Admin)
+DELETE {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/users/{{userId}}/roles/{{roleId}}
+Authorization: Bearer {{token}}
+
+### Get Role Permissions (Admin)
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/roles/{{roleId}}/permissions
+Authorization: Bearer {{token}}
+
+### Set Role Permissions (Admin)
+PUT {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/roles/{{roleId}}/permissions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "permissionIds": [
+    "permission-guid-1",
+    "permission-guid-2"
+  ]
+}
+
+# ==============================================================================
+# 5. ADMIN - AUDIT (4 endpoints)
+# ==============================================================================
+
+### Get All Audit Logs (Admin)
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/audit/logs?skip=0&take=20
+Authorization: Bearer {{token}}
+
+### Get Login Logs (Admin)
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/audit/logins?skip=0&take=20
+Authorization: Bearer {{token}}
+
+### Get Admin Action Logs (Admin)
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/audit/admin-actions?skip=0&take=20
+Authorization: Bearer {{token}}
+
+### Set Audit Retention Policy (Admin)
+PUT {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/audit/retention-policy
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "retentionDays": 90
+}
+
+# ==============================================================================
+# 6. ADMIN - SETTINGS (2 endpoints)
+# ==============================================================================
+
+### Get File Upload Settings (Admin)
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/settings/file-upload
+Authorization: Bearer {{token}}
+
+### Update File Upload Settings (Admin)
+PUT {{DotnetNiger.Identity_HostAddress}}/api/v1/admin/settings/file-upload
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "provider": "Local",
+  "maxAvatarSizeInMB": 5,
+  "allowedExtensions": [".jpg", ".png", ".webp"]
+}
+
+# ==============================================================================
+# 7. HEALTH & DIAGNOSTICS (3 endpoints)
+# ==============================================================================
+
+### Health Check (Public)
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/health
+
+### Health Check Detailed (Admin)
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/health/detailed
+Authorization: Bearer {{token}}
+
+### Diagnostics Status (Public)
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/diagnostics/status
+
+# ==============================================================================
+# 8. ROLES (Legacy endpoints - 5 endpoints)
+# ==============================================================================
+
+### Get All Roles
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/roles
+Authorization: Bearer {{token}}
+
+### Create Role
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/roles
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Editor"
+}
+
+### Delete Role
+DELETE {{DotnetNiger.Identity_HostAddress}}/api/v1/roles/{{roleId}}
+Authorization: Bearer {{token}}
+
+### Assign Role
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/roles/assign
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": "user-guid-here",
+  "roleName": "Editor"
+}
+
+### Remove Role
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/roles/remove
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userId": "user-guid-here",
+  "roleName": "Editor"
+}
+
+### Get User Roles
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/roles/user/{{userId}}
+Authorization: Bearer {{token}}
+
+# ==============================================================================
+# 9. PERMISSIONS (Legacy endpoints - 5 endpoints)
+# ==============================================================================
+
+### Get All Permissions
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/permissions
+Authorization: Bearer {{token}}
+
+### Create Permission
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/permissions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "CanPublish",
+  "description": "Can publish content"
+}
+
+### Delete Permission
+DELETE {{DotnetNiger.Identity_HostAddress}}/api/v1/permissions/{{permissionId}}
+Authorization: Bearer {{token}}
+
+### Assign Permission to Role
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/permissions/assign
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "roleId": "role-guid-here",
+  "permissionId": "permission-guid-here"
+}
+
+### Remove Permission from Role
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/permissions/remove
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "roleId": "role-guid-here",
+  "permissionId": "permission-guid-here"
+}
+
+### Get Role Permissions
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/permissions/role/{{roleId}}
+Authorization: Bearer {{token}}
+
+# ==============================================================================
+# 10. SOCIAL LINKS (3 endpoints)
+# ==============================================================================
+
+### Get My Social Links
+GET {{DotnetNiger.Identity_HostAddress}}/api/v1/social-links
+Authorization: Bearer {{token}}
+
+### Add Social Link
+POST {{DotnetNiger.Identity_HostAddress}}/api/v1/social-links
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "platform": "Twitter",
+  "url": "https://twitter.com/username"
+}
+
+### Delete Social Link
+DELETE {{DotnetNiger.Identity_HostAddress}}/api/v1/social-links/{{socialLinkId}}
+Authorization: Bearer {{token}}
 
 ###
