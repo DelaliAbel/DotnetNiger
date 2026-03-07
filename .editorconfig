@@ -1,0 +1,84 @@
+# EditorConfig for DotnetNiger
+
+root = true
+
+# Code files
+[*.{cs,xaml}]
+indent_size = 4
+indent_style = space
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# C# files
+[*.cs]
+
+# Naming Rules
+# PascalCase for public members
+dotnet_naming_rule.naming_rule_public_members_pascalcase.symbols = symbol_public_members
+dotnet_naming_rule.naming_rule_public_members_pascalcase.style = style_pascalcase
+dotnet_naming_rule.naming_rule_public_members_pascalcase.severity = suggestion
+
+dotnet_naming_symbols.symbol_public_members.applicable_kinds = class,struct,interface,enum,property,method,field,event,delegate
+dotnet_naming_symbols.symbol_public_members.applicable_accessibilities = public,protected,protected_friend
+
+dotnet_naming_style.style_pascalcase.capitalization = pascal_case
+
+# camelCase for private/local members
+dotnet_naming_rule.naming_rule_private_members_camelcase.symbols = symbol_private_members
+dotnet_naming_rule.naming_rule_private_members_camelcase.style = style_camelcase
+dotnet_naming_rule.naming_rule_private_members_camelcase.severity = suggestion
+
+dotnet_naming_symbols.symbol_private_members.applicable_kinds = parameter,local,local_function
+dotnet_naming_symbols.symbol_private_members.applicable_accessibilities = *
+
+dotnet_naming_style.style_camelcase.capitalization = camel_case
+
+# _camelCase for private fields
+dotnet_naming_rule.naming_rule_private_fields_underscore_camelcase.symbols = symbol_private_fields
+dotnet_naming_rule.naming_rule_private_fields_underscore_camelcase.style = style_underscore_camelcase
+dotnet_naming_rule.naming_rule_private_fields_underscore_camelcase.severity = suggestion
+
+dotnet_naming_symbols.symbol_private_fields.applicable_kinds = field
+dotnet_naming_symbols.symbol_private_fields.applicable_accessibilities = private
+
+dotnet_naming_style.style_underscore_camelcase.required_prefix = _
+dotnet_naming_style.style_underscore_camelcase.capitalization = camel_case
+
+# Code Style Rules
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_for_built_in_types = false:silent
+csharp_style_var_elsewhere = false:silent
+
+csharp_prefer_simple_using_statement = true:suggestion
+csharp_prefer_braces = true:silent
+csharp_prefer_simple_default_expression = true:suggestion
+
+# Formatting Rules
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_space_after_colon_in_inheritance_clause = true
+csharp_space_after_comma = true
+csharp_space_after_dot = false
+csharp_space_around_binary_operators = before_and_after
+csharp_space_around_declaration_statements = false
+csharp_space_before_colon_in_inheritance_clause = true
+csharp_space_before_comma = false
+csharp_space_before_dot = false
+csharp_space_before_open_square_brackets = false
+csharp_space_between_empty_square_brackets = false
+csharp_space_between_method_call_empty_parameter_list_parentheses = false
+csharp_space_between_method_declaration_empty_parameter_list_parentheses = false
+csharp_space_between_method_declaration_name_and_open_parenthesis = false
+
+# JSON files
+[*.json]
+indent_size = 2
+
+# YAML files
+[*.{yml,yaml}]
+indent_size = 2
+
+# Markdown files
+[*.md]
+trim_trailing_whitespace = false
