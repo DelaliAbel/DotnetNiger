@@ -68,11 +68,14 @@ Jwt__Audience=DotnetNiger.Identity.Client
 ## Depannage
 
 1. Gateway build OK mais swagger aggregate KO
+
 - Verifier que les downstream services tournent bien sur `5075` et `5269`.
 
 2. Reponse 401 sur routes protegees
+
 - Verifier `Authorization: Bearer <token>`.
 - Verifier coherence `Jwt__Key` entre Identity et Gateway.
 
 3. Reponse 429 (too many requests)
+
 - Limites appliquees par Ocelot (`RateLimitOptions` dans `ocelot.json`).
