@@ -5,6 +5,7 @@ using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace DotnetNiger.Identity.Api.Controllers;
 
@@ -16,11 +17,13 @@ public class AuthController : ControllerBase
 {
     // Endpoints publics pour l'authentification.
     private readonly IAuthService _authService;
+    private readonly ITokenService _tokenService;
     private readonly IWebHostEnvironment _environment;
 
-    public AuthController(IAuthService authService, IWebHostEnvironment environment)
+    public AuthController(IAuthService authService, ITokenService tokenService, IWebHostEnvironment environment)
     {
         _authService = authService;
+        _tokenService = tokenService;
         _environment = environment;
     }
 
@@ -80,5 +83,27 @@ public class AuthController : ControllerBase
     {
         await _authService.VerifyEmailAsync(request);
         return Ok(new { message = "Email verified." });
+    }
+
+    [HttpPost("refresh")]
+    [AllowAnonymous]
+    public async Task<ActionResult<AuthDto>> Refresh([FromBody] RefreshTokenRequest request)
+    {
+        var result = await _tokenService.RefreshAsync(request);
+        return Ok(result);
+    }
+
+    [HttpPost("logout")]
+    [Authorize]
+    public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request)
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdValue, out var userId))
+        {
+            return Unauthorized();
+        }
+
+        await _tokenService.LogoutAsync(userId, request);
+        return NoContent();
     }
 }

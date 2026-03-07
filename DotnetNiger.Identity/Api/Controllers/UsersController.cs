@@ -1,20 +1,23 @@
 // Controleur API Identity: UsersController
 using System.Security.Claims;
+using System.Text.Json;
 using Asp.Versioning;
 using DotnetNiger.Identity.Application.DTOs.Requests;
 using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Exceptions;
 using DotnetNiger.Identity.Application.Services.Interfaces;
+using DotnetNiger.Identity.Infrastructure.Data;
 using DotnetNiger.Identity.Infrastructure.External;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace DotnetNiger.Identity.Api.Controllers;
 
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/users")]
+[Route("api/v{version:apiVersion}/me")]
 [Authorize]
 // Endpoints pour le profil et les operations du compte.
 public class UsersController : ControllerBase
@@ -24,6 +27,9 @@ public class UsersController : ControllerBase
 	private readonly IFileUploadService _fileUploadService;
 	private readonly FileUploadOptions _fileUploadOptions;
 	private readonly IAvatarMetadataService _avatarMetadataService;
+	private readonly ILoginHistoryService _loginHistoryService;
+	private readonly ISocialLinkService _socialLinkService;
+	private readonly DotnetNigerIdentityDbContext _dbContext;
 	private readonly ILogger<UsersController> _logger;
 
 	public UsersController(
@@ -31,12 +37,18 @@ public class UsersController : ControllerBase
 		IFileUploadService fileUploadService,
 		IOptions<FileUploadOptions> fileUploadOptions,
 		IAvatarMetadataService avatarMetadataService,
+		ILoginHistoryService loginHistoryService,
+		ISocialLinkService socialLinkService,
+		DotnetNigerIdentityDbContext dbContext,
 		ILogger<UsersController> logger)
 	{
 		_userService = userService;
 		_fileUploadService = fileUploadService;
 		_fileUploadOptions = fileUploadOptions.Value;
 		_avatarMetadataService = avatarMetadataService;
+		_loginHistoryService = loginHistoryService;
+		_socialLinkService = socialLinkService;
+		_dbContext = dbContext;
 		_logger = logger;
 	}
 
@@ -77,7 +89,8 @@ public class UsersController : ControllerBase
 		}
 	}
 
-	[HttpGet("me")]
+
+	[HttpGet]
 	public async Task<ActionResult<UserDto>> Me()
 	{
 		var userId = RequireUserId();
@@ -90,7 +103,8 @@ public class UsersController : ControllerBase
 		return Ok(profile);
 	}
 
-	[HttpPut("me")]
+
+	[HttpPut]
 	public async Task<ActionResult<UserDto>> UpdateMe([FromBody] UpdateProfileRequest request)
 	{
 		var userId = RequireUserId();
@@ -104,7 +118,7 @@ public class UsersController : ControllerBase
 		return Ok(profile);
 	}
 
-	[HttpGet("me/avatar")]
+	[HttpGet("avatar")]
 	[ProducesResponseType(typeof(AvatarInfoDto), StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	public async Task<ActionResult<AvatarInfoDto>> GetAvatar()
@@ -120,7 +134,8 @@ public class UsersController : ControllerBase
 		return Ok(metadata);
 	}
 
-	[HttpPost("me/change-password")]
+
+	[HttpPost("change-password")]
 	public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
 	{
 		var userId = RequireUserId();
@@ -137,24 +152,8 @@ public class UsersController : ControllerBase
 		}
 	}
 
-	[HttpPost("me/change-email")]
-	public async Task<IActionResult> ChangeEmail([FromBody] ChangeEmailRequest request)
-	{
-		var userId = RequireUserId();
-		try
-		{
-			await _userService.ChangeEmailAsync(userId, request);
-			_logger.LogInformation("User {UserId} changed email.", userId);
-			return NoContent();
-		}
-		catch (IdentityException ex)
-		{
-			_logger.LogWarning(ex, "Erreur lors du changement d'email pour {UserId}", userId);
-			return StatusCode(ex.StatusCode, new { message = ex.Message });
-		}
-	}
 
-	[HttpPost("me/avatar")]
+	[HttpPost("avatar")]
 	[Consumes("multipart/form-data")]
 	[ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
 	[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
@@ -187,7 +186,8 @@ public class UsersController : ControllerBase
 		}
 	}
 
-	[HttpDelete("me/avatar")]
+
+	[HttpDelete("avatar")]
 	[ProducesResponseType(StatusCodes.Status204NoContent)]
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	public async Task<IActionResult> DeleteAvatar()
@@ -215,6 +215,65 @@ public class UsersController : ControllerBase
 			_logger.LogWarning(ex, "Erreur lors de la suppression d'avatar pour {UserId}", userId);
 			return StatusCode(ex.StatusCode, new { message = ex.Message });
 		}
+	}
+
+
+	[HttpGet("login-history")]
+	public async Task<ActionResult<PaginatedDto<LoginHistoryDto>>> GetMyLoginHistory([FromQuery] int skip = 0, [FromQuery] int take = 20)
+	{
+		var userId = RequireUserId();
+		var history = await _loginHistoryService.GetUserHistoryAsync(userId, skip, take);
+		return Ok(history);
+	}
+
+
+	[HttpPost("export-data/request")]
+	public async Task<IActionResult> RequestExport()
+	{
+		var userId = RequireUserId();
+		var requestId = Guid.NewGuid();
+
+		var profile = await _userService.GetProfileAsync(userId);
+		var logins = await _dbContext.LoginHistories.AsNoTracking()
+			.Where(item => item.UserId == userId)
+			.OrderByDescending(item => item.LoginAt)
+			.Take(500)
+			.ToListAsync();
+		var socialLinks = await _socialLinkService.GetForUserAsync(userId);
+
+		var exportPayload = new
+		{
+			requestId,
+			generatedAt = DateTime.UtcNow,
+			user = profile,
+			loginHistory = logins,
+			socialLinks
+		};
+
+		var exportDir = Path.Combine(AppContext.BaseDirectory, "uploads", "exports");
+		Directory.CreateDirectory(exportDir);
+		var filePath = Path.Combine(exportDir, $"export-{userId:N}-{requestId:N}.json");
+		await System.IO.File.WriteAllTextAsync(filePath, JsonSerializer.Serialize(exportPayload, new JsonSerializerOptions
+		{
+			WriteIndented = true
+		}));
+
+		return Ok(new { requestId, status = "completed", downloadUrl = $"/me/export-data/download/{requestId}" });
+	}
+
+
+	[HttpGet("export-data/download/{requestId:guid}")]
+	public IActionResult DownloadExport(Guid requestId)
+	{
+		var userId = RequireUserId();
+		var filePath = Path.Combine(AppContext.BaseDirectory, "uploads", "exports", $"export-{userId:N}-{requestId:N}.json");
+
+		if (!System.IO.File.Exists(filePath))
+		{
+			return NotFound(new { message = "Export file not found." });
+		}
+
+		return PhysicalFile(filePath, "application/json", $"export-{requestId:N}.json", enableRangeProcessing: true);
 	}
 
 	private Guid? GetUserId()
