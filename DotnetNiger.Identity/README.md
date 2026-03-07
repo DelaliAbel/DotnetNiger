@@ -8,8 +8,7 @@ Service Identity pour l'authentification et la gestion des utilisateurs.
 dotnet restore
 cd DotnetNiger.Identity
 dotnet ef database update
-./run.ps1    # Windows
-./run.sh     # Linux/Mac
+./run.sh    # Windows
 ```
 
 Swagger: http://localhost:5075/swagger
