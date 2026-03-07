@@ -18,9 +18,9 @@ public class DotnetNigerIdentityDbFactory : IDesignTimeDbContextFactory<DotnetNi
             .AddJsonFile("appsettings.Development.json", optional: true)
             .Build();
 
-        var connectionString = configuration.GetConnectionString("DotnetNigerIdentityDbContext")
+        var connectionString = configuration.GetConnectionString("DotnetNigerDb")
             ?? throw new InvalidOperationException(
-                "Connection string 'DotnetNigerIdentityDbContext' not found in appsettings.");
+                "Connection string 'DotnetNigerDb' not found in appsettings.");
 
         var optionsBuilder = new DbContextOptionsBuilder<DotnetNigerIdentityDbContext>();
         optionsBuilder.UseSqlite(connectionString);

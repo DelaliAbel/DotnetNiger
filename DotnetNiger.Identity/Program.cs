@@ -28,7 +28,7 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
         .Enrich.FromLogContext());
 
 // Configuration principale du service Identity.
-var connectionString = builder.Configuration.GetConnectionString("DotnetNigerIdentityDbContext") ?? throw new InvalidOperationException("Connection string 'DotnetNigerIdentityDbContext' introuvable.");
+var connectionString = builder.Configuration.GetConnectionString("DotnetNigerDb") ?? throw new InvalidOperationException("Connection string 'DotnetNigerDb' introuvable.");
 
 // Chargement de la configuration JWT.
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>()
