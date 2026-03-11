@@ -4,18 +4,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Infrastructure.Repositories;
 
-public interface ITeamMemberRepository : IRepository<TeamMember>
+public interface IMemberRepository : IRepository<Member>
 {
-    Task<IEnumerable<TeamMember>> GetActiveTeamMembersAsync();
+    Task<IEnumerable<Member>> GetActiveMembersAsync();
 }
 
-public class TeamMemberRepository : BaseRepository<TeamMember>, ITeamMemberRepository
+public class MemberRepository : BaseRepository<Member>, IMemberRepository
 {
-    public TeamMemberRepository(CommunityDbContext context) : base(context)
+    public MemberRepository(CommunityDbContext context) : base(context)
     {
     }
 
-    public async Task<IEnumerable<TeamMember>> GetActiveTeamMembersAsync()
+    public async Task<IEnumerable<Member>> GetActiveMembersAsync()
     {
         return await _dbSet
             .Include(tm => tm.Skills)

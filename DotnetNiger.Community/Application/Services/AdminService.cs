@@ -1,16 +1,9 @@
 using DotnetNiger.Community.Domain.Entities;
 using DotnetNiger.Community.Infrastructure.Repositories;
+using DotnetNiger.Community.Application.Services.Interfaces;
+
 
 namespace DotnetNiger.Community.Application.Services;
-
-public interface IAdminService
-{
-    Task<object> GetDashboardAsync();
-    Task<IEnumerable<Comment>> GetPendingCommentsAsync(int page = 1, int pageSize = 20);
-    Task<IEnumerable<Resource>> GetPendingResourcesAsync(int page = 1, int pageSize = 20);
-    Task<bool> ModerateCommentAsync(Guid commentId, bool isApproved);
-    Task<bool> ModerateResourceAsync(Guid resourceId, bool isApproved);
-}
 
 public class AdminService : IAdminService
 {
@@ -20,7 +13,6 @@ public class AdminService : IAdminService
     private readonly IResourceRepository _resourceRepository;
     private readonly ICommentRepository _commentRepository;
     private readonly IPartnerRepository _partnerRepository;
-    private readonly ITeamMemberRepository _teamMemberRepository;
 
     public AdminService(
         IPostRepository postRepository,
@@ -28,8 +20,7 @@ public class AdminService : IAdminService
         IProjectRepository projectRepository,
         IResourceRepository resourceRepository,
         ICommentRepository commentRepository,
-        IPartnerRepository partnerRepository,
-        ITeamMemberRepository teamMemberRepository)
+        IPartnerRepository partnerRepository)
     {
         _postRepository = postRepository;
         _eventRepository = eventRepository;
@@ -37,8 +28,9 @@ public class AdminService : IAdminService
         _resourceRepository = resourceRepository;
         _commentRepository = commentRepository;
         _partnerRepository = partnerRepository;
-        _teamMemberRepository = teamMemberRepository;
     }
+
+    // --- Dashboard ---
 
     public async Task<object> GetDashboardAsync()
     {
@@ -52,10 +44,7 @@ public class AdminService : IAdminService
         var pendingResources = await _resourceRepository.CountAsync(r => !r.IsApproved);
         var approvedResources = await _resourceRepository.CountAsync(r => r.IsApproved);
         var totalComments = await _commentRepository.CountAsync();
-        var pendingComments = await _commentRepository.CountAsync(c => !c.IsApproved);
-        var approvedComments = await _commentRepository.CountAsync(c => c.IsApproved);
         var totalPartners = await _partnerRepository.CountAsync();
-        var totalTeamMembers = await _teamMemberRepository.CountAsync();
 
         return new
         {
@@ -66,34 +55,26 @@ public class AdminService : IAdminService
                 projects = totalProjects,
                 resources = totalResources,
                 comments = totalComments,
-                partners = totalPartners,
-                teamMembers = totalTeamMembers
+                partners = totalPartners
             },
             moderation = new
             {
-                pendingComments,
-                approvedComments,
                 pendingResources,
                 approvedResources
             },
             publication = new
             {
                 publishedPosts,
+                unpublishedPosts = totalPosts - publishedPosts,
                 publishedEvents,
+                unpublishedEvents = totalEvents - publishedEvents,
                 activeProjects
             },
             generatedAt = DateTime.UtcNow
         };
     }
 
-    public async Task<IEnumerable<Comment>> GetPendingCommentsAsync(int page = 1, int pageSize = 20)
-    {
-        var pendingComments = await _commentRepository.FindAsync(c => !c.IsApproved);
-        return pendingComments
-            .OrderByDescending(c => c.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize);
-    }
+    // --- Resources ---
 
     public async Task<IEnumerable<Resource>> GetPendingResourcesAsync(int page = 1, int pageSize = 20)
     {
@@ -104,32 +85,10 @@ public class AdminService : IAdminService
             .Take(pageSize);
     }
 
-    public async Task<bool> ModerateCommentAsync(Guid commentId, bool isApproved)
-    {
-        var comment = await _commentRepository.GetByIdAsync(commentId);
-        if (comment == null)
-        {
-            return false;
-        }
-
-        if (isApproved)
-        {
-            comment.IsApproved = true;
-            comment.UpdatedAt = DateTime.UtcNow;
-            await _commentRepository.UpdateAsync(comment);
-            return true;
-        }
-
-        return await _commentRepository.DeleteAsync(commentId);
-    }
-
     public async Task<bool> ModerateResourceAsync(Guid resourceId, bool isApproved)
     {
         var resource = await _resourceRepository.GetByIdAsync(resourceId);
-        if (resource == null)
-        {
-            return false;
-        }
+        if (resource == null) return false;
 
         if (isApproved)
         {
@@ -141,4 +100,116 @@ public class AdminService : IAdminService
 
         return await _resourceRepository.DeleteAsync(resourceId);
     }
+
+    // --- Posts ---
+
+    public async Task<IEnumerable<Post>> GetAllPostsAsync(int page = 1, int pageSize = 20)
+    {
+        var all = await _postRepository.GetAllAsync();
+        return all
+            .OrderByDescending(p => p.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize);
+    }
+
+    public async Task<bool> PublishPostAsync(Guid postId)
+    {
+        var post = await _postRepository.GetByIdAsync(postId);
+        if (post == null) return false;
+
+        post.IsPublished = true;
+        post.PublishedAt = DateTime.UtcNow;
+        post.UpdatedAt = DateTime.UtcNow;
+        await _postRepository.UpdateAsync(post);
+        return true;
+    }
+
+    public async Task<bool> UnpublishPostAsync(Guid postId)
+    {
+        var post = await _postRepository.GetByIdAsync(postId);
+        if (post == null) return false;
+
+        post.IsPublished = false;
+        post.UpdatedAt = DateTime.UtcNow;
+        await _postRepository.UpdateAsync(post);
+        return true;
+    }
+
+    public async Task<bool> DeletePostAsync(Guid postId)
+    {
+        return await _postRepository.DeleteAsync(postId);
+    }
+
+    // --- Events ---
+
+    public async Task<IEnumerable<Event>> GetAllEventsAsync(int page = 1, int pageSize = 20)
+    {
+        var all = await _eventRepository.GetAllAsync();
+        return all
+            .OrderByDescending(e => e.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize);
+    }
+
+    public async Task<bool> PublishEventAsync(Guid eventId)
+    {
+        var @event = await _eventRepository.GetByIdAsync(eventId);
+        if (@event == null) return false;
+
+        @event.IsPublished = true;
+        @event.UpdatedAt = DateTime.UtcNow;
+        await _eventRepository.UpdateAsync(@event);
+        return true;
+    }
+
+    public async Task<bool> UnpublishEventAsync(Guid eventId)
+    {
+        var @event = await _eventRepository.GetByIdAsync(eventId);
+        if (@event == null) return false;
+
+        @event.IsPublished = false;
+        @event.UpdatedAt = DateTime.UtcNow;
+        await _eventRepository.UpdateAsync(@event);
+        return true;
+    }
+
+    public async Task<bool> DeleteEventAsync(Guid eventId)
+    {
+        return await _eventRepository.DeleteAsync(eventId);
+    }
+
+    // --- Comments ---
+
+    public async Task<bool> DeleteCommentAsync(Guid commentId)
+    {
+        return await _commentRepository.DeleteAsync(commentId);
+    }
+
+    // --- Projects ---
+
+    public async Task<IEnumerable<Project>> GetAllProjectsAsync(int page = 1, int pageSize = 20)
+    {
+        var all = await _projectRepository.GetAllAsync();
+        return all
+            .OrderByDescending(p => p.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize);
+    }
+
+    public async Task<bool> FeatureProjectAsync(Guid projectId, bool isFeatured)
+    {
+        var project = await _projectRepository.GetByIdAsync(projectId);
+        if (project == null) return false;
+
+        project.IsFeatured = isFeatured;
+        project.UpdatedAt = DateTime.UtcNow;
+        await _projectRepository.UpdateAsync(project);
+        return true;
+    }
+
+    public async Task<bool> DeleteProjectAsync(Guid projectId)
+    {
+        return await _projectRepository.DeleteAsync(projectId);
+    }
 }
+
