@@ -3,7 +3,7 @@
     {
       "UpstreamPathTemplate": "/health",
       "UpstreamHttpMethod": ["GET"],
-      "DownstreamPathTemplate": "/health",
+      "DownstreamPathTemplate": "/api/v1/health",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -16,7 +16,7 @@
     {
       "UpstreamPathTemplate": "/info",
       "UpstreamHttpMethod": ["GET"],
-      "DownstreamPathTemplate": "/api/v1/diagnostics/info",
+      "DownstreamPathTemplate": "/api/v1/health",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -203,8 +203,38 @@
     },
     {
       "UpstreamPathTemplate": "/api/community/posts/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
-      "DownstreamPathTemplate": "/api/posts/{everything}",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/api/v1/posts/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5269
+        }
+      ],
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": 5000,
+        "TimeoutValue": 5000
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 60,
+        "Limit": 50
+      },
+      "FileCacheOptions": {
+        "TtlSeconds": 10,
+        "Region": "posts"
+      },
+      "Key": "CommunityPostsRoute",
+      "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/community/posts/{everything}",
+      "UpstreamHttpMethod": ["POST", "PUT", "DELETE", "PATCH"],
+      "DownstreamPathTemplate": "/api/v1/posts/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -227,17 +257,13 @@
         "PeriodTimespan": 60,
         "Limit": 50
       },
-      "FileCacheOptions": {
-        "TtlSeconds": 10,
-        "Region": "posts"
-      },
-      "Key": "CommunityPostsRoute",
+      "Key": "CommunityPostsWriteRoute",
       "SwaggerKey": "community"
     },
     {
       "UpstreamPathTemplate": "/api/community/comments/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
-      "DownstreamPathTemplate": "/api/comments/{everything}",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/api/v1/comments/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -245,16 +271,13 @@
           "Port": 5269
         }
       ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer"
-      },
       "Key": "CommunityCommentsRoute",
       "SwaggerKey": "community"
     },
     {
-      "UpstreamPathTemplate": "/api/community/events/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
-      "DownstreamPathTemplate": "/api/events/{everything}",
+      "UpstreamPathTemplate": "/api/community/comments/{everything}",
+      "UpstreamHttpMethod": ["POST", "PUT", "DELETE", "PATCH"],
+      "DownstreamPathTemplate": "/api/v1/comments/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -265,13 +288,27 @@
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "Bearer"
       },
+      "Key": "CommunityCommentsWriteRoute",
+      "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/community/events/{everything}",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/api/v1/events/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5269
+        }
+      ],
       "Key": "CommunityEventsRoute",
       "SwaggerKey": "community"
     },
     {
-      "UpstreamPathTemplate": "/api/community/projects/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
-      "DownstreamPathTemplate": "/api/projects/{everything}",
+      "UpstreamPathTemplate": "/api/community/events/{everything}",
+      "UpstreamHttpMethod": ["POST", "PUT", "DELETE", "PATCH"],
+      "DownstreamPathTemplate": "/api/v1/events/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -282,86 +319,156 @@
       "AuthenticationOptions": {
         "AuthenticationProviderKey": "Bearer"
       },
+      "Key": "CommunityEventsWriteRoute",
+      "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/community/admin/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+      "DownstreamPathTemplate": "/api/v1/admin/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5269
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer"
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": 5000,
+        "TimeoutValue": 5000
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 60,
+        "Limit": 30
+      },
+      "Key": "CommunityAdminRoute",
+      "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/community/projects/{everything}",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/api/v1/projects/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5269 }],
       "Key": "CommunityProjectsRoute",
       "SwaggerKey": "community"
     },
     {
-      "UpstreamPathTemplate": "/api/community/resources/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
-      "DownstreamPathTemplate": "/api/resources/{everything}",
+      "UpstreamPathTemplate": "/api/community/projects/{everything}",
+      "UpstreamHttpMethod": ["POST", "PUT", "DELETE", "PATCH"],
+      "DownstreamPathTemplate": "/api/v1/projects/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "localhost",
-          "Port": 5269
-        }
-      ],
-      "AuthenticationOptions": {
-        "AuthenticationProviderKey": "Bearer"
-      },
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5269 }],
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
+      "Key": "CommunityProjectsWriteRoute",
+      "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/community/resources/{everything}",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/api/v1/resources/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5269 }],
       "Key": "CommunityResourcesRoute",
       "SwaggerKey": "community"
     },
     {
-      "UpstreamPathTemplate": "/api/community/categories/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
-      "DownstreamPathTemplate": "/api/categories/{everything}",
+      "UpstreamPathTemplate": "/api/community/resources/{everything}",
+      "UpstreamHttpMethod": ["POST", "PUT", "DELETE", "PATCH"],
+      "DownstreamPathTemplate": "/api/v1/resources/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "localhost",
-          "Port": 5269
-        }
-      ],
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5269 }],
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
+      "Key": "CommunityResourcesWriteRoute",
+      "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/community/categories/{everything}",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/api/v1/categories/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5269 }],
       "Key": "CommunityCategoriesRoute",
       "SwaggerKey": "community"
     },
     {
-      "UpstreamPathTemplate": "/api/community/tags/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
-      "DownstreamPathTemplate": "/api/tags/{everything}",
+      "UpstreamPathTemplate": "/api/community/categories/{everything}",
+      "UpstreamHttpMethod": ["POST", "PUT", "DELETE", "PATCH"],
+      "DownstreamPathTemplate": "/api/v1/categories/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "localhost",
-          "Port": 5269
-        }
-      ],
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5269 }],
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
+      "Key": "CommunityCategoriesWriteRoute",
+      "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/community/tags/{everything}",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/api/v1/tags/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5269 }],
       "Key": "CommunityTagsRoute",
       "SwaggerKey": "community"
     },
     {
-      "UpstreamPathTemplate": "/api/community/partners/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
-      "DownstreamPathTemplate": "/api/partners/{everything}",
+      "UpstreamPathTemplate": "/api/community/tags/{everything}",
+      "UpstreamHttpMethod": ["POST", "PUT", "DELETE", "PATCH"],
+      "DownstreamPathTemplate": "/api/v1/tags/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "localhost",
-          "Port": 5269
-        }
-      ],
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5269 }],
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
+      "Key": "CommunityTagsWriteRoute",
+      "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/community/partners/{everything}",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/api/v1/partners/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5269 }],
       "Key": "CommunityPartnersRoute",
       "SwaggerKey": "community"
     },
     {
-      "UpstreamPathTemplate": "/api/community/team/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
-      "DownstreamPathTemplate": "/api/team/{everything}",
+      "UpstreamPathTemplate": "/api/community/partners/{everything}",
+      "UpstreamHttpMethod": ["POST", "PUT", "DELETE", "PATCH"],
+      "DownstreamPathTemplate": "/api/v1/partners/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [
-        {
-          "Host": "localhost",
-          "Port": 5269
-        }
-      ],
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5269 }],
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
+      "Key": "CommunityPartnersWriteRoute",
+      "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/community/team/{everything}",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/api/v1/team/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5269 }],
       "Key": "CommunityTeamRoute",
+      "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/community/team/{everything}",
+      "UpstreamHttpMethod": ["POST", "PUT", "DELETE", "PATCH"],
+      "DownstreamPathTemplate": "/api/v1/team/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5269 }],
+      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer" },
+      "Key": "CommunityTeamWriteRoute",
       "SwaggerKey": "community"
     },
     {
       "UpstreamPathTemplate": "/api/community/stats/{everything}",
       "UpstreamHttpMethod": ["GET"],
-      "DownstreamPathTemplate": "/api/stats/{everything}",
+      "DownstreamPathTemplate": "/api/v1/stats/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -375,7 +482,7 @@
     {
       "UpstreamPathTemplate": "/api/community/search/{everything}",
       "UpstreamHttpMethod": ["GET"],
-      "DownstreamPathTemplate": "/api/search/{everything}",
+      "DownstreamPathTemplate": "/api/v1/search/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {

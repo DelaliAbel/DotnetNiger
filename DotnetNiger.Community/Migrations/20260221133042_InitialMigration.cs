@@ -158,7 +158,7 @@ namespace DotnetNiger.Community.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "TeamMembers",
+                name: "Members",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
@@ -174,7 +174,7 @@ namespace DotnetNiger.Community.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_TeamMembers", x => x.Id);
+                    table.PrimaryKey("PK_Members", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -345,21 +345,21 @@ namespace DotnetNiger.Community.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "TeamMemberSkills",
+                name: "MemberSkills",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "TEXT", nullable: false),
-                    TeamMemberId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    MemberId = table.Column<Guid>(type: "TEXT", nullable: false),
                     SkillName = table.Column<string>(type: "TEXT", nullable: false),
                     Level = table.Column<string>(type: "TEXT", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_TeamMemberSkills", x => x.Id);
+                    table.PrimaryKey("PK_MemberSkills", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_TeamMemberSkills_TeamMembers_TeamMemberId",
-                        column: x => x.TeamMemberId,
-                        principalTable: "TeamMembers",
+                        name: "FK_MemberSkills_Members_MemberId",
+                        column: x => x.MemberId,
+                        principalTable: "Members",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -447,9 +447,9 @@ namespace DotnetNiger.Community.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_TeamMemberSkills_TeamMemberId",
-                table: "TeamMemberSkills",
-                column: "TeamMemberId");
+                name: "IX_MemberSkills_MemberId",
+                table: "MemberSkills",
+                column: "MemberId");
         }
 
         /// <inheritdoc />
@@ -480,7 +480,7 @@ namespace DotnetNiger.Community.Migrations
                 name: "ResourceCategories");
 
             migrationBuilder.DropTable(
-                name: "TeamMemberSkills");
+                name: "MemberSkills");
 
             migrationBuilder.DropTable(
                 name: "Events");
@@ -501,7 +501,7 @@ namespace DotnetNiger.Community.Migrations
                 name: "Resources");
 
             migrationBuilder.DropTable(
-                name: "TeamMembers");
+                name: "Members");
         }
     }
 }

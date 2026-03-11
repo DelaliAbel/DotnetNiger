@@ -24,8 +24,8 @@ public class CommunityDbContext : DbContext
     public DbSet<Resource> Resources { get; set; } = null!;
     public DbSet<ResourceCategory> ResourceCategories { get; set; } = null!;
     public DbSet<Tag> Tags { get; set; } = null!;
-    public DbSet<TeamMember> TeamMembers { get; set; } = null!;
-    public DbSet<TeamMemberSkill> TeamMemberSkills { get; set; } = null!;
+    public DbSet<Member> Members { get; set; } = null!;
+    public DbSet<MemberSkill> MemberSkills { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -40,7 +40,7 @@ public class CommunityDbContext : DbContext
         ConfigureProjectEntity(modelBuilder);
         ConfigureResourceEntity(modelBuilder);
         ConfigureTagEntity(modelBuilder);
-        ConfigureTeamMemberEntity(modelBuilder);
+        ConfigureMemberEntity(modelBuilder);
     }
 
     private void ConfigurePostEntity(ModelBuilder modelBuilder)
@@ -191,15 +191,15 @@ public class CommunityDbContext : DbContext
             .OnDelete(DeleteBehavior.Cascade);
     }
 
-    private void ConfigureTeamMemberEntity(ModelBuilder modelBuilder)
+    private void ConfigureMemberEntity(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<TeamMember>()
+        modelBuilder.Entity<Member>()
             .HasKey(tm => tm.Id);
 
-        modelBuilder.Entity<TeamMember>()
+        modelBuilder.Entity<Member>()
             .HasMany(tm => tm.Skills)
-            .WithOne(tms => tms.TeamMember)
-            .HasForeignKey(tms => tms.TeamMemberId)
+            .WithOne(tms => tms.Member)
+            .HasForeignKey(tms => tms.MemberId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

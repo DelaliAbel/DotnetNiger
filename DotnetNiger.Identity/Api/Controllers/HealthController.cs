@@ -22,7 +22,7 @@ public class HealthController : ControllerBase
 	[AllowAnonymous]
 	public IActionResult Health()
 	{
-		return Ok(new { status = "healthy", service = "identity", timestamp = DateTime.UtcNow });
+		return Ok(new { status = "healthy", service = "DotnetNiger.Identity", timestamp = DateTime.UtcNow });
 	}
 
 	[HttpGet("health/detailed")]

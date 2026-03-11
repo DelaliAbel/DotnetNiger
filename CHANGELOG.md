@@ -9,6 +9,74 @@ et ce projet adhère à [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Added
 
+- **Community API** : versioning `Asp.Versioning.Mvc` v7.1.0 identique à Identity
+  - Tous les controllers passent à `[ApiVersion("1.0")]` + `api/v{version:apiVersion}/...`
+  - `ConfigureSwaggerOptions` ajouté (pattern identique Identity)
+  - `Program.cs` : `AddApiVersioning()` + `AddApiExplorer()` + Swagger UI par version
+- **Gateway** : `Ocelot.Provider.Polly` v24.1.0 ajouté (`AddPolly()`) — support `QoSOptions`
+- **Gateway** : `await app.UseOcelot()` corrigé (Task non attendue)
+- **Gateway** : `Program.cs` nettoyé et reformaté (sections claires, imports triés)
+- **Community** : section `Jwt` (Issuer, Audience, Key) ajoutée dans `appsettings.json` et `appsettings.Development.json`
+- **Gateway** `ocelot.json` : tous les `DownstreamPathTemplate` Community mis à jour vers `/api/v1/...`
+- **Docs** : `docs/BLAZOR_WASM_INTEGRATION.md` ajouté (guide complet interconnexion Blazor WASM)
+
+### Changed
+
+- Community routes (Gateway) : `/api/xxx/` → `/api/v1/xxx/`
+- Clé JWT partagée entre Identity, Gateway et Community (même `Jwt:Key`)
+- Gateway `Program.cs` : `authHeader.Substring(...)` → range operator `authHeader["Bearer ".Length..]`
+
+### Fixed
+
+- Gateway crash au démarrage : `QosDelegatingHandlerDelegate not registered` — résolu via `AddPolly()`
+- Gateway : `app.UseOcelot()` sans `await` → corrigé
+- Community : controllers sans `[ApiVersion]` (404 sur toutes les routes versionnées)
+
+---
+
+## [1.1.0] - 2026-03-11
+
+### Added
+
+- API versioning complet sur Identity et Community (`Asp.Versioning.Mvc`)
+- Support QoS Ocelot via `Ocelot.Provider.Polly`
+- Clé JWT unifiée sur les trois services
+- Documentation `BLAZOR_WASM_INTEGRATION.md`
+
+### Fixed
+
+- Gateway : démarrage impossible avec `QoSOptions` sans Polly
+- Community : routes non joignables (absence de versioning)
+
+---
+
+## [1.0.0] - 2026-01-29
+
+### Added
+
+#### Core Features
+
+- API Gateway avec Ocelot (routing, cache, rate limiting, QoS, Swagger agrégé)
+- Identity Service — authentification JWT + API Key, utilisateurs, rôles, permissions, social links, avatars
+- Community Service — posts, commentaires, événements, projets, ressources, catégories, tags, partenaires
+- Admin Identity (users, api-keys, audit logs)
+- Admin Community (tableau de bord, modération, publication)
+
+#### Infrastructure
+
+- Docker & Docker Compose
+- SQLite partagé (dev sans Docker)
+- Serilog sur tous les services
+- Seed de données automatique au démarrage Community
+
+#### Documentation
+
+- `README.md`, `docs/INDEX.md`, `docs/SETUP.md`, `docs/ARCHITECTURE.md`, `docs/API.md`, `docs/HEALTH_REPORT.md`
+- Tests unitaires Identity (7/7) + intégration
+
+
+### Added
+
 - Structure complète du projet microservices
 - Gateway API centralisée avec YARP
 - Service d'identité avec JWT

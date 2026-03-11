@@ -535,7 +535,7 @@ namespace DotnetNiger.Community.Migrations
                     b.ToTable("Tags");
                 });
 
-            modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.TeamMember", b =>
+            modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.Member", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -574,10 +574,10 @@ namespace DotnetNiger.Community.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("TeamMembers");
+                    b.ToTable("Members");
                 });
 
-            modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.TeamMemberSkill", b =>
+            modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.MemberSkill", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -591,14 +591,14 @@ namespace DotnetNiger.Community.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
-                    b.Property<Guid>("TeamMemberId")
+                    b.Property<Guid>("MemberId")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TeamMemberId");
+                    b.HasIndex("MemberId");
 
-                    b.ToTable("TeamMemberSkills");
+                    b.ToTable("MemberSkills");
                 });
 
             modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.Comment", b =>
@@ -708,15 +708,15 @@ namespace DotnetNiger.Community.Migrations
                     b.Navigation("Resource");
                 });
 
-            modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.TeamMemberSkill", b =>
+            modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.MemberSkill", b =>
                 {
-                    b.HasOne("DotnetNiger.Community.Domain.Entities.TeamMember", "TeamMember")
+                    b.HasOne("DotnetNiger.Community.Domain.Entities.Member", "Member")
                         .WithMany("Skills")
-                        .HasForeignKey("TeamMemberId")
+                        .HasForeignKey("MemberId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("TeamMember");
+                    b.Navigation("Member");
                 });
 
             modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.Category", b =>
@@ -760,7 +760,7 @@ namespace DotnetNiger.Community.Migrations
                     b.Navigation("PostTags");
                 });
 
-            modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.TeamMember", b =>
+            modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.Member", b =>
                 {
                     b.Navigation("Skills");
                 });

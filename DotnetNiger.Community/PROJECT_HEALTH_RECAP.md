@@ -1,12 +1,10 @@
 # Project Health Recap - DotnetNiger.Community
 
 Date: 2026-03-07
-Scope: scan des donnees statiques (hardcode) + sante globale du projet
 
 ## 1) Etat Global
 
 - Build: OK (`dotnet build`) apres correction de `Application/Services/AdminService.cs`.
-- Warning build: fichier executable verrouille temporairement (`MSB3026`, lock par `CompatTelRunner.exe`) mais compilation reussie.
 - Couverture tests: tres faible.
 - Fichiers C# vides: 62 fichiers detectes.
 
@@ -42,6 +40,7 @@ Plusieurs controllers creent des `AuthorId`, `OwnerId`, `CreatedBy`, `UserId` vi
 Cela genere des auteurs/proprietaires fictifs et empeche la tracabilite reelle.
 
 Exemples:
+
 - `Api/Controllers/PostsController.cs`
 - `Api/Controllers/EventsController.cs`
 - `Api/Controllers/ProjectsController.cs`

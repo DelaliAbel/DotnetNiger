@@ -1,14 +1,12 @@
-# API
-
-Base URL (dev): <http://localhost:5000>
-
-> Les exemples suivants utilisent la configuration locale par défaut (bases SQLite générées par `dotnet ef database update`, aucune dépendance Docker obligatoire).
-
 # API Reference — DotnetNiger
 
-Base URL (dev): <http://localhost:5000>
+> Dernière mise à jour : **2026-03-11**
 
-> Tous les appels API passent par le Gateway (reverse proxy YARP). La sécurité (JWT, CORS, rate limiting) est centralisée.
+**Base URL (dev):** `http://localhost:5000`
+
+> Tous les appels API passent par le Gateway (Ocelot). La sécurité (JWT, CORS, rate limiting, QoS via Polly) est centralisée.
+> Les routes Community passent par `/api/community/xxx` au Gateway, qui les redirige vers `/api/v1/xxx` sur le service Community.
+> Les exemples suivants utilisent la configuration locale par défaut (SQLite généré par `dotnet ef database update`).
 
 ## 🔒 Authentification & Flux JWT
 
@@ -118,12 +116,66 @@ curl -X GET http://localhost:5000/api/v1/users/me \
 - GET /api/v1/diagnostics/ping
 - GET /api/v1/diagnostics/health
 
+## Community (via Gateway)
+
+> Préfixe Gateway : `/api/community/...` → redirigé vers `http://localhost:5269/api/v1/...`
+
+### Public (sans authentification)
+
+- `GET /api/community/posts` — Liste posts publiés
+- `GET /api/community/posts/{id}` — Détail post
+- `GET /api/community/events` — Liste events publiés
+- `GET /api/community/events/{id}` — Détail event
+- `GET /api/community/projects` — Liste projets actifs
+- `GET /api/community/projects/{id}` — Détail projet
+- `GET /api/community/resources` — Liste ressources approuvées
+- `GET /api/community/resources/{id}` — Détail ressource
+- `GET /api/community/categories` — Liste catégories
+- `GET /api/community/tags` — Liste tags
+- `GET /api/community/partners` — Liste partenaires
+- `GET /api/community/search?q=...` — Recherche globale
+- `GET /api/community/stats` — Statistiques publiques
+
+### Protégées (JWT Bearer requis)
+
+- `POST /api/community/posts` — Créer post
+- `PUT /api/community/posts/{id}` — Modifier post
+- `DELETE /api/community/posts/{id}` — Supprimer post
+- `POST /api/community/comments` — Ajouter commentaire
+- `DELETE /api/community/comments/{id}` — Supprimer commentaire
+- `POST /api/community/events` — Créer event
+- `PUT /api/community/events/{id}` — Modifier event
+- `DELETE /api/community/events/{id}` — Supprimer event
+- `POST /api/community/projects` — Créer projet
+- `PUT /api/community/projects/{id}` — Modifier projet
+- `DELETE /api/community/projects/{id}` — Supprimer projet
+- `POST /api/community/resources` — Soumettre ressource
+- `DELETE /api/community/resources/{id}` — Supprimer ressource
+
+### Admin Community
+
+> Requis : `X-Admin-Key` + `X-Admin-Role` (validés par `AuthorizeFilter` Community)
+
+```bash
+# Exemple d'appel admin Community
+curl -X GET http://localhost:5269/api/v1/admin/posts \
+  -H "X-Admin-Key: dev-community-admin-key-change-me" \
+  -H "X-Admin-Role: admin"
+```
+
+| Header | Valeur acceptée |
+|--------|----------------|
+| `X-Admin-Key` | Valeur de `Admin:ApiKey` (config ou env var `Admin__ApiKey`) |
+| `X-Admin-Role` | `admin`, `super-admin`, ou `moderator` |
+
+---
+
 ## Gateway
 
-- GET /health
-- GET /swagger/v1/swagger.json
-- GET /swagger-aggregated/v1/swagger.json (si active)
-- GET /metrics (si active)
+- `GET /health` — Health check
+- `GET /swagger/v1/swagger.json` — Swagger Gateway
+- `GET /swagger-aggregated/v1/swagger.json` — Swagger agrégé (si activé)
+- `GET /metrics` — Métriques Prometheus (si activé)
 
 ### API Keys
 
@@ -239,7 +291,7 @@ GET /api/v1/admin/audit-logs?adminUserId=<guid>&action=api_key&targetType=api_ke
 Authorization: Bearer <token>
 ```
 
-**Derniere mise a jour:** 10 Fevrier 2026
+**Dernière mise à jour :** 2026-03-11
 
 ## Errors (standard)
 

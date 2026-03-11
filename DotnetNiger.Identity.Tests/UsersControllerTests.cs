@@ -3,10 +3,12 @@ using DotnetNiger.Identity.Api.Controllers;
 using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Exceptions;
 using DotnetNiger.Identity.Application.Services.Interfaces;
+using DotnetNiger.Identity.Infrastructure.Data;
 using DotnetNiger.Identity.Infrastructure.External;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
@@ -16,7 +18,7 @@ namespace DotnetNiger.Identity.Tests;
 public class UsersControllerTests
 {
 	[Fact]
-	public async Task UploadAvatar_Throws_WhenFileTooLarge()
+	public async Task UploadAvatar_Returns400_WhenFileTooLarge()
 	{
 		var userId = Guid.NewGuid();
 		var options = new FileUploadOptions
@@ -28,14 +30,15 @@ public class UsersControllerTests
 		var controller = CreateController(userId, options);
 		var file = CreateFormFile(new byte[11], "image/png", "avatar.png");
 
-		var action = async () => await controller.UploadAvatar(file);
+		var result = await controller.UploadAvatar(file);
 
-		var exception = await Assert.ThrowsAsync<IdentityException>(action);
-		exception.StatusCode.Should().Be(400);
+		var objectResult = result.Result as ObjectResult;
+		objectResult.Should().NotBeNull();
+		objectResult!.StatusCode.Should().Be(400);
 	}
 
 	[Fact]
-	public async Task UploadAvatar_Throws_WhenContentTypeInvalid()
+	public async Task UploadAvatar_Returns400_WhenContentTypeInvalid()
 	{
 		var userId = Guid.NewGuid();
 		var options = new FileUploadOptions
@@ -47,10 +50,11 @@ public class UsersControllerTests
 		var controller = CreateController(userId, options);
 		var file = CreateFormFile(new byte[10], "text/plain", "avatar.txt");
 
-		var action = async () => await controller.UploadAvatar(file);
+		var result = await controller.UploadAvatar(file);
 
-		var exception = await Assert.ThrowsAsync<IdentityException>(action);
-		exception.StatusCode.Should().Be(400);
+		var objectResult = result.Result as ObjectResult;
+		objectResult.Should().NotBeNull();
+		objectResult!.StatusCode.Should().Be(400);
 	}
 
 	[Fact]
@@ -95,7 +99,7 @@ public class UsersControllerTests
 	}
 
 	[Fact]
-	public async Task UploadAvatar_Throws_WhenExtensionNotAllowed()
+	public async Task UploadAvatar_Returns400_WhenExtensionNotAllowed()
 	{
 		var userId = Guid.NewGuid();
 		var options = new FileUploadOptions
@@ -108,10 +112,11 @@ public class UsersControllerTests
 		var controller = CreateController(userId, options);
 		var file = CreateFormFile(new byte[10], "image/png", "avatar.gif");
 
-		var action = async () => await controller.UploadAvatar(file);
+		var result = await controller.UploadAvatar(file);
 
-		var exception = await Assert.ThrowsAsync<IdentityException>(action);
-		exception.StatusCode.Should().Be(400);
+		var objectResult = result.Result as ObjectResult;
+		objectResult.Should().NotBeNull();
+		objectResult!.StatusCode.Should().Be(400);
 	}
 
 	[Fact]
@@ -204,6 +209,12 @@ public class UsersControllerTests
 		var userServiceMock = userService ?? new Mock<IUserService>().Object;
 		var fileUploadServiceMock = fileUploadService ?? new Mock<IFileUploadService>().Object;
 		var avatarMetadataService = new Mock<IAvatarMetadataService>().Object;
+		var loginHistoryService = new Mock<ILoginHistoryService>().Object;
+		var socialLinkService = new Mock<ISocialLinkService>().Object;
+		var dbContextOptions = new DbContextOptionsBuilder<DotnetNigerIdentityDbContext>()
+			.UseSqlite("Data Source=:memory:")
+			.Options;
+		var dbContext = new DotnetNigerIdentityDbContext(dbContextOptions);
 		var logger = new Mock<Microsoft.Extensions.Logging.ILogger<UsersController>>().Object;
 
 		var controller = new UsersController(
@@ -211,6 +222,9 @@ public class UsersControllerTests
 			fileUploadServiceMock,
 			Options.Create(options),
 			avatarMetadataService,
+			loginHistoryService,
+			socialLinkService,
+			dbContext,
 			logger);
 
 		var httpContext = new DefaultHttpContext

@@ -265,7 +265,7 @@ public static class DatabaseSeeder
         await context.Partners.AddRangeAsync(partners);
 
         // 9. Créer des membres d'équipe
-        var teamMembers = new List<TeamMember>
+        var Members = new List<Member>
         {
             new()
             {
@@ -301,20 +301,20 @@ public static class DatabaseSeeder
                 JoinedAt = DateTime.UtcNow.AddDays(-250)
             }
         };
-        await context.TeamMembers.AddRangeAsync(teamMembers);
+        await context.Members.AddRangeAsync(Members);
 
         // 10. Créer des skills pour les membres
-        var skills = new List<TeamMemberSkill>
+        var skills = new List<MemberSkill>
         {
-            new() { Id = Guid.NewGuid(), TeamMemberId = teamMembers[0].Id, SkillName = "C#", Level = "Expert" },
-            new() { Id = Guid.NewGuid(), TeamMemberId = teamMembers[0].Id, SkillName = ".NET", Level = "Expert" },
-            new() { Id = Guid.NewGuid(), TeamMemberId = teamMembers[0].Id, SkillName = "ASP.NET Core", Level = "Expert" },
-            new() { Id = Guid.NewGuid(), TeamMemberId = teamMembers[1].Id, SkillName = "Community", Level = "Expert" },
-            new() { Id = Guid.NewGuid(), TeamMemberId = teamMembers[1].Id, SkillName = "Marketing", Level = "Advanced" },
-            new() { Id = Guid.NewGuid(), TeamMemberId = teamMembers[2].Id, SkillName = "Mentoring", Level = "Expert" },
-            new() { Id = Guid.NewGuid(), TeamMemberId = teamMembers[2].Id, SkillName = "Web Development", Level = "Advanced" }
+            new() { Id = Guid.NewGuid(), MemberId = Members[0].Id, SkillName = "C#", Level = "Expert" },
+            new() { Id = Guid.NewGuid(), MemberId = Members[0].Id, SkillName = ".NET", Level = "Expert" },
+            new() { Id = Guid.NewGuid(), MemberId = Members[0].Id, SkillName = "ASP.NET Core", Level = "Expert" },
+            new() { Id = Guid.NewGuid(), MemberId = Members[1].Id, SkillName = "Community", Level = "Expert" },
+            new() { Id = Guid.NewGuid(), MemberId = Members[1].Id, SkillName = "Marketing", Level = "Advanced" },
+            new() { Id = Guid.NewGuid(), MemberId = Members[2].Id, SkillName = "Mentoring", Level = "Expert" },
+            new() { Id = Guid.NewGuid(), MemberId = Members[2].Id, SkillName = "Web Development", Level = "Advanced" }
         };
-        await context.TeamMemberSkills.AddRangeAsync(skills);
+        await context.MemberSkills.AddRangeAsync(skills);
 
         // Lier les posts aux catégories
         var postCategories = new List<PostCategory>
