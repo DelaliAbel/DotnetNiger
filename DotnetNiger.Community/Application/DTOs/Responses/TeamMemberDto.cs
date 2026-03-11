@@ -1,6 +1,6 @@
 namespace DotnetNiger.Community.Application.DTOs.Responses;
 
-public class TeamMemberDto
+public class MemberDto
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }

@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DotnetNiger.Community.Application.DTOs.Requests;
 
-public class AddTeamMemberRequest
+public class AddMemberRequest
 {
     [Required]
     public Guid UserId { get; set; }

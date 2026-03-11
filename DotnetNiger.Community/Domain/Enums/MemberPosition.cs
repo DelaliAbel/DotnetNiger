@@ -1,6 +1,6 @@
 namespace DotnetNiger.Community.Domain.Enums;
 
-public enum TeamPosition
+public enum MemberPosition
 {
     Lead,
     Organizer,

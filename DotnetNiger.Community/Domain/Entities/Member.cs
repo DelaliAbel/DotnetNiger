@@ -1,6 +1,6 @@
 namespace DotnetNiger.Community.Domain.Entities;
 
-public class TeamMember
+public class Member
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; } // FK Identity API
@@ -14,5 +14,5 @@ public class TeamMember
     public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
 
     // Relations
-    public ICollection<TeamMemberSkill> Skills { get; set; } = new List<TeamMemberSkill>();
+    public ICollection<MemberSkill> Skills { get; set; } = new List<MemberSkill>();
 }
