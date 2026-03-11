@@ -1,17 +1,19 @@
 # Setup DotnetNiger
 
-Guide court pour demarrer le projet en local avec le gateway Ocelot.
+Guide pour démarrer le projet en local avec le gateway Ocelot.
 
-## Prerequis
+> Dernière mise à jour : **2026-03-11**
+
+## Prérequis
 
 - .NET SDK 8.0+
 - Git
 - PowerShell (Windows) ou bash (Linux/Mac)
 
-## 1. Recuperer le code
+## 1. Récupérer le code
 
 ```bash
-git clone https://github.com/akaletekoffilevis/DotnetNiger.git
+git clone https://github.com/DelaliAbel/DotnetNiger.git
 cd DotnetNiger
 ```
 
@@ -23,59 +25,94 @@ dotnet restore
 
 ## 3. Lancer les services
 
-Option scripts projet:
+Ordre obligatoire : **Identity → Community → Gateway**
 
 ```bash
-./run.sh
-# ou
-./run.ps1
-```
+# Terminal 1
+cd DotnetNiger.Identity  && dotnet run
 
-Option manuelle (3 terminaux):
-
-```bash
-cd DotnetNiger.Identity && dotnet run
+# Terminal 2
 cd DotnetNiger.Community && dotnet run
-cd DotnetNiger.Gateway && dotnet run
+
+# Terminal 3
+cd DotnetNiger.Gateway   && dotnet run
 ```
 
-## 4. Verifier les endpoints
+## 4. Vérifier les endpoints
 
-- Gateway Swagger: `http://localhost:5000/swagger`
-- Gateway health: `http://localhost:5000/health`
-- Identity Swagger: `http://localhost:5075/swagger`
-- Community Swagger: `http://localhost:5269/swagger`
+| URL | Description |
+|-----|-------------|
+| `http://localhost:5000/swagger` | Swagger agrégé Gateway |
+| `http://localhost:5000/health` | Health check Gateway |
+| `http://localhost:5075/swagger` | Swagger Identity |
+| `http://localhost:5269/swagger` | Swagger Community |
 
 ## 5. Tester via Gateway
 
 ```bash
-curl -X POST http://localhost:5000/api/auth/login -H "Content-Type: application/json" -d "{\"email\":\"test@example.com\",\"password\":\"Test@123\"}"
+# Login
+curl -X POST http://localhost:5000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"admin@example.com","password":"Admin@123"}'
+
+# Appel protégé
+curl -X GET http://localhost:5000/api/users/me \
+  -H "Authorization: Bearer <token>"
+
+# Endpoint Community (public)
+curl http://localhost:5000/api/community/posts
 ```
 
-## Configuration utile
+## 6. Configuration Admin Community
 
-- `DotnetNiger.Gateway/ocelot.json`: routes Ocelot, auth, rate limit, qos, cache, swagger aggregation
-- `DotnetNiger.Gateway/appsettings*.json`: logs + JWT settings
-
-Variables JWT (optionnel, recommande hors dev):
+Les endpoints `/api/v1/admin/*` de Community nécessitent deux headers supplémentaires :
 
 ```bash
+curl -X GET http://localhost:5269/api/v1/admin/dashboard \
+  -H "Authorization: Bearer <jwt_token>" \
+  -H "X-Admin-Key: dev-community-admin-key-change-me" \
+  -H "X-Admin-Role: admin"
+```
+
+La clé est définie dans `DotnetNiger.Community/appsettings.Development.json` → `Admin:ApiKey`.
+
+> **Production** : définir via variable d'environnement `Admin__ApiKey` ou `dotnet user-secrets`.
+
+## 7. Variables d'environnement clés
+
+```bash
+# Clé JWT — MÊME valeur sur les 3 services
 Jwt__Key=your_very_long_secret_key_min_32_chars
 Jwt__Issuer=DotnetNiger.Identity
 Jwt__Audience=DotnetNiger.Identity.Client
+
+# Clé admin Community
+Admin__ApiKey=your_strong_admin_key
 ```
 
-## Depannage
+## Dépannage
 
-1. Gateway build OK mais swagger aggregate KO
+### Gateway crash au démarrage — `QosDelegatingHandlerDelegate not registered`
 
-- Verifier que les downstream services tournent bien sur `5075` et `5269`.
+S'assurer que `Ocelot.Provider.Polly` est installé et `.AddPolly()` appelé dans `Program.cs`.
 
-2. Reponse 401 sur routes protegees
+```bash
+dotnet add package Ocelot.Provider.Polly --version 24.1.0
+```
 
-- Verifier `Authorization: Bearer <token>`.
-- Verifier coherence `Jwt__Key` entre Identity et Gateway.
+### Gateway build OK mais Swagger agrégé KO
 
-3. Reponse 429 (too many requests)
+Vérifier que Identity (`:5075`) et Community (`:5269`) tournent avant de démarrer le Gateway.
 
-- Limites appliquees par Ocelot (`RateLimitOptions` dans `ocelot.json`).
+### Réponse 401 sur routes protégées
+
+- Vérifier `Authorization: Bearer <token>`.
+- Vérifier que `Jwt__Key` est identique sur Identity, Community et Gateway.
+
+### Réponse 429 (Too Many Requests)
+
+Limites appliquées par Ocelot (`RateLimitOptions` dans `ocelot.json`).
+
+### Fichier `.exe` verrouillé à la recompilation Community
+
+Un process `DotnetNiger.Community` est déjà en cours. Arrêter le terminal existant avant de relancer `dotnet run`.
