@@ -163,10 +163,10 @@ curl -X GET http://localhost:5269/api/v1/admin/posts \
   -H "X-Admin-Role: admin"
 ```
 
-| Header | Valeur acceptée |
-|--------|----------------|
-| `X-Admin-Key` | Valeur de `Admin:ApiKey` (config ou env var `Admin__ApiKey`) |
-| `X-Admin-Role` | `admin`, `super-admin`, ou `moderator` |
+| Header         | Valeur acceptée                                              |
+| -------------- | ------------------------------------------------------------ |
+| `X-Admin-Key`  | Valeur de `Admin:ApiKey` (config ou env var `Admin__ApiKey`) |
+| `X-Admin-Role` | `admin`, `super-admin`, ou `moderator`                       |
 
 ---
 

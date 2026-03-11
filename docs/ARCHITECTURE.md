@@ -105,27 +105,27 @@ DotnetNiger/
 
 Les trois services utilisent la **même clé** `Jwt:Key` :
 
-| Service | Utilisation |
-|---------|-------------|
-| Identity | Émet et signe les tokens |
-| Gateway  | Valide les tokens avant routage |
+| Service   | Utilisation                                      |
+| --------- | ------------------------------------------------ |
+| Identity  | Émet et signe les tokens                         |
+| Gateway   | Valide les tokens avant routage                  |
 | Community | Peut valider les tokens localement si nécessaire |
 
 ## Modèle de données Community
 
 Entités principales (EF Core SQLite, `Data Source=../DotnetNiger.db`) :
 
-| Entité | Champs clés |
-|--------|-------------|
-| `Post` | `IsPublished`, `CategoryId`, `Tags`, `AuthorId` |
-| `Comment` | `IsApproved` (auto `true` à la création) |
-| `Event` | `IsPublished`, `Location`, `StartDate`, `EndDate` |
-| `Project` | `IsActive`, `IsFeatured`, `OwnerId` |
-| `Resource` | `IsApproved`, `Type` |
-| `Category` | Catégories posts |
-| `Tag` | Tags posts |
-| `Partner` | Partenaires |
-| `Member` / `MemberSkill` | **DÉSACTIVÉ** (controller et service commentés) |
+| Entité                   | Champs clés                                       |
+| ------------------------ | ------------------------------------------------- |
+| `Post`                   | `IsPublished`, `CategoryId`, `Tags`, `AuthorId`   |
+| `Comment`                | `IsApproved` (auto `true` à la création)          |
+| `Event`                  | `IsPublished`, `Location`, `StartDate`, `EndDate` |
+| `Project`                | `IsActive`, `IsFeatured`, `OwnerId`               |
+| `Resource`               | `IsApproved`, `Type`                              |
+| `Category`               | Catégories posts                                  |
+| `Tag`                    | Tags posts                                        |
+| `Partner`                | Partenaires                                       |
+| `Member` / `MemberSkill` | **DÉSACTIVÉ** (controller et service commentés)   |
 
 ## Observabilité
 
@@ -136,18 +136,18 @@ Entités principales (EF Core SQLite, `Data Source=../DotnetNiger.db`) :
 
 ## État des fonctionnalités
 
-| Fonctionnalité | Statut |
-|----------------|--------|
-| Gateway Ocelot + Polly (QoS) | ✅ Complet |
-| Identity auth JWT + API Key | ✅ Complet |
-| Identity versioning v1 | ✅ Complet |
-| Community versioning v1 | ✅ Complet |
-| Community CRUD public | ✅ Complet |
-| Community admin | ✅ Complet |
-| Clé JWT unifiée (3 services) | ✅ Complet |
-| Identity unit tests (7/7) | ✅ Passants |
-| Identity integration tests | ⚠️ Partiellement validés |
-| Member feature (Community) | ❌ Désactivé |
+| Fonctionnalité                 | Statut                          |
+| ------------------------------ | ------------------------------- |
+| Gateway Ocelot + Polly (QoS)   | ✅ Complet                      |
+| Identity auth JWT + API Key    | ✅ Complet                      |
+| Identity versioning v1         | ✅ Complet                      |
+| Community versioning v1        | ✅ Complet                      |
+| Community CRUD public          | ✅ Complet                      |
+| Community admin                | ✅ Complet                      |
+| Clé JWT unifiée (3 services)   | ✅ Complet                      |
+| Identity unit tests (7/7)      | ✅ Passants                     |
+| Identity integration tests     | ⚠️ Partiellement validés        |
+| Member feature (Community)     | ❌ Désactivé                    |
 | Community JWT local validation | ❌ Dépend du Gateway uniquement |
 
 ## Notes d'évolution

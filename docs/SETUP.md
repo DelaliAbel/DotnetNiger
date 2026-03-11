@@ -40,12 +40,12 @@ cd DotnetNiger.Gateway   && dotnet run
 
 ## 4. Vérifier les endpoints
 
-| URL | Description |
-|-----|-------------|
+| URL                             | Description            |
+| ------------------------------- | ---------------------- |
 | `http://localhost:5000/swagger` | Swagger agrégé Gateway |
-| `http://localhost:5000/health` | Health check Gateway |
-| `http://localhost:5075/swagger` | Swagger Identity |
-| `http://localhost:5269/swagger` | Swagger Community |
+| `http://localhost:5000/health`  | Health check Gateway   |
+| `http://localhost:5075/swagger` | Swagger Identity       |
+| `http://localhost:5269/swagger` | Swagger Community      |
 
 ## 5. Tester via Gateway
 

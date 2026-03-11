@@ -6,11 +6,11 @@ Plateforme communautaire microservices construite avec .NET 8.
 
 ## Services
 
-| Service | Port | Description |
-|---------|------|-------------|
-| Gateway (`DotnetNiger.Gateway`) | `5000` | Ocelot — point d'entrée unique, JWT, rate limiting, QoS |
-| Identity (`DotnetNiger.Identity`) | `5075` | Auth JWT + API Key, users, rôles, permissions, admin |
-| Community (`DotnetNiger.Community`) | `5269` | Posts, events, projets, ressources, catégories, admin |
+| Service                             | Port   | Description                                             |
+| ----------------------------------- | ------ | ------------------------------------------------------- |
+| Gateway (`DotnetNiger.Gateway`)     | `5000` | Ocelot — point d'entrée unique, JWT, rate limiting, QoS |
+| Identity (`DotnetNiger.Identity`)   | `5075` | Auth JWT + API Key, users, rôles, permissions, admin    |
+| Community (`DotnetNiger.Community`) | `5269` | Posts, events, projets, ressources, catégories, admin   |
 
 ## Démarrage rapide
 
@@ -35,12 +35,12 @@ cd DotnetNiger.Gateway   && dotnet run
 
 ## URLs utiles (dev)
 
-| URL | Description |
-|-----|-------------|
+| URL                             | Description            |
+| ------------------------------- | ---------------------- |
 | `http://localhost:5000/swagger` | Swagger agrégé Gateway |
-| `http://localhost:5000/health` | Health check Gateway |
-| `http://localhost:5075/swagger` | Swagger Identity |
-| `http://localhost:5269/swagger` | Swagger Community |
+| `http://localhost:5000/health`  | Health check Gateway   |
+| `http://localhost:5075/swagger` | Swagger Identity       |
+| `http://localhost:5269/swagger` | Swagger Community      |
 
 ## Fonctionnalités
 
@@ -64,23 +64,23 @@ dotnet test                                       # tous
 
 ## Documentation
 
-| Fichier | Contenu |
-|---------|---------|
-| [docs/INDEX.md](docs/INDEX.md) | Index général |
-| [docs/SETUP.md](docs/SETUP.md) | Guide d'installation et dépannage |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Architecture, sécurité, modèle de données |
-| [docs/API.md](docs/API.md) | Référence complète des endpoints |
-| [docs/HEALTH_REPORT.md](docs/HEALTH_REPORT.md) | Santé technique |
-| [docs/BLAZOR_WASM_INTEGRATION.md](docs/BLAZOR_WASM_INTEGRATION.md) | Guide interconnexion Blazor WASM |
+| Fichier                                                            | Contenu                                   |
+| ------------------------------------------------------------------ | ----------------------------------------- |
+| [docs/INDEX.md](docs/INDEX.md)                                     | Index général                             |
+| [docs/SETUP.md](docs/SETUP.md)                                     | Guide d'installation et dépannage         |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)                       | Architecture, sécurité, modèle de données |
+| [docs/API.md](docs/API.md)                                         | Référence complète des endpoints          |
+| [docs/HEALTH_REPORT.md](docs/HEALTH_REPORT.md)                     | Santé technique                           |
+| [docs/BLAZOR_WASM_INTEGRATION.md](docs/BLAZOR_WASM_INTEGRATION.md) | Guide interconnexion Blazor WASM          |
 
 ## Configuration essentielle
 
-| Variable | Usage | Services concernés |
-|----------|-------|--------------------|
-| `Jwt__Key` | Clé JWT partagée (≥ 32 chars) | Gateway + Identity + Community |
-| `Jwt__Issuer` | Émetteur JWT | Les 3 |
-| `Jwt__Audience` | Audience JWT | Les 3 |
-| `Admin__ApiKey` | Clé admin Community (header `X-Admin-Key`) | Community |
+| Variable        | Usage                                      | Services concernés             |
+| --------------- | ------------------------------------------ | ------------------------------ |
+| `Jwt__Key`      | Clé JWT partagée (≥ 32 chars)              | Gateway + Identity + Community |
+| `Jwt__Issuer`   | Émetteur JWT                               | Les 3                          |
+| `Jwt__Audience` | Audience JWT                               | Les 3                          |
+| `Admin__ApiKey` | Clé admin Community (header `X-Admin-Key`) | Community                      |
 
 > **Production** : ne jamais committer de vraies clés. Utiliser `dotnet user-secrets` ou variables d'environnement.
 
@@ -89,7 +89,6 @@ dotnet test                                       # tous
 - Le routing gateway est configuré dans `DotnetNiger.Gateway/ocelot.json`.
 - Les routes Community passent toutes par `api/v1/...` depuis la migration versioning.
 - `Ocelot.Provider.Polly` est requis pour les `QoSOptions` (circuit breaker, timeout).
-
 
 ## Services
 

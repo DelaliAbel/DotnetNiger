@@ -6,16 +6,16 @@ Documentation du projet DotnetNiger — plateforme communautaire microservices .
 
 ## Documents
 
-| Fichier | Description |
-|---------|-------------|
-| [SETUP](./SETUP.md) | Installation et démarrage local |
-| [ARCHITECTURE](./ARCHITECTURE.md) | Vue d'ensemble des services et modèle de sécurité |
-| [API](./API.md) | Référence complète des endpoints (Identity + Community + Gateway) |
-| [HEALTH_REPORT](./HEALTH_REPORT.md) | Santé technique, dette et prochaines étapes |
-| [BLAZOR_WASM_INTEGRATION](./BLAZOR_WASM_INTEGRATION.md) | Guide interconnexion frontend Blazor WASM |
-| [Gateway README](../DotnetNiger.Gateway/README.md) | Configuration Ocelot |
-| [Identity README](../DotnetNiger.Identity/README.md) | Guide du service Identity |
-| [Community Health](../DotnetNiger.Community/PROJECT_HEALTH_RECAP.md) | Santé du service Community |
+| Fichier                                                              | Description                                                       |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [SETUP](./SETUP.md)                                                  | Installation et démarrage local                                   |
+| [ARCHITECTURE](./ARCHITECTURE.md)                                    | Vue d'ensemble des services et modèle de sécurité                 |
+| [API](./API.md)                                                      | Référence complète des endpoints (Identity + Community + Gateway) |
+| [HEALTH_REPORT](./HEALTH_REPORT.md)                                  | Santé technique, dette et prochaines étapes                       |
+| [BLAZOR_WASM_INTEGRATION](./BLAZOR_WASM_INTEGRATION.md)              | Guide interconnexion frontend Blazor WASM                         |
+| [Gateway README](../DotnetNiger.Gateway/README.md)                   | Configuration Ocelot                                              |
+| [Identity README](../DotnetNiger.Identity/README.md)                 | Guide du service Identity                                         |
+| [Community Health](../DotnetNiger.Community/PROJECT_HEALTH_RECAP.md) | Santé du service Community                                        |
 
 ## Parcours rapides
 
