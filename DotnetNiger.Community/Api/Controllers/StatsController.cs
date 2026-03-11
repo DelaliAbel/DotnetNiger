@@ -1,5 +1,7 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using DotnetNiger.Community.Application.Services;
+using DotnetNiger.Community.Application.Services.Interfaces;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
@@ -7,7 +9,8 @@ namespace DotnetNiger.Community.Api.Controllers;
 /// Controller pour récupérer les statistiques du service Community
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 public class StatsController : ControllerBase
 {
     private readonly IPostService _postService;

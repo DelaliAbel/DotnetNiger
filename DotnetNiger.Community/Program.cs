@@ -1,16 +1,32 @@
 
 
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
+using DotnetNiger.Community.Api.Extensions;
+using DotnetNiger.Community.Application.Services.Interfaces;
 using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Community.Infrastructure.Data;
 using DotnetNiger.Community.Infrastructure.Data.Seeds;
 using DotnetNiger.Community.Infrastructure.Repositories;
 using DotnetNiger.Community.Application.Services;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+}).AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV";
+    options.SubstituteApiVersionInUrl = true;
+});
 
 // Configurer SQLite avec la base partagée
 var connectionString = builder.Configuration.GetConnectionString("DotnetNigerDb")
@@ -28,7 +44,7 @@ builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IResourceRepository, ResourceRepository>();
 builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.AddScoped<IPartnerRepository, PartnerRepository>();
-builder.Services.AddScoped<ITeamMemberRepository, TeamMemberRepository>();
+// builder.Services.AddScoped<IMemberRepository, MemberRepository>();
 
 // Enregistrer les services
 builder.Services.AddScoped<IPostService, PostService>();
@@ -39,7 +55,7 @@ builder.Services.AddScoped<IResourceService, ResourceService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IPartnerService, PartnerService>();
-builder.Services.AddScoped<ITeamMemberService, TeamMemberService>();
+// builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 
 
@@ -56,15 +72,8 @@ builder.Services.AddCors(options =>
 
 // Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "Community Service API",
-        Version = "v1",
-        Description = "API pour gérer les fonctionnalités de la communauté"
-    });
-});
+builder.Services.AddSwaggerGen();
+builder.Services.ConfigureOptions<ConfigureSwaggerOptions>();
 
 var app = builder.Build();
 
@@ -82,7 +91,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Community Service v1");
+        var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+        foreach (var description in provider.ApiVersionDescriptions)
+        {
+            options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", $"Community Service {description.GroupName}");
+        }
         options.RoutePrefix = "swagger";
         options.DocumentTitle = "Community Service - API Documentation";
         options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);

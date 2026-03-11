@@ -1,5 +1,7 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using DotnetNiger.Community.Application.Services;
+using DotnetNiger.Community.Application.Services.Interfaces;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
@@ -7,7 +9,8 @@ namespace DotnetNiger.Community.Api.Controllers;
 /// Controller pour la recherche dans le service Community
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 public class SearchController : ControllerBase
 {
     private readonly IPostService _postService;
@@ -43,28 +46,28 @@ public class SearchController : ControllerBase
             // Recherche dans les posts
             var posts = await _postService.GetAllPublishedPostsAsync(1, 10);
             var postsResults = posts
-                .Where(p => p.Title.Contains(query, StringComparison.OrdinalIgnoreCase) || 
+                .Where(p => p.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                            p.Content.Contains(query, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             // Recherche dans les événements
             var events = await _eventService.GetAllEventsAsync(1, 10);
             var eventsResults = events
-                .Where(e => e.Title.Contains(query, StringComparison.OrdinalIgnoreCase) || 
+                .Where(e => e.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                            e.Description.Contains(query, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             // Recherche dans les projets
             var projects = await _projectService.GetAllProjectsAsync(1, 10);
             var projectsResults = projects
-                .Where(p => p.Name.Contains(query, StringComparison.OrdinalIgnoreCase) || 
+                .Where(p => p.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                            p.Description.Contains(query, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             // Recherche dans les ressources
             var resources = await _resourceService.GetAllResourcesAsync(1, 10);
             var resourcesResults = resources
-                .Where(r => r.Title.Contains(query, StringComparison.OrdinalIgnoreCase) || 
+                .Where(r => r.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                            r.Description.Contains(query, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 

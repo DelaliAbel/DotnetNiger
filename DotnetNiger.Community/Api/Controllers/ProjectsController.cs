@@ -1,6 +1,8 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using DotnetNiger.Community.Application.Services;
 using DotnetNiger.Community.Domain.Entities;
+using DotnetNiger.Community.Application.Services.Interfaces;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
@@ -8,7 +10,8 @@ namespace DotnetNiger.Community.Api.Controllers;
 /// Controller pour gérer les projets
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 public class ProjectsController : ControllerBase
 {
     private readonly IProjectService _projectService;

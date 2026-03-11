@@ -1,5 +1,7 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using DotnetNiger.Community.Application.Services;
+using DotnetNiger.Community.Application.Services.Interfaces;
 using DotnetNiger.Community.Domain.Entities;
 
 namespace DotnetNiger.Community.Api.Controllers;
@@ -8,7 +10,8 @@ namespace DotnetNiger.Community.Api.Controllers;
 /// Controller pour gérer les catégories
 /// </summary>
 [ApiController]
-[Route("api/[controller]")]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 public class CategoriesController : ControllerBase
 {
     private readonly ICategoryService _categoryService;
