@@ -137,4 +137,7 @@ Dotnet.Identity.Client.Tests/
 # Health report (contient des infos sensibles sur l'architecture)
 docs/HEALTH_REPORT.md
 
+# Documentation confidentielle
+docs/BLAZOR_WASM_INTEGRATION.md
+
 .fake
