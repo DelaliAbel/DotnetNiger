@@ -1,0 +1,74 @@
+@page "/admin/Users"
+@using DotnetNiger.UI.Components.Admin.Cards
+@inject NavigationManager Navigation
+
+<div class="min-h-screen p-6">
+    <!-- Header Section -->
+    <div class="mb-8">
+        <div class="mb-6 flex items-center justify-between">
+            <h1 class="text-4xl font-bold text-gray-900">Utilisateurs</h1>
+            <button
+                @onclick='() => Navigation.NavigateTo("/admin/blog/create")'
+                class="bg-red-500 hover:bg-red-600 text-white min-h-12 px-4 py-2 rounded-lg Button flex items-center gap-2 transition">
+                <i class="fas fa-plus text-2xl"></i>
+                <span class="Button">Nouveau</span>
+            </button>
+            </div>
+            <h3 class="font-bold text-gray-900 pb-8">Liste de tous les utilisateurs connectés.</h3>
+
+        <!-- Search and Filters -->
+        <div class="mb-4 flex flex-col items-stretch gap-4 md:flex-row md:items-center">
+                
+            <!-- Search Bar -->
+            <div class="flex-1">
+                <div class="relative">
+                    <i class="fas fa-search -translate-y-1/2 absolute left-4 top-1/2 transform text-gray-400"></i>
+                    <input type="text" placeholder="Rechercher un utilisateur..."    
+                           class="w-1/2 min-w-[455px] rounded-lg border border-gray-300 py-3 pl-12 pr-4 focus:outline-none"/>
+                </div>
+            </div>
+
+            <!-- Filter Dropdowns -->
+            <select 
+                    class="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-3 hover:border-gray-400 focus:outline-none">
+                <option value="Role">Role </option>
+                    <option value="Tutorial">Tutorial</option>
+                    <option value="Article">Article</option>
+                    <option value="Interview">Interview</option>
+                </select>
+
+            </div>
+
+            <!-- View Toggle -->
+            <div class="mb-6 flex gap-3">
+                <button @onclick='() => viewMode = "list"'
+                        class='@(viewMode == "list" ? "bg-gray-900 text-white" : "bg-white text-gray-900 border border-gray-300") px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition hover:shadow-md'>
+                    <i class="fas fa-list text-2xl"></i>
+                </button>
+                <button @onclick='() => viewMode = "grid"'
+                        class='@(viewMode == "grid" ? "bg-gray-900 text-white" : "bg-white text-gray-900 border border-gray-300") px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition hover:shadow-md'>
+                    <i class="fas fa-th text-2xl"></i>
+                </button>
+            </div>
+        </div>
+
+        
+        <!-- Table View -->
+        @if (viewMode == "list")
+        {
+            <UsersTable/>    
+        }else{
+        <div class="grid gap-4 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3">
+            @for (int i = 0; i < 6; i++)
+            {
+                <UsersCard/>
+            }
+            </div>
+            }
+    </div>
+
+@code {
+    
+    private string viewMode = "list";
+
+}
