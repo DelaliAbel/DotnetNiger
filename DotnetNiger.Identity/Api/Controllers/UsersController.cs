@@ -20,7 +20,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [Route("api/v{version:apiVersion}/me")]
 [Authorize]
 // Endpoints pour le profil et les operations du compte.
-public class UsersController : ControllerBase
+public class UsersController : ApiControllerBase
 {
 	// Endpoints proteges pour le profil utilisateur.
 	private readonly IUserService _userService;
@@ -55,12 +55,7 @@ public class UsersController : ControllerBase
 	// Factorized user validation
 	private Guid RequireUserId()
 	{
-		var userId = GetUserId();
-		if (userId == null)
-		{
-			throw new IdentityException("Authentication required. Please login.", 401);
-		}
-		return userId.Value;
+		return RequireAuthenticatedUserId();
 	}
 
 	// Factorized avatar validation
@@ -91,47 +86,47 @@ public class UsersController : ControllerBase
 
 
 	[HttpGet]
-	public async Task<ActionResult<UserDto>> Me()
+	public async Task<IActionResult> Me()
 	{
 		var userId = RequireUserId();
 		var profile = await _userService.GetProfileAsync(userId);
 		if (profile == null)
 		{
 			_logger.LogWarning("Profil utilisateur introuvable pour {UserId}", userId);
-			return NotFound(new { message = "Profil utilisateur introuvable." });
+			return NotFoundProblem("Profil utilisateur introuvable.");
 		}
-		return Ok(profile);
+		return Success(profile);
 	}
 
 
 	[HttpPut]
-	public async Task<ActionResult<UserDto>> UpdateMe([FromBody] UpdateProfileRequest request)
+	public async Task<IActionResult> UpdateMe([FromBody] UpdateProfileRequest request)
 	{
 		var userId = RequireUserId();
 		var profile = await _userService.UpdateProfileAsync(userId, request);
 		if (profile == null)
 		{
 			_logger.LogWarning("Échec de la mise à jour du profil pour {UserId}", userId);
-			return StatusCode(500, new { message = "Impossible de mettre à jour le profil utilisateur." });
+			throw new IdentityException("Impossible de mettre a jour le profil utilisateur.", 500);
 		}
 		_logger.LogInformation("User {UserId} updated profile.", userId);
-		return Ok(profile);
+		return Success(profile, "Profile updated successfully.");
 	}
 
 	[HttpGet("avatar")]
 	[ProducesResponseType(typeof(AvatarInfoDto), StatusCodes.Status200OK)]
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-	public async Task<ActionResult<AvatarInfoDto>> GetAvatar()
+	public async Task<IActionResult> GetAvatar()
 	{
 		var userId = RequireUserId();
 		var profile = await _userService.GetProfileAsync(userId);
 		if (profile == null)
 		{
 			_logger.LogWarning("Profil utilisateur introuvable pour {UserId}", userId);
-			return NotFound(new { message = "Profil utilisateur introuvable." });
+			return NotFoundProblem("Profil utilisateur introuvable.");
 		}
 		var metadata = await _avatarMetadataService.GetMetadataAsync(profile.AvatarUrl);
-		return Ok(metadata);
+		return Success(metadata);
 	}
 
 
@@ -143,12 +138,12 @@ public class UsersController : ControllerBase
 		{
 			await _userService.ChangePasswordAsync(userId, request);
 			_logger.LogInformation("User {UserId} changed password.", userId);
-			return NoContent();
+			return SuccessMessage("Password changed successfully.");
 		}
 		catch (IdentityException ex)
 		{
 			_logger.LogWarning(ex, "Erreur lors du changement de mot de passe pour {UserId}", userId);
-			return StatusCode(ex.StatusCode, new { message = ex.Message });
+			throw;
 		}
 	}
 
@@ -158,14 +153,14 @@ public class UsersController : ControllerBase
 	[ProducesResponseType(typeof(UserDto), StatusCodes.Status200OK)]
 	[ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-	public async Task<ActionResult<UserDto>> UploadAvatar([FromForm] IFormFile avatar)
+	public async Task<IActionResult> UploadAvatar([FromForm] IFormFile avatar)
 	{
 		var userId = RequireUserId();
 		try
 		{
 			ValidateAvatar(avatar);
 			var currentProfile = await _userService.GetProfileAsync(userId);
-			var previousAvatarUrl = currentProfile.AvatarUrl;
+			var previousAvatarUrl = currentProfile?.AvatarUrl;
 			var extension = GetAvatarExtension(avatar.ContentType, avatar.FileName);
 			var fileName = $"avatars/{userId}/{Guid.NewGuid():N}{extension}";
 			await using var stream = avatar.OpenReadStream();
@@ -177,12 +172,12 @@ public class UsersController : ControllerBase
 			{
 				await TryDeleteAsync(previousAvatarUrl, "upload");
 			}
-			return Ok(profile);
+			return Success(profile, "Avatar uploaded successfully.");
 		}
 		catch (IdentityException ex)
 		{
 			_logger.LogWarning(ex, "Erreur lors de l'upload d'avatar pour {UserId}", userId);
-			return StatusCode(ex.StatusCode, new { message = ex.Message });
+			throw;
 		}
 	}
 
@@ -197,33 +192,33 @@ public class UsersController : ControllerBase
 		if (currentProfile == null)
 		{
 			_logger.LogWarning("Profil utilisateur introuvable pour {UserId}", userId);
-			return NotFound(new { message = "Profil utilisateur introuvable." });
+			return NotFoundProblem("Profil utilisateur introuvable.");
 		}
 		if (string.IsNullOrWhiteSpace(currentProfile.AvatarUrl))
 		{
-			return NoContent();
+			return SuccessMessage("No avatar to delete.");
 		}
 		try
 		{
 			await _userService.ClearAvatarAsync(userId);
 			await TryDeleteAsync(currentProfile.AvatarUrl, "delete");
 			_logger.LogInformation("User {UserId} deleted avatar.", userId);
-			return NoContent();
+			return SuccessMessage("Avatar deleted successfully.");
 		}
 		catch (IdentityException ex)
 		{
 			_logger.LogWarning(ex, "Erreur lors de la suppression d'avatar pour {UserId}", userId);
-			return StatusCode(ex.StatusCode, new { message = ex.Message });
+			throw;
 		}
 	}
 
 
 	[HttpGet("login-history")]
-	public async Task<ActionResult<PaginatedDto<LoginHistoryDto>>> GetMyLoginHistory([FromQuery] int skip = 0, [FromQuery] int take = 20)
+	public async Task<IActionResult> GetMyLoginHistory([FromQuery] int skip = 0, [FromQuery] int take = 20)
 	{
 		var userId = RequireUserId();
 		var history = await _loginHistoryService.GetUserHistoryAsync(userId, skip, take);
-		return Ok(history);
+		return Success(history);
 	}
 
 
@@ -258,7 +253,7 @@ public class UsersController : ControllerBase
 			WriteIndented = true
 		}));
 
-		return Ok(new { requestId, status = "completed", downloadUrl = $"/me/export-data/download/{requestId}" });
+		return Success(new { requestId, status = "completed", downloadUrl = $"/me/export-data/download/{requestId}" }, "Export generated successfully.");
 	}
 
 
@@ -270,21 +265,10 @@ public class UsersController : ControllerBase
 
 		if (!System.IO.File.Exists(filePath))
 		{
-			return NotFound(new { message = "Export file not found." });
+			return NotFoundProblem("Export file not found.");
 		}
 
 		return PhysicalFile(filePath, "application/json", $"export-{requestId:N}.json", enableRangeProcessing: true);
-	}
-
-	private Guid? GetUserId()
-	{
-		var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-		if (string.IsNullOrWhiteSpace(userIdValue))
-		{
-			return null;
-		}
-
-		return Guid.TryParse(userIdValue, out var userId) ? userId : null;
 	}
 
 	private string BuildAbsoluteUrl(string url)

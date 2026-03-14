@@ -13,7 +13,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [Route("api/v{version:apiVersion}/permissions")]
 [Authorize(Roles = "Admin")]
 // Endpoints pour la gestion des permissions.
-public class PermissionsController : ControllerBase
+public class PermissionsController : ApiControllerBase
 {
 	private readonly IPermissionService _permissionService;
 
@@ -23,44 +23,44 @@ public class PermissionsController : ControllerBase
 	}
 
 	[HttpGet]
-	public async Task<ActionResult<IReadOnlyList<PermissionDto>>> GetPermissions()
+	public async Task<IActionResult> GetPermissions()
 	{
 		var permissions = await _permissionService.GetAllAsync();
-		return Ok(permissions);
+		return Success(permissions);
 	}
 
 	[HttpPost]
-	public async Task<ActionResult<PermissionDto>> CreatePermission([FromBody] AddPermissionRequest request)
+	public async Task<IActionResult> CreatePermission([FromBody] AddPermissionRequest request)
 	{
 		var permission = await _permissionService.CreateAsync(request);
-		return Ok(permission);
+		return Success(permission, "Permission created successfully.");
 	}
 
 	[HttpDelete("{id:guid}")]
 	public async Task<IActionResult> DeletePermission(Guid id)
 	{
 		await _permissionService.DeleteAsync(id);
-		return NoContent();
+		return SuccessMessage("Permission deleted successfully.");
 	}
 
 	[HttpPost("assign")]
 	public async Task<IActionResult> AssignPermission([FromBody] AssignPermissionRequest request)
 	{
 		await _permissionService.AssignToRoleAsync(request);
-		return NoContent();
+		return SuccessMessage("Permission assigned successfully.");
 	}
 
 	[HttpPost("remove")]
 	public async Task<IActionResult> RemovePermission([FromBody] AssignPermissionRequest request)
 	{
 		await _permissionService.RemoveFromRoleAsync(request);
-		return NoContent();
+		return SuccessMessage("Permission removed successfully.");
 	}
 
 	[HttpGet("role/{roleId:guid}")]
-	public async Task<ActionResult<IReadOnlyList<PermissionDto>>> GetRolePermissions(Guid roleId)
+	public async Task<IActionResult> GetRolePermissions(Guid roleId)
 	{
 		var permissions = await _permissionService.GetRolePermissionsAsync(roleId);
-		return Ok(permissions);
+		return Success(permissions);
 	}
 }

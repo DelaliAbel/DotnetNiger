@@ -17,7 +17,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [Route("api/v{version:apiVersion}/admin")]
 [Authorize(Roles = "Admin")]
 // Endpoints d'administration et supervision des utilisateurs.
-public class AdminController : ControllerBase
+public class AdminController : ApiControllerBase
 {
 	private readonly IAdminService _adminService;
 	private readonly IUserService _userService;
@@ -52,7 +52,7 @@ public class AdminController : ControllerBase
 	}
 
 	[HttpGet("users")]
-	public async Task<ActionResult<PaginatedDto<UserSummaryDto>>> GetUsers(
+	public async Task<IActionResult> GetUsers(
 		[FromQuery] string? search,
 		[FromQuery] bool? isActive,
 		[FromQuery] bool? emailConfirmed,
@@ -90,33 +90,33 @@ public class AdminController : ControllerBase
 			sortDirection,
 			skip,
 			take);
-		return Ok(result);
+		return Success(result);
 	}
 
 	[HttpGet("users/{userId:guid}")]
-	public async Task<ActionResult<UserDto>> GetUser(Guid userId)
+	public async Task<IActionResult> GetUser(Guid userId)
 	{
 		var profile = await _userService.GetProfileAsync(userId);
-		return Ok(profile);
+		return Success(profile);
 	}
 
     [HttpDelete("users/{userId:guid}")]
 	public async Task<IActionResult> DeleteUser(Guid userId)
 	{
 		await _adminService.DeleteUserAsync(userId);
-		return NoContent();
+		return SuccessMessage("User deleted successfully.");
 	}
 
 	[HttpPut("users/{userId:guid}/status")]
 	public async Task<IActionResult> UpdateUserStatus(Guid userId, [FromBody] UpdateUserStatusRequest request)
 	{
 		await _adminService.SetUserActiveAsync(userId, request.IsActive);
-		return NoContent();
+		return SuccessMessage("User status updated successfully.");
 	}
 
 
 	[HttpGet("users/{userId:guid}/login-history")]
-	public async Task<ActionResult<PaginatedDto<LoginHistoryDto>>> GetUserLoginHistory(
+	public async Task<IActionResult> GetUserLoginHistory(
 		Guid userId,
 		[FromQuery] int skip = 0,
 		[FromQuery] int take = 20)
@@ -137,11 +137,11 @@ public class AdminController : ControllerBase
 		}
 
 		var result = await _loginHistoryService.GetUserHistoryAsync(userId, skip, take);
-		return Ok(result);
+		return Success(result);
 	}
 
 	[HttpGet("audit-logs")]
-	public async Task<ActionResult<PaginatedDto<AdminAuditLogDto>>> GetAuditLogs(
+	public async Task<IActionResult> GetAuditLogs(
 		[FromQuery] Guid? adminUserId,
 		[FromQuery] string? action,
 		[FromQuery] string? targetType,
@@ -174,30 +174,30 @@ public class AdminController : ControllerBase
 			createdTo,
 			skip,
 			take);
-		return Ok(result);
+		return Success(result);
 	}
 
 	// --- Settings endpoints ---
 
 	[HttpGet("settings/file-upload")]
-	public async Task<ActionResult<FileUploadSettingsDto>> GetFileUploadSettings()
+	public async Task<IActionResult> GetFileUploadSettings()
 	{
 		var settings = await _adminService.GetFileUploadSettingsAsync();
-		return Ok(settings);
+		return Success(settings);
 	}
 
 	[HttpPut("settings/file-upload")]
-	public async Task<ActionResult<FileUploadSettingsDto>> UpdateFileUploadSettings(
+	public async Task<IActionResult> UpdateFileUploadSettings(
 		[FromBody] UpdateFileUploadSettingsRequest request)
 	{
 		var settings = await _adminService.UpdateFileUploadSettingsAsync(request);
-		return Ok(settings);
+		return Success(settings, "File upload settings updated successfully.");
 	}
 
 	// --- User Management endpoints ---
 
 	[HttpPost("users")]
-	public async Task<ActionResult<UserDto>> CreateUser([FromBody] AdminCreateUserRequest request)
+	public async Task<IActionResult> CreateUser([FromBody] AdminCreateUserRequest request)
 	{
 		var user = new ApplicationUser
 		{
@@ -212,20 +212,23 @@ public class AdminController : ControllerBase
 		var result = await _userManager.CreateAsync(user, request.Password);
 		if (!result.Succeeded)
 		{
-			return BadRequest(new { errors = result.Errors });
+			return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]>
+			{
+				["identity"] = result.Errors.Select(error => error.Description).ToArray()
+			}));
 		}
 
 		var profile = await _userService.GetProfileAsync(user.Id);
-		return CreatedAtAction(nameof(GetUser), new { userId = user.Id }, profile);
+		return CreatedSuccess(nameof(GetUser), new { userId = user.Id }, profile, "User created successfully.");
 	}
 
 	[HttpPut("users/{userId:guid}")]
-	public async Task<ActionResult<UserDto>> UpdateUser(Guid userId, [FromBody] AdminUpdateUserRequest request)
+	public async Task<IActionResult> UpdateUser(Guid userId, [FromBody] AdminUpdateUserRequest request)
 	{
 		var user = await _userManager.FindByIdAsync(userId.ToString());
 		if (user == null)
 		{
-			return NotFound(new { message = "User not found." });
+			return NotFoundProblem("User not found.");
 		}
 
 		if (!string.IsNullOrWhiteSpace(request.FirstName) || !string.IsNullOrWhiteSpace(request.LastName))
@@ -240,11 +243,14 @@ public class AdminController : ControllerBase
 		var result = await _userManager.UpdateAsync(user);
 		if (!result.Succeeded)
 		{
-			return BadRequest(new { errors = result.Errors });
+			return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]>
+			{
+				["identity"] = result.Errors.Select(error => error.Description).ToArray()
+			}));
 		}
 
 		var profile = await _userService.GetProfileAsync(userId);
-		return Ok(profile);
+		return Success(profile, "User updated successfully.");
 	}
 
 	[HttpPost("users/{userId:guid}/reset-password")]
@@ -253,7 +259,7 @@ public class AdminController : ControllerBase
 		var user = await _userManager.FindByIdAsync(userId.ToString());
 		if (user == null)
 		{
-			return NotFound(new { message = "User not found." });
+			return NotFoundProblem("User not found.");
 		}
 
 		var token = await _userManager.GeneratePasswordResetTokenAsync(user);
@@ -261,10 +267,13 @@ public class AdminController : ControllerBase
 
 		if (!result.Succeeded)
 		{
-			return BadRequest(new { errors = result.Errors });
+			return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]>
+			{
+				["identity"] = result.Errors.Select(error => error.Description).ToArray()
+			}));
 		}
 
-		return Ok(new { message = "Password reset successfully." });
+		return SuccessMessage("Password reset successfully.");
 	}
 
 	[HttpPost("users/{userId:guid}/force-logout")]
@@ -284,7 +293,7 @@ public class AdminController : ControllerBase
 			await _dbContext.SaveChangesAsync();
 		}
 
-		return NoContent();
+		return SuccessMessage("User sessions revoked successfully.");
 	}
 
 	[HttpPost("users/{userId:guid}/unlock")]
@@ -293,53 +302,56 @@ public class AdminController : ControllerBase
 		var user = await _userManager.FindByIdAsync(userId.ToString());
 		if (user == null)
 		{
-			return NotFound(new { message = "User not found." });
+			return NotFoundProblem("User not found.");
 		}
 
 		var result = await _userManager.SetLockoutEndDateAsync(user, null);
 		if (!result.Succeeded)
 		{
-			return BadRequest(new { errors = result.Errors });
+			return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]>
+			{
+				["identity"] = result.Errors.Select(error => error.Description).ToArray()
+			}));
 		}
 
-		return NoContent();
+		return SuccessMessage("User unlocked successfully.");
 	}
 
 	// --- Roles Management endpoints ---
 
 	[HttpPost("roles")]
-	public async Task<ActionResult<RoleDto>> CreateRole([FromBody] AddRoleRequest request)
+	public async Task<IActionResult> CreateRole([FromBody] AddRoleRequest request)
 	{
 		var role = await _roleService.CreateAsync(request);
-		return CreatedAtAction(nameof(GetRole), new { roleId = role.Id }, role);
+		return CreatedSuccess(nameof(GetRole), new { roleId = role.Id }, role, "Role created successfully.");
 	}
 
 	[HttpGet("roles")]
-	public async Task<ActionResult<IReadOnlyList<RoleDto>>> GetRoles()
+	public async Task<IActionResult> GetRoles()
 	{
 		var roles = await _roleService.GetAllAsync();
-		return Ok(roles);
+		return Success(roles);
 	}
 
 	[HttpGet("roles/{roleId:guid}")]
-	public async Task<ActionResult<RoleDto>> GetRole(Guid roleId)
+	public async Task<IActionResult> GetRole(Guid roleId)
 	{
 		var role = await _dbContext.Roles.AsNoTracking().FirstOrDefaultAsync(r => r.Id == roleId);
 		if (role == null)
 		{
-			return NotFound(new { message = "Role not found." });
+			return NotFoundProblem("Role not found.");
 		}
 
-		return Ok(new RoleDto { Id = role.Id, Name = role.Name });
+		return Success(new RoleDto { Id = role.Id, Name = role.Name ?? string.Empty });
 	}
 
 	[HttpPut("roles/{roleId:guid}")]
-	public async Task<ActionResult<RoleDto>> UpdateRole(Guid roleId, [FromBody] UpdateRoleRequest request)
+	public async Task<IActionResult> UpdateRole(Guid roleId, [FromBody] UpdateRoleRequest request)
 	{
 		var role = await _roleManager.FindByIdAsync(roleId.ToString());
 		if (role == null)
 		{
-			return NotFound(new { message = "Role not found." });
+			return NotFoundProblem("Role not found.");
 		}
 
 		role.Name = request.Name ?? role.Name;
@@ -348,24 +360,27 @@ public class AdminController : ControllerBase
 		var result = await _roleManager.UpdateAsync(role);
 		if (!result.Succeeded)
 		{
-			return BadRequest(new { errors = result.Errors });
+			return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]>
+			{
+				["identity"] = result.Errors.Select(error => error.Description).ToArray()
+			}));
 		}
 
-		return Ok(new RoleDto { Id = role.Id, Name = role.Name });
+		return Success(new RoleDto { Id = role.Id, Name = role.Name ?? string.Empty }, "Role updated successfully.");
 	}
 
 	[HttpDelete("roles/{roleId:guid}")]
 	public async Task<IActionResult> DeleteRole(Guid roleId)
 	{
 		await _roleService.DeleteAsync(roleId);
-		return NoContent();
+		return SuccessMessage("Role deleted successfully.");
 	}
 
 	[HttpPost("users/{userId:guid}/roles")]
 	public async Task<IActionResult> AssignRoleToUser(Guid userId, [FromBody] AssignRoleRequest request)
 	{
 		await _roleService.AssignToUserAsync(new AssignRoleRequest { UserId = userId, RoleName = request.RoleName });
-		return NoContent();
+		return SuccessMessage("Role assigned successfully.");
 	}
 
 	[HttpDelete("users/{userId:guid}/roles/{roleId:guid}")]
@@ -374,18 +389,18 @@ public class AdminController : ControllerBase
 		var role = await _roleManager.FindByIdAsync(roleId.ToString());
 		if (role == null)
 		{
-			return NotFound(new { message = "Role not found." });
+			return NotFoundProblem("Role not found.");
 		}
 
 		await _roleService.RemoveFromUserAsync(new AssignRoleRequest { UserId = userId, RoleName = role.Name! });
-		return NoContent();
+		return SuccessMessage("Role removed successfully.");
 	}
 
 	[HttpGet("roles/{roleId:guid}/permissions")]
-	public async Task<ActionResult<List<PermissionDto>>> GetRolePermissions(Guid roleId)
+	public async Task<IActionResult> GetRolePermissions(Guid roleId)
 	{
 		var permissions = await _permissionService.GetRolePermissionsAsync(roleId);
-		return Ok(permissions);
+		return Success(permissions);
 	}
 
 	[HttpPut("roles/{roleId:guid}/permissions")]
@@ -394,7 +409,7 @@ public class AdminController : ControllerBase
 		var role = await _roleManager.FindByIdAsync(roleId.ToString());
 		if (role == null)
 		{
-			return NotFound(new { message = "Role not found." });
+			return NotFoundProblem("Role not found.");
 		}
 
 		// Remove existing permissions
@@ -414,22 +429,22 @@ public class AdminController : ControllerBase
 		}
 
 		await _dbContext.SaveChangesAsync();
-		return NoContent();
+		return SuccessMessage("Role permissions updated successfully.");
 	}
 
 	// --- Audit endpoints ---
 
 	[HttpGet("audit/logs")]
-	public async Task<ActionResult<PaginatedDto<AdminAuditLogDto>>> GetAllAuditLogs(
+	public async Task<IActionResult> GetAllAuditLogs(
 		[FromQuery] int skip = 0,
 		[FromQuery] int take = 20)
 	{
 		var result = await _adminService.GetAdminAuditLogsAsync(null, null, null, null, null, skip, take);
-		return Ok(result);
+		return Success(result);
 	}
 
 	[HttpGet("audit/logins")]
-	public async Task<ActionResult<PaginatedDto<LoginHistoryDto>>> GetLoginLogs(
+	public async Task<IActionResult> GetLoginLogs(
 		[FromQuery] int skip = 0,
 		[FromQuery] int take = 20)
 	{
@@ -453,7 +468,7 @@ public class AdminController : ControllerBase
 
 		var total = await _dbContext.LoginHistories.CountAsync();
 
-		return Ok(new PaginatedDto<LoginHistoryDto>
+		return Success(new PaginatedDto<LoginHistoryDto>
 		{
 			Items = items,
 			TotalCount = total,
@@ -463,18 +478,18 @@ public class AdminController : ControllerBase
 	}
 
 	[HttpGet("audit/admin-actions")]
-	public async Task<ActionResult<PaginatedDto<AdminAuditLogDto>>> GetAdminActionLogs(
+	public async Task<IActionResult> GetAdminActionLogs(
 		[FromQuery] int skip = 0,
 		[FromQuery] int take = 20)
 	{
 		var result = await _adminService.GetAdminAuditLogsAsync(null, null, null, null, null, skip, take);
-		return Ok(result);
+		return Success(result);
 	}
 
 	[HttpPut("audit/retention-policy")]
 	public Task<IActionResult> SetRetentionPolicy([FromBody] AuditRetentionPolicyRequest request)
 	{
 		// For now, just acknowledge the policy (can be stored in config or database later)
-		return Task.FromResult<IActionResult>(Ok(new { message = "Retention policy updated.", retentionDays = request.RetentionDays }));
+		return Task.FromResult<IActionResult>(Success(new { retentionDays = request.RetentionDays }, "Retention policy updated."));
 	}
 }

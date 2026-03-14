@@ -13,7 +13,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [Route("api/v{version:apiVersion}/roles")]
 [Authorize(Roles = "Admin")]
 // Endpoints pour la gestion des roles.
-public class RolesController : ControllerBase
+public class RolesController : ApiControllerBase
 {
 	// Endpoints proteges pour les roles.
 	private readonly IRoleService _roleService;
@@ -24,44 +24,44 @@ public class RolesController : ControllerBase
 	}
 
 	[HttpGet]
-	public async Task<ActionResult<IReadOnlyList<RoleDto>>> GetRoles()
+	public async Task<IActionResult> GetRoles()
 	{
 		var roles = await _roleService.GetAllAsync();
-		return Ok(roles);
+		return Success(roles);
 	}
 
 	[HttpPost]
-	public async Task<ActionResult<RoleDto>> CreateRole([FromBody] AddRoleRequest request)
+	public async Task<IActionResult> CreateRole([FromBody] AddRoleRequest request)
 	{
 		var role = await _roleService.CreateAsync(request);
-		return Ok(role);
+		return Success(role, "Role created successfully.");
 	}
 
 	[HttpDelete("{id:guid}")]
 	public async Task<IActionResult> DeleteRole(Guid id)
 	{
 		await _roleService.DeleteAsync(id);
-		return NoContent();
+		return SuccessMessage("Role deleted successfully.");
 	}
 
 	[HttpPost("assign")]
 	public async Task<IActionResult> AssignRole([FromBody] AssignRoleRequest request)
 	{
 		await _roleService.AssignToUserAsync(request);
-		return NoContent();
+		return SuccessMessage("Role assigned successfully.");
 	}
 
 	[HttpPost("remove")]
 	public async Task<IActionResult> RemoveRole([FromBody] AssignRoleRequest request)
 	{
 		await _roleService.RemoveFromUserAsync(request);
-		return NoContent();
+		return SuccessMessage("Role removed successfully.");
 	}
 
 	[HttpGet("user/{userId:guid}")]
-	public async Task<ActionResult<IReadOnlyList<string>>> GetUserRoles(Guid userId)
+	public async Task<IActionResult> GetUserRoles(Guid userId)
 	{
 		var roles = await _roleService.GetUserRolesAsync(userId);
-		return Ok(roles);
+		return Success(roles);
 	}
 }

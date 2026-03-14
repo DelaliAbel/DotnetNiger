@@ -1,5 +1,4 @@
 // Controleur API Identity: SocialLinksController
-using System.Security.Claims;
 using Asp.Versioning;
 using DotnetNiger.Identity.Application.DTOs.Requests;
 using DotnetNiger.Identity.Application.DTOs.Responses;
@@ -14,7 +13,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [Route("api/v{version:apiVersion}/social-links")]
 [Authorize]
 // Endpoints pour les liens sociaux de l'utilisateur connecte.
-public class SocialLinksController : ControllerBase
+public class SocialLinksController : ApiControllerBase
 {
 	// Endpoints proteges pour les liens sociaux.
 	private readonly ISocialLinkService _socialLinkService;
@@ -25,52 +24,26 @@ public class SocialLinksController : ControllerBase
 	}
 
 	[HttpGet]
-	public async Task<ActionResult<IReadOnlyList<SocialLinkDto>>> GetMyLinks()
+	public async Task<IActionResult> GetMyLinks()
 	{
-		var userId = GetUserId();
-		if (userId == null)
-		{
-			return Unauthorized();
-		}
-
-		var links = await _socialLinkService.GetForUserAsync(userId.Value);
-		return Ok(links);
+		var userId = RequireAuthenticatedUserId();
+		var links = await _socialLinkService.GetForUserAsync(userId);
+		return Success(links);
 	}
 
 	[HttpPost]
-	public async Task<ActionResult<SocialLinkDto>> AddLink([FromBody] AddSocialLinkRequest request)
+	public async Task<IActionResult> AddLink([FromBody] AddSocialLinkRequest request)
 	{
-		var userId = GetUserId();
-		if (userId == null)
-		{
-			return Unauthorized();
-		}
-
-		var link = await _socialLinkService.AddAsync(userId.Value, request);
-		return Ok(link);
+		var userId = RequireAuthenticatedUserId();
+		var link = await _socialLinkService.AddAsync(userId, request);
+		return Success(link, "Social link added successfully.");
 	}
 
 	[HttpDelete("{id:guid}")]
 	public async Task<IActionResult> DeleteLink(Guid id)
 	{
-		var userId = GetUserId();
-		if (userId == null)
-		{
-			return Unauthorized();
-		}
-
-		await _socialLinkService.DeleteAsync(userId.Value, id);
-		return NoContent();
-	}
-
-	private Guid? GetUserId()
-	{
-		var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
-		if (string.IsNullOrWhiteSpace(userIdValue))
-		{
-			return null;
-		}
-
-		return Guid.TryParse(userIdValue, out var userId) ? userId : null;
+		var userId = RequireAuthenticatedUserId();
+		await _socialLinkService.DeleteAsync(userId, id);
+		return SuccessMessage("Social link deleted successfully.");
 	}
 }

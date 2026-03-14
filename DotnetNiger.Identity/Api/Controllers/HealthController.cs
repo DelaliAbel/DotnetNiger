@@ -9,7 +9,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}")]
-public class HealthController : ControllerBase
+public class HealthController : ApiControllerBase
 {
 	private readonly DotnetNigerIdentityDbContext _dbContext;
 
@@ -22,7 +22,7 @@ public class HealthController : ControllerBase
 	[AllowAnonymous]
 	public IActionResult Health()
 	{
-		return Ok(new { status = "healthy", service = "DotnetNiger.Identity", timestamp = DateTime.UtcNow });
+		return Success(new { status = "healthy", service = "DotnetNiger.Identity", timestamp = DateTime.UtcNow });
 	}
 
 	[HttpGet("health/detailed")]
@@ -30,7 +30,7 @@ public class HealthController : ControllerBase
 	public async Task<IActionResult> DetailedHealth()
 	{
 		var dbOk = await _dbContext.Database.CanConnectAsync();
-		return Ok(new
+		return Success(new
 		{
 			status = dbOk ? "healthy" : "degraded",
 			db = dbOk ? "ok" : "unreachable",
