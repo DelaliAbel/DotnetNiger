@@ -7,10 +7,12 @@ namespace DotnetNiger.Community.Application.Services;
 public class ResourceService : IResourceService
 {
     private readonly IResourceRepository _resourceRepository;
+    private readonly ISlugGenerator _slugGenerator;
 
-    public ResourceService(IResourceRepository resourceRepository)
+    public ResourceService(IResourceRepository resourceRepository, ISlugGenerator slugGenerator)
     {
         _resourceRepository = resourceRepository;
+        _slugGenerator = slugGenerator;
     }
 
     public async Task<IEnumerable<Resource>> GetAllResourcesAsync(int page = 1, int pageSize = 10)
@@ -33,11 +35,13 @@ public class ResourceService : IResourceService
     {
         resource.Id = Guid.NewGuid();
         resource.CreatedAt = DateTime.UtcNow;
+        resource.Slug = _slugGenerator.Generate(resource.Title);
         return await _resourceRepository.AddAsync(resource);
     }
 
     public async Task<Resource> UpdateResourceAsync(Resource resource)
     {
+        resource.Slug = _slugGenerator.Generate(resource.Title);
         return await _resourceRepository.UpdateAsync(resource);
     }
 

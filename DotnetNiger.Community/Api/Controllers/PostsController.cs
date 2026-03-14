@@ -1,7 +1,9 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
-using DotnetNiger.Community.Application.Services;
+using DotnetNiger.Community.Api.Services;
 using DotnetNiger.Community.Domain.Entities;
+using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.Mappers;
 using DotnetNiger.Community.Application.Services.Interfaces;
 
 namespace DotnetNiger.Community.Api.Controllers;
@@ -12,13 +14,20 @@ namespace DotnetNiger.Community.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
-public class PostsController : ControllerBase
+public class PostsController : ApiControllerBase
 {
     private readonly IPostService _postService;
+    private readonly ICurrentUserService _currentUserService;
+    private readonly ICommunityRequestMapper _requestMapper;
 
-    public PostsController(IPostService postService)
+    public PostsController(
+        IPostService postService,
+        ICurrentUserService currentUserService,
+        ICommunityRequestMapper requestMapper)
     {
         _postService = postService;
+        _currentUserService = currentUserService;
+        _requestMapper = requestMapper;
     }
 
     /// <summary>
@@ -31,23 +40,10 @@ public class PostsController : ControllerBase
     public async Task<IActionResult> GetPosts([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         if (page < 1 || pageSize < 1 || pageSize > 100)
-            return BadRequest(new { message = "Paramètres de pagination invalides" });
+            return BadRequestProblem("Parametres de pagination invalides");
 
-        try
-        {
-            var posts = await _postService.GetAllPublishedPostsAsync(page, pageSize);
-            return Ok(new
-            {
-                page = page,
-                pageSize = pageSize,
-                total = posts.Count(),
-                data = posts
-            });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la récupération des posts", error = ex.Message });
-        }
+        var posts = await _postService.GetAllPublishedPostsAsync(page, pageSize);
+        return Success(posts, meta: new { page, pageSize, total = posts.Count() });
     }
 
     /// <summary>
@@ -58,21 +54,13 @@ public class PostsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetPostById(string id)
     {
-        if (!Guid.TryParse(id, out var postId))
-            return BadRequest(new { message = "ID du post invalide" });
+        var postId = ParseGuidOrThrow(id, nameof(id), "ID du post invalide");
 
-        try
-        {
-            var post = await _postService.GetPostByIdAsync(postId);
-            if (post == null)
-                return NotFound(new { message = "Post non trouvé" });
+        var post = await _postService.GetPostByIdAsync(postId);
+        if (post == null)
+            return NotFoundProblem("Post non trouve");
 
-            return Ok(post);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la récupération du post", error = ex.Message });
-        }
+        return Success(post);
     }
 
     /// <summary>
@@ -84,32 +72,13 @@ public class PostsController : ControllerBase
     public async Task<IActionResult> CreatePost([FromBody] CreatePostRequest request)
     {
         if (request == null || string.IsNullOrEmpty(request.Title))
-            return BadRequest(new { message = "Titre requis" });
+            return BadRequestProblem("Titre requis");
 
-        if (!this.TryGetCurrentUserId(out var currentUserId))
-            return Unauthorized(new { message = "Utilisateur non authentifie", details = "Claim user ou header X-User-Id requis" });
+        var currentUserId = _currentUserService.GetRequiredUserId();
+        var post = _requestMapper.MapToPost(request, currentUserId);
 
-        try
-        {
-            var post = new Post
-            {
-                Id = Guid.NewGuid(),
-                Title = request.Title,
-                Content = request.Content,
-                Slug = request.Title.ToLower().Replace(" ", "-"),
-                AuthorId = currentUserId,
-                PostType = "Blog",
-                IsPublished = false,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            var createdPost = await _postService.CreatePostAsync(post);
-            return CreatedAtAction(nameof(GetPostById), new { id = createdPost.Id }, createdPost);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la création du post", error = ex.Message });
-        }
+        var createdPost = await _postService.CreatePostAsync(post);
+        return CreatedSuccess(nameof(GetPostById), new { id = createdPost.Id }, createdPost, "Post cree avec succes");
     }
 
     /// <summary>
@@ -121,28 +90,15 @@ public class PostsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdatePost(string id, [FromBody] UpdatePostRequest request)
     {
-        if (!Guid.TryParse(id, out var postId))
-            return BadRequest(new { message = "ID du post invalide" });
+        var postId = ParseGuidOrThrow(id, nameof(id), "ID du post invalide");
 
-        try
-        {
-            var post = await _postService.GetPostByIdAsync(postId);
-            if (post == null)
-                return NotFound(new { message = "Post non trouvé" });
+        var post = await _postService.GetPostByIdAsync(postId);
+        if (post == null)
+            return NotFoundProblem("Post non trouve");
 
-            if (!string.IsNullOrEmpty(request.Title))
-                post.Title = request.Title;
-            if (!string.IsNullOrEmpty(request.Content))
-                post.Content = request.Content;
-
-            post.UpdatedAt = DateTime.UtcNow;
-            var updatedPost = await _postService.UpdatePostAsync(post);
-            return Ok(updatedPost);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la mise à jour du post", error = ex.Message });
-        }
+        _requestMapper.ApplyPostUpdates(post, request);
+        var updatedPost = await _postService.UpdatePostAsync(post);
+        return Success(updatedPost, "Post mis a jour avec succes");
     }
 
     /// <summary>
@@ -153,46 +109,12 @@ public class PostsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeletePost(string id)
     {
-        if (!Guid.TryParse(id, out var postId))
-            return BadRequest(new { message = "ID du post invalide" });
+        var postId = ParseGuidOrThrow(id, nameof(id), "ID du post invalide");
 
-        try
-        {
-            var deleted = await _postService.DeletePostAsync(postId);
-            if (!deleted)
-                return NotFound(new { message = "Post non trouvé" });
+        var deleted = await _postService.DeletePostAsync(postId);
+        if (!deleted)
+            return NotFoundProblem("Post non trouve");
 
-            return Ok(new { message = "Post supprimé avec succès" });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la suppression du post", error = ex.Message });
-        }
+        return SuccessMessage("Post supprime avec succes");
     }
-}
-
-/// <summary>
-/// DTO pour créer un post
-/// </summary>
-public class CreatePostRequest
-{
-    /// <summary>Titre du post</summary>
-    public string Title { get; set; } = string.Empty;
-    /// <summary>Contenu du post</summary>
-    public string Content { get; set; } = string.Empty;
-    /// <summary>Tags du post</summary>
-    public List<string>? Tags { get; set; }
-}
-
-/// <summary>
-/// DTO pour mettre à jour un post
-/// </summary>
-public class UpdatePostRequest
-{
-    /// <summary>Titre du post</summary>
-    public string? Title { get; set; }
-    /// <summary>Contenu du post</summary>
-    public string? Content { get; set; }
-    /// <summary>Tags du post</summary>
-    public List<string>? Tags { get; set; }
 }

@@ -1,7 +1,8 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
-using DotnetNiger.Community.Application.Services;
-using DotnetNiger.Community.Domain.Entities;
+using DotnetNiger.Community.Api.Services;
+using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.Mappers;
 using DotnetNiger.Community.Application.Services.Interfaces;
 
 namespace DotnetNiger.Community.Api.Controllers;
@@ -12,13 +13,20 @@ namespace DotnetNiger.Community.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
-public class ProjectsController : ControllerBase
+public class ProjectsController : ApiControllerBase
 {
     private readonly IProjectService _projectService;
+    private readonly ICurrentUserService _currentUserService;
+    private readonly ICommunityRequestMapper _requestMapper;
 
-    public ProjectsController(IProjectService projectService)
+    public ProjectsController(
+        IProjectService projectService,
+        ICurrentUserService currentUserService,
+        ICommunityRequestMapper requestMapper)
     {
         _projectService = projectService;
+        _currentUserService = currentUserService;
+        _requestMapper = requestMapper;
     }
 
     /// <summary>
@@ -31,23 +39,10 @@ public class ProjectsController : ControllerBase
     public async Task<IActionResult> GetProjects([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         if (page < 1 || pageSize < 1 || pageSize > 100)
-            return BadRequest(new { message = "Paramètres de pagination invalides" });
+            return BadRequestProblem("Parametres de pagination invalides");
 
-        try
-        {
-            var projects = await _projectService.GetAllProjectsAsync(page, pageSize);
-            return Ok(new
-            {
-                page = page,
-                pageSize = pageSize,
-                total = projects.Count(),
-                data = projects
-            });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la récupération des projets", error = ex.Message });
-        }
+        var projects = await _projectService.GetAllProjectsAsync(page, pageSize);
+        return Success(projects, meta: new { page, pageSize, total = projects.Count() });
     }
 
     /// <summary>
@@ -58,21 +53,13 @@ public class ProjectsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetProjectById(string id)
     {
-        if (!Guid.TryParse(id, out var projectId))
-            return BadRequest(new { message = "ID du projet invalide" });
+        var projectId = ParseGuidOrThrow(id, nameof(id), "ID du projet invalide");
 
-        try
-        {
-            var project = await _projectService.GetProjectByIdAsync(projectId);
-            if (project == null)
-                return NotFound(new { message = "Projet non trouvé" });
+        var project = await _projectService.GetProjectByIdAsync(projectId);
+        if (project == null)
+            return NotFoundProblem("Projet non trouve");
 
-            return Ok(project);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la récupération du projet", error = ex.Message });
-        }
+        return Success(project);
     }
 
     /// <summary>
@@ -82,15 +69,8 @@ public class ProjectsController : ControllerBase
     [HttpGet("active/list")]
     public async Task<IActionResult> GetActiveProjects()
     {
-        try
-        {
-            var projects = await _projectService.GetActiveProjectsAsync();
-            return Ok(new { data = projects });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la récupération des projets actifs", error = ex.Message });
-        }
+        var projects = await _projectService.GetActiveProjectsAsync();
+        return Success(projects);
     }
 
     /// <summary>
@@ -102,36 +82,13 @@ public class ProjectsController : ControllerBase
     public async Task<IActionResult> CreateProject([FromBody] CreateProjectRequest request)
     {
         if (request == null || string.IsNullOrEmpty(request.Name))
-            return BadRequest(new { message = "Nom du projet requis" });
+            return BadRequestProblem("Nom du projet requis");
 
-        if (!this.TryGetCurrentUserId(out var currentUserId))
-            return Unauthorized(new { message = "Utilisateur non authentifie", details = "Claim user ou header X-User-Id requis" });
+        var currentUserId = _currentUserService.GetRequiredUserId();
+        var project = _requestMapper.MapToProject(request, currentUserId);
 
-        try
-        {
-            var project = new Project
-            {
-                Id = Guid.NewGuid(),
-                Name = request.Name,
-                Slug = request.Name.ToLower().Replace(" ", "-"),
-                Description = request.Description ?? string.Empty,
-                GitHubUrl = request.GitHubUrl ?? string.Empty,
-                OwnerId = currentUserId,
-                IsFeatured = false,
-                Stars = 0,
-                ContributorsCount = 0,
-                Language = request.Language ?? "C#",
-                License = request.License ?? "MIT",
-                CreatedAt = DateTime.UtcNow
-            };
-
-            var createdProject = await _projectService.CreateProjectAsync(project);
-            return CreatedAtAction(nameof(GetProjectById), new { id = createdProject.Id }, createdProject);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la création du projet", error = ex.Message });
-        }
+        var createdProject = await _projectService.CreateProjectAsync(project);
+        return CreatedSuccess(nameof(GetProjectById), new { id = createdProject.Id }, createdProject, "Projet cree avec succes");
     }
 
     /// <summary>
@@ -143,29 +100,15 @@ public class ProjectsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateProject(string id, [FromBody] UpdateProjectRequest request)
     {
-        if (!Guid.TryParse(id, out var projectId))
-            return BadRequest(new { message = "ID du projet invalide" });
+        var projectId = ParseGuidOrThrow(id, nameof(id), "ID du projet invalide");
 
-        try
-        {
-            var project = await _projectService.GetProjectByIdAsync(projectId);
-            if (project == null)
-                return NotFound(new { message = "Projet non trouvé" });
+        var project = await _projectService.GetProjectByIdAsync(projectId);
+        if (project == null)
+            return NotFoundProblem("Projet non trouve");
 
-            if (!string.IsNullOrEmpty(request.Name))
-                project.Name = request.Name;
-            if (!string.IsNullOrEmpty(request.Description))
-                project.Description = request.Description;
-            if (!string.IsNullOrEmpty(request.GitHubUrl))
-                project.GitHubUrl = request.GitHubUrl;
-
-            var updatedProject = await _projectService.UpdateProjectAsync(project);
-            return Ok(updatedProject);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la mise à jour du projet", error = ex.Message });
-        }
+        _requestMapper.ApplyProjectUpdates(project, request);
+        var updatedProject = await _projectService.UpdateProjectAsync(project);
+        return Success(updatedProject, "Projet mis a jour avec succes");
     }
 
     /// <summary>
@@ -176,50 +119,13 @@ public class ProjectsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteProject(string id)
     {
-        if (!Guid.TryParse(id, out var projectId))
-            return BadRequest(new { message = "ID du projet invalide" });
+        var projectId = ParseGuidOrThrow(id, nameof(id), "ID du projet invalide");
 
-        try
-        {
-            var deleted = await _projectService.DeleteProjectAsync(projectId);
-            if (!deleted)
-                return NotFound(new { message = "Projet non trouvé" });
+        var deleted = await _projectService.DeleteProjectAsync(projectId);
+        if (!deleted)
+            return NotFoundProblem("Projet non trouve");
 
-            return Ok(new { message = "Projet supprimé avec succès" });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la suppression du projet", error = ex.Message });
-        }
+        return SuccessMessage("Projet supprime avec succes");
     }
 }
 
-/// <summary>
-/// DTO pour créer un projet
-/// </summary>
-public class CreateProjectRequest
-{
-    /// <summary>Nom du projet</summary>
-    public string Name { get; set; } = string.Empty;
-    /// <summary>Description du projet</summary>
-    public string? Description { get; set; }
-    /// <summary>GitHub URL</summary>
-    public string? GitHubUrl { get; set; }
-    /// <summary>Langage programming</summary>
-    public string? Language { get; set; }
-    /// <summary>License</summary>
-    public string? License { get; set; }
-}
-
-/// <summary>
-/// DTO pour mettre à jour un projet
-/// </summary>
-public class UpdateProjectRequest
-{
-    /// <summary>Nom du projet</summary>
-    public string? Name { get; set; }
-    /// <summary>Description du projet</summary>
-    public string? Description { get; set; }
-    /// <summary>GitHub URL</summary>
-    public string? GitHubUrl { get; set; }
-}

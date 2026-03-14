@@ -7,10 +7,12 @@ namespace DotnetNiger.Community.Application.Services;
 public class ProjectService : IProjectService
 {
     private readonly IProjectRepository _projectRepository;
+    private readonly ISlugGenerator _slugGenerator;
 
-    public ProjectService(IProjectRepository projectRepository)
+    public ProjectService(IProjectRepository projectRepository, ISlugGenerator slugGenerator)
     {
         _projectRepository = projectRepository;
+        _slugGenerator = slugGenerator;
     }
 
     public async Task<IEnumerable<Project>> GetAllProjectsAsync(int page = 1, int pageSize = 10)
@@ -33,12 +35,14 @@ public class ProjectService : IProjectService
     {
         project.Id = Guid.NewGuid();
         project.CreatedAt = DateTime.UtcNow;
+        project.Slug = _slugGenerator.Generate(project.Name);
         return await _projectRepository.AddAsync(project);
     }
 
     public async Task<Project> UpdateProjectAsync(Project project)
     {
         project.UpdatedAt = DateTime.UtcNow;
+        project.Slug = _slugGenerator.Generate(project.Name);
         return await _projectRepository.UpdateAsync(project);
     }
 

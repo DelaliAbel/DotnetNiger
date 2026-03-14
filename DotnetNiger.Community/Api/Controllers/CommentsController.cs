@@ -1,8 +1,9 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
-using DotnetNiger.Community.Application.Services;
+using DotnetNiger.Community.Api.Services;
+using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.Mappers;
 using DotnetNiger.Community.Application.Services.Interfaces;
-using DotnetNiger.Community.Domain.Entities;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
@@ -12,13 +13,20 @@ namespace DotnetNiger.Community.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
-public class CommentsController : ControllerBase
+public class CommentsController : ApiControllerBase
 {
     private readonly ICommentService _commentService;
+    private readonly ICurrentUserService _currentUserService;
+    private readonly ICommunityRequestMapper _requestMapper;
 
-    public CommentsController(ICommentService commentService)
+    public CommentsController(
+        ICommentService commentService,
+        ICurrentUserService currentUserService,
+        ICommunityRequestMapper requestMapper)
     {
         _commentService = commentService;
+        _currentUserService = currentUserService;
+        _requestMapper = requestMapper;
     }
 
     /// <summary>
@@ -28,15 +36,11 @@ public class CommentsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetComments([FromQuery] int pageSize = 10)
     {
-        try
-        {
-            var allComments = await _commentService.GetAllCommentsAsync();
-            return Ok(new { data = allComments.Take(pageSize) });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la récupération des commentaires", error = ex.Message });
-        }
+        if (pageSize < 1 || pageSize > 100)
+            return BadRequestProblem("Parametres de pagination invalides");
+
+        var allComments = await _commentService.GetAllCommentsAsync();
+        return Success(allComments.Take(pageSize));
     }
 
     /// <summary>
@@ -47,21 +51,13 @@ public class CommentsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetCommentById(string id)
     {
-        if (!Guid.TryParse(id, out var commentId))
-            return BadRequest(new { message = "ID du commentaire invalide" });
+        var commentId = ParseGuidOrThrow(id, nameof(id), "ID du commentaire invalide");
 
-        try
-        {
-            var comment = await _commentService.GetCommentByIdAsync(commentId);
-            if (comment == null)
-                return NotFound(new { message = "Commentaire non trouvé" });
+        var comment = await _commentService.GetCommentByIdAsync(commentId);
+        if (comment == null)
+            return NotFoundProblem("Commentaire non trouve");
 
-            return Ok(comment);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la récupération du commentaire", error = ex.Message });
-        }
+        return Success(comment);
     }
 
     /// <summary>
@@ -73,33 +69,14 @@ public class CommentsController : ControllerBase
     public async Task<IActionResult> CreateComment([FromBody] CreateCommentRequest request)
     {
         if (request == null || string.IsNullOrEmpty(request.Content))
-            return BadRequest(new { message = "Contenu requis" });
+            return BadRequestProblem("Contenu requis");
 
-        if (!Guid.TryParse(request.PostId, out var postId))
-            return BadRequest(new { message = "ID du post invalide" });
+        var postId = ParseGuidOrThrow(request.PostId, nameof(request.PostId), "ID du post invalide");
+        var currentUserId = _currentUserService.GetRequiredUserId();
+        var comment = _requestMapper.MapToComment(request, postId, currentUserId);
 
-        if (!this.TryGetCurrentUserId(out var currentUserId))
-            return Unauthorized(new { message = "Utilisateur non authentifie", details = "Claim user ou header X-User-Id requis" });
-
-        try
-        {
-            var comment = new Comment
-            {
-                Id = Guid.NewGuid(),
-                PostId = postId,
-                UserId = currentUserId,
-                Content = request.Content,
-                IsApproved = false,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            var createdComment = await _commentService.CreateCommentAsync(comment);
-            return CreatedAtAction(nameof(GetCommentById), new { id = createdComment.Id }, createdComment);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la création du commentaire", error = ex.Message });
-        }
+        var createdComment = await _commentService.CreateCommentAsync(comment);
+        return CreatedSuccess(nameof(GetCommentById), new { id = createdComment.Id }, createdComment, "Commentaire cree avec succes");
     }
 
     /// <summary>
@@ -111,26 +88,15 @@ public class CommentsController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateComment(string id, [FromBody] UpdateCommentRequest request)
     {
-        if (!Guid.TryParse(id, out var commentId))
-            return BadRequest(new { message = "ID du commentaire invalide" });
+        var commentId = ParseGuidOrThrow(id, nameof(id), "ID du commentaire invalide");
 
-        try
-        {
-            var comment = await _commentService.GetCommentByIdAsync(commentId);
-            if (comment == null)
-                return NotFound(new { message = "Commentaire non trouvé" });
+        var comment = await _commentService.GetCommentByIdAsync(commentId);
+        if (comment == null)
+            return NotFoundProblem("Commentaire non trouve");
 
-            if (!string.IsNullOrEmpty(request.Content))
-                comment.Content = request.Content;
-
-            comment.UpdatedAt = DateTime.UtcNow;
-            var updatedComment = await _commentService.UpdateCommentAsync(comment);
-            return Ok(updatedComment);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la mise à jour du commentaire", error = ex.Message });
-        }
+        _requestMapper.ApplyCommentUpdates(comment, request);
+        var updatedComment = await _commentService.UpdateCommentAsync(comment);
+        return Success(updatedComment, "Commentaire mis a jour avec succes");
     }
 
     /// <summary>
@@ -141,40 +107,13 @@ public class CommentsController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteComment(string id)
     {
-        if (!Guid.TryParse(id, out var commentId))
-            return BadRequest(new { message = "ID du commentaire invalide" });
+        var commentId = ParseGuidOrThrow(id, nameof(id), "ID du commentaire invalide");
 
-        try
-        {
-            var deleted = await _commentService.DeleteCommentAsync(commentId);
-            if (!deleted)
-                return NotFound(new { message = "Commentaire non trouvé" });
+        var deleted = await _commentService.DeleteCommentAsync(commentId);
+        if (!deleted)
+            return NotFoundProblem("Commentaire non trouve");
 
-            return Ok(new { message = "Commentaire supprimé avec succès" });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la suppression du commentaire", error = ex.Message });
-        }
+        return SuccessMessage("Commentaire supprime avec succes");
     }
 }
 
-/// <summary>
-/// DTO pour créer un commentaire
-/// </summary>
-public class CreateCommentRequest
-{
-    /// <summary>Contenu du commentaire</summary>
-    public string Content { get; set; } = string.Empty;
-    /// <summary>ID du post concerné</summary>
-    public string PostId { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// DTO pour mettre à jour un commentaire
-/// </summary>
-public class UpdateCommentRequest
-{
-    /// <summary>Contenu du commentaire</summary>
-    public string? Content { get; set; }
-}

@@ -1,6 +1,5 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
-using DotnetNiger.Community.Application.Services;
 using DotnetNiger.Community.Application.Services.Interfaces;
 
 namespace DotnetNiger.Community.Api.Controllers;
@@ -11,26 +10,23 @@ namespace DotnetNiger.Community.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
-public class StatsController : ControllerBase
+public class StatsController : ApiControllerBase
 {
     private readonly IPostService _postService;
     private readonly IEventService _eventService;
     private readonly IProjectService _projectService;
     private readonly IResourceService _resourceService;
-    private readonly ICommentService _commentService;
 
     public StatsController(
         IPostService postService,
         IEventService eventService,
         IProjectService projectService,
-        IResourceService resourceService,
-        ICommentService commentService)
+        IResourceService resourceService)
     {
         _postService = postService;
         _eventService = eventService;
         _projectService = projectService;
         _resourceService = resourceService;
-        _commentService = commentService;
     }
 
     /// <summary>
@@ -40,27 +36,20 @@ public class StatsController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetStatistics()
     {
-        try
-        {
-            var posts = await _postService.GetAllPublishedPostsAsync(1, 1000);
-            var events = await _eventService.GetAllEventsAsync(1, 1000);
-            var projects = await _projectService.GetAllProjectsAsync(1, 1000);
-            var resources = await _resourceService.GetAllResourcesAsync(1, 1000);
+        var posts = await _postService.GetAllPublishedPostsAsync(1, 1000);
+        var events = await _eventService.GetAllEventsAsync(1, 1000);
+        var projects = await _projectService.GetAllProjectsAsync(1, 1000);
+        var resources = await _resourceService.GetAllResourcesAsync(1, 1000);
 
-            return Ok(new
-            {
-                totalPosts = posts.Count(),
-                totalEvents = events.Count(),
-                totalProjects = projects.Count(),
-                totalResources = resources.Count(),
-                upcomingEvents = events.Count(e => e.StartDate > DateTime.UtcNow),
-                activeProjects = projects.Count(),
-                lastUpdated = DateTime.UtcNow
-            });
-        }
-        catch (Exception ex)
+        return Success(new
         {
-            return StatusCode(500, new { message = "Erreur lors de la récupération des statistiques", error = ex.Message });
-        }
+            totalPosts = posts.Count(),
+            totalEvents = events.Count(),
+            totalProjects = projects.Count(),
+            totalResources = resources.Count(),
+            upcomingEvents = events.Count(e => e.StartDate > DateTime.UtcNow),
+            activeProjects = projects.Count(),
+            lastUpdated = DateTime.UtcNow
+        });
     }
 }

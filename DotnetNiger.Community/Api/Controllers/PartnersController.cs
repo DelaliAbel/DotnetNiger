@@ -1,7 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
-using DotnetNiger.Community.Application.Services;
-using DotnetNiger.Community.Domain.Entities;
+using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.Mappers;
 using DotnetNiger.Community.Application.Services.Interfaces;
 
 namespace DotnetNiger.Community.Api.Controllers;
@@ -12,13 +12,15 @@ namespace DotnetNiger.Community.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
-public class PartnersController : ControllerBase
+public class PartnersController : ApiControllerBase
 {
     private readonly IPartnerService _partnerService;
+    private readonly ICommunityRequestMapper _requestMapper;
 
-    public PartnersController(IPartnerService partnerService)
+    public PartnersController(IPartnerService partnerService, ICommunityRequestMapper requestMapper)
     {
         _partnerService = partnerService;
+        _requestMapper = requestMapper;
     }
 
     /// <summary>
@@ -28,15 +30,8 @@ public class PartnersController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetPartners()
     {
-        try
-        {
-            var partners = await _partnerService.GetAllPartnersAsync();
-            return Ok(new { data = partners });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la récupération des partenaires", error = ex.Message });
-        }
+        var partners = await _partnerService.GetAllPartnersAsync();
+        return Success(partners);
     }
 
     /// <summary>
@@ -47,21 +42,13 @@ public class PartnersController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetPartnerById(string id)
     {
-        if (!Guid.TryParse(id, out var partnerId))
-            return BadRequest(new { message = "ID du partenaire invalide" });
+        var partnerId = ParseGuidOrThrow(id, nameof(id), "ID du partenaire invalide");
 
-        try
-        {
-            var partner = await _partnerService.GetPartnerByIdAsync(partnerId);
-            if (partner == null)
-                return NotFound(new { message = "Partenaire non trouvé" });
+        var partner = await _partnerService.GetPartnerByIdAsync(partnerId);
+        if (partner == null)
+            return NotFoundProblem("Partenaire non trouve");
 
-            return Ok(partner);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la récupération du partenaire", error = ex.Message });
-        }
+        return Success(partner);
     }
 
     /// <summary>
@@ -73,31 +60,11 @@ public class PartnersController : ControllerBase
     public async Task<IActionResult> CreatePartner([FromBody] CreatePartnerRequest request)
     {
         if (request == null || string.IsNullOrEmpty(request.Name))
-            return BadRequest(new { message = "Nom du partenaire requis" });
+            return BadRequestProblem("Nom du partenaire requis");
 
-        try
-        {
-            var partner = new Partner
-            {
-                Id = Guid.NewGuid(),
-                Name = request.Name,
-                Slug = request.Name.ToLower().Replace(" ", "-"),
-                LogoUrl = request.LogoUrl ?? string.Empty,
-                Website = request.Website ?? string.Empty,
-                Description = request.Description ?? string.Empty,
-                PartnerType = request.PartnerType ?? "Silver",
-                Level = request.Level ?? "Gold",
-                DisplayOrder = 0,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            var createdPartner = await _partnerService.CreatePartnerAsync(partner);
-            return CreatedAtAction(nameof(GetPartnerById), new { id = createdPartner.Id }, createdPartner);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la création du partenaire", error = ex.Message });
-        }
+        var partner = _requestMapper.MapToPartner(request);
+        var createdPartner = await _partnerService.CreatePartnerAsync(partner);
+        return CreatedSuccess(nameof(GetPartnerById), new { id = createdPartner.Id }, createdPartner, "Partenaire cree avec succes");
     }
 
     /// <summary>
@@ -109,29 +76,15 @@ public class PartnersController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdatePartner(string id, [FromBody] UpdatePartnerRequest request)
     {
-        if (!Guid.TryParse(id, out var partnerId))
-            return BadRequest(new { message = "ID du partenaire invalide" });
+        var partnerId = ParseGuidOrThrow(id, nameof(id), "ID du partenaire invalide");
 
-        try
-        {
-            var partner = await _partnerService.GetPartnerByIdAsync(partnerId);
-            if (partner == null)
-                return NotFound(new { message = "Partenaire non trouvé" });
+        var partner = await _partnerService.GetPartnerByIdAsync(partnerId);
+        if (partner == null)
+            return NotFoundProblem("Partenaire non trouve");
 
-            if (!string.IsNullOrEmpty(request.Name))
-                partner.Name = request.Name;
-            if (!string.IsNullOrEmpty(request.Description))
-                partner.Description = request.Description;
-            if (!string.IsNullOrEmpty(request.Website))
-                partner.Website = request.Website;
-
-            var updatedPartner = await _partnerService.UpdatePartnerAsync(partner);
-            return Ok(updatedPartner);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la mise à jour du partenaire", error = ex.Message });
-        }
+        _requestMapper.ApplyPartnerUpdates(partner, request);
+        var updatedPartner = await _partnerService.UpdatePartnerAsync(partner);
+        return Success(updatedPartner, "Partenaire mis a jour avec succes");
     }
 
     /// <summary>
@@ -142,52 +95,13 @@ public class PartnersController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeletePartner(string id)
     {
-        if (!Guid.TryParse(id, out var partnerId))
-            return BadRequest(new { message = "ID du partenaire invalide" });
+        var partnerId = ParseGuidOrThrow(id, nameof(id), "ID du partenaire invalide");
 
-        try
-        {
-            var deleted = await _partnerService.DeletePartnerAsync(partnerId);
-            if (!deleted)
-                return NotFound(new { message = "Partenaire non trouvé" });
+        var deleted = await _partnerService.DeletePartnerAsync(partnerId);
+        if (!deleted)
+            return NotFoundProblem("Partenaire non trouve");
 
-            return Ok(new { message = "Partenaire supprimé avec succès" });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la suppression du partenaire", error = ex.Message });
-        }
+        return SuccessMessage("Partenaire supprime avec succes");
     }
 }
 
-/// <summary>
-/// DTO pour créer un partenaire
-/// </summary>
-public class CreatePartnerRequest
-{
-    /// <summary>Nom du partenaire</summary>
-    public string Name { get; set; } = string.Empty;
-    /// <summary>Description du partenaire</summary>
-    public string? Description { get; set; }
-    /// <summary>URL du site web</summary>
-    public string? Website { get; set; }
-    /// <summary>URL du logo</summary>
-    public string? LogoUrl { get; set; }
-    /// <summary>Type de partenariat</summary>
-    public string? PartnerType { get; set; }
-    /// <summary>Niveau de partenariat</summary>
-    public string? Level { get; set; }
-}
-
-/// <summary>
-/// DTO pour mettre à jour un partenaire
-/// </summary>
-public class UpdatePartnerRequest
-{
-    /// <summary>Nom du partenaire</summary>
-    public string? Name { get; set; }
-    /// <summary>Description du partenaire</summary>
-    public string? Description { get; set; }
-    /// <summary>URL du site web</summary>
-    public string? Website { get; set; }
-}

@@ -3,6 +3,9 @@
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using DotnetNiger.Community.Api.Extensions;
+using DotnetNiger.Community.Api.Middleware;
+using DotnetNiger.Community.Api.Services;
+using DotnetNiger.Community.Application.Mappers;
 using DotnetNiger.Community.Application.Services.Interfaces;
 using Microsoft.OpenApi.Models;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +19,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddApiVersioning(options =>
 {
@@ -57,6 +62,16 @@ builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IPartnerService, PartnerService>();
 // builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddSingleton<ISlugGenerator, SlugGenerator>();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddScoped<ICommunityRequestMapper, CommunityRequestMapper>();
+builder.Services.AddHttpClient<IIdentityApiClient, IdentityApiClient>((sp, client) =>
+{
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    var identityBaseUrl = configuration["IdentityApi:BaseUrl"] ?? "http://localhost:5075/";
+    client.BaseAddress = new Uri(identityBaseUrl, UriKind.Absolute);
+    client.Timeout = TimeSpan.FromSeconds(5);
+});
 
 
 //-----AjouterPourLaCommunicationExterne--------
@@ -106,6 +121,8 @@ if (app.Environment.IsDevelopment())
 
 
 app.UseHttpsRedirection();
+
+app.UseMiddleware<ErrorHandlingMiddleware>();
 
 app.UseAuthorization();
 

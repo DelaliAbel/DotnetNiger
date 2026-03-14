@@ -7,10 +7,12 @@ namespace DotnetNiger.Community.Application.Services;
 public class EventService : IEventService
 {
     private readonly IEventRepository _eventRepository;
+    private readonly ISlugGenerator _slugGenerator;
 
-    public EventService(IEventRepository eventRepository)
+    public EventService(IEventRepository eventRepository, ISlugGenerator slugGenerator)
     {
         _eventRepository = eventRepository;
+        _slugGenerator = slugGenerator;
     }
 
     public async Task<IEnumerable<Event>> GetAllEventsAsync(int page = 1, int pageSize = 10)
@@ -38,12 +40,14 @@ public class EventService : IEventService
     {
         @event.Id = Guid.NewGuid();
         @event.CreatedAt = DateTime.UtcNow;
+        @event.Slug = _slugGenerator.Generate(@event.Title);
         return await _eventRepository.AddAsync(@event);
     }
 
     public async Task<Event> UpdateEventAsync(Event @event)
     {
         @event.UpdatedAt = DateTime.UtcNow;
+        @event.Slug = _slugGenerator.Generate(@event.Title);
         return await _eventRepository.UpdateAsync(@event);
     }
 

@@ -7,10 +7,12 @@ namespace DotnetNiger.Community.Application.Services;
 public class PostService : IPostService
 {
     private readonly IPostRepository _postRepository;
+    private readonly ISlugGenerator _slugGenerator;
 
-    public PostService(IPostRepository postRepository)
+    public PostService(IPostRepository postRepository, ISlugGenerator slugGenerator)
     {
         _postRepository = postRepository;
+        _slugGenerator = slugGenerator;
     }
 
     public async Task<IEnumerable<Post>> GetAllPublishedPostsAsync(int page = 1, int pageSize = 10)
@@ -32,12 +34,14 @@ public class PostService : IPostService
     {
         post.Id = Guid.NewGuid();
         post.CreatedAt = DateTime.UtcNow;
+        post.Slug = _slugGenerator.Generate(post.Title);
         return await _postRepository.AddAsync(post);
     }
 
     public async Task<Post> UpdatePostAsync(Post post)
     {
         post.UpdatedAt = DateTime.UtcNow;
+        post.Slug = _slugGenerator.Generate(post.Title);
         return await _postRepository.UpdateAsync(post);
     }
 

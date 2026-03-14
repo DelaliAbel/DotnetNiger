@@ -7,10 +7,12 @@ namespace DotnetNiger.Community.Application.Services;
 public class TagService : ITagService
 {
     private readonly ITagRepository _tagRepository;
+    private readonly ISlugGenerator _slugGenerator;
 
-    public TagService(ITagRepository tagRepository)
+    public TagService(ITagRepository tagRepository, ISlugGenerator slugGenerator)
     {
         _tagRepository = tagRepository;
+        _slugGenerator = slugGenerator;
     }
 
     public async Task<IEnumerable<Tag>> GetAllTagsAsync()
@@ -31,6 +33,7 @@ public class TagService : ITagService
     public async Task<Tag> CreateTagAsync(Tag tag)
     {
         tag.Id = Guid.NewGuid();
+        tag.Slug = _slugGenerator.Generate(tag.Name);
         return await _tagRepository.AddAsync(tag);
     }
 

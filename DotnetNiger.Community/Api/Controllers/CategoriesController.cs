@@ -1,8 +1,8 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
-using DotnetNiger.Community.Application.Services;
+using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.Mappers;
 using DotnetNiger.Community.Application.Services.Interfaces;
-using DotnetNiger.Community.Domain.Entities;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
@@ -12,13 +12,15 @@ namespace DotnetNiger.Community.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
-public class CategoriesController : ControllerBase
+public class CategoriesController : ApiControllerBase
 {
     private readonly ICategoryService _categoryService;
+    private readonly ICommunityRequestMapper _requestMapper;
 
-    public CategoriesController(ICategoryService categoryService)
+    public CategoriesController(ICategoryService categoryService, ICommunityRequestMapper requestMapper)
     {
         _categoryService = categoryService;
+        _requestMapper = requestMapper;
     }
 
     /// <summary>
@@ -28,15 +30,8 @@ public class CategoriesController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetCategories()
     {
-        try
-        {
-            var categories = await _categoryService.GetAllCategoriesAsync();
-            return Ok(new { data = categories });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la récupération des catégories", error = ex.Message });
-        }
+        var categories = await _categoryService.GetAllCategoriesAsync();
+        return Success(categories);
     }
 
     /// <summary>
@@ -47,21 +42,13 @@ public class CategoriesController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetCategoryById(string id)
     {
-        if (!Guid.TryParse(id, out var categoryId))
-            return BadRequest(new { message = "ID de la catégorie invalide" });
+        var categoryId = ParseGuidOrThrow(id, nameof(id), "ID de la categorie invalide");
 
-        try
-        {
-            var category = await _categoryService.GetCategoryByIdAsync(categoryId);
-            if (category == null)
-                return NotFound(new { message = "Catégorie non trouvée" });
+        var category = await _categoryService.GetCategoryByIdAsync(categoryId);
+        if (category == null)
+            return NotFoundProblem("Categorie non trouvee");
 
-            return Ok(category);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la récupération de la catégorie", error = ex.Message });
-        }
+        return Success(category);
     }
 
     /// <summary>
@@ -73,25 +60,11 @@ public class CategoriesController : ControllerBase
     public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryRequest request)
     {
         if (request == null || string.IsNullOrEmpty(request.Name))
-            return BadRequest(new { message = "Nom requis" });
+            return BadRequestProblem("Nom requis");
 
-        try
-        {
-            var category = new Category
-            {
-                Id = Guid.NewGuid(),
-                Name = request.Name,
-                Slug = request.Name.ToLower().Replace(" ", "-"),
-                Description = request.Description ?? string.Empty
-            };
-
-            var createdCategory = await _categoryService.CreateCategoryAsync(category);
-            return CreatedAtAction(nameof(GetCategoryById), new { id = createdCategory.Id }, createdCategory);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la création de la catégorie", error = ex.Message });
-        }
+        var category = _requestMapper.MapToCategory(request);
+        var createdCategory = await _categoryService.CreateCategoryAsync(category);
+        return CreatedSuccess(nameof(GetCategoryById), new { id = createdCategory.Id }, createdCategory, "Categorie creee avec succes");
     }
 
     /// <summary>
@@ -103,27 +76,15 @@ public class CategoriesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateCategory(string id, [FromBody] UpdateCategoryRequest request)
     {
-        if (!Guid.TryParse(id, out var categoryId))
-            return BadRequest(new { message = "ID de la catégorie invalide" });
+        var categoryId = ParseGuidOrThrow(id, nameof(id), "ID de la categorie invalide");
 
-        try
-        {
-            var category = await _categoryService.GetCategoryByIdAsync(categoryId);
-            if (category == null)
-                return NotFound(new { message = "Catégorie non trouvée" });
+        var category = await _categoryService.GetCategoryByIdAsync(categoryId);
+        if (category == null)
+            return NotFoundProblem("Categorie non trouvee");
 
-            if (!string.IsNullOrEmpty(request.Name))
-                category.Name = request.Name;
-            if (request.Description != null)
-                category.Description = request.Description;
-
-            var updatedCategory = await _categoryService.UpdateCategoryAsync(category);
-            return Ok(updatedCategory);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la mise à jour de la catégorie", error = ex.Message });
-        }
+        _requestMapper.ApplyCategoryUpdates(category, request);
+        var updatedCategory = await _categoryService.UpdateCategoryAsync(category);
+        return Success(updatedCategory, "Categorie mise a jour avec succes");
     }
 
     /// <summary>
@@ -134,42 +95,13 @@ public class CategoriesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteCategory(string id)
     {
-        if (!Guid.TryParse(id, out var categoryId))
-            return BadRequest(new { message = "ID de la catégorie invalide" });
+        var categoryId = ParseGuidOrThrow(id, nameof(id), "ID de la categorie invalide");
 
-        try
-        {
-            var deleted = await _categoryService.DeleteCategoryAsync(categoryId);
-            if (!deleted)
-                return NotFound(new { message = "Catégorie non trouvée" });
+        var deleted = await _categoryService.DeleteCategoryAsync(categoryId);
+        if (!deleted)
+            return NotFoundProblem("Categorie non trouvee");
 
-            return Ok(new { message = "Catégorie supprimée avec succès" });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la suppression de la catégorie", error = ex.Message });
-        }
+        return SuccessMessage("Categorie supprimee avec succes");
     }
 }
 
-/// <summary>
-/// DTO pour créer une catégorie
-/// </summary>
-public class CreateCategoryRequest
-{
-    /// <summary>Nom de la catégorie</summary>
-    public string Name { get; set; } = string.Empty;
-    /// <summary>Description de la catégorie</summary>
-    public string? Description { get; set; }
-}
-
-/// <summary>
-/// DTO pour mettre à jour une catégorie
-/// </summary>
-public class UpdateCategoryRequest
-{
-    /// <summary>Nom de la catégorie</summary>
-    public string? Name { get; set; }
-    /// <summary>Description de la catégorie</summary>
-    public string? Description { get; set; }
-}

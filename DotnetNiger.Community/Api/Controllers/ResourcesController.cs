@@ -1,7 +1,8 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
-using DotnetNiger.Community.Application.Services;
-using DotnetNiger.Community.Domain.Entities;
+using DotnetNiger.Community.Api.Services;
+using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.Mappers;
 using DotnetNiger.Community.Application.Services.Interfaces;
 
 namespace DotnetNiger.Community.Api.Controllers;
@@ -12,13 +13,20 @@ namespace DotnetNiger.Community.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
-public class ResourcesController : ControllerBase
+public class ResourcesController : ApiControllerBase
 {
     private readonly IResourceService _resourceService;
+    private readonly ICurrentUserService _currentUserService;
+    private readonly ICommunityRequestMapper _requestMapper;
 
-    public ResourcesController(IResourceService resourceService)
+    public ResourcesController(
+        IResourceService resourceService,
+        ICurrentUserService currentUserService,
+        ICommunityRequestMapper requestMapper)
     {
         _resourceService = resourceService;
+        _currentUserService = currentUserService;
+        _requestMapper = requestMapper;
     }
 
     /// <summary>
@@ -31,23 +39,10 @@ public class ResourcesController : ControllerBase
     public async Task<IActionResult> GetResources([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         if (page < 1 || pageSize < 1 || pageSize > 100)
-            return BadRequest(new { message = "Paramètres de pagination invalides" });
+            return BadRequestProblem("Parametres de pagination invalides");
 
-        try
-        {
-            var resources = await _resourceService.GetAllResourcesAsync(page, pageSize);
-            return Ok(new
-            {
-                page = page,
-                pageSize = pageSize,
-                total = resources.Count(),
-                data = resources
-            });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la récupération des ressources", error = ex.Message });
-        }
+        var resources = await _resourceService.GetAllResourcesAsync(page, pageSize);
+        return Success(resources, meta: new { page, pageSize, total = resources.Count() });
     }
 
     /// <summary>
@@ -58,21 +53,13 @@ public class ResourcesController : ControllerBase
     [HttpGet("{id}")]
     public async Task<IActionResult> GetResourceById(string id)
     {
-        if (!Guid.TryParse(id, out var resourceId))
-            return BadRequest(new { message = "ID de la ressource invalide" });
+        var resourceId = ParseGuidOrThrow(id, nameof(id), "ID de la ressource invalide");
 
-        try
-        {
-            var resource = await _resourceService.GetResourceByIdAsync(resourceId);
-            if (resource == null)
-                return NotFound(new { message = "Ressource non trouvée" });
+        var resource = await _resourceService.GetResourceByIdAsync(resourceId);
+        if (resource == null)
+            return NotFoundProblem("Ressource non trouvee");
 
-            return Ok(resource);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la récupération de la ressource", error = ex.Message });
-        }
+        return Success(resource);
     }
 
     /// <summary>
@@ -84,35 +71,13 @@ public class ResourcesController : ControllerBase
     public async Task<IActionResult> CreateResource([FromBody] CreateResourceRequest request)
     {
         if (request == null || string.IsNullOrEmpty(request.Title))
-            return BadRequest(new { message = "Titre requis" });
+            return BadRequestProblem("Titre requis");
 
-        if (!this.TryGetCurrentUserId(out var currentUserId))
-            return Unauthorized(new { message = "Utilisateur non authentifie", details = "Claim user ou header X-User-Id requis" });
+        var currentUserId = _currentUserService.GetRequiredUserId();
+        var resource = _requestMapper.MapToResource(request, currentUserId);
 
-        try
-        {
-            var resource = new Resource
-            {
-                Id = Guid.NewGuid(),
-                Title = request.Title,
-                Slug = request.Title.ToLower().Replace(" ", "-"),
-                Description = request.Description ?? string.Empty,
-                Url = request.Url ?? string.Empty,
-                ResourceType = request.ResourceType ?? "Documentation",
-                Level = request.Level ?? "Beginner",
-                CreatedBy = currentUserId,
-                IsApproved = false,
-                ViewCount = 0,
-                CreatedAt = DateTime.UtcNow
-            };
-
-            var createdResource = await _resourceService.CreateResourceAsync(resource);
-            return CreatedAtAction(nameof(GetResourceById), new { id = createdResource.Id }, createdResource);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la création de la ressource", error = ex.Message });
-        }
+        var createdResource = await _resourceService.CreateResourceAsync(resource);
+        return CreatedSuccess(nameof(GetResourceById), new { id = createdResource.Id }, createdResource, "Ressource creee avec succes");
     }
 
     /// <summary>
@@ -124,29 +89,15 @@ public class ResourcesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateResource(string id, [FromBody] UpdateResourceRequest request)
     {
-        if (!Guid.TryParse(id, out var resourceId))
-            return BadRequest(new { message = "ID de la ressource invalide" });
+        var resourceId = ParseGuidOrThrow(id, nameof(id), "ID de la ressource invalide");
 
-        try
-        {
-            var resource = await _resourceService.GetResourceByIdAsync(resourceId);
-            if (resource == null)
-                return NotFound(new { message = "Ressource non trouvée" });
+        var resource = await _resourceService.GetResourceByIdAsync(resourceId);
+        if (resource == null)
+            return NotFoundProblem("Ressource non trouvee");
 
-            if (!string.IsNullOrEmpty(request.Title))
-                resource.Title = request.Title;
-            if (!string.IsNullOrEmpty(request.Description))
-                resource.Description = request.Description;
-            if (!string.IsNullOrEmpty(request.Url))
-                resource.Url = request.Url;
-
-            var updatedResource = await _resourceService.UpdateResourceAsync(resource);
-            return Ok(updatedResource);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la mise à jour de la ressource", error = ex.Message });
-        }
+        _requestMapper.ApplyResourceUpdates(resource, request);
+        var updatedResource = await _resourceService.UpdateResourceAsync(resource);
+        return Success(updatedResource, "Ressource mise a jour avec succes");
     }
 
     /// <summary>
@@ -157,50 +108,13 @@ public class ResourcesController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteResource(string id)
     {
-        if (!Guid.TryParse(id, out var resourceId))
-            return BadRequest(new { message = "ID de la ressource invalide" });
+        var resourceId = ParseGuidOrThrow(id, nameof(id), "ID de la ressource invalide");
 
-        try
-        {
-            var deleted = await _resourceService.DeleteResourceAsync(resourceId);
-            if (!deleted)
-                return NotFound(new { message = "Ressource non trouvée" });
+        var deleted = await _resourceService.DeleteResourceAsync(resourceId);
+        if (!deleted)
+            return NotFoundProblem("Ressource non trouvee");
 
-            return Ok(new { message = "Ressource supprimée avec succès" });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { message = "Erreur lors de la suppression de la ressource", error = ex.Message });
-        }
+        return SuccessMessage("Ressource supprimee avec succes");
     }
 }
 
-/// <summary>
-/// DTO pour créer une ressource
-/// </summary>
-public class CreateResourceRequest
-{
-    /// <summary>Titre de la ressource</summary>
-    public string Title { get; set; } = string.Empty;
-    /// <summary>Description de la ressource</summary>
-    public string? Description { get; set; }
-    /// <summary>URL de la ressource</summary>
-    public string? Url { get; set; }
-    /// <summary>Type de ressource</summary>
-    public string? ResourceType { get; set; }
-    /// <summary>Niveau de difficulté</summary>
-    public string? Level { get; set; }
-}
-
-/// <summary>
-/// DTO pour mettre à jour une ressource
-/// </summary>
-public class UpdateResourceRequest
-{
-    /// <summary>Titre de la ressource</summary>
-    public string? Title { get; set; }
-    /// <summary>Description de la ressource</summary>
-    public string? Description { get; set; }
-    /// <summary>URL de la ressource</summary>
-    public string? Url { get; set; }
-}

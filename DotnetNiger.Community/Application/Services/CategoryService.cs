@@ -7,10 +7,12 @@ namespace DotnetNiger.Community.Application.Services;
 public class CategoryService : ICategoryService
 {
     private readonly ICategoryRepository _categoryRepository;
+    private readonly ISlugGenerator _slugGenerator;
 
-    public CategoryService(ICategoryRepository categoryRepository)
+    public CategoryService(ICategoryRepository categoryRepository, ISlugGenerator slugGenerator)
     {
         _categoryRepository = categoryRepository;
+        _slugGenerator = slugGenerator;
     }
 
     public async Task<IEnumerable<Category>> GetAllCategoriesAsync()
@@ -26,11 +28,13 @@ public class CategoryService : ICategoryService
     public async Task<Category> CreateCategoryAsync(Category category)
     {
         category.Id = Guid.NewGuid();
+        category.Slug = _slugGenerator.Generate(category.Name);
         return await _categoryRepository.AddAsync(category);
     }
 
     public async Task<Category> UpdateCategoryAsync(Category category)
     {
+        category.Slug = _slugGenerator.Generate(category.Name);
         return await _categoryRepository.UpdateAsync(category);
     }
 

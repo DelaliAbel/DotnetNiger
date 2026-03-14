@@ -7,10 +7,12 @@ namespace DotnetNiger.Community.Application.Services;
 public class PartnerService : IPartnerService
 {
     private readonly IPartnerRepository _partnerRepository;
+    private readonly ISlugGenerator _slugGenerator;
 
-    public PartnerService(IPartnerRepository partnerRepository)
+    public PartnerService(IPartnerRepository partnerRepository, ISlugGenerator slugGenerator)
     {
         _partnerRepository = partnerRepository;
+        _slugGenerator = slugGenerator;
     }
 
     public async Task<IEnumerable<Partner>> GetAllPartnersAsync()
@@ -27,11 +29,13 @@ public class PartnerService : IPartnerService
     {
         partner.Id = Guid.NewGuid();
         partner.CreatedAt = DateTime.UtcNow;
+        partner.Slug = _slugGenerator.Generate(partner.Name);
         return await _partnerRepository.AddAsync(partner);
     }
 
     public async Task<Partner> UpdatePartnerAsync(Partner partner)
     {
+        partner.Slug = _slugGenerator.Generate(partner.Name);
         return await _partnerRepository.UpdateAsync(partner);
     }
 
