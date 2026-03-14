@@ -111,10 +111,10 @@ Les services Community et Identity renvoient des succes JSON uniformes sous la f
 
 ```json
 {
-	"success": true,
-	"message": "optional human-readable message",
-	"data": {},
-	"meta": {}
+  "success": true,
+  "message": "optional human-readable message",
+  "data": {},
+  "meta": {}
 }
 ```
 
