@@ -1,8 +1,8 @@
 # Setup DotnetNiger
 
-Guide pour démarrer le projet en local avec le gateway Ocelot.
+Guide de démarrage local avec Gateway Ocelot.
 
-> Dernière mise à jour : **2026-03-11**
+> Dernière mise à jour : **2026-03-14**
 
 ## Prérequis
 
@@ -60,7 +60,7 @@ curl -X GET http://localhost:5000/api/users/me \
   -H "Authorization: Bearer <token>"
 
 # Endpoint Community (public)
-curl http://localhost:5000/api/community/posts
+curl http://localhost:5000/api/posts
 ```
 
 ## 6. Configuration Admin Community
@@ -111,7 +111,8 @@ Vérifier que Identity (`:5075`) et Community (`:5269`) tournent avant de démar
 
 ### Réponse 429 (Too Many Requests)
 
-Limites appliquées par Ocelot (`RateLimitOptions` dans `ocelot.json`).
+Vérifier les `RateLimitOptions` de la route ciblée dans `DotnetNiger.Gateway/ocelot.json`.
+Les routes `/health` et `/info` doivent rester avec `EnableRateLimiting = false`.
 
 ### Fichier `.exe` verrouillé à la recompilation Community
 

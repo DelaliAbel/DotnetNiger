@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Nodes;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using MMLib.SwaggerForOcelot.DependencyInjection;
@@ -36,8 +37,8 @@ builder.Services.AddOcelot(builder.Configuration)
     .AddCacheManager(x => x.WithDictionaryHandle())
     .AddPolly();
 
+builder.Services.AddHttpClient();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 builder.Services.AddSwaggerForOcelot(builder.Configuration);
 
 builder.Services.AddCors(options =>
@@ -51,19 +52,19 @@ if (!string.IsNullOrWhiteSpace(jwtKey) && jwtKey.Length >= 32 && !jwtKey.StartsW
     builder.Services.AddAuthentication(options =>
     {
         options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-        options.DefaultChallengeScheme    = JwtBearerDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     })
     .AddJwtBearer("Bearer", options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
-            ValidateIssuer           = true,
-            ValidateAudience         = true,
-            ValidateLifetime         = true,
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer              = builder.Configuration["Jwt:Issuer"]   ?? "DotnetNiger.Identity",
-            ValidAudience            = builder.Configuration["Jwt:Audience"] ?? "DotnetNiger.Identity.Client",
-            IssuerSigningKey         = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "DotnetNiger.Identity",
+            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "DotnetNiger.Identity.Client",
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
 
         options.Events = new JwtBearerEvents
@@ -99,8 +100,25 @@ app.UseCors("AllowAll");
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
-    app.Urls.Add("http://localhost:5000");
+    // app.Urls.Add("http://localhost:5000");
 }
+
+// Garantit un identifiant client pour le rate limiting Ocelot
+app.Use(async (context, next) =>
+{
+    var resolvedClientId = context.Request.Headers["ClientId"].FirstOrDefault()
+                           ?? context.Request.Headers["Oc-Client"].FirstOrDefault()
+                           ?? context.Connection.RemoteIpAddress?.MapToIPv4().ToString()
+                           ?? "unknown-client";
+
+    if (!context.Request.Headers.ContainsKey("ClientId"))
+        context.Request.Headers["ClientId"] = resolvedClientId;
+
+    if (!context.Request.Headers.ContainsKey("Oc-Client"))
+        context.Request.Headers["Oc-Client"] = resolvedClientId;
+
+    await next.Invoke();
+});
 
 // Propagation et journalisation du X-Request-ID
 app.Use(async (context, next) =>
@@ -113,7 +131,72 @@ app.Use(async (context, next) =>
     Log.Information("← {StatusCode}", context.Response.StatusCode);
 });
 
-app.UseSwaggerForOcelotUI(options => options.PathToSwaggerGenerator = "/swagger/docs");
+// Middleware de fusion — DOIT être AVANT UseSwaggerForOcelotUI pour court-circuiter MMLib
+app.Use(async (context, next) =>
+{
+    if (!context.Request.Path.Equals("/swagger/docs/v1/all", StringComparison.OrdinalIgnoreCase))
+    {
+        await next(context);
+        return;
+    }
+
+    var factory = context.RequestServices.GetRequiredService<IHttpClientFactory>();
+    using var client = factory.CreateClient();
+
+    // Appels directs vers MMLib (évite de re-passer par Ocelot)
+    string? identityJson = null, communityJson = null;
+    try { identityJson = await client.GetStringAsync("http://localhost:5000/swagger/docs/v1/identity"); } catch { }
+    try { communityJson = await client.GetStringAsync("http://localhost:5000/swagger/docs/v1/community"); } catch { }
+
+    if (identityJson == null && communityJson == null)
+    {
+        context.Response.StatusCode = 503;
+        return;
+    }
+
+    var merged = identityJson ?? communityJson!;
+    if (identityJson != null && communityJson != null)
+    {
+        var idoc = JsonNode.Parse(identityJson)!.AsObject();
+        var cdoc = JsonNode.Parse(communityJson)!.AsObject();
+
+        if (idoc["info"] is JsonObject info)
+            info["title"] = "DotnetNiger - All APIs";
+
+        var paths = idoc["paths"]?.AsObject() ?? new JsonObject();
+        if (cdoc["paths"] is JsonObject cPaths)
+            foreach (var p in cPaths)
+                paths[p.Key] = p.Value?.DeepClone();
+        idoc["paths"] = paths;
+
+        var iComponents = idoc["components"]?.AsObject() ?? new JsonObject();
+        var iSchemas = iComponents["schemas"]?.AsObject() ?? new JsonObject();
+        if (cdoc["components"]?["schemas"] is JsonObject cSchemas)
+            foreach (var s in cSchemas)
+                if (!iSchemas.ContainsKey(s.Key))
+                    iSchemas[s.Key] = s.Value?.DeepClone();
+        iComponents["schemas"] = iSchemas;
+        idoc["components"] = iComponents;
+        merged = idoc.ToJsonString();
+    }
+
+    context.Response.ContentType = "application/json";
+    await context.Response.WriteAsync(merged);
+});
+
+app.UseSwaggerForOcelotUI(
+    opt =>
+    {
+        opt.PathToSwaggerGenerator = "/swagger/docs";
+    },
+    uiOpt =>
+    {
+        uiOpt.EnableFilter();
+        uiOpt.EnableDeepLinking();
+        uiOpt.DisplayRequestDuration();
+        uiOpt.EnablePersistAuthorization();
+        uiOpt.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
+    });
 
 await app.UseOcelot();
 await app.RunAsync();
