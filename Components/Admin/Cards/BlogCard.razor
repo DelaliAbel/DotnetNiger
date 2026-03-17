@@ -1,49 +1,86 @@
-﻿
-        <div class="relative h-[380px] w-[280px] overflow-hidden rounded-xl bg-white shadow-lg">
-            <div class="relative h-[180px] w-full">
-                <img src="/Images/ImageBlog.jpg" class="h-full w-full object-cover" alt="Img">
-                <div class="absolute left-2 top-2 h-7 w-7 rounded-full bg-orange-500"></div>
-            </div>
-            <div class="px-3 py-3">
-                <div class="mb-2 flex items-center justify-between">
-                    <span class="H5 text-text">Introduction à Blazor WASM</span>
-                    <div class="relative inline-block">
-                        <button @onclick="ToggleMenu" class="rounded-full p-2 transition hover:bg-gray-200">
-                            <i class="fas fa-ellipsis-vertical text-2xl text-gray-600"></i>
-                        </button>
-                        @if(isOpen){
-                            <div class="absolute right-0 z-50 mt-2 w-40 p-2 border border-[#D9D9D9] rounded-lg bg-white shadow-lg transition duration-1000 ease-in transform origin-top-right">
-                                <button class="flex w-full gap-2 px-4 py-2 text-[#3498DB]">
-                                    <i class="fas fa-pen text-xl text-[#3498DB]"></i> <span class="Link">Modifier</span> 
-                                </button>
-                                <button class="flex w-full gap-2 px-4 py-2 text-[#F0483E]">
-                                    <i class="fas fa-trash text-xl text-[#F0483E]"></i> <span class="Link">Supprimer</span> 
-                                </button>
-                            </div>
-                        }
-                    </div>
-                </div>
-                <div class="mb-2">
-                    <span class="body-small text-text">
-                        Lorem ipsum dolor, sit amet consectetur adipisicing elit. Et ratione sapiente odio,
-                        quod doloribus, facilis quisquam placeat officiis sunt, sequi saepe quaerat facere
-                    </span>
-                </div>
+﻿@* Composant carte : affichage d'un post avec menu d'actions contextuelles. *@
+@using DotnetNiger.UI.Models.Responses
+@inject IPostService PostService
+@inject NavigationManager NavigationManager 
 
-                <div class="flex justify-between">
-                    <span class="Button text-text">Ali Mahamane</span>
-                    <span class="Button text-text">15/01/2025 12:34</span>
-                </div>
+<div class="relative h-full overflow-hidden rounded-xl bg-white shadow-lg">
+    <div class="relative h-40 sm:h-48 md:h-56 w-full">
+        <img src="@(post?.CoverImageUrl ?? "/Images/ImageBlog.jpg")" class="h-full w-full object-cover" alt="@post?.Title">
+    </div>
+    <div class="p-4 sm:p-5 md:p-6">
+        <div class="mb-2 flex items-center justify-between">
+            <span class="H5 text-text">@post?.Title</span>
+            <div class="relative inline-block">
+                <button @onclick="ToggleMenu" class="rounded-full p-2 transition hover:bg-gray-200">
+                    <i class="fas fa-ellipsis-vertical text-2xl text-gray-600"></i>
+                </button>
+                @if (isOpen)
+                {
+                    <div
+                        class="absolute right-0 z-50 mt-2 w-40 p-2 border border-[#D9D9D9] rounded-lg bg-white shadow-lg transition duration-1000 ease-in transform origin-top-right">
+                        <button @onclick="EditPost" class="flex w-full gap-2 px-4 py-2 text-[#3498DB]">
+                            <i class="fas fa-pen text-xl text-[#3498DB]"></i> <span class="Link">Modifier</span>
+                        </button>
+                        <button @onclick="DeletePost" class="flex w-full gap-2 px-4 py-2 text-[#F0483E]">
+                            <i class="fas fa-trash text-xl text-[#F0483E]"></i> <span class="Link">Supprimer</span>
+                        </button>
+                    </div>
+                }
             </div>
         </div>
-@code{
+        <div class="mb-2">
+            <span class="body-small text-text">
+                @post?.Excerpt
+            </span>
+        </div>
+
+        <div class="flex justify-between">
+            <span class="Button text-text">@post?.AuthorName</span>
+            <span class="Button text-text">@post?.PublishedAt.ToString("dd/MM/yyyy HH:mm")</span>
+        </div>
+    </div>
+</div>
+@code {
+
+    [Parameter]
+    public PostDto? post { get; set; }
+
+    [Parameter]
+    public EventCallback OnPostDeleted { get; set; }
+
     private bool isOpen = false;
+
     [JSInvokable]
-    public void CloseMenu(){
+    public void CloseMenu()
+    {
         isOpen = false;
         StateHasChanged();
     }
-    void ToggleMenu(){
+
+    void ToggleMenu()
+    {
         isOpen = !isOpen;
+    }
+
+    Task EditPost()
+    {
+        if (post is null) return Task.CompletedTask;
+        NavigationManager.NavigateTo($"/admin/blog/edit/{post.Id}");
+        return Task.CompletedTask;
+    }
+
+    async Task DeletePost()
+    {
+        if (post?.Id != null)
+        {
+            bool success = await PostService.DeletePostAsync(post.Id);
+            if (success)
+            {
+                // Notifier le parent que le post a été supprimé
+                await OnPostDeleted.InvokeAsync();
+                isOpen = false;
+                StateHasChanged();
+            }
+        }
     }
 }

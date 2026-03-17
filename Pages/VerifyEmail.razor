@@ -1,0 +1,90 @@
+@page "/verify-email"
+@* Page d'authentification : vérification d'email via paramètres de requête. *@
+@layout DotnetNiger.UI.Layouts.MainLayout
+@inject AuthService Auth
+@inject NavigationManager Navigation
+
+<PageTitle>Vérification e-mail - .NET Niger</PageTitle>
+
+<div class="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-lg p-8">
+        <div class="text-center mb-6">
+            <h1 class="text-2xl font-bold text-gray-800">Vérification de votre email</h1>
+            <p class="text-gray-500 mt-2">Validation de votre compte en cours...</p>
+        </div>
+
+        @if (isLoading)
+        {
+            <div class="text-center text-gray-500 py-6">Traitement...</div>
+        }
+        else if (isVerified)
+        {
+            <div class="mb-4 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-green-700 text-sm">
+                Votre email a été vérifié avec succès. Vous pouvez maintenant vous connecter.
+            </div>
+            <button @onclick='() => Navigation.NavigateTo("/login")'
+                    class="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition">
+                Aller à la connexion
+            </button>
+        }
+        else
+        {
+            <div class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-red-700 text-sm">
+                @errorMessage
+            </div>
+
+            <button @onclick="ResendVerification" disabled="@isResending"
+                    class="w-full rounded-lg bg-gray-800 py-2.5 text-sm font-semibold text-white hover:bg-black transition disabled:opacity-60">
+                @(isResending ? "Renvoi en cours..." : "Renvoyer l'email de vérification")
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter, SupplyParameterFromQuery] public string? Email { get; set; }
+    [Parameter, SupplyParameterFromQuery] public string? Token { get; set; }
+
+    private bool isLoading = true;
+    private bool isVerified;
+    private bool isResending;
+    private string errorMessage = "Lien de vérification invalide ou expiré.";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(Token))
+        {
+            isLoading = false;
+            errorMessage = "Le lien de vérification est incomplet.";
+            return;
+        }
+
+        isVerified = await Auth.VerifyEmailAsync(new VerifyEmailRequest
+        {
+            Email = Email,
+            Token = Token
+        });
+
+        if (!isVerified)
+            errorMessage = "La vérification a échoué. Vous pouvez demander un nouveau lien.";
+
+        isLoading = false;
+    }
+
+    private async Task ResendVerification()
+    {
+        if (string.IsNullOrWhiteSpace(Email))
+        {
+            errorMessage = "Adresse email manquante pour renvoyer la vérification.";
+            return;
+        }
+
+        isResending = true;
+        var sent = await Auth.RequestEmailVerificationAsync(new RequestEmailVerificationRequest { Email = Email });
+        isResending = false;
+
+        errorMessage = sent
+            ? "Un nouveau lien de vérification a été envoyé. Vérifiez votre boîte mail."
+            : "Impossible de renvoyer l'email de vérification pour le moment.";
+    }
+}

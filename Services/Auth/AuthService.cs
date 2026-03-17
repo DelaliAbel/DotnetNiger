@@ -1,0 +1,245 @@
+using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
+using DotnetNiger.UI.Models.Requests;
+using DotnetNiger.UI.Models.Responses;
+
+namespace DotnetNiger.UI.Services.Auth;
+
+public class AuthService
+{
+    private readonly HttpClient _http;
+    private readonly CustomAuthStateProvider _authProvider;
+
+    public AuthService(HttpClient http, CustomAuthStateProvider authProvider)
+    {
+        _http = http;
+        _authProvider = authProvider;
+    }
+
+    public async Task<AuthDto> LoginAsync(LoginRequest request)
+    {
+        try
+        {
+            var response = await _http.PostAsJsonAsync("api/auth/login", request);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                AuthDto? errorPayload = null;
+                try
+                {
+                    errorPayload = await response.Content.ReadFromJsonAsync<AuthDto>();
+                }
+                catch
+                {
+                }
+
+                return new AuthDto
+                {
+                    Success = false,
+                    Message = !string.IsNullOrWhiteSpace(errorPayload?.Message)
+                        ? errorPayload.Message
+                        : $"Connexion impossible (HTTP {(int)response.StatusCode})."
+                };
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<AuthDto>()
+                         ?? new AuthDto { Success = false, Message = "Erreur de connexion." };
+
+            if (result.Success && result.Token is not null)
+                await _authProvider.SaveTokensAsync(result.Token.AccessToken, result.Token.RefreshToken);
+
+            return result;
+        }
+        catch (HttpRequestException)
+        {
+            return new AuthDto
+            {
+                Success = false,
+                Message = "Impossible de joindre le serveur d'authentification. Vérifiez que l'API est démarrée et accessible."
+            };
+        }
+        catch (TaskCanceledException)
+        {
+            return new AuthDto
+            {
+                Success = false,
+                Message = "Le serveur a mis trop de temps à répondre."
+            };
+        }
+    }
+
+    public string? GetRoleFromAccessToken(string? accessToken)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken))
+            return null;
+
+        var segments = accessToken.Split('.');
+        if (segments.Length < 2)
+            return null;
+
+        try
+        {
+            var payloadJson = Encoding.UTF8.GetString(ParseBase64WithoutPadding(segments[1]));
+            using var document = JsonDocument.Parse(payloadJson);
+            var root = document.RootElement;
+
+            if (TryGetRoleValue(root, "roles", out var roleFromRoles))
+                return roleFromRoles;
+
+            if (TryGetRoleValue(root, "role", out var roleFromRole))
+                return roleFromRole;
+
+            if (TryGetRoleValue(root, "http://schemas.microsoft.com/ws/2008/06/identity/claims/role", out var roleFromClaimType))
+                return roleFromClaimType;
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    public string GetPostLoginRedirectPath(string? accessToken)
+    {
+        var role = GetRoleFromAccessToken(accessToken);
+        if (string.IsNullOrWhiteSpace(role))
+            return "/";
+
+        return role.ToLowerInvariant() switch
+        {
+            "admin" => "/admin/dashboard",
+            "superadmin" => "/admin/dashboard",
+            "moderator" => "/admin/dashboard",
+            _ => "/"
+        };
+    }
+
+    public async Task<AuthDto> RegisterAsync(RegisterRequest request)
+    {
+        var response = await _http.PostAsJsonAsync("api/auth/register", request);
+        var result = await response.Content.ReadFromJsonAsync<AuthDto>()
+                     ?? new AuthDto { Success = false, Message = "Erreur lors de l'inscription." };
+
+        if (result.Success && result.Token is not null)
+            await _authProvider.SaveTokensAsync(result.Token.AccessToken, result.Token.RefreshToken);
+
+        return result;
+    }
+
+    public async Task LogoutAsync()
+    {
+        var refreshToken = await _authProvider.GetRefreshTokenAsync();
+
+        if (!string.IsNullOrWhiteSpace(refreshToken))
+        {
+            _ = await _http.PostAsJsonAsync("api/auth/logout",
+                new RefreshTokenRequest { RefreshToken = refreshToken });
+        }
+
+        await _authProvider.ClearTokensAsync();
+    }
+
+    /// <summary>
+    /// Renouvelle l'access token depuis le refresh token stocké.
+    /// Efface la session si le refresh token est invalide ou expiré.
+    /// </summary>
+    public async Task<AuthDto?> RefreshTokenAsync()
+    {
+        var refreshToken = await _authProvider.GetRefreshTokenAsync();
+        if (string.IsNullOrWhiteSpace(refreshToken))
+            return null;
+
+        var response = await _http.PostAsJsonAsync("api/auth/refresh",
+            new RefreshTokenRequest { RefreshToken = refreshToken });
+
+        if (!response.IsSuccessStatusCode)
+        {
+            await _authProvider.ClearTokensAsync();
+            return null;
+        }
+
+        var result = await response.Content.ReadFromJsonAsync<AuthDto>();
+        if (result?.Success == true && result.Token is not null)
+            await _authProvider.SaveTokensAsync(result.Token.AccessToken, result.Token.RefreshToken);
+
+        return result;
+    }
+
+    public async Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request)
+    {
+        var response = await _http.PostAsJsonAsync("api/auth/forgot-password", request);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<AuthDto?> ResetPasswordAsync(ResetPasswordRequest request)
+    {
+        var response = await _http.PostAsJsonAsync("api/auth/reset-password", request);
+        if (!response.IsSuccessStatusCode) return null;
+
+        if (response.Content.Headers.ContentLength is null or 0)
+        {
+            return new AuthDto
+            {
+                Success = true,
+                Message = "Mot de passe réinitialisé avec succès."
+            };
+        }
+
+        return await response.Content.ReadFromJsonAsync<AuthDto>()
+               ?? new AuthDto
+               {
+                   Success = true,
+                   Message = "Mot de passe réinitialisé avec succès."
+               };
+    }
+
+    public async Task<bool> RequestEmailVerificationAsync(RequestEmailVerificationRequest request)
+    {
+        var response = await _http.PostAsJsonAsync("api/auth/request-email-verification", request);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> VerifyEmailAsync(VerifyEmailRequest request)
+    {
+        var response = await _http.PostAsJsonAsync("api/auth/verify-email", request);
+        return response.IsSuccessStatusCode;
+    }
+
+    private static bool TryGetRoleValue(JsonElement root, string key, out string? role)
+    {
+        role = null;
+
+        if (!root.TryGetProperty(key, out var roleElement))
+            return false;
+
+        if (roleElement.ValueKind == JsonValueKind.Array)
+        {
+            role = roleElement
+                .EnumerateArray()
+                .Select(x => x.GetString())
+                .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x));
+            return !string.IsNullOrWhiteSpace(role);
+        }
+
+        if (roleElement.ValueKind == JsonValueKind.String)
+        {
+            role = roleElement.GetString();
+            return !string.IsNullOrWhiteSpace(role);
+        }
+
+        return false;
+    }
+
+    private static byte[] ParseBase64WithoutPadding(string base64)
+    {
+        base64 = base64.Replace('-', '+').Replace('_', '/');
+        return (base64.Length % 4) switch
+        {
+            2 => Convert.FromBase64String(base64 + "=="),
+            3 => Convert.FromBase64String(base64 + "="),
+            _ => Convert.FromBase64String(base64),
+        };
+    }
+}

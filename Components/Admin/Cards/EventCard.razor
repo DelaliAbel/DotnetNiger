@@ -1,4 +1,5 @@
-
+@* Composant carte : aperçu visuel d'un événement (version statique/prototype). *@
+@* 
         <div class="relative h-[380px] w-[280px] overflow-hidden rounded-xl bg-white shadow-lg">
             <div class="relative h-[180px] w-full">
                 <img src="/Images/ImageBlog.jpg" class="h-full w-full object-cover" alt="Img">
@@ -40,5 +41,160 @@
     private bool isOpen = false;
     void ToggleMenu(){
         isOpen = !isOpen;
+    }
+} *@
+
+
+@* Composant carte : affichage d'un post avec menu d'actions contextuelles. *@
+@using DotnetNiger.UI.Models.Responses
+@inject NavigationManager NavigationManager 
+
+<div class="relative h-full overflow-hidden rounded-xl bg-white shadow-lg">
+    <div class="relative h-40 sm:h-48 md:h-56 w-full">
+        <img src="@(Event?.CoverImageUrl ?? "/Images/ImageBlog.jpg")" class="h-full w-full object-cover" alt="@Event?.Title">
+    </div>
+    <div class="p-4 sm:p-5 md:p-6">
+        <div class="mb-2 flex items-center justify-between">
+            <span class="H5 text-text">@Event?.Title</span>
+            <div class="relative inline-block">
+                <button @onclick="ToggleMenu" class="rounded-full p-2 transition hover:bg-gray-200">
+                    <i class="fas fa-ellipsis-vertical text-2xl text-gray-600"></i>
+                </button>
+                @if (isOpen)
+                {
+                    <div
+                        class="absolute right-0 z-50 mt-2 w-40 p-2 border border-[#D9D9D9] rounded-lg bg-white shadow-lg transition duration-1000 ease-in transform origin-top-right">
+                        <button @onclick="EditEvent" class="flex w-full gap-2 px-4 py-2 text-[#3498DB]">
+                            <i class="fas fa-pen text-xl text-[#3498DB]"></i> <span class="Link">Modifier</span>
+                        </button>
+                        @if (!IsPublished)
+                        {
+                            <button @onclick="SetPublished" class="flex w-full gap-2 px-4 py-2 text-green-600">
+                                <i class="fas fa-circle-check text-xl text-green-600"></i> <span class="Link">Publier</span>
+                            </button>
+                        }
+                        @if (!IsPending)
+                        {
+                            <button @onclick="SetPending" class="flex w-full gap-2 px-4 py-2 text-amber-500">
+                                <i class="fas fa-clock text-xl text-amber-500"></i> <span class="Link">En attente</span>
+                            </button>
+                        }
+                        @if (!IsArchived)
+                        {
+                            <button @onclick="SetArchived" class="flex w-full gap-2 px-4 py-2 text-gray-600">
+                                <i class="fas fa-box-archive text-xl text-gray-600"></i> <span class="Link">Archiver</span>
+                            </button>
+                        }
+                        <button @onclick="DeleteEvent" class="flex w-full gap-2 px-4 py-2 text-[#F0483E]">
+                            <i class="fas fa-trash text-xl text-[#F0483E]"></i> <span class="Link">Supprimer</span>
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+        <div class="mb-2">
+            <span class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold @StatusCssClass">
+                <span class="h-2 w-2 rounded-full @StatusDotCssClass"></span>
+                @StatusLabel
+            </span>
+        </div>
+        <div class="mb-2">
+            <span class="body-small text-text">
+                @Event?.Description
+            </span>
+        </div>
+
+        <div class="flex justify-between">
+            <span class="Button text-text">@Event?.OrganizerName</span>
+            <span class="Button text-text">@Event?.StartDate.ToString("dd/MM/yyyy HH:mm")</span>
+        </div>
+    </div>
+</div>
+@code {
+
+    [Parameter]
+    public EventDto? Event { get; set; }
+
+    [Parameter]
+    public EventCallback OnEventDeleted { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid> OnSetPending { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid> OnSetPublished { get; set; }
+
+    [Parameter]
+    public EventCallback<Guid> OnSetArchived { get; set; }
+
+    private bool isOpen = false;
+
+    private bool IsArchived => Event?.IsArchived == true;
+    private bool IsPublished => Event?.IsPublished == true && !IsArchived;
+    private bool IsPending => !IsPublished && !IsArchived;
+
+    private string StatusLabel => IsArchived
+        ? "Archivé"
+        : IsPublished
+            ? "Publié"
+            : "En attente";
+
+    private string StatusCssClass => IsArchived
+        ? "bg-gray-100 text-gray-700"
+        : IsPublished
+            ? "bg-green-100 text-green-700"
+            : "bg-amber-100 text-amber-700";
+
+    private string StatusDotCssClass => IsArchived
+        ? "bg-gray-500"
+        : IsPublished
+            ? "bg-green-500"
+            : "bg-amber-500";
+
+    [JSInvokable]
+    public void CloseMenu()
+    {
+        isOpen = false;
+        StateHasChanged();
+    }
+
+    void ToggleMenu()
+    {
+        isOpen = !isOpen;
+    }
+
+    Task EditEvent()
+    {
+        if (Event is null) return Task.CompletedTask;
+        NavigationManager.NavigateTo($"/admin/events/edit/{Event.Id}");
+        return Task.CompletedTask;
+    }
+
+    async Task DeleteEvent()
+    {
+        if (Event is null) return;
+        await OnEventDeleted.InvokeAsync();
+        isOpen = false;
+    }
+
+    async Task SetPending()
+    {
+        if (Event is null) return;
+        await OnSetPending.InvokeAsync(Event.Id);
+        isOpen = false;
+    }
+
+    async Task SetPublished()
+    {
+        if (Event is null) return;
+        await OnSetPublished.InvokeAsync(Event.Id);
+        isOpen = false;
+    }
+
+    async Task SetArchived()
+    {
+        if (Event is null) return;
+        await OnSetArchived.InvokeAsync(Event.Id);
+        isOpen = false;
     }
 }

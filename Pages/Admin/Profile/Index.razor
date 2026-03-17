@@ -1,0 +1,133 @@
+@page "/admin/profile"
+@inject IProfileService ProfileService
+@inject NavigationManager Navigation
+
+<div class="mx-auto max-w-7xl p-4 md:p-6">
+      <h1 class="mb-6 text-2xl font-bold text-gray-900">Mon profil administrateur</h1>
+
+      @if (profil is null)
+      {
+            <p class="text-gray-600">Chargement...</p>
+      }
+      else
+      {
+            <div class="space-y-5">
+                  <section class="rounded-lg border border-gray-300 bg-white p-4 shadow-sm md:p-5">
+                        <div class="flex items-start justify-end">
+                              <button @onclick='() => Navigation.NavigateTo("/admin/profile/informations")'
+                                      class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100"
+                                      title="Modifier les informations">
+                                    <i class="fas fa-pen text-xs"></i>
+                              </button>
+                        </div>
+
+                        <div class="mt-2 grid grid-cols-1 gap-6 md:grid-cols-[300px_1fr]">
+                              <div class="h-48 w-full overflow-hidden rounded-md bg-gray-100">
+                                    <img src="@GetAvatarUrl(profil.AvatarUrl)" alt="Avatar" class="h-full w-full object-cover" />
+                              </div>
+
+                              <div class="space-y-2 text-sm text-gray-700">
+                                    <p><span class="font-semibold text-gray-900">Nom Complet :</span> @DisplayOrFallback(profil.FullName, profil.Username)</p>
+                                    <p><span class="font-semibold text-gray-900">Email :</span> @profil.Email</p>
+                                    <p><span class="font-semibold text-gray-900">Localisation :</span> @BuildLocation(profil.City, profil.Country)</p>
+                                    <p><span class="font-semibold text-gray-900">Date d’inscription :</span> @profil.CreatedAt.ToString("dd/MM/yyyy")</p>
+                                    <p><span class="font-semibold text-gray-900">Dernière connexion :</span> @LastLoginLabel</p>
+                                    <div class="flex items-center gap-2 pt-1">
+                                          <span class="font-semibold text-gray-900">Statut :</span>
+                                          <span class="h-3 w-3 rounded-full @(profil.IsActive ? "bg-green-500" : "bg-gray-400")"></span>
+                                          <span>@(profil.IsActive ? "En ligne" : "Hors ligne")</span>
+                                    </div>
+                              </div>
+                        </div>
+                  </section>
+
+                  <section class="rounded-lg border border-gray-300 bg-white p-4 shadow-sm md:p-5">
+                        <div class="mb-3 flex items-start justify-between">
+                              <h2 class="text-2xl font-semibold text-gray-900">Bio</h2>
+                              <button @onclick='() => Navigation.NavigateTo("/admin/profile/informations")'
+                                      class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100"
+                                      title="Modifier la bio">
+                                    <i class="fas fa-pen text-xs"></i>
+                              </button>
+                        </div>
+                        <p class="text-sm text-gray-700">@DisplayOrFallback(profil.Bio, "Aucune biographie renseignée.")</p>
+                  </section>
+
+                  <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
+                        <section class="rounded-lg border border-gray-300 bg-white p-4 shadow-sm md:p-5">
+                              <div class="mb-3 flex items-start justify-between">
+                                    <h2 class="text-2xl font-semibold text-gray-900">Statistiques de contribution</h2>
+                                    <button @onclick='() => Navigation.NavigateTo("/admin/profile/informations")'
+                                            class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100"
+                                            title="Modifier les statistiques">
+                                          <i class="fas fa-pen text-xs"></i>
+                                    </button>
+                              </div>
+                              <div class="grid grid-cols-3 gap-3 text-sm text-gray-700">
+                                    <div><span class="font-medium">Articles :</span> 20</div>
+                                    <div><span class="font-medium">Événements :</span> 20</div>
+                                    <div><span class="font-medium">Commentaires :</span> 20</div>
+                              </div>
+                        </section>
+
+                        <section class="rounded-lg border border-gray-300 bg-white p-4 shadow-sm md:p-5">
+                              <div class="mb-3 flex items-start justify-between">
+                                    <h2 class="text-2xl font-semibold text-gray-900">Compétences</h2>
+                                    <button @onclick='() => Navigation.NavigateTo("/admin/profile/informations")'
+                                            class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100"
+                                            title="Modifier les compétences">
+                                          <i class="fas fa-pen text-xs"></i>
+                                    </button>
+                              </div>
+                              <div class="flex flex-wrap gap-2">
+                                    @foreach (var skill in Skills)
+                                    {
+                                          <span class="rounded-md bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-900">@skill</span>
+                                    }
+                              </div>
+                        </section>
+                  </div>
+            </div>
+      }
+</div>
+
+@code {
+      private UserDto? profil;
+      private static readonly string[] Skills = ["C#", "ASP.NET Core", "Entity Framework", "Azure"];
+
+      private string LastLoginLabel => profil?.LastLoginAt?.ToString("dd/MM/yyyy HH:mm") ?? "Jamais";
+
+      protected override async Task OnInitializedAsync()
+      {
+            profil = await ProfileService.GetProfileAsync();
+      }
+
+      private static string DisplayOrFallback(string? value, string fallback)
+            => string.IsNullOrWhiteSpace(value) ? fallback : value;
+
+      private static string BuildLocation(string? city, string? country)
+      {
+            var hasCity = !string.IsNullOrWhiteSpace(city);
+            var hasCountry = !string.IsNullOrWhiteSpace(country);
+
+            if (hasCity && hasCountry)
+            {
+                  return $"{city}, {country}";
+            }
+
+            if (hasCity)
+            {
+                  return city!;
+            }
+
+            if (hasCountry)
+            {
+                  return country!;
+            }
+
+            return "Non renseignée";
+      }
+
+      private static string GetAvatarUrl(string? avatarUrl)
+            => string.IsNullOrWhiteSpace(avatarUrl) ? "Images/Fond.jpeg" : avatarUrl;
+}

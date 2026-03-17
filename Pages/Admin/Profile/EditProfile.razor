@@ -1,0 +1,64 @@
+@page "/admin/profile/informations"
+@* Page admin : formulaire de mise à jour du profil utilisateur. *@
+@inject IProfileService ProfileService
+@inject NavigationManager Navigation
+
+<div class="max-w-2xl mx-auto bg-[#F4F2F2] rounded-xl shadow-lg p-6">
+    <h1 class="text-2xl font-bold mb-6">Modifier mes informations</h1>
+
+    <EditForm Model="model" OnValidSubmit="HandleSubmit">
+        <div class="space-y-4">
+            <div>
+                <label class="block font-medium mb-1">Nom Complet</label>
+                <InputText @bind-Value="model.FullName" class="w-full p-2 border rounded-lg" />
+            </div>
+            <div>
+                <label class="block font-medium mb-1">Région</label>
+                <InputText @bind-Value="model.City" class="w-full p-2 border rounded-lg" />
+            </div>
+            <div>
+                <label class="block font-medium mb-1">Pays</label>
+                <InputText @bind-Value="model.Country" class="w-full p-2 border rounded-lg" />
+            </div>
+            <div>
+                <label class="block font-medium mb-1">Bio</label>
+                <InputTextArea @bind-Value="model.Bio" rows="4" class="w-full p-2 border rounded-lg" />
+            </div>
+            
+
+            <div class="flex space-x-3 pt-4">
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                    Enregistrer
+                </button>
+                <button type="button" @onclick="Annuler" class="bg-gray-200 px-6 py-2 rounded-lg hover:bg-gray-300">
+                    Annuler
+                </button>
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private UpdateProfileRequest model = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var profil = await ProfileService.GetProfileAsync();
+        model = new UpdateProfileRequest
+        {
+            FullName = profil.FullName,
+            Country = profil.Country,
+            City = profil.City,
+            AvatarUrl = profil.AvatarUrl,
+            Bio = profil.Bio
+        };
+    }
+
+    private async Task HandleSubmit()
+    {
+        await ProfileService.UpdateProfileAsync(model);
+        Navigation.NavigateTo("/admin/profile");
+    }
+
+    private void Annuler() => Navigation.NavigateTo("/admin/profile");
+}

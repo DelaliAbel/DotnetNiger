@@ -1,15 +1,19 @@
 @page "/admin/events/nouveau"
+@page "/admin/events/{Id:guid}"
+@* Page admin : création d'un nouvel événement. *@
 @using DotnetNiger.UI.Models.Requests
+@using DotnetNiger.UI.Models.Responses
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
+@inject IEventService EventService
 
-<div class="p-6">
+<div class="p-6 bg-[#F4F2F2]">
     <!-- Header -->
     <div class="flex justify-between items-center mb-6">
         <div class="flex items-center gap-3">
             <h1 class="H3">Gestion des événements</h1>
             <i class="fas fa-chevron-right text-gray-400"></i>
-            <span class="H3">Nouveau</span>
+            <span class="H3">@(isEditMode ? "Modifier" : "Nouveau")</span>
         </div>
         <button @onclick="GoBack" class="bg-red-500 hover:bg-red-600 text-white min-h-12 px-4 py-2 rounded-lg flex items-center gap-2">
             <i class="fas fa-arrow-left text-2xl"></i>
@@ -150,12 +154,18 @@
                        @onclick="SaveDraft"
                        class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg flex items-center gap-2">
                     <i class="fas fa-save"></i>
-                    Sauvegarder
+                    En attente
                 </button>
                 <button type="submit" 
                        class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg flex items-center gap-2">
                     <i class="fas fa-bullhorn"></i>
                     Publier
+                </button>
+                <button type="button" 
+                       @onclick="ArchiveEvent"
+                       class="bg-gray-700 hover:bg-gray-800 text-white px-6 py-3 rounded-lg flex items-center gap-2">
+                    <i class="fas fa-box-archive"></i>
+                    Archiver
                 </button>
                 <button type="button" 
                        @onclick="Preview"
@@ -169,6 +179,8 @@
 </div>
 
 @code {
+    [Parameter] public Guid Id { get; set; }
+
     private CreateEventRequest eventRequest = new()
     {
         StartDate = DateTime.Now,
@@ -178,6 +190,24 @@
     
     private string organizerName = string.Empty;
     private string selectedFileName = string.Empty;
+    private bool isEditMode => Id != Guid.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!isEditMode)
+            return;
+
+        var existingEvent = await EventService.GetEventByIdAsync(Id);
+        if (existingEvent is null)
+        {
+            await JS.InvokeVoidAsync("alert", "Événement introuvable.");
+            Navigation.NavigateTo("/admin/events");
+            return;
+        }
+
+        organizerName = existingEvent.OrganizerName;
+        eventRequest = MapToRequest(existingEvent);
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -186,6 +216,7 @@
             try
             {
                 await JS.InvokeVoidAsync("initTinyMCE", "eventDescription");
+                await JS.InvokeVoidAsync("setTinyMCEContent", "eventDescription", eventRequest.Description ?? string.Empty);
             }
             catch (Exception ex)
             {
@@ -220,24 +251,17 @@
     {
         try
         {
-            // Get content from TinyMCE
             eventRequest.Description = await JS.InvokeAsync<string>("getTinyMCEContent", "eventDescription");
             eventRequest.IsPublished = false;
-
-            // TODO: Call API to save draft
-            Console.WriteLine("Saving draft...");
-            Console.WriteLine($"Title: {eventRequest.Title}");
-            Console.WriteLine($"Description: {eventRequest.Description}");
-            
-            // Show success message
-            await JS.InvokeVoidAsync("alert", "Brouillon sauvegardé avec succès !");
-            
+            eventRequest.IsArchived = false;
+            await SaveOrUpdateAsync();
+            await JS.InvokeVoidAsync("alert", "Événement mis en attente avec succès !");
             GoBack();
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Error saving draft: {ex.Message}");
-            await JS.InvokeVoidAsync("alert", "Erreur lors de la sauvegarde du brouillon");
+            await JS.InvokeVoidAsync("alert", "Erreur lors de la sauvegarde.");
         }
     }
 
@@ -245,26 +269,17 @@
     {
         try
         {
-            // Get content from TinyMCE
             eventRequest.Description = await JS.InvokeAsync<string>("getTinyMCEContent", "eventDescription");
             eventRequest.IsPublished = true;
-
-            // TODO: Call API to create event
-            Console.WriteLine("Publishing event...");
-            Console.WriteLine($"Title: {eventRequest.Title}");
-            Console.WriteLine($"Description: {eventRequest.Description}");
-            Console.WriteLine($"Start Date: {eventRequest.StartDate}");
-            Console.WriteLine($"End Date: {eventRequest.EndDate}");
-            
-            // Show success message
+            eventRequest.IsArchived = false;
+            await SaveOrUpdateAsync();
             await JS.InvokeVoidAsync("alert", "Événement publié avec succès !");
-            
             GoBack();
         }
         catch (Exception ex)
         {
             Console.Error.WriteLine($"Error publishing event: {ex.Message}");
-            await JS.InvokeVoidAsync("alert", "Erreur lors de la publication de l'événement");
+            await JS.InvokeVoidAsync("alert", "Erreur lors de la publication.");
         }
     }
 
@@ -282,5 +297,52 @@
         {
             Console.Error.WriteLine($"Error showing preview: {ex.Message}");
         }
+    }
+
+    private async Task ArchiveEvent()
+    {
+        try
+        {
+            eventRequest.Description = await JS.InvokeAsync<string>("getTinyMCEContent", "eventDescription");
+            eventRequest.IsPublished = false;
+            eventRequest.IsArchived = true;
+            await SaveOrUpdateAsync();
+            await JS.InvokeVoidAsync("alert", "Événement archivé avec succès !");
+            GoBack();
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine($"Error archiving event: {ex.Message}");
+            await JS.InvokeVoidAsync("alert", "Erreur lors de l'archivage.");
+        }
+    }
+
+    private async Task SaveOrUpdateAsync()
+    {
+        if (isEditMode)
+        {
+            await EventService.UpdateEventAsync(Id, eventRequest);
+            return;
+        }
+
+        await EventService.CreateEventAsync(eventRequest);
+    }
+
+    private static CreateEventRequest MapToRequest(EventDto ev)
+    {
+        return new CreateEventRequest
+        {
+            Title = ev.Title,
+            Description = ev.Description,
+            Location = ev.Location,
+            EventType = ev.EventType,
+            StartDate = ev.StartDate,
+            EndDate = ev.EndDate,
+            CoverImageUrl = ev.CoverImageUrl,
+            Capacity = ev.Capacity,
+            MeetupLink = ev.MeetupLink,
+            IsPublished = ev.IsPublished,
+            IsArchived = ev.IsArchived
+        };
     }
 }
