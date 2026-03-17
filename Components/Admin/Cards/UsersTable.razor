@@ -1,0 +1,80 @@
+@using DotnetNiger.UI.Components.Admin.Cards
+
+<div class="overflow-hidden rounded-lg bg-white shadow">
+      <div class="overflow-y-scroll">
+            <table class="w-full">
+                  <thead class="border-b border-gray-200 bg-gray-100">
+                        <tr>
+                              <th class="Button px-6 py-4 text-left text-text">Avatar</th>
+                              <th class="Button px-6 py-4 text-left text-text">ID</th>
+                              <th class="Button px-6 py-4 text-left text-text">Nom</th>
+                              <th class="Button px-6 py-4 text-left text-text">Email</th>
+                              <th class="Button px-6 py-4 text-left text-text">Role</th>
+                              <th class="Button px-6 py-4 text-left text-text">Date création</th>
+                              <th class="Button px-6 py-4 text-left text-text">Actions</th>
+                        </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                        @for(int i = 0;i < 6;i++){
+
+                        <tr class="transition hover:bg-gray-50">
+                              <td class="px-6 py-4 text-sm font-medium text-text"><img src="/Images/user.png" class=" rounded-full" ></td>
+                              <td class="px-6 py-4 text-sm text-text">1</td>
+                              <td class="px-6 py-4 text-sm text-text">Moussa Idi</td>
+                              <td class="px-6 py-4 text-sm text-text">
+                                    <span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">zoeenzedz@gmail.com</span>
+                              </td>
+                              <td class="px-6 py-4 text-sm">
+                                    <div class="flex items-center gap-2">
+                                          <div class="h-3 w-3 rounded-full"></div>
+                                          <span class="text-gray-700">Membre</span
+                                    </div>
+                              </td>
+                              <td class="px-6 py-4 text-sm text-text">01/04/2026 12:15</td>
+                              <td class="px-6 py-4 text-sm">
+                                    <div class="flex gap-3">
+                                          <button class="text-text transition hover:text-blue-600" title="Voir">
+                                                <i class="fas fa-eye"></i>
+                                          </button>
+                                          <button class="text-text transition hover:text-yellow-600" title="Éditer">
+                                                <i class="fas fa-edit"></i>
+                                          </button>
+                                          <button class="text-text transition hover:text-red-600" title="Supprimer">
+                                                <i class="fas fa-trash-alt"></i>
+                                          </button>
+                                    </div>
+                              </td>
+                        </tr>
+                        }
+                  </tbody>
+            </table>
+      </div>
+      <div class="flex h-16 items-center justify-end bg-gray-100 px-6">
+            <div class="flex h-[40px] w-auto items-center justify-center gap-[32px]">
+            <div>
+                  <button class="flex h-[40px] w-[98px] items-center justify-center rounded-lg bg-secondary">
+                        <span class="Button">Prec</span>
+                  </button>
+            </div>
+            <div>
+                  <button class="flex h-[40px] w-[38px] items-center justify-center rounded-lg bg-secondary">
+                        <span class="Button">1</span>
+                  </button>
+            </div>
+            <div>
+                  <button class="flex h-[40px] w-[38px] items-center justify-center rounded-lg bg-secondary">
+                        <span class="Button">2</span>
+                  </button>
+            </div>
+            <div>
+                  <button class="flex h-[40px] w-[98px] items-center justify-center rounded-lg bg-secondary">
+                        <span class="Button">Suiv</span>
+                  </button>
+            </div>
+      </div>
+      </div>
+
+</div>
+@code {
+
+}
