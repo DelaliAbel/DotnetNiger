@@ -1,208 +1,167 @@
-@page "/admin/ressources"
-@using DotnetNiger.UI.Models.Responses
+﻿@page "/admin/ressources"
+@* Page admin : gestion CRUD des ressources via drawer latéral. *@
 @inject NavigationManager Navigation
+@inject IResourceService ResourceService
+@using DotnetNiger.UI.Components.Admin.Cards
 
-<div class="p-6">
-    <!-- Header -->
+<div class="p-6 bg-[#F4F2F2]">
     <div class="flex justify-between items-center mb-6">
         <span class="H3">Ressources</span>
-        <button @onclick="OpenDrawer" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg flex items-center gap-2">
-            <i class="fas fa-plus Button"></i>
-            Nouveau
+        <button @onclick="OpenDrawer" class="bg-red-500 hover:bg-red-600 text-white min-h-12 px-4 py-2 rounded-lg flex items-center gap-2">
+            <i class="fas fa-plus text-xl"></i>
+            <span class="Button">Nouveau</span>
         </button>
     </div>
-    @if (IsOpen)
-{
-    <!-- Overlay -->
-    <div class="fixed inset-0 bg-black bg-opacity-50 z-40"
-         @onclick="CloseDrawer">
-    </div>
 
-    <!-- Drawer -->
-    <div class="fixed top-0 right-0 h-screen 
-                w-full sm:w-4/5 md:w-3/5 lg:w-2/5 
-                bg-white shadow-2xl z-50 
-                transform transition-transform duration-300 ease-in-out
-                @(IsOpen ? "translate-x-0" : "translate-x-full")">
-
-        <div class="flex flex-col h-full">
-
-            <!-- Header -->
-            <div class="flex justify-between items-center 
-                        px-6 py-4 border-b">
-                <h2 class="text-xl font-semibold">
-                    Créer un événement
-                </h2>
-
-                <button @onclick="CloseDrawer"
-                        class="text-gray-500 hover:text-black text-2xl">
-                    &times;
-                </button>
+    @if (isDrawerOpen)
+    {
+        <div class="fixed inset-0 bg-black bg-opacity-50 z-40" @onclick="CloseDrawer"></div>
+        <div class="fixed top-0 right-0 h-screen w-full sm:w-4/5 md:w-3/5 lg:w-2/5 bg-white shadow-2xl z-50 transform transition-transform duration-300">
+            <div class="flex flex-col h-full">
+                <div class="flex justify-between items-center px-6 py-4 border-b">
+                    <h2 class="text-xl font-semibold">@(editingId.HasValue ? "Modifier la ressource" : "Nouvelle ressource")</h2>
+                    <button @onclick="CloseDrawer" class="text-gray-500 hover:text-black text-2xl">&times;</button>
+                </div>
+                <div class="flex-1 overflow-y-auto px-6 py-6 space-y-5">
+                    @if (!string.IsNullOrEmpty(drawerError))
+                    {
+                        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">@drawerError</div>
+                    }
+                    <EditForm Model="resourceRequest" OnValidSubmit="SaveResource">
+                        <DataAnnotationsValidator />
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Titre *</label>
+                            <InputText @bind-Value="resourceRequest.Title"
+                                       class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="Titre de la ressource" />
+                            <ValidationMessage For="@(() => resourceRequest.Title)" class="text-xs text-red-500 mt-1" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Description *</label>
+                            <InputTextArea @bind-Value="resourceRequest.Description" rows="3"
+                                           class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                           placeholder="Description de la ressource" />
+                            <ValidationMessage For="@(() => resourceRequest.Description)" class="text-xs text-red-500 mt-1" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">URL *</label>
+                            <InputText @bind-Value="resourceRequest.Url"
+                                       class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       placeholder="https://..." />
+                            <ValidationMessage For="@(() => resourceRequest.Url)" class="text-xs text-red-500 mt-1" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Type *</label>
+                            <InputSelect @bind-Value="resourceRequest.ResourceType"
+                                         class="w-full border rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Selectionner un type</option>
+                                <option value="Documentation">Documentation</option>
+                                <option value="Tutoriel">Tutoriel</option>
+                                <option value="Article">Article</option>
+                                <option value="GitHub">GitHub</option>
+                                <option value="Cours">Cours</option>
+                                <option value="Livre">Livre</option>
+                                <option value="Outil">Outil</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => resourceRequest.ResourceType)" class="text-xs text-red-500 mt-1" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">Niveau *</label>
+                            <InputSelect @bind-Value="resourceRequest.Level"
+                                         class="w-full border rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Selectionner un niveau</option>
+                                <option value="Débutant">Débutant</option>
+                                <option value="Intermediaire">Intermediaire</option>
+                                <option value="Avancé">Avancé</option>
+                                <option value="Tous niveaux">Tous niveaux</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => resourceRequest.Level)" class="text-xs text-red-500 mt-1" />
+                        </div>
+                        <div class="border-t pt-4 flex justify-end gap-3 bg-white">
+                            <button type="button" @onclick="CloseDrawer"
+                                    class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">
+                                Annuler
+                            </button>
+                            <button type="submit"
+                                    class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition">
+                                @(editingId.HasValue ? "Mettre à jour" : "Créer")
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
             </div>
-
-            <!-- Body (Scrollable) -->
-            <div class="flex-1 overflow-y-auto px-6 py-6 space-y-6">
-
-                <div>
-                    <label class="block text-sm font-medium mb-1">
-                        Titre
-                    </label>
-                    <input type="text"
-                           class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium mb-1">
-                        Date
-                    </label>
-                    <input type="date"
-                           class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium mb-1">
-                        Lieu
-                    </label>
-                    <input type="text"
-                           class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium mb-1">
-                        Description
-                    </label>
-                    <textarea rows="4"
-                              class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </textarea>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium mb-1">
-                        Image URL
-                    </label>
-                    <input type="text"
-                           class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-
-            </div>
-
-            <!-- Footer fixe -->
-            <div class="border-t px-6 py-4 flex justify-end space-x-4 bg-white">
-                <button @onclick="CloseDrawer"
-                        class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">
-                    Annuler
-                </button>
-
-                <button class="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition">
-                    Créer
-                </button>
-            </div>
-
         </div>
-    </div>
-}
+    }
 
-
-    <!-- Filters and Search -->
     <div class="flex gap-4 mb-6">
-        <!-- Search Bar -->
         <div class="flex-1 relative">
-            <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-            <input 
-                type="text" 
-                placeholder="Rechercher un événement..." 
-                @bind="searchQuery"
-                @bind:event="oninput"
-                class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            <i class="fas fa-search absolute left-3 top-8 transform -translate-y-1/2 text-gray-400"></i>
+            <input type="text" placeholder="Rechercher une ressource..."
+                   @bind="searchQuery" @bind:event="oninput"
+                   class="w-full bg-white pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none" />
         </div>
-
-        <!-- Status Filter -->
-        <select @bind="selectedStatus" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="">Tous</option>
-            <option value="published">Publié</option>
-            <option value="pending">Attente</option>
-            <option value="archived">Archivé</option>
-        </select>
-
-        <!-- Type Filter -->
-        <select @bind="selectedType" class="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <select @bind="selectedType" class="bg-white px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
             <option value="">Type</option>
-            <option value="Cours">Cours</option>
+            <option value="Documentation">Documentation</option>
+            <option value="Tutoriel">Tutoriel</option>
             <option value="Article">Article</option>
-            <option value="outil">Outil</option>
+            <option value="GitHub">GitHub</option>
+            <option value="Cours">Cours</option>
             <option value="Livre">Livre</option>
+            <option value="Outil">Outil</option>
+        </select>
+        <select @bind="selectedLevel" class="bg-white px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+            <option value="">Niveau</option>
+            <option value="Débutant">Débutant</option>
+            <option value="Intermediaire">Intermediaire</option>
+            <option value="Avancé">Avancé</option>
+            <option value="Tous niveaux">Tous niveaux</option>
         </select>
     </div>
 
-    <!-- View Toggle -->
     <div class="flex gap-2 mb-6">
-        <button 
-            @onclick="() => isListView = true"
-            class="@(isListView ? "bg-black text-white" : "bg-white text-black border border-gray-300") px-4 py-2 rounded-lg flex items-center gap-2">
+        <button @onclick="() => isListView = true"
+                class="@(isListView ? "bg-black text-white" : "bg-white text-black border border-gray-300") px-4 py-2 rounded-lg flex items-center gap-2">
             <i class="fas fa-list text-2xl"></i>
         </button>
-        <button 
-            @onclick="() => isListView = false"
-            class="@(!isListView ? "bg-black text-white" : "bg-white text-black border border-gray-300") px-4 py-2 rounded-lg flex items-center gap-2">
+        <button @onclick="() => isListView = false"
+                class="@(!isListView ? "bg-black text-white" : "bg-white text-black border border-gray-300") px-4 py-2 rounded-lg flex items-center gap-2">
             <i class="fas fa-th text-2xl"></i>
         </button>
     </div>
 
     @if (isListView)
     {
-        <!-- List View (Table) -->
         <div class="bg-white rounded-lg shadow overflow-hidden">
             <table class="w-full">
                 <thead class="bg-gray-50 border-b">
                     <tr>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Titre</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Auteur</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Catégorie</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Type</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Date</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Statut</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Niveau</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">URL</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Vues</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var resource in filteredResources)
+                    @foreach (var resource in pagedResources)
                     {
                         <tr class="border-b hover:bg-gray-50">
-                            <td class="px-6 py-4 text-sm">@resource.Title</td>
-                            <td class="px-6 py-4 text-sm">@resource.Author</td>
-                            <td class="px-6 py-4 text-sm">@resource.Category</td>
-                            <td class="px-6 py-4 text-sm">@resource.ResourceType</td>
-                            <td class="px-6 py-4 text-sm whitespace-nowrap">@resource.PublishedDate.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="px-6 py-4 text-sm font-medium">@resource.Title</td>
                             <td class="px-6 py-4 text-sm">
-                                @if (resource.Status == "published")
-                                {
-                                    <span class="flex items-center gap-2">
-                                        <span class="w-3 h-3 bg-green-500 rounded-full"></span>
-                                        Publié
-                                    </span>
-                                }
-                                else if (resource.Status == "archived")
-                                {
-                                    <span class="flex items-center gap-2">
-                                        <span class="w-3 h-3 bg-red-500 rounded-full"></span>
-                                        Archivé
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="flex items-center gap-2">
-                                        <span class="w-3 h-3 bg-orange-500 rounded-full"></span>
-                                        Attente
-                                    </span>
-                                }
+                                <span class="rounded-full bg-blue-100 text-blue-800 px-2 py-1 text-xs">@resource.ResourceType</span>
                             </td>
+                            <td class="px-6 py-4 text-sm">@resource.Level</td>
+                            <td class="px-6 py-4 text-sm">
+                                <a href="@resource.Url" target="_blank" class="text-blue-600 hover:underline truncate max-w-[160px] block">
+                                    @(resource.Url.Length > 40 ? resource.Url[..40] + "..." : resource.Url)
+                                </a>
+                            </td>
+                            <td class="px-6 py-4 text-sm">@resource.ViewCount</td>
                             <td class="px-6 py-4 text-sm">
                                 <div class="flex gap-2">
-                                    <button @onclick="() => ViewResource(resource.Id)" class="text-gray-600 hover:text-blue-600" title="Voir">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    <button @onclick="() => EditResource(resource.Id)" class="text-gray-600 hover:text-blue-600" title="Éditer">
+                                    <button @onclick="() => EditResource(resource)" class="text-gray-600 hover:text-blue-600" title="&#201;diter">
                                         <i class="fas fa-edit"></i>
                                     </button>
                                     <button @onclick="() => DeleteResource(resource.Id)" class="text-gray-600 hover:text-red-600" title="Supprimer">
@@ -218,303 +177,166 @@
     }
     else
     {
-        <!-- Grid View (Cards) -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            @foreach (var resource in filteredResources)
+            @foreach (var resource in pagedResources)
             {
                 <div class="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                    <!-- Card Image/Header -->
-                    <div class="relative h-48 bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
-                        <!-- Status Badge -->
-                        <div class="absolute top-4 left-4">
-                            @if (resource.Status == "published")
-                            {
-                                <span class="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-check text-white text-sm"></i>
-                                </span>
-                            }
-                            else if (resource.Status == "archived")
-                            {
-                                <span class="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-archive text-white text-sm"></i>
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
-                                    <i class="fas fa-clock text-white text-sm"></i>
-                                </span>
-                            }
+                    <div class="relative h-32 bg-gradient-to-br from-blue-600 to-cyan-600 flex items-center justify-center">
+                        <div class="absolute top-3 left-3">
+                            <span class="bg-white bg-opacity-20 text-white text-xs px-2 py-1 rounded-full">@resource.Level</span>
                         </div>
-
-                        <!-- Menu Dropdown -->
-                        <div class="absolute top-4 right-4">
-                            <button @onclick="() => ToggleMenu(resource.Id)" class="text-white hover:bg-white/20 rounded-full p-2">
-                                <i class="fas fa-ellipsis-v"></i>
+                        <div class="absolute top-3 right-3">
+                            <button @onclick="() => EditResource(resource)" class="text-white hover:bg-white/20 rounded-full p-1.5">
+                                <i class="fas fa-edit text-sm"></i>
                             </button>
-                            @if (openMenuId == resource.Id)
-                            {
-                                <div class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-10">
-                                    <button @onclick="() => ViewResource(resource.Id)" class="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2">
-                                        <i class="fas fa-eye"></i> Voir
-                                    </button>
-                                    <button @onclick="() => EditResource(resource.Id)" class="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2">
-                                        <i class="fas fa-edit"></i> Éditer
-                                    </button>
-                                    <button @onclick="() => DeleteResource(resource.Id)" class="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 flex items-center gap-2">
-                                        <i class="fas fa-trash"></i> Supprimer
-                                    </button>
-                                </div>
-                            }
+                            <button @onclick="() => DeleteResource(resource.Id)" class="text-white hover:bg-white/20 rounded-full p-1.5">
+                                <i class="fas fa-trash text-sm"></i>
+                            </button>
                         </div>
-
-                        <!-- Resource Type Icon -->
-                        <div class="text-white text-6xl">
-                            @if (resource.ResourceType == "Cours")
-                            {
-                                <i class="fas fa-graduation-cap"></i>
-                            }
-                            else if (resource.ResourceType == "Article")
-                            {
-                                <i class="fas fa-newspaper"></i>
-                            }
-                            else if (resource.ResourceType == "outil")
-                            {
-                                <i class="fas fa-tools"></i>
-                            }
-                            else if (resource.ResourceType == "Livre")
-                            {
-                                <i class="fas fa-book"></i>
-                            }
-                            else
-                            {
-                                <i class="fas fa-file"></i>
-                            }
-                        </div>
+                        <i class="fas fa-file text-white text-5xl"></i>
                     </div>
-
-                    <!-- Card Content -->
                     <div class="p-4">
-                        <h3 class="text-lg font-bold mb-2 line-clamp-1">@resource.Title</h3>
-                        <p class="text-gray-600 text-sm mb-4 line-clamp-3">
-                            @if (!string.IsNullOrEmpty(resource.Description))
-                            {
-                                @resource.Description
-                            }
-                            else
-                            {
-                                <text>Lorem, ipsum dolor sit amet consectetur adipisicing elit. Haque, architecto. Eligendi beatae inventore dolorum sequi laudantium dicta aut reiciendis! Non</text>
-                            }
-                        </p>
-                        <div class="flex justify-between items-center text-sm text-gray-700">
-                            <span class="font-medium">@resource.Author</span>
-                            <span>@resource.PublishedDate.ToString("dd/MM/yyyy")</span>
+                        <h3 class="text-base font-bold mb-1 line-clamp-1">@resource.Title</h3>
+                        <p class="text-gray-600 text-sm mb-3 line-clamp-2">@resource.Description</p>
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded text-xs">@resource.ResourceType</span>
+                            <span class="text-gray-500 text-xs"><i class="fas fa-eye mr-1"></i>@resource.ViewCount</span>
                         </div>
-                        <div class="mt-2 text-xs text-gray-500">
-                            <span class="bg-gray-100 px-2 py-1 rounded">@resource.Category</span>
-                        </div>
+                        <a href="@resource.Url" target="_blank"
+                           class="mt-3 block text-center text-sm py-1.5 rounded-lg border border-blue-300 text-blue-600 hover:bg-blue-50 transition">
+                            Voir la ressource
+                        </a>
                     </div>
                 </div>
             }
         </div>
     }
 
-    <!-- Pagination -->
-    <div class="flex justify-center items-center gap-2 mt-6">
-        <button 
-            @onclick="PreviousPage" 
-            disabled="@(currentPage == 1)"
-            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-            <i class="fas fa-arrow-left"></i>
-            Préc
-        </button>
-
-        @for (int i = 1; i <= totalPages; i++)
-        {
-            var pageNum = i;
-            <button 
-                @onclick="() => GoToPage(pageNum)"
-                class="@(currentPage == pageNum ? "bg-black text-white" : "bg-white text-black border border-gray-300") px-4 py-2 rounded-lg hover:bg-gray-100">
-                @pageNum
-            </button>
-        }
-
-        <button 
-            @onclick="NextPage"
-            disabled="@(currentPage == totalPages)"
-            class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-            Suiv
-            <i class="fas fa-arrow-right"></i>
-        </button>
+    <div class="mt-6">
+        <Paginated @bind-CurrentPage="currentPage" TotalPages="@totalPages" />
     </div>
 </div>
 
 @code {
     private bool isListView = true;
-    private string searchQuery = string.Empty;
-    private string selectedStatus = string.Empty;
-    private string selectedType = string.Empty;
+    private bool isDrawerOpen;
+    private string searchQueryValue = string.Empty;
+    private string selectedTypeValue = string.Empty;
+    private string selectedLevelValue = string.Empty;
     private int currentPage = 1;
     private int pageSize = 7;
-    private int totalPages = 2;
-    private Guid? openMenuId = null;
+    private string drawerError = string.Empty;
+    private Guid? editingId;
 
-    private bool IsOpen = false;
+    private CreateResourceRequest resourceRequest = new();
+    private List<ResourceDto> allResources = new();
 
-    void OpenDrawer()
+    private string searchQuery
     {
-        IsOpen = true;
-    }
-
-    void CloseDrawer()
-    {
-        IsOpen = false;
-    }
-
-    // Sample data - Replace with actual API call
-    private List<ResourceItem> resources = new()
-    {
-        new ResourceItem
+        get => searchQueryValue;
+        set
         {
-            Id = Guid.NewGuid(),
-            Title = "Introduction à .Net",
-            Author = "Ali Mahamane",
-            Category = "Formation",
-            ResourceType = "Cours",
-            PublishedDate = new DateTime(2025, 1, 15, 12, 30, 0),
-            Status = "published",
-            Description = "Un cours complet sur le framework .NET pour les débutants"
-        },
-        new ResourceItem
-        {
-            Id = Guid.NewGuid(),
-            Title = "Introduction à .Net",
-            Author = "Ali Mahamane",
-            Category = "Documentation",
-            ResourceType = "Article",
-            PublishedDate = new DateTime(2025, 1, 15, 12, 30, 0),
-            Status = "pending",
-            Description = "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Haque, architecto."
-        },
-        new ResourceItem
-        {
-            Id = Guid.NewGuid(),
-            Title = "Introduction à .Net",
-            Author = "Ali Mahamane",
-            Category = "Bibliothèque",
-            ResourceType = "outil",
-            PublishedDate = new DateTime(2025, 1, 15, 12, 30, 0),
-            Status = "pending",
-            Description = "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Haque, architecto."
-        },
-        new ResourceItem
-        {
-            Id = Guid.NewGuid(),
-            Title = "Introduction à .Net",
-            Author = "Ali Mahamane",
-            Category = "Outil",
-            ResourceType = "Livre",
-            PublishedDate = new DateTime(2025, 1, 15, 12, 30, 0),
-            Status = "archived",
-            Description = "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Haque, architecto."
-        },
-        new ResourceItem
-        {
-            Id = Guid.NewGuid(),
-            Title = "Introduction à .Net",
-            Author = "Ali Mahamane",
-            Category = "Documentation",
-            ResourceType = "Cours",
-            PublishedDate = new DateTime(2025, 1, 15, 12, 30, 0),
-            Status = "published",
-            Description = "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Haque, architecto."
-        },
-        new ResourceItem
-        {
-            Id = Guid.NewGuid(),
-            Title = "Introduction à .Net",
-            Author = "Ali Mahamane",
-            Category = "Documentation",
-            ResourceType = "Article",
-            PublishedDate = new DateTime(2025, 1, 15, 12, 30, 0),
-            Status = "archived",
-            Description = "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Haque, architecto."
-        },
-        new ResourceItem
-        {
-            Id = Guid.NewGuid(),
-            Title = "Introduction à .Net",
-            Author = "Ali Mahamane",
-            Category = "Formation",
-            ResourceType = "Livre",
-            PublishedDate = new DateTime(2025, 1, 15, 12, 30, 0),
-            Status = "published",
-            Description = "Lorem, ipsum dolor sit amet consectetur adipisicing elit. Haque, architecto."
+            if (searchQueryValue == value) return;
+            searchQueryValue = value;
+            currentPage = 1;
         }
-    };
+    }
 
-    private IEnumerable<ResourceItem> filteredResources => resources
-        .Where(r => string.IsNullOrEmpty(searchQuery) || 
-                   r.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
-                   r.Author.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
-        .Where(r => string.IsNullOrEmpty(selectedStatus) || r.Status == selectedStatus)
+    private string selectedType
+    {
+        get => selectedTypeValue;
+        set
+        {
+            if (selectedTypeValue == value) return;
+            selectedTypeValue = value;
+            currentPage = 1;
+        }
+    }
+
+    private string selectedLevel
+    {
+        get => selectedLevelValue;
+        set
+        {
+            if (selectedLevelValue == value) return;
+            selectedLevelValue = value;
+            currentPage = 1;
+        }
+    }
+
+    private List<ResourceDto> filteredResources => allResources
+        .Where(r => string.IsNullOrEmpty(searchQuery) ||
+                    r.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    r.Description.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
         .Where(r => string.IsNullOrEmpty(selectedType) || r.ResourceType == selectedType)
-        .Skip((currentPage - 1) * pageSize)
-        .Take(pageSize);
+        .Where(r => string.IsNullOrEmpty(selectedLevel) || r.Level == selectedLevel)
+        .ToList();
 
-    private void NavigateToCreate()
+    private int totalPages => Math.Max(1, (int)Math.Ceiling((double)filteredResources.Count / pageSize));
+
+    private List<ResourceDto> pagedResources => filteredResources
+        .Skip((SafeCurrentPage - 1) * pageSize)
+        .Take(pageSize)
+        .ToList();
+
+    private int SafeCurrentPage => Math.Clamp(currentPage, 1, totalPages);
+
+    protected override async Task OnInitializedAsync()
     {
-        Navigation.NavigateTo("/admin/ressources/nouveau");
+        allResources = await ResourceService.GetAllResourcesAsync();
     }
 
-    private void ToggleMenu(Guid resourceId)
+    private void OpenDrawer()
     {
-        openMenuId = openMenuId == resourceId ? null : resourceId;
+        editingId = null;
+        resourceRequest = new CreateResourceRequest();
+        drawerError = string.Empty;
+        isDrawerOpen = true;
     }
 
-    private void ViewResource(Guid resourceId)
+    private void EditResource(ResourceDto resource)
     {
-        openMenuId = null;
-        Console.WriteLine($"View resource: {resourceId}");
+        editingId = resource.Id;
+        resourceRequest = new CreateResourceRequest
+        {
+            Title = resource.Title,
+            Description = resource.Description,
+            Url = resource.Url,
+            ResourceType = resource.ResourceType,
+            Level = resource.Level
+        };
+        drawerError = string.Empty;
+        isDrawerOpen = true;
     }
 
-    private void EditResource(Guid resourceId)
+    private void CloseDrawer()
     {
-        openMenuId = null;
-        Console.WriteLine($"Edit resource: {resourceId}");
+        isDrawerOpen = false;
+        editingId = null;
+        resourceRequest = new CreateResourceRequest();
     }
 
-    private void DeleteResource(Guid resourceId)
+    private async Task SaveResource()
     {
-        openMenuId = null;
-        Console.WriteLine($"Delete resource: {resourceId}");
+        try
+        {
+            if (editingId.HasValue)
+                await ResourceService.UpdateResourceAsync(editingId.Value, resourceRequest);
+            else
+                await ResourceService.CreateResourceAsync(resourceRequest);
+
+            allResources = await ResourceService.GetAllResourcesAsync();
+            CloseDrawer();
+        }
+        catch (Exception ex)
+        {
+            drawerError = ex.Message;
+        }
     }
 
-    private void PreviousPage()
+    private async Task DeleteResource(Guid id)
     {
-        if (currentPage > 1) currentPage--;
-    }
-
-    private void NextPage()
-    {
-        if (currentPage < totalPages) currentPage++;
-    }
-
-    private void GoToPage(int page)
-    {
-        currentPage = page;
-    }
-
-    // Local model for UI purposes
-    public class ResourceItem
-    {
-        public Guid Id { get; set; }
-        public string Title { get; set; } = string.Empty;
-        public string Author { get; set; } = string.Empty;
-        public string Category { get; set; } = string.Empty;
-        public string ResourceType { get; set; } = string.Empty;
-        public DateTime PublishedDate { get; set; }
-        public string Status { get; set; } = string.Empty;
-        public string Description { get; set; } = string.Empty;
+        await ResourceService.DeleteResourceAsync(id);
+        allResources = await ResourceService.GetAllResourcesAsync();
     }
 }

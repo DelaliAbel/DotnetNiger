@@ -18,7 +18,7 @@ GitHub pour travailler ensemble efficacement.
 
 -   Entre dans ton dossier de travail
 -   tu ouvres le terminal git(bash)
--   git clone https://github.com/AbdoulRaouf2005/DotnetNiger-Frontend.git
+-   git clone https://github.com/DelaliAbel/DotnetNiger.git
 -   cd DotnetNiger-Frontend
 - dotnet restore
 
@@ -30,7 +30,7 @@ GitHub pour travailler ensemble efficacement.
 -   sur les lignes de commandes allez-y à la source du projet 
 -   tapez npm install
 -   executez npx tailwindcss -i ./wwwroot/css/input.css -o ./wwwroot/css/output.css --watch
--   ou executer le fichier "Tailwind Watch.sh"
+-   ou executer le fichier "Tailwind-watch.sh"
 
 Règles : -assurez-vous de toujours executer la derniere commande avant de commencer une implementation
 
@@ -39,16 +39,19 @@ Règles : -assurez-vous de toujours executer la derniere commande avant de comme
 
 ## 🏗️ Structure des branches
 
-    main(master)        → version stable
+    main(master)        → version en production
+    FrontEnd            → version stable
     develop     → version d’intégration
     feature/... → branches de travail
 
-Règles : - Ne jamais travailler directement sur main - Tout le monde
+Règles : - Ne jamais travailler directement sur main ou FrontEnd - Tout le monde
 part de develop
 
 ------------------------------------------------------------------------
 
 ## 🌱 Création des branches
+
+Assurez-vous de toujours vous positionnez sur develop avant de créer une sous-branche (feature/....)
 
 Exemples :
 
@@ -101,13 +104,17 @@ Quand un autre membre ajoute des fonctionnalités sur develop :
 
 ### Étape 2 : Télécharger les nouveautés
 
-    git pull origin develop
+    git pull origin develop ou git pull
 
 ### Etape 3 : Retourne sur ta branche de developpement de la fonctionnalité (feature)
 
     git switch feature/...
 
-### Etape 4 : Travailler
+### Etape 4 : Fusion (merge) des deux branches
+
+    git merge develop
+
+### Etape 5 : Travailler
 
     coder normalement ou tester la nouvelle fonctionnaté
 
@@ -144,8 +151,8 @@ Chaque jour :
 
 ## ❌ À ne jamais faire
 
-    git push origin main
-    git pull origin main
+    git push origin main(master) ou FrontEnd
+    git pull origin main(master) ou FrontEnd
 
 
 ------------------------------------------------------------------------
@@ -164,7 +171,7 @@ Chaque jour :
 
 ### Structure du projet Blazor à suivre
 ```
-dotnetniger-frontend/
+dotnetNiger/
 ├── Pages/
 │   ├── Home.razor
 │   ├── Community.razor
@@ -190,13 +197,15 @@ dotnetniger-frontend/
 │   └── ApiService.cs
 ├── Models/
 ├── wwwroot/
-│   ├── index.html (+ Bootstrap CDN)
+│   ├── index.html 
 │   └── css/
-│       ├── header-overrides.css
-│       └── admin.css
+│       ├── app.css
+│       ├── input.css
+│       └── output.css
 └── Program.cs
 
 ```
 
+### En cas de probleme(soucis), contactez-moi on va essayer d'y resoudre 
 
 Fin du document

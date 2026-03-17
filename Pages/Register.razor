@@ -1,0 +1,114 @@
+@page "/register"
+@* Page d'authentification : création de compte utilisateur. *@
+@layout DotnetNiger.UI.Layouts.MainLayout
+@inject AuthService Auth
+@inject NavigationManager Navigation
+
+<PageTitle>Inscription - .NET Niger</PageTitle>
+
+<div class="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
+    <div class="w-full max-w-lg bg-white rounded-2xl shadow-lg p-8">
+
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Créer un compte</h1>
+            <p class="text-gray-500 mt-2">Rejoignez la communauté .NET Niger</p>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-red-700 text-sm">
+                @errorMessage
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(successMessage))
+        {
+            <div class="mb-4 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-green-700 text-sm">
+                @successMessage
+            </div>
+        }
+
+        <EditForm Model="model" OnValidSubmit="HandleRegister">
+            <DataAnnotationsValidator />
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nom d'utilisateur *</label>
+                    <InputText @bind-Value="model.Username"
+                        class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                        placeholder="jeanDupont" />
+                    <ValidationMessage For="@(() => model.Username)" class="text-xs text-red-500 mt-1" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nom complet *</label>
+                    <InputText @bind-Value="model.FullName"
+                        class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                        placeholder="Jean Dupont" />
+                    <ValidationMessage For="@(() => model.FullName)" class="text-xs text-red-500 mt-1" />
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Adresse e-mail *</label>
+                <InputText @bind-Value="model.Email" type="email"
+                    class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    placeholder="vous@exemple.com" />
+                <ValidationMessage For="@(() => model.Email)" class="text-xs text-red-500 mt-1" />
+            </div>
+
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe *</label>
+                <InputText @bind-Value="model.Password" type="password"
+                    class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                    placeholder="Minimum 8 caractères" />
+                <ValidationMessage For="@(() => model.Password)" class="text-xs text-red-500 mt-1" />
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Pays</label>
+                    <InputText @bind-Value="model.Country"
+                        class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                        placeholder="Niger" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Ville</label>
+                    <InputText @bind-Value="model.City"
+                        class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition"
+                        placeholder="Niamey" />
+                </div>
+            </div>
+
+            <button type="submit" disabled="@isLoading"
+                class="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition disabled:opacity-60">
+                @(isLoading ? "Inscription en cours..." : "Créer mon compte")
+            </button>
+        </EditForm>
+
+        <p class="text-center text-sm text-gray-500 mt-6">
+            Déjà un compte ?
+            <a href="/login" class="text-blue-600 font-medium hover:underline">Se connecter</a>
+        </p>
+    </div>
+</div>
+
+@code {
+    private RegisterRequest model = new();
+    private string errorMessage = "";
+    private string successMessage = "";
+    private bool isLoading;
+
+    private async Task HandleRegister()
+    {
+        isLoading = true;
+        errorMessage = "";
+        successMessage = "";
+        var result = await Auth.RegisterAsync(model);
+        isLoading = false;
+
+        if (result.Success)
+            Navigation.NavigateTo("/");
+        else
+            errorMessage = result.Message;
+    }
+}

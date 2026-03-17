@@ -1,14 +1,25 @@
 ﻿@using DotnetNiger.UI.Components.Admin.Shared
 @inherits LayoutComponentBase
 
-<div class="flex h-screen overflow-hidden">
-  <Sidebar />
-  <div class="flex flex-1 flex-col">
-    <Topbar />
-    <main class="flex-1 overflow-y-scroll bg-primary">
-      <div class="container mx-auto">
+<div class="flex flex-col h-screen">
+  <Topbar ToggleSidebar="ToggleSidebar"/>
+  <div class="flex flex-1 overflow-hidden">
+      <Sidebar IsOpen="sidebarOpen" IsCollapsed="isCollapsed" ToggleCollapsed="ToggleCollapsed"/>
+    <main class="flex-1 overflow-y-auto bg-primary transition-all duration-300">
+      <div class="container mx-auto ">
         @Body
       </div>
     </main>
   </div>
 </div>
+
+@code{
+  bool sidebarOpen = false;
+  bool isCollapsed = false;
+  void ToggleCollapsed(){
+    isCollapsed = !isCollapsed;
+  }
+  void ToggleSidebar(){
+    sidebarOpen = !sidebarOpen;
+  }
+}

@@ -1,79 +1,148 @@
 ﻿@page "/admin/blog"
+@* Page admin : gestion des articles (recherche, filtres, vue liste/grille). *@
 @using DotnetNiger.UI.Components.Admin.Cards
 @inject NavigationManager NavigationManager
+@inject IPostService PostService
 
-<div class="min-h-screen p-6">
-    <!-- Header Section -->
+<div class="min-h-screen p-6 bg-[#F4F2F2]">
     <div class="mb-8">
         <div class="mb-6 flex items-center justify-between">
-            <h1 class="text-4xl font-bold text-gray-900">Blog</h1>
-            <button
-                @onclick='() => NavigationManager.NavigateTo("/admin/blog/create")'
-                class="bg-red-500 hover:bg-red-600 text-white min-h-12 px-4 py-2 rounded-lg Button flex items-center gap-2 transition">
-                <i class="fas fa-plus text-2xl"></i>
+            <h1 class="H3 text-text">Blog</h1>
+            <button @onclick='() => NavigationManager.NavigateTo("/admin/blog/create")'
+                    class="bg-red-500 hover:bg-red-600 text-white min-h-12 px-4 py-2 rounded-lg Button flex items-center gap-2 transition">
+                <i class="fas fa-plus text-xl"></i>
                 <span class="Button">Nouveau</span>
             </button>
         </div>
 
-        <!-- Search and Filters -->
         <div class="mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center">
-            <!-- Search Bar -->
-            <div class="flex-1">
+            <div class="flex-1 bg-white">
                 <div class="relative">
-                    <i class="fas fa-search -translate-y-1/2 absolute left-4 top-1/2 transform text-gray-400"></i>
-                    <input type="text" placeholder="Rechercher un événement..."    
-                           class="w-1/2 min-w-[455px] rounded-lg border border-gray-300 py-3 pl-12 pr-4 focus:outline-none"/>
+                    <i class="fas fa-search -translate-y-1/2 absolute left-4 top-8 transform text-gray-400"></i>
+                    <input type="text" placeholder="Rechercher un article..."
+                           @bind="searchQuery" @bind:event="oninput"
+                           class="w-full rounded-lg border border-gray-300 py-3 pl-12 pr-4 focus:outline-none" />
                 </div>
             </div>
 
-            <!-- Filter Dropdowns -->
-            <select 
+            <select @bind="selectedType"
                     class="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-3 hover:border-gray-400 focus:outline-none">
-                <option value="">Type de Post </option>
-                    <option value="Tutorial">Tutorial</option>
-                    <option value="Article">Article</option>
-                    <option value="Interview">Interview</option>
-                </select>
+                <option value="">Type de Post</option>
+                <option value="Tutorial">Tutorial</option>
+                <option value="Article">Article</option>
+                <option value="Interview">Interview</option>
+            </select>
 
-                <select 
-                        class="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-3 hover:border-gray-400 focus:outline-none">
-                    <option value="">Statut</option>
-                    <option value="published">Publié</option>
-                    <option value="draft">Brouillon</option>
-                    <option value="archived">Archivé</option>
-                </select>
-            </div>
-
-            <!-- View Toggle -->
-            <div class="mb-6 flex gap-3">
-                <button @onclick='() => viewMode = "list"'
-                        class='@(viewMode == "list" ? "bg-gray-900 text-white" : "bg-white text-gray-900 border border-gray-300") px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition hover:shadow-md'>
-                    <i class="fas fa-list text-2xl"></i>
-                </button>
-                <button @onclick='() => viewMode = "grid"'
-                        class='@(viewMode == "grid" ? "bg-gray-900 text-white" : "bg-white text-gray-900 border border-gray-300") px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition hover:shadow-md'>
-                    <i class="fas fa-th text-2xl"></i>
-                </button>
-            </div>
+            <select @bind="selectedStatus"
+                    class="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-3 hover:border-gray-400 focus:outline-none">
+                <option value="">Statut</option>
+                <option value="published">Publi&#233;</option>
+                <option value="draft">Brouillon</option>
+            </select>
         </div>
 
-        
-        <!-- Table View -->
-        @if (viewMode == "list")
-        {
-            <BlogTable/>    
-        }else{
-        <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
-            @for (int i = 0; i < 6; i++)
-            {
-                <BlogCard/>
-            }
-            </div>
-            }
+        <div class="mb-6 flex gap-3">
+            <button @onclick='() => viewMode = "list"'
+                    class='@(viewMode == "list" ? "bg-gray-900 text-white" : "bg-white text-gray-900 border border-gray-300") px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition hover:shadow-md'>
+                <i class="fas fa-list text-2xl"></i>
+            </button>
+            <button @onclick='() => viewMode = "grid"'
+                    class='@(viewMode == "grid" ? "bg-gray-900 text-white" : "bg-white text-gray-900 border border-gray-300") px-4 py-2 rounded-lg font-semibold flex items-center gap-2 transition hover:shadow-md'>
+                <i class="fas fa-th text-2xl"></i>
+            </button>
+        </div>
     </div>
+    <div class="overflow-y-hidden">
+        @if (viewMode == "list")
+    {
+        <BlogTable Posts="@pagedPosts" OnDelete="HandleDeletePost" />
+    }
+    else
+    {
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 md:gap-6">
+            @foreach (var post in pagedPosts)
+            {
+                <BlogCard post="@post" OnPostDeleted="() => HandleDeletePost(post.Id)" />
+            }
+        </div>
+    }
+    </div>
+    
+    <div>
+        <Paginated @bind-CurrentPage="currentPage" TotalPages="@totalPages" />
+    </div>
+    
+</div>
 
 @code {
-    
     private string viewMode = "list";
+    private string searchQueryValue = string.Empty;
+    private string selectedTypeValue = string.Empty;
+    private string selectedStatusValue = string.Empty;
+    private int currentPage = 1;
+    private int pageSize = 7;
+    private List<PostDto> allPosts = new(); 
 
+    private string searchQuery
+    {
+        get => searchQueryValue;
+        set
+        {
+            if (searchQueryValue == value) return;
+            searchQueryValue = value;
+            currentPage = 1;
+        }
+    }
+
+    private string selectedType
+    {
+        get => selectedTypeValue;
+        set
+        {
+            if (selectedTypeValue == value) return;
+            selectedTypeValue = value;
+            currentPage = 1;
+        }
+    }
+
+    private string selectedStatus
+    {
+        get => selectedStatusValue;
+        set
+        {
+            if (selectedStatusValue == value) return;
+            selectedStatusValue = value;
+            currentPage = 1;
+        }
+    }
+
+    private List<PostDto> filteredPosts => allPosts
+        .Where(p => string.IsNullOrEmpty(searchQuery) ||
+                    p.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    p.AuthorName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .Where(p => string.IsNullOrEmpty(selectedType) || p.PostType == selectedType)
+        .Where(p => string.IsNullOrEmpty(selectedStatus) ||
+                    (selectedStatus == "published" && p.PublishedAt != DateTime.MinValue) ||
+                    (selectedStatus == "draft" && p.PublishedAt == DateTime.MinValue))
+        .ToList();
+
+    private int totalPages => Math.Max(1, (int)Math.Ceiling((double)filteredPosts.Count / pageSize));
+
+    private List<PostDto> pagedPosts => filteredPosts
+        .Skip((SafeCurrentPage - 1) * pageSize)
+        .Take(pageSize)
+        .ToList();
+
+    private int SafeCurrentPage => Math.Clamp(currentPage, 1, totalPages);
+
+    protected override async Task OnInitializedAsync()
+    {
+        allPosts = await PostService.GetAllPostsAsync();
+    }
+
+    private async Task HandleDeletePost(Guid id)
+    {
+        await PostService.DeletePostAsync(id);
+        allPosts = await PostService.GetAllPostsAsync();
+    }
 }

@@ -1,0 +1,72 @@
+@* Composant UI : pagination réutilisable avec fenêtre de pages visibles. *@
+<div class="flex h-16 items-center justify-end px-6">
+      <div class="flex h-[40px] w-auto items-center justify-center gap-2 sm:gap-3">
+            <button @onclick="GoToPreviousPage" disabled="@(SafeCurrentPage == 1)"
+                    class="flex h-[40px] w-[98px] items-center justify-center gap-2 rounded-xl border border-slate-700 text-black disabled:cursor-not-allowed disabled:opacity-50">
+                  <i class="fas fa-arrow-left text-xs"></i>
+                  <span class="Button text-black">Prec</span>
+            </button>
+            @foreach (var pageNumber in VisiblePages)
+            {
+                  <button @onclick="() => GoToPage(pageNumber)"
+                          class="@(SafeCurrentPage == pageNumber
+                              ? "flex h-[40px] min-w-[40px] px-3 items-center justify-center rounded-xl border border-slate-600 bg-black text-white"
+                              : "flex h-[40px] min-w-[40px] px-3 items-center justify-center rounded-xl border border-slate-700 text-black hover:bg-slate-900")">
+                        <span class="Button">@pageNumber</span>
+                  </button>
+            }
+            <button @onclick="GoToNextPage" disabled="@(SafeCurrentPage == SafeTotalPages)"
+                    class="flex h-[40px] w-[98px] items-center justify-center gap-2 rounded-xl border border-slate-700 text-black disabled:cursor-not-allowed disabled:opacity-50">
+                  <span class="Button text-black">Suiv</span>
+                  <i class="fas fa-arrow-right text-xs"></i>
+            </button>
+      </div>
+</div>
+
+@code {
+      [Parameter] public int CurrentPage { get; set; } = 1;
+      [Parameter] public EventCallback<int> CurrentPageChanged { get; set; }
+      [Parameter] public int TotalPages { get; set; } = 1;
+      [Parameter] public int MaxVisiblePages { get; set; } = 5;
+
+      private int SafeTotalPages => Math.Max(1, TotalPages);
+      private int SafeCurrentPage => Math.Clamp(CurrentPage, 1, SafeTotalPages);
+
+      private IEnumerable<int> VisiblePages
+      {
+            get
+            {
+                  var visibleCount = Math.Max(1, MaxVisiblePages);
+                  var halfWindow = visibleCount / 2;
+                  var start = Math.Max(1, SafeCurrentPage - halfWindow);
+                  var end = Math.Min(SafeTotalPages, start + visibleCount - 1);
+
+                  if (end - start + 1 < visibleCount)
+                  {
+                        start = Math.Max(1, end - visibleCount + 1);
+                  }
+
+                  return Enumerable.Range(start, end - start + 1);
+            }
+      }
+
+      protected override async Task OnParametersSetAsync()
+      {
+            if (CurrentPage != SafeCurrentPage)
+            {
+                  await CurrentPageChanged.InvokeAsync(SafeCurrentPage);
+            }
+      }
+
+      private Task GoToPreviousPage() => GoToPage(SafeCurrentPage - 1);
+
+      private Task GoToNextPage() => GoToPage(SafeCurrentPage + 1);
+
+      private Task GoToPage(int page)
+      {
+            var nextPage = Math.Clamp(page, 1, SafeTotalPages);
+            return nextPage == CurrentPage
+                  ? Task.CompletedTask
+                  : CurrentPageChanged.InvokeAsync(nextPage);
+      }
+}

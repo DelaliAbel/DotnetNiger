@@ -1,8 +1,12 @@
-﻿
-<aside class="sticky hidden h-screen w-64 flex-shrink-0 flex-col bg-secondary text-white md:flex">
+﻿@* Composant admin : barre latérale de navigation (responsive + mode réduit). *@
+
+<aside class="@(!IsCollapsed ? "w-64":"w-20") @SidebarClass">
       <div class="flex h-16 items-center justify-center bg-active text-2xl font-bold">
         <div class="flex items-center justify-center">
-          <i class="fa-solid fa-code mr-2 text-indigo-400"></i> <span>Dotnet Niger</span>
+          <i class="fa-solid fa-code mr-2 text-indigo-400"></i>
+          @if(!IsCollapsed){
+                        <span class="Link">Dotnet Niger</span>
+                  }
         </div>
             
       </div>
@@ -10,34 +14,75 @@
       <nav class="mt-4 flex-1 space-y-2 px-4">
             <NavLink href="/admin/dashboard" class="flex items-center rounded-lg p-3 transition hover:bg-hover"
                      ActiveClass="bg-active">
-                  <i class="fas fa-gauge w-8 text-2xl"></i> Dashboard
+                  <i class="fas fa-gauge w-8 text-2xl"></i> 
+                  @if(!IsCollapsed){
+                        <span class="Link">Dashboard</span>
+                  }
             </NavLink>
 
             <NavLink href="/admin/users" class="flex items-center rounded-lg p-3 transition hover:bg-hover"
                      ActiveClass="bg-active">
                      <i class="fas fa-user w-8 text-2xl"></i>
-                   Utilisateurs
+                     @if(!IsCollapsed){
+                        <span class="Link">Utilisateurs</span>
+                  }
+                   
             </NavLink>
 
             <NavLink href="/admin/blog" class="flex items-center rounded-lg p-3 transition hover:bg-hover"
                      ActiveClass="bg-active">
-                  <i class="fas fa-newspaper w-8 text-2xl"></i> Blog
+                  <i class="fas fa-newspaper w-8 text-2xl"></i> 
+                  @if(!IsCollapsed){
+                        <span class="Link">Blog</span>
+                  }
             </NavLink>
 
             <NavLink href="/admin/events" class="flex items-center rounded-lg p-3 transition hover:bg-hover"
                      ActiveClass="bg-active">
-                  <i class="fas fa-calendar w-8 text-2xl"></i> Événements
+                  <i class="fas fa-calendar w-8 text-2xl"></i> 
+                  @if(!IsCollapsed){
+                        <span class="Link">Événements</span>
+                  }
             </NavLink>
 
             <NavLink href="/admin/ressources" class="flex items-center rounded-lg p-3 transition hover:bg-hover"
                      ActiveClass="bg-active">
-                  <i class="fas fa-folder w-8 text-2xl"></i> Ressources
+                  <i class="fas fa-folder w-8 text-2xl"></i>
+                  @if(!IsCollapsed){
+                        <span class="Link">Ressources</span>
+                  } 
             </NavLink>
       </nav>
 
-      <div class="border-t border-slate-700 p-4">
+      <div class="border-t border-slate-700 p-4 flex flex-col">
+            <div>
+                  @if(!IsCollapsed){
+                        <button @onclick="ToggleCollapsed">
+                              <i class="fas fa-angles-left text-2xl"></i>
+                        </button>
+                  }else{
+                        <button @onclick="ToggleCollapsed">
+                              <i class="fas fa-angles-right text-2xl"></i>
+                        </button>
+                  }
+            </div>
             <NavLink href="/" class="flex items-center text-gray-400 transition hover:text-white">
-                  <i class="fas fa-arrow-right-from-bracket mr-2"></i> Retour au site
+                  <i class="fas fa-arrow-left mr-2"></i>
+                  @if(!IsCollapsed){
+                        <span>Retour au site</span>
+                  }  
             </NavLink>
       </div>
 </aside>
+
+@code{
+      [Parameter]
+      public bool IsCollapsed {set;get;}
+      [Parameter]
+      public EventCallback ToggleCollapsed {set;get;}
+      [Parameter]
+      public bool IsOpen {set;get;}
+
+      string SidebarClass => IsOpen ? "sticky z-40 h-full bg-secondary text-white shadow-lg transition-all transform translate-x-0 transition duration-300 lg:relative" :
+      "sticky z-40 h-full bg-secondary text-white shadow-lg transition-all transform translate-x-[-100%] transition duration-300 lg:translate-x-0 lg:relative";
+}
