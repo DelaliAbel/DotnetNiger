@@ -34,7 +34,7 @@ public class SearchService : ISearchService
             return Enumerable.Empty<SearchResultDto>();
 
         var normalizedQuery = query.Trim().ToLowerInvariant();
-        
+
         // SQL-optimized: Predicate pushed to DB, not GetAllAsync()
         var results = await _postRepository.SearchAsync(
             p => p.IsPublished && (
@@ -49,6 +49,8 @@ public class SearchService : ISearchService
             Type = "Post",
             Id = p.Id,
             Title = p.Title,
+            Content = p.Content,
+            Description = p.Excerpt,
             Slug = p.Slug,
             Excerpt = p.Excerpt,
             CoverImageUrl = p.CoverImageUrl,
@@ -62,7 +64,7 @@ public class SearchService : ISearchService
             return Enumerable.Empty<SearchResultDto>();
 
         var normalizedQuery = query.Trim().ToLowerInvariant();
-        
+
         // SQL-optimized: Predicate pushed to DB
         var results = await _eventRepository.SearchAsync(
             e => e.IsPublished && (
@@ -76,6 +78,8 @@ public class SearchService : ISearchService
             Type = "Event",
             Id = e.Id,
             Title = e.Title,
+            Description = e.Description,
+            StartDateTime = e.StartDate,
             Slug = e.Slug,
             Excerpt = e.Description.Length > 200 ? e.Description.Substring(0, 200) : e.Description,
             CoverImageUrl = e.CoverImageUrl,
@@ -89,7 +93,7 @@ public class SearchService : ISearchService
             return Enumerable.Empty<SearchResultDto>();
 
         var normalizedQuery = query.Trim().ToLowerInvariant();
-        
+
         // SQL-optimized: Predicate pushed to DB
         var results = await _resourceRepository.SearchAsync(
             r => r.IsApproved && (
@@ -103,6 +107,7 @@ public class SearchService : ISearchService
             Type = "Resource",
             Id = r.Id,
             Title = r.Title,
+            Description = r.Description,
             Slug = r.Slug,
             Excerpt = r.Description.Length > 200 ? r.Description.Substring(0, 200) : r.Description,
             CoverImageUrl = r.Url,
@@ -116,7 +121,7 @@ public class SearchService : ISearchService
             return Enumerable.Empty<SearchResultDto>();
 
         var normalizedQuery = query.Trim().ToLowerInvariant();
-        
+
         // SQL-optimized: Predicate pushed to DB
         var results = await _projectRepository.SearchAsync(
             p => p.Name.ToLower().Contains(normalizedQuery) ||
@@ -129,6 +134,8 @@ public class SearchService : ISearchService
             Type = "Project",
             Id = p.Id,
             Title = p.Name,
+            Name = p.Name,
+            Description = p.Description,
             Slug = p.Slug,
             Excerpt = p.Description.Length > 200 ? p.Description.Substring(0, 200) : p.Description,
             CoverImageUrl = p.GitHubUrl,

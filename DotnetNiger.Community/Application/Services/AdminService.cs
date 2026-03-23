@@ -1,6 +1,8 @@
 using DotnetNiger.Community.Domain.Entities;
 using DotnetNiger.Community.Infrastructure.Repositories;
 using DotnetNiger.Community.Application.Services.Interfaces;
+using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.DTOs.Responses;
 
 
 namespace DotnetNiger.Community.Application.Services;
