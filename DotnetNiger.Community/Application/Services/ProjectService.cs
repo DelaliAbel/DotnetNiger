@@ -17,8 +17,9 @@ public class ProjectService : IProjectService
 
     public async Task<IEnumerable<Project>> GetAllProjectsAsync(int page = 1, int pageSize = 10)
     {
-        var allProjects = await _projectRepository.GetAllAsync();
-        return allProjects.Skip((page - 1) * pageSize).Take(pageSize);
+        // Server-side pagination: Uses database Skip/Take via GetPagedAsync
+        // This prevents loading entire table into memory
+        return await _projectRepository.GetPagedAsync(page, pageSize);
     }
 
     public async Task<Project?> GetProjectByIdAsync(Guid id)
@@ -28,7 +29,7 @@ public class ProjectService : IProjectService
 
     public async Task<IEnumerable<Project>> GetActiveProjectsAsync()
     {
-        return await _projectRepository.GetActivaProjectsAsync();
+        return await _projectRepository.GetActiveProjectsAsync();
     }
 
     public async Task<Project> CreateProjectAsync(Project project)

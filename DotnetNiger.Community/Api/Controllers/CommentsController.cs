@@ -32,15 +32,17 @@ public class CommentsController : ApiControllerBase
     /// <summary>
     /// Récupérer tous les commentaires
     /// </summary>
-    /// <returns>Liste des commentaires</returns>
+    /// <param name="page">Numéro de page (par défaut 1)</param>
+    /// <param name="pageSize">Nombre de commentaires par page (par défaut 20)</param>
+    /// <returns>Liste paginée des commentaires</returns>
     [HttpGet]
-    public async Task<IActionResult> GetComments([FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetComments([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        if (pageSize < 1 || pageSize > 100)
+        if (page < 1 || pageSize < 1 || pageSize > 100)
             return BadRequestProblem("Parametres de pagination invalides");
 
-        var allComments = await _commentService.GetAllCommentsAsync();
-        return Success(allComments.Take(pageSize));
+        var comments = await _commentService.GetAllCommentsAsync(page, pageSize);
+        return Success(comments, meta: new { page, pageSize });
     }
 
     /// <summary>

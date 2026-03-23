@@ -32,6 +32,9 @@ public class PostService : IPostService
 
     public async Task<Post> CreatePostAsync(Post post)
     {
+        if (post == null)
+            throw new ArgumentNullException(nameof(post), "Post cannot be null");
+
         post.Id = Guid.NewGuid();
         post.CreatedAt = DateTime.UtcNow;
         post.Slug = _slugGenerator.Generate(post.Title);
@@ -40,6 +43,12 @@ public class PostService : IPostService
 
     public async Task<Post> UpdatePostAsync(Post post)
     {
+        if (post == null)
+            throw new ArgumentNullException(nameof(post), "Post cannot be null");
+
+        if (post.Id == Guid.Empty)
+            throw new ArgumentException("Post ID cannot be empty", nameof(post));
+
         post.UpdatedAt = DateTime.UtcNow;
         post.Slug = _slugGenerator.Generate(post.Title);
         return await _postRepository.UpdateAsync(post);

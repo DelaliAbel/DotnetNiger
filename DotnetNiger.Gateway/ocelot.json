@@ -58,16 +58,16 @@
       },
       "QoSOptions": {
         "ExceptionsAllowedBeforeBreaking": 3,
-        "DurationOfBreak": 5000,
-        "TimeoutValue": 10000
+        "DurationOfBreak": 10000,
+        "TimeoutValue": 30000
       },
       "Key": "IdentityAuthRoute",
       "SwaggerKey": "identity"
     },
     {
-      "UpstreamPathTemplate": "/api/users/{everything}",
+      "UpstreamPathTemplate": "/api/me/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
-      "DownstreamPathTemplate": "/api/v1/users/{everything}",
+      "DownstreamPathTemplate": "/api/v1/me/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [
         {
@@ -80,8 +80,8 @@
       },
       "QoSOptions": {
         "ExceptionsAllowedBeforeBreaking": 3,
-        "DurationOfBreak": 5000,
-        "TimeoutValue": 5000
+        "DurationOfBreak": 10000,
+        "TimeoutValue": 30000
       },
       "RateLimitOptions": {
         "ClientWhitelist": [],
@@ -90,7 +90,7 @@
         "PeriodTimespan": 60,
         "Limit": 100
       },
-      "Key": "IdentityUsersRoute",
+      "Key": "IdentityMeRoute",
       "SwaggerKey": "identity"
     },
     {

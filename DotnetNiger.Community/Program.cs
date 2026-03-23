@@ -49,7 +49,6 @@ builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
 builder.Services.AddScoped<IResourceRepository, ResourceRepository>();
 builder.Services.AddScoped<ITagRepository, TagRepository>();
 builder.Services.AddScoped<IPartnerRepository, PartnerRepository>();
-// builder.Services.AddScoped<IMemberRepository, MemberRepository>();
 
 // Enregistrer les services
 builder.Services.AddScoped<IPostService, PostService>();
@@ -60,11 +59,13 @@ builder.Services.AddScoped<IResourceService, ResourceService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<ITagService, TagService>();
 builder.Services.AddScoped<IPartnerService, PartnerService>();
-// builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
-builder.Services.AddSingleton<ISlugGenerator, SlugGenerator>();
+builder.Services.AddScoped<ISearchService, SearchService>();
+builder.Services.AddScoped<IStatisticsService, StatisticsService>();
+builder.Services.AddScoped<ISlugGenerator, SlugGenerator>();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<ICommunityRequestMapper, CommunityRequestMapper>();
+// builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddHttpClient<IIdentityApiClient, IdentityApiClient>((sp, client) =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
@@ -74,15 +75,33 @@ builder.Services.AddHttpClient<IIdentityApiClient, IdentityApiClient>((sp, clien
 });
 
 
-//-----AjouterPourLaCommunicationExterne--------
+//-----CORS Configuration: Environment-based policies--------
+var env = builder.Environment;
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("CorsePolicy",
-        builder => builder.AllowAnyOrigin()
-        .AllowAnyMethod()
-        .AllowAnyHeader());
-}
-);
+    if (env.IsProduction())
+    {
+        // Production: Restrict CORS to specific trusted origins
+        var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
+            ?? new[] { "https://yourdomain.com", "https://app.yourdomain.com" };
+
+        options.AddPolicy("Production",
+            policy => policy
+                .WithOrigins(allowedOrigins)
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials());
+    }
+    else
+    {
+        // Development: Allow any origin for easier testing
+        options.AddPolicy("Development",
+            policy => policy
+                .AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader());
+    }
+});
 //-----------------------------------------------
 
 // Configure Swagger/OpenAPI
@@ -121,6 +140,16 @@ if (app.Environment.IsDevelopment())
 
 
 app.UseHttpsRedirection();
+
+// Apply environment-specific CORS policy
+if (app.Environment.IsProduction())
+{
+    app.UseCors("Production");
+}
+else
+{
+    app.UseCors("Development");
+}
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
 

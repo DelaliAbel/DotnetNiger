@@ -7,6 +7,26 @@ namespace DotnetNiger.Identity.Api.Controllers;
 
 public abstract class ApiControllerBase : ControllerBase
 {
+    protected static (int Skip, int Take) NormalizePaging(int skip, int take, int defaultTake = 20, int maxTake = 100)
+    {
+        if (skip < 0)
+        {
+            skip = 0;
+        }
+
+        if (take <= 0)
+        {
+            take = defaultTake;
+        }
+
+        if (take > maxTake)
+        {
+            take = maxTake;
+        }
+
+        return (skip, take);
+    }
+
     protected IActionResult Success<T>(T data, string? message = null, object? meta = null)
     {
         return Ok(new ApiSuccessResponse<T>

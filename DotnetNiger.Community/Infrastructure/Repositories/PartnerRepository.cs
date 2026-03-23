@@ -4,11 +4,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Infrastructure.Repositories;
 
-public interface IPartnerRepository : IRepository<Partner>
-{
-    Task<Partner?> GetBySlugAsync(string slug);
-}
-
 public class PartnerRepository : BaseRepository<Partner>, IPartnerRepository
 {
     public PartnerRepository(CommunityDbContext context) : base(context)

@@ -132,7 +132,7 @@ local.settings.json
 !.gitkeep
 
 # Folder
-Dotnet.Identity.Client.Tests/
+DotnetNiger/
 
 # Health report (contient des infos sensibles sur l'architecture)
 docs/HEALTH_REPORT.md

@@ -9,6 +9,8 @@ public interface IAdminService
 {
     Task<FileUploadSettingsDto> GetFileUploadSettingsAsync();
     Task<FileUploadSettingsDto> UpdateFileUploadSettingsAsync(UpdateFileUploadSettingsRequest request);
+    Task<FeatureSettingsDto> GetFeatureSettingsAsync();
+    Task<FeatureSettingsDto> UpdateFeatureSettingsAsync(UpdateFeatureSettingsRequest request);
     Task<PaginatedDto<UserSummaryDto>> GetUsersAsync(
         string? search,
         bool? isActive,

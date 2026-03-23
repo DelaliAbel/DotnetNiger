@@ -24,8 +24,12 @@ public static class ServiceExtensions
 		services.AddScoped<IApiKeyService, ApiKeyService>();
 		services.AddScoped<ILoginHistoryService, LoginHistoryService>();
 		services.AddScoped<IPasswordService, PasswordService>();
+		services.AddSingleton<IFeatureToggleService, FeatureToggleService>();
+		services.AddSingleton<IClientRateLimiter, ClientRateLimiter>();
+		services.AddScoped<IEmailVerificationCodeService, EmailVerificationCodeService>();
 		services.AddScoped<ICacheService, RedisCacheService>();
 		services.AddScoped<IAvatarMetadataService, AvatarMetadataService>();
+		services.AddScoped<IGeoLocationProvider, DevelopmentGeoLocationProvider>();
 		services.AddScoped<FileSystemUploadService>();
 		services.AddScoped<AzureBlobService>();
 		services.AddScoped<IFileUploadService>(serviceProvider =>

@@ -32,7 +32,7 @@ public class UsersControllerTests
 
 		var result = await controller.UploadAvatar(file);
 
-		var objectResult = result.Result as ObjectResult;
+		var objectResult = result as ObjectResult;
 		objectResult.Should().NotBeNull();
 		objectResult!.StatusCode.Should().Be(400);
 	}
@@ -52,7 +52,7 @@ public class UsersControllerTests
 
 		var result = await controller.UploadAvatar(file);
 
-		var objectResult = result.Result as ObjectResult;
+		var objectResult = result as ObjectResult;
 		objectResult.Should().NotBeNull();
 		objectResult!.StatusCode.Should().Be(400);
 	}
@@ -92,7 +92,7 @@ public class UsersControllerTests
 
 		var result = await controller.UploadAvatar(file);
 
-		var okResult = result.Result as OkObjectResult;
+		var okResult = result as OkObjectResult;
 		okResult.Should().NotBeNull();
 		okResult!.Value.Should().BeEquivalentTo(expectedUser);
 		userService.Verify(service => service.UpdateAvatarAsync(userId, expectedUrl, It.IsAny<CancellationToken>()), Times.Once);
@@ -114,7 +114,7 @@ public class UsersControllerTests
 
 		var result = await controller.UploadAvatar(file);
 
-		var objectResult = result.Result as ObjectResult;
+		var objectResult = result as ObjectResult;
 		objectResult.Should().NotBeNull();
 		objectResult!.StatusCode.Should().Be(400);
 	}
@@ -211,6 +211,9 @@ public class UsersControllerTests
 		var avatarMetadataService = new Mock<IAvatarMetadataService>().Object;
 		var loginHistoryService = new Mock<ILoginHistoryService>().Object;
 		var socialLinkService = new Mock<ISocialLinkService>().Object;
+		var featureToggleService = new Mock<IFeatureToggleService>();
+		featureToggleService.Setup(service => service.IsAvatarUploadEnabled()).Returns(true);
+		featureToggleService.Setup(service => service.IsProfileDataExportEnabled()).Returns(true);
 		var dbContextOptions = new DbContextOptionsBuilder<DotnetNigerIdentityDbContext>()
 			.UseSqlite("Data Source=:memory:")
 			.Options;
@@ -224,6 +227,7 @@ public class UsersControllerTests
 			avatarMetadataService,
 			loginHistoryService,
 			socialLinkService,
+			featureToggleService.Object,
 			dbContext,
 			logger);
 

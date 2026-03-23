@@ -27,6 +27,8 @@ public class AuthService : IAuthService
 	private readonly IEmailService _emailService;
 	private readonly ILoginHistoryService _loginHistoryService;
 	private readonly IHttpContextAccessor _httpContextAccessor;
+	private readonly IConfiguration _configuration;
+	private readonly IEmailVerificationCodeService _emailVerificationCodeService;
 	public AuthService(
 		UserManager<ApplicationUser> userManager,
 		DotnetNigerIdentityDbContext dbContext,
@@ -36,7 +38,9 @@ public class AuthService : IAuthService
 		IOptions<JwtOptions> jwtOptions,
 		IEmailService emailService,
 		ILoginHistoryService loginHistoryService,
-		IHttpContextAccessor httpContextAccessor)
+		IHttpContextAccessor httpContextAccessor,
+		IConfiguration configuration,
+		IEmailVerificationCodeService emailVerificationCodeService)
 	{
 		_userManager = userManager;
 		_dbContext = dbContext;
@@ -47,6 +51,8 @@ public class AuthService : IAuthService
 		_emailService = emailService;
 		_loginHistoryService = loginHistoryService;
 		_httpContextAccessor = httpContextAccessor;
+		_configuration = configuration;
+		_emailVerificationCodeService = emailVerificationCodeService;
 	}
 
 	public async Task<AuthDto> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
@@ -81,20 +87,22 @@ public class AuthService : IAuthService
 			throw new IdentityException(message, 400);
 		}
 
-        await _userManager.AddToRoleAsync(user, "Member");
+		// Use configuration-based role assignment instead of hard-coded "Member"
+		var defaultRole = _configuration["Auth:DefaultRole"] ?? "Member";
+		await _userManager.AddToRoleAsync(user, defaultRole);
 
 		var confirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-
-		var verifyUrl = $"/api/auth/verify-email?email={Uri.EscapeDataString(user.Email ?? string.Empty)}&token={Uri.EscapeDataString(confirmationToken)}";
-		await _emailService.SendAsync(user.Email ?? string.Empty, "Verify email", $"Please verify your email by clicking: {verifyUrl}");
+		var verificationCode = await _emailVerificationCodeService.CreateCodeAsync(user.Email ?? string.Empty, confirmationToken, ct);
+		await _emailService.SendAsync(
+			user.Email ?? string.Empty,
+			"Verify email",
+			$"Your verification code is: {verificationCode}. It expires in 10 minutes.");
 
 		var tokenDto = await CreateTokenAsync(user);
 		var userDto = await UserMapper.ToUserDtoAsync(user, _userManager, _dbContext);
 
 		return new AuthDto
 		{
-			Success = true,
-			Message = "Registration successful. Please verify your email.",
 			User = userDto,
 			Token = tokenDto
 		};
@@ -137,8 +145,6 @@ public class AuthService : IAuthService
 
 		return new AuthDto
 		{
-			Success = true,
-			Message = "Login successful.",
 			User = userDto,
 			Token = tokenDto
 		};
@@ -163,11 +169,14 @@ public class AuthService : IAuthService
 			return null;
 		}
 
-		var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-		var verifyUrl = $"/api/auth/verify-email?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(token)}";
-		await _emailService.SendAsync(email, "Verify email", $"Please verify your email by clicking: {verifyUrl}");
+		var identityToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+		var verificationCode = await _emailVerificationCodeService.CreateCodeAsync(email, identityToken, ct);
+		await _emailService.SendAsync(
+			email,
+			"Verify email",
+			$"Your verification code is: {verificationCode}. It expires in 10 minutes.");
 
-		return token;
+		return verificationCode;
 	}
 
 	public async Task<string?> RequestPasswordResetAsync(ForgotPasswordRequest request, CancellationToken ct = default)
@@ -226,7 +235,13 @@ public class AuthService : IAuthService
 			throw new IdentityException("Invalid verification request.", 400);
 		}
 
-		var result = await _userManager.ConfirmEmailAsync(user, request.Token);
+		var identityToken = await _emailVerificationCodeService.ConsumeIdentityTokenAsync(email, request.Token, ct);
+		if (string.IsNullOrWhiteSpace(identityToken))
+		{
+			throw new IdentityException("Invalid or expired verification code.", 400);
+		}
+
+		var result = await _userManager.ConfirmEmailAsync(user, identityToken);
 		if (!result.Succeeded)
 		{
 			var message = string.Join(" ", result.Errors.Select(error => error.Description));

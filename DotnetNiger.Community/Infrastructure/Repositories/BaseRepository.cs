@@ -23,6 +23,68 @@ public class BaseRepository<TEntity> : IRepository<TEntity> where TEntity : clas
         return await _dbSet.ToListAsync();
     }
 
+    public async Task<IEnumerable<TEntity>> GetPagedAsync(int page = 1, int pageSize = 10)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Min(pageSize, 100); // Cap pageSize at 100 for safety
+        return await _dbSet
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+
+    /// <summary>
+    /// Get paginated results with predicate and ordering (SQL-optimized)
+    /// Returns Items AND Total count for client-side pagination
+    /// </summary>
+    public async Task<(IEnumerable<TEntity> Items, int Total)> GetPagedWithCountAsync(
+        Expression<Func<TEntity, bool>>? predicate = null,
+        int page = 1,
+        int pageSize = 10,
+        Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>>? orderBy = null)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Min(Math.Max(1, pageSize), 100);
+
+        IQueryable<TEntity> query = _dbSet;
+
+        if (predicate != null)
+            query = query.Where(predicate);
+
+        // Get total count BEFORE ordering (more efficient)
+        var total = await query.CountAsync();
+
+        if (orderBy != null)
+            query = orderBy(query);
+        else
+            query = query.OrderByDescending(e => EF.Property<object>(e, "CreatedAt"));
+
+        var items = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return (items, total);
+    }
+
+    /// <summary>
+    /// Search with LIKE on predicate (SQL-optimized with pagination)
+    /// </summary>
+    public async Task<IEnumerable<TEntity>> SearchAsync(
+        Expression<Func<TEntity, bool>> predicate,
+        int page = 1,
+        int pageSize = 20)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Min(Math.Max(1, pageSize), 100);
+
+        return await _dbSet
+            .Where(predicate)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+    }
+
     public async Task<TEntity?> GetByIdAsync(Guid id)
     {
         return await _dbSet.FindAsync(id);

@@ -29,6 +29,7 @@ public class UsersController : ApiControllerBase
 	private readonly IAvatarMetadataService _avatarMetadataService;
 	private readonly ILoginHistoryService _loginHistoryService;
 	private readonly ISocialLinkService _socialLinkService;
+	private readonly IFeatureToggleService _featureToggleService;
 	private readonly DotnetNigerIdentityDbContext _dbContext;
 	private readonly ILogger<UsersController> _logger;
 
@@ -39,6 +40,7 @@ public class UsersController : ApiControllerBase
 		IAvatarMetadataService avatarMetadataService,
 		ILoginHistoryService loginHistoryService,
 		ISocialLinkService socialLinkService,
+		IFeatureToggleService featureToggleService,
 		DotnetNigerIdentityDbContext dbContext,
 		ILogger<UsersController> logger)
 	{
@@ -48,6 +50,7 @@ public class UsersController : ApiControllerBase
 		_avatarMetadataService = avatarMetadataService;
 		_loginHistoryService = loginHistoryService;
 		_socialLinkService = socialLinkService;
+		_featureToggleService = featureToggleService;
 		_dbContext = dbContext;
 		_logger = logger;
 	}
@@ -155,6 +158,11 @@ public class UsersController : ApiControllerBase
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	public async Task<IActionResult> UploadAvatar([FromForm] IFormFile avatar)
 	{
+		if (!_featureToggleService.IsAvatarUploadEnabled())
+		{
+			return StatusCode(503, new ProblemDetails { Title = "Feature disabled", Detail = "Avatar upload is currently disabled.", Status = 503 });
+		}
+
 		var userId = RequireUserId();
 		try
 		{
@@ -187,6 +195,11 @@ public class UsersController : ApiControllerBase
 	[ProducesResponseType(StatusCodes.Status401Unauthorized)]
 	public async Task<IActionResult> DeleteAvatar()
 	{
+		if (!_featureToggleService.IsAvatarUploadEnabled())
+		{
+			return StatusCode(503, new ProblemDetails { Title = "Feature disabled", Detail = "Avatar management is currently disabled.", Status = 503 });
+		}
+
 		var userId = RequireUserId();
 		var currentProfile = await _userService.GetProfileAsync(userId);
 		if (currentProfile == null)
@@ -225,6 +238,11 @@ public class UsersController : ApiControllerBase
 	[HttpPost("export-data/request")]
 	public async Task<IActionResult> RequestExport()
 	{
+		if (!_featureToggleService.IsProfileDataExportEnabled())
+		{
+			return StatusCode(503, new ProblemDetails { Title = "Feature disabled", Detail = "Profile data export is currently disabled.", Status = 503 });
+		}
+
 		var userId = RequireUserId();
 		var requestId = Guid.NewGuid();
 

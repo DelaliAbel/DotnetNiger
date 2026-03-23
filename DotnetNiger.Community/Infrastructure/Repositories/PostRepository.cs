@@ -4,14 +4,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Infrastructure.Repositories;
 
-public interface IPostRepository : IRepository<Post>
-{
-    Task<IEnumerable<Post>> GetPublishedPostsAsync(int page = 1, int pageSize = 10);
-    Task<Post?> GetBySlugAsync(string slug);
-    Task<IEnumerable<Post>> GetByCategoryAsync(Guid categoryId);
-    Task<IEnumerable<Post>> GetByTagAsync(Guid tagId);
-}
-
 public class PostRepository : BaseRepository<Post>, IPostRepository
 {
     public PostRepository(CommunityDbContext context) : base(context)
@@ -37,19 +29,27 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
             .FirstOrDefaultAsync(p => p.Slug == slug);
     }
 
-    public async Task<IEnumerable<Post>> GetByCategoryAsync(Guid categoryId)
+    public async Task<IEnumerable<Post>> GetByCategoryAsync(Guid categoryId, int page = 1, int pageSize = 10)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Min(pageSize, 100); // Cap at 100 for safety
         return await _dbSet
             .Where(p => p.IsPublished && p.PostCategories.Any(pc => pc.CategoryId == categoryId))
             .OrderByDescending(p => p.PublishedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<Post>> GetByTagAsync(Guid tagId)
+    public async Task<IEnumerable<Post>> GetByTagAsync(Guid tagId, int page = 1, int pageSize = 10)
     {
+        page = Math.Max(1, page);
+        pageSize = Math.Min(pageSize, 100); // Cap at 100 for safety
         return await _dbSet
             .Where(p => p.IsPublished && p.PostTags.Any(pt => pt.TagId == tagId))
             .OrderByDescending(p => p.PublishedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
     }
 }

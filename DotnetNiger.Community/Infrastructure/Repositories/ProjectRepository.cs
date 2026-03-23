@@ -4,12 +4,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Infrastructure.Repositories;
 
-public interface IProjectRepository : IRepository<Project>
-{
-    Task<Project?> GetBySlugAsync(string slug);
-    Task<IEnumerable<Project>> GetActivaProjectsAsync();
-}
-
 public class ProjectRepository : BaseRepository<Project>, IProjectRepository
 {
     public ProjectRepository(CommunityDbContext context) : base(context)
@@ -23,7 +17,7 @@ public class ProjectRepository : BaseRepository<Project>, IProjectRepository
             .FirstOrDefaultAsync(p => p.Slug == slug);
     }
 
-    public async Task<IEnumerable<Project>> GetActivaProjectsAsync()
+    public async Task<IEnumerable<Project>> GetActiveProjectsAsync()
     {
         return await _dbSet
             .OrderByDescending(p => p.CreatedAt)

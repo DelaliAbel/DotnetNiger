@@ -24,6 +24,7 @@ public class AdminService : IAdminService
     private readonly DotnetNigerIdentityDbContext _dbContext;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IOptionsMonitor<FileUploadOptions> _fileUploadOptions;
+    private readonly IFeatureToggleService _featureToggleService;
     private readonly IConfiguration _configuration;
 
     public AdminService(
@@ -31,12 +32,14 @@ public class AdminService : IAdminService
         DotnetNigerIdentityDbContext dbContext,
         IHttpContextAccessor httpContextAccessor,
         IOptionsMonitor<FileUploadOptions> fileUploadOptions,
+        IFeatureToggleService featureToggleService,
         IConfiguration configuration)
     {
         _userManager = userManager;
         _dbContext = dbContext;
         _httpContextAccessor = httpContextAccessor;
         _fileUploadOptions = fileUploadOptions;
+        _featureToggleService = featureToggleService;
         _configuration = configuration;
     }
 
@@ -498,6 +501,24 @@ public class AdminService : IAdminService
             CleanupOrphanDays = options.CleanupOrphanDays
         };
         return Task.FromResult(dto);
+    }
+
+    public Task<FeatureSettingsDto> GetFeatureSettingsAsync()
+    {
+        return Task.FromResult(_featureToggleService.GetCurrentSettings());
+    }
+
+    public async Task<FeatureSettingsDto> UpdateFeatureSettingsAsync(UpdateFeatureSettingsRequest request)
+    {
+        var settings = _featureToggleService.UpdateSettings(request);
+
+        await LogAdminActionAsync(
+            "UpdateFeatureSettings",
+            "Settings",
+            "Features",
+            $"Registration={settings.RegistrationEnabled}, Login={settings.LoginEnabled}, PasswordReset={settings.PasswordResetEnabled}, EmailVerification={settings.EmailVerificationEnabled}, AvatarUpload={settings.AvatarUploadEnabled}, ProfileDataExport={settings.ProfileDataExportEnabled}");
+
+        return settings;
     }
 
     public async Task<FileUploadSettingsDto> UpdateFileUploadSettingsAsync(UpdateFileUploadSettingsRequest request)

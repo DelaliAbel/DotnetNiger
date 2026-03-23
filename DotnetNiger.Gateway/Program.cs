@@ -64,7 +64,8 @@ if (!string.IsNullOrWhiteSpace(jwtKey) && jwtKey.Length >= 32 && !jwtKey.StartsW
             ValidateIssuerSigningKey = true,
             ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "DotnetNiger.Identity",
             ValidAudience = builder.Configuration["Jwt:Audience"] ?? "DotnetNiger.Identity.Client",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.FromMinutes(1)
         };
 
         options.Events = new JwtBearerEvents
@@ -78,7 +79,15 @@ if (!string.IsNullOrWhiteSpace(jwtKey) && jwtKey.Length >= 32 && !jwtKey.StartsW
             },
             OnAuthenticationFailed = context =>
             {
-                Log.Warning("JWT Authentication failed: {Error}", context.Exception.Message);
+                var path = context.HttpContext.Request.Path.Value ?? string.Empty;
+                var isPublicPath = path.StartsWith("/api/diagnostics", StringComparison.OrdinalIgnoreCase)
+                    || path.StartsWith("/health", StringComparison.OrdinalIgnoreCase)
+                    || path.StartsWith("/swagger", StringComparison.OrdinalIgnoreCase);
+
+                if (!isPublicPath)
+                {
+                    Log.Warning("JWT Authentication failed: {Error}", context.Exception.Message);
+                }
                 return Task.CompletedTask;
             }
         };
@@ -134,7 +143,10 @@ app.Use(async (context, next) =>
 // Middleware de fusion — DOIT être AVANT UseSwaggerForOcelotUI pour court-circuiter MMLib
 app.Use(async (context, next) =>
 {
-    if (!context.Request.Path.Equals("/swagger/docs/v1/all", StringComparison.OrdinalIgnoreCase))
+    var isMergedSwaggerPath = context.Request.Path.Equals("/swagger/docs/v1/all", StringComparison.OrdinalIgnoreCase)
+        || context.Request.Path.Equals("/swagger/v1/swagger.json", StringComparison.OrdinalIgnoreCase);
+
+    if (!isMergedSwaggerPath)
     {
         await next(context);
         return;
@@ -178,6 +190,21 @@ app.Use(async (context, next) =>
         iComponents["schemas"] = iSchemas;
         idoc["components"] = iComponents;
         merged = idoc.ToJsonString();
+    }
+
+    var gatewayServer = $"{context.Request.Scheme}://{context.Request.Host}";
+    var normalized = JsonNode.Parse(merged)?.AsObject();
+    if (normalized != null)
+    {
+        normalized["servers"] = new JsonArray
+        {
+            new JsonObject
+            {
+                ["url"] = gatewayServer
+            }
+        };
+
+        merged = normalized.ToJsonString();
     }
 
     context.Response.ContentType = "application/json";

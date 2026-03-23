@@ -10,6 +10,7 @@ public interface IRepository<TEntity> where TEntity : class
 {
     // Read
     Task<IEnumerable<TEntity>> GetAllAsync();
+    Task<IEnumerable<TEntity>> GetPagedAsync(int page = 1, int pageSize = 10);
     Task<TEntity?> GetByIdAsync(Guid id);
     Task<IEnumerable<TEntity>> FindAsync(Expression<Func<TEntity, bool>> predicate);
     Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate);
@@ -29,6 +30,12 @@ public interface IRepository<TEntity> where TEntity : class
     // Count
     Task<int> CountAsync();
     Task<int> CountAsync(Expression<Func<TEntity, bool>> predicate);
+
+    // Search
+    Task<IEnumerable<TEntity>> SearchAsync(
+        Expression<Func<TEntity, bool>> predicate,
+        int page = 1,
+        int pageSize = 20);
 
     // Exists
     Task<bool> ExistsAsync(Guid id);

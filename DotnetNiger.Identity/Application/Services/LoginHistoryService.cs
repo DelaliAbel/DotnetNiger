@@ -8,18 +8,21 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Identity.Application.Services;
 
-// Service de journalisation des connexions.
+// Service de journalisation des connexions avec geolocalisation IP.
 public class LoginHistoryService : ILoginHistoryService
 {
 	private readonly ILoginHistoryRepository _loginHistoryRepository;
 	private readonly IHttpContextAccessor _httpContextAccessor;
+	private readonly IGeoLocationProvider _geoLocationProvider;
 
 	public LoginHistoryService(
 		ILoginHistoryRepository loginHistoryRepository,
-		IHttpContextAccessor httpContextAccessor)
+		IHttpContextAccessor httpContextAccessor,
+		IGeoLocationProvider geoLocationProvider)
 	{
 		_loginHistoryRepository = loginHistoryRepository;
 		_httpContextAccessor = httpContextAccessor;
+		_geoLocationProvider = geoLocationProvider;
 	}
 
 	public async Task RecordAsync(Guid userId, bool success, string? failureReason, CancellationToken ct = default)
@@ -28,6 +31,9 @@ public class LoginHistoryService : ILoginHistoryService
 		var ip = context?.Connection.RemoteIpAddress?.ToString() ?? string.Empty;
 		var userAgent = context?.Request.Headers.UserAgent.ToString() ?? string.Empty;
 
+		// Get geolocation data from IP address
+		var geoLocation = await _geoLocationProvider.GetAsync(ip, ct);
+
 		var history = new LoginHistory
 		{
 			UserId = userId,
@@ -35,9 +41,8 @@ public class LoginHistoryService : ILoginHistoryService
 			FailureReason = failureReason ?? string.Empty,
 			IpAddress = ip,
 			UserAgent = userAgent,
-			// TODO: Implementer la geolocalisation IP (ex: MaxMind GeoIP2) pour remplir Country et City.
-			Country = string.Empty,
-			City = string.Empty
+			Country = geoLocation.Country,
+			City = geoLocation.City
 		};
 
 		await _loginHistoryRepository.AddAsync(history);
