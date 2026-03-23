@@ -114,11 +114,11 @@ public class MembersController : ApiControllerBase
 				UserId = request.UserId,
 				Name = request.Name,
 				Position = request.Position,
-				BioOverride = request.BioOverride,
+				BioOverride = request.BioOverride ?? string.Empty,
 				Order = request.Order,
 				IsPublic = request.IsPublic,
 				IsActive = request.IsActive,
-				RoleDescription = request.RoleDescription,
+				RoleDescription = request.RoleDescription ?? string.Empty,
 				JoinedAt = DateTime.UtcNow
 			};
 			var createdMember = await _memberService.CreateMemberAsync(memberEntity);
@@ -217,10 +217,10 @@ public class MembersController : ApiControllerBase
 		}
 	}
 
-	/// <summary>Maps a Member entity to a MemberDto.</summary>
-	private static global::DotnetNiger.Community.Application.DTOs.Responses.MemberDto MapToDto(Member member)
+	/// <summary>Maps a Member entity to a TeamMemberDto.</summary>
+	private static TeamMemberDto MapToDto(Member member)
 	{
-		return new global::DotnetNiger.Community.Application.DTOs.Responses.MemberDto
+		return new TeamMemberDto
 		{
 			Id = member.Id,
 			UserId = member.UserId,
