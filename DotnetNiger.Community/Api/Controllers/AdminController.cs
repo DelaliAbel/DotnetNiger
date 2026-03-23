@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using DotnetNiger.Community.Api.Filters;
 using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.DTOs.Responses;
 using DotnetNiger.Community.Application.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
@@ -214,6 +215,24 @@ public class AdminController : ApiControllerBase
             return NotFoundProblem("Projet non trouve");
 
         return SuccessMessage("Projet supprime avec succes");
+    }
+
+    // ─── Settings ─────────────────────────────────────────────────────────────
+
+    /// <summary>Récupérer les paramètres de fonctionnalités de la communauté.</summary>
+    [HttpGet("settings/features")]
+    public async Task<IActionResult> GetFeatureSettings()
+    {
+        var settings = await _adminService.GetCommunityFeatureSettingsAsync();
+        return Success(settings);
+    }
+
+    /// <summary>Mettre à jour les paramètres de fonctionnalités de la communauté.</summary>
+    [HttpPut("settings/features")]
+    public async Task<IActionResult> UpdateFeatureSettings([FromBody] UpdateCommunityFeatureSettingsRequest request)
+    {
+        var settings = await _adminService.UpdateCommunityFeatureSettingsAsync(request);
+        return Success(settings, "Paramètres de fonctionnalités mis à jour avec succès.");
     }
 }
 

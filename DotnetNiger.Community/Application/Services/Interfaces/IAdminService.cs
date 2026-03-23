@@ -1,3 +1,5 @@
+using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.DTOs.Responses;
 using DotnetNiger.Community.Domain.Entities;
 
 namespace DotnetNiger.Community.Application.Services.Interfaces;
@@ -30,4 +32,8 @@ public interface IAdminService
     Task<IEnumerable<Project>> GetAllProjectsAsync(int page = 1, int pageSize = 20);
     Task<bool> FeatureProjectAsync(Guid projectId, bool isFeatured);
     Task<bool> DeleteProjectAsync(Guid projectId);
+
+    // Settings
+    Task<CommunityFeatureSettingsDto> GetCommunityFeatureSettingsAsync();
+    Task<CommunityFeatureSettingsDto> UpdateCommunityFeatureSettingsAsync(UpdateCommunityFeatureSettingsRequest request);
 }

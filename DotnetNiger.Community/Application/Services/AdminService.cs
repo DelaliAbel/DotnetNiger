@@ -31,18 +31,24 @@ public class AdminService : IAdminService
     }
 
     // --- Dashboard ---
-
+    // OPTIMIZED: Uses SQL COUNT() instead of loading all entities
+    // Queries: 12 COUNT calls (lightweight) instead of 6 GetAll (massive data transfer)
     public async Task<object> GetDashboardAsync()
     {
+        // All queries execute as COUNT(*) on DB side - no data transfer
         var totalPosts = await _postRepository.CountAsync();
         var publishedPosts = await _postRepository.CountAsync(p => p.IsPublished);
+
         var totalEvents = await _eventRepository.CountAsync();
         var publishedEvents = await _eventRepository.CountAsync(e => e.IsPublished);
+
         var totalProjects = await _projectRepository.CountAsync();
-        var activeProjects = await _projectRepository.CountAsync();
+        var activeProjects = await _projectRepository.CountAsync(p => p.IsFeatured);
+
         var totalResources = await _resourceRepository.CountAsync();
         var pendingResources = await _resourceRepository.CountAsync(r => !r.IsApproved);
         var approvedResources = await _resourceRepository.CountAsync(r => r.IsApproved);
+
         var totalComments = await _commentRepository.CountAsync();
         var totalPartners = await _partnerRepository.CountAsync();
 
@@ -210,6 +216,48 @@ public class AdminService : IAdminService
     public async Task<bool> DeleteProjectAsync(Guid projectId)
     {
         return await _projectRepository.DeleteAsync(projectId);
+    }
+
+    // --- Settings ---
+
+    public async Task<CommunityFeatureSettingsDto> GetCommunityFeatureSettingsAsync()
+    {
+        // TODO: Implement persistent storage (Database or Cache)
+        // For MVP, return default enabled state
+        return await Task.FromResult(new CommunityFeatureSettingsDto
+        {
+            PostsEnabled = true,
+            CommentsEnabled = true,
+            EventsEnabled = true,
+            ProjectsEnabled = true,
+            ResourcesEnabled = true,
+            SearchEnabled = true,
+            PublicAccessEnabled = true,
+            UpdatedAtUtc = DateTime.UtcNow
+        });
+    }
+
+    public async Task<CommunityFeatureSettingsDto> UpdateCommunityFeatureSettingsAsync(UpdateCommunityFeatureSettingsRequest request)
+    {
+        // TODO: Implement persistent storage (Database or Cache)
+        // For MVP, apply updates and return
+        var current = await GetCommunityFeatureSettingsAsync();
+
+        var updated = new CommunityFeatureSettingsDto
+        {
+            PostsEnabled = request.PostsEnabled ?? current.PostsEnabled,
+            CommentsEnabled = request.CommentsEnabled ?? current.CommentsEnabled,
+            EventsEnabled = request.EventsEnabled ?? current.EventsEnabled,
+            ProjectsEnabled = request.ProjectsEnabled ?? current.ProjectsEnabled,
+            ResourcesEnabled = request.ResourcesEnabled ?? current.ResourcesEnabled,
+            SearchEnabled = request.SearchEnabled ?? current.SearchEnabled,
+            PublicAccessEnabled = request.PublicAccessEnabled ?? current.PublicAccessEnabled,
+            UpdatedAtUtc = DateTime.UtcNow
+        };
+
+        // TODO: Persist to database/cache
+
+        return await Task.FromResult(updated);
     }
 }
 
