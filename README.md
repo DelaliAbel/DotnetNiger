@@ -2,7 +2,7 @@
 
 Plateforme communautaire microservices .NET 8 avec API Gateway Ocelot.
 
-> Dernière mise à jour : **2026-03-14**
+> Dernière mise à jour : **2026-03-23**
 
 ## Services
 

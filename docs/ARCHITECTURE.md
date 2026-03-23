@@ -1,6 +1,6 @@
 # Architecture DotnetNiger
 
-Derniere mise a jour: 2026-03-14
+Derniere mise a jour: 2026-03-23
 
 ## Topologie runtime
 
