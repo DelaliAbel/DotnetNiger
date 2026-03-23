@@ -67,11 +67,15 @@ public class EventsController : ApiControllerBase
     /// </summary>
     /// <param name="limit">Nombre d'événements (par défaut 10)</param>
     /// <returns>Événements à venir</returns>
-    [HttpGet("upcoming/{limit:int?}")]
-    public async Task<IActionResult> GetUpcomingEvents(int? limit)
+    [HttpGet("upcoming")]
+    public async Task<IActionResult> GetUpcomingEvents([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var events = await _eventService.GetUpcomingEventsAsync(limit ?? 10);
-        return Success(events);
+        if (page < 1 || pageSize < 1 || pageSize > 100)
+            return BadRequestProblem("Invalid pagination parameters");
+
+        var events = await _eventService.GetUpcomingEventsAsync(pageSize);
+        var paginatedEvents = events.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        return Success(paginatedEvents, meta: new { page, pageSize, total = events.Count() });
     }
 
     /// <summary>

@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using DotnetNiger.Community.Application.Services.Interfaces;
+using DotnetNiger.Community.Application.DTOs.Responses;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
@@ -12,75 +13,84 @@ namespace DotnetNiger.Community.Api.Controllers;
 [Route("api/v{version:apiVersion}/[controller]")]
 public class SearchController : ApiControllerBase
 {
-    private readonly IPostService _postService;
-    private readonly IEventService _eventService;
-    private readonly IProjectService _projectService;
-    private readonly IResourceService _resourceService;
+    private readonly ISearchService _searchService;
 
-    public SearchController(
-        IPostService postService,
-        IEventService eventService,
-        IProjectService projectService,
-        IResourceService resourceService)
+    public SearchController(ISearchService searchService)
     {
-        _postService = postService;
-        _eventService = eventService;
-        _projectService = projectService;
-        _resourceService = resourceService;
+        _searchService = searchService;
     }
 
     /// <summary>
-    /// Rechercher du contenu
+    /// Rechercher du contenu avec pagination
+    /// Utilise une requête optimisée côté database (LIKE + pagination)
     /// </summary>
-    /// <param name="query">Terme de recherche</param>
-    /// <returns>Résultats de la recherche</returns>
+    /// <param name="query">Terme de recherche (min 2 caractères)</param>
+    /// <param name="page">Numéro de page (défaut 1)</param>
+    /// <param name="pageSize">Resultats par page (défaut 20, max 100)</param>
+    /// <returns>Résultats paginés de la recherche</returns>
     [HttpGet]
-    public async Task<IActionResult> Search([FromQuery] string query)
+    public async Task<IActionResult> Search(
+        [FromQuery] string query,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 20)
     {
         if (string.IsNullOrWhiteSpace(query))
             return BadRequestProblem("Terme de recherche requis");
 
-        // Recherche dans les posts
-        var posts = await _postService.GetAllPublishedPostsAsync(1, 10);
-        var postsResults = posts
-            .Where(p => p.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                        p.Content.Contains(query, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        if (query.Length < 2)
+            return BadRequestProblem("La recherche doit contenir au moins 2 caractères");
 
-        // Recherche dans les événements
-        var events = await _eventService.GetAllEventsAsync(1, 10);
-        var eventsResults = events
-            .Where(e => e.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                        e.Description.Contains(query, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        if (page < 1)
+            page = 1;
 
-        // Recherche dans les projets
-        var projects = await _projectService.GetAllProjectsAsync(1, 10);
-        var projectsResults = projects
-            .Where(p => p.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                        p.Description.Contains(query, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        if (pageSize < 1)
+            pageSize = 20;
 
-        // Recherche dans les ressources
-        var resources = await _resourceService.GetAllResourcesAsync(1, 10);
-        var resourcesResults = resources
-            .Where(r => r.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                        r.Description.Contains(query, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+        if (pageSize > 100)
+            pageSize = 100;
 
-        return Success(new
+        // Utiliser SearchService pour requêtes côté base de données optimisées
+        var postsResults = await _searchService.SearchPostsAsync(query, page, pageSize);
+        var eventsResults = await _searchService.SearchEventsAsync(query, page, pageSize);
+        var resourcesResults = await _searchService.SearchResourcesAsync(query, page, pageSize);
+        var projectsResults = await _searchService.SearchProjectsAsync(query, page, pageSize);
+
+        var searchResults = new SearchResultsDto
         {
-            query,
-            results = new
+            Query = query,
+            Posts = postsResults.Select(p => new SearchPostResultDto
             {
-                posts = postsResults,
-                events = eventsResults,
-                projects = projectsResults,
-                resources = resourcesResults
-            }
-        }, meta: new
-        {
-            totalResults = postsResults.Count + eventsResults.Count + projectsResults.Count + resourcesResults.Count
-        });
+                Id = p.Id,
+                Title = p.Title,
+                Content = p.Content,
+                CreatedAt = p.CreatedAt
+            }).ToList(),
+            Events = eventsResults.Select(e => new SearchEventResultDto
+            {
+                Id = e.Id,
+                Title = e.Title,
+                Description = e.Description,
+                StartDateTime = e.StartDateTime
+            }).ToList(),
+            Projects = projectsResults.Select(pr => new SearchProjectResultDto
+            {
+                Id = pr.Id,
+                Name = pr.Name,
+                Description = pr.Description,
+                CreatedAt = pr.CreatedAt
+            }).ToList(),
+            Resources = resourcesResults.Select(r => new SearchResourceResultDto
+            {
+                Id = r.Id,
+                Title = r.Title,
+                Description = r.Description,
+                CreatedAt = r.CreatedAt
+            }).ToList(),
+            TotalResults = postsResults.Count() + eventsResults.Count() + projectsResults.Count() + resourcesResults.Count(),
+            ExecutedAtUtc = DateTime.UtcNow
+        };
+
+        return Success(searchResults);
     }
 }
+
