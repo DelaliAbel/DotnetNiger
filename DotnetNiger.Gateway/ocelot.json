@@ -1,0 +1,27 @@
+{
+  "Aggregates": [],
+  "Routes": [
+    {
+      "UpstreamHttpMethod": [
+        "Get"
+      ],
+      "UpstreamPathTemplate": "/ocelot/posts/{id}",
+      "DownstreamPathTemplate": "/todos/{id}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "jsonplaceholder.typicode.com",
+          "Port": 443
+        }
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "IdentityApiKey",
+        "AllowedScopes": []
+      }
+    }
+  ],
+  "DynamicRoutes": [],
+  "GlobalConfiguration": {
+    "BaseUrl": "https://api.mybusiness.com"
+  }
+}
