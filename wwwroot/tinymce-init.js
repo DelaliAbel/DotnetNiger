@@ -59,3 +59,20 @@ window.getTinyMCEContent = (id) => {
             return '';
       }
 };
+
+window.setTinyMCEContent = (id, content) => {
+      try {
+            if (typeof tinymce === 'undefined') {
+                  return;
+            }
+
+            const editor = tinymce.get(id);
+            if (!editor) {
+                  return;
+            }
+
+            editor.setContent(content || '');
+      } catch (error) {
+            console.error('Error setting TinyMCE content:', error);
+      }
+};

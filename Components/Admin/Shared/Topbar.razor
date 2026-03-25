@@ -1,21 +1,39 @@
-﻿
-<header class="sticky flex h-16 items-center justify-between bg-white px-8 shadow-md">
-            <div class="flex gap-2">
-                  <div class="flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-full" >
-                        <img src="./Images/user.png" class="h-auto w-[46px]" alt="">
+﻿@* Composant admin : barre supérieure avec profil et actions rapides. *@
+@inject IProfileService ProfileService
+<header class="sticky w-full flex h-16 items-center justify-between bg-white px-8 sm:px-4 md:px-6 shadow-md">
+      <div class="flex gap-4">
+            <button class="sm:hidden" @onclick="ToggleSidebar">
+                  <i class="fas fa-bars text-xl"></i>
+            </button>
+            <NavLink href="/admin/profile" class="flex gap-2">
+                  <div class="flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-full">
+                        <img src="@(profil?.AvatarUrl)" class="h-auto w-[46px]" alt="">
                   </div>
-                  <div class="block h-[46px] w-auto justify-center">
-                        <span class="Button block text-text">Abdoul Raouf</span>
-                        <span class="Badge block text-[#04FE00]">Administrateur</span>
+                  <div class="hidden sm:block h-[46px] w-auto justify-center">
+                        <span class="Button block text-text">@profil?.Username</span>
+                        <span class="Badge block text-[#04FE00]">@profil?.Roles[0]</span>
                   </div>
-            </div>
-            <div class="flex items-center space-x-4">
-                <div>
+            </NavLink>
+      </div>
+      <div class="flex items-center space-x-4">
+            <div>
 
-                </div>
-                <button class="Button flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-white hover:bg-hover">
-                   Deconnexion
-            <i class="fas fa-sign-out-alt text-2xl"></i>
-                  </button>
             </div>
+            <button class="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-white hover:bg-hover">
+                  <span class="Button hidden sm:inline"> Deconnexion</span>
+                  <i class="fas fa-sign-out-alt text-2xl sm:text-xl"></i>
+            </button>
+      </div>
 </header>
+
+@code {
+      [Parameter]
+      public EventCallback ToggleSidebar { get; set; }
+      private UserDto? profil;
+
+      protected override async Task OnInitializedAsync()
+      {
+            profil = await ProfileService.GetProfileAsync();
+      }
+
+}

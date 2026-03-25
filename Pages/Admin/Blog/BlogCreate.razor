@@ -1,10 +1,11 @@
 ﻿@page "/admin/blog/create"
+@* Page admin : création d'article avec éditeur riche. *@
 @using DotnetNiger.UI.Components.Admin
 @inject NavigationManager NavigationManager
-
 @inject IJSRuntime JS
+@inject IPostService PostService
 
-<div class="min-h-screen bg-gray-50 p-6">
+<div class="min-h-screen bg-[#F4F2F2] p-6">
     <div class="mb-6 flex items-center justify-between">
         <span class="H3 text-gray-800">Blog <span class="text-gray-400">></span> Création</span>
         <button @onclick='() => NavigationManager.NavigateTo("/admin/blog")' class="bg-red-500 hover:bg-red-600 text-white min-h-12 px-4 py-2 rounded-lg flex items-center gap-2 transition">
@@ -17,11 +18,11 @@
         <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
                 <label class="mb-2 block text-sm font-semibold text-gray-700">Titre</label>
-                <input @bind="title" type="text" class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500" />
+                <input @bind="postRequest.Title" type="text" class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500" />
             </div>
             <div>
                 <label class="mb-2 block text-sm font-semibold text-gray-700">Catégorie</label>
-                <select @bind="category" class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500">
+                <select @bind="postRequest.PostType" class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500">
                     <option value="">Sélectionner</option>
                     <option value="Tutorial">Tutorial</option>
                     <option value="Article">Article</option>
@@ -46,11 +47,11 @@
         </div>
 
         <div class="mt-6 flex flex-wrap gap-4">
-            <button class="flex items-center gap-2 rounded-lg bg-blue-500 px-6 py-3 text-white transition hover:bg-blue-600">
+            <button @onclick="SaveDraft" class="flex items-center gap-2 rounded-lg bg-blue-500 px-6 py-3 text-white transition hover:bg-blue-600">
                 <i class="fas fa-save"></i>
                 Sauvegarder
             </button>
-            <button class="flex items-center gap-2 rounded-lg bg-green-500 px-6 py-3 text-white transition hover:bg-green-600">
+            <button @onclick="Publish" class="flex items-center gap-2 rounded-lg bg-green-500 px-6 py-3 text-white transition hover:bg-green-600">
                 <i class="fas fa-paper-plane"></i>
                 Publier
             </button>
@@ -63,24 +64,39 @@
 </div>
 
 @code {
-    private string title = "";
-    private string author = "";
-    private string category = "";
-    private string description = "";
-    private string content = "";
+    private CreatePostRequest postRequest = new();
+    private string errorMessage = string.Empty;
 
-     protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            try
-            {
-                await JS.InvokeVoidAsync("initTinyMCE", "blogDescription");
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Error initializing TinyMCE: {ex.Message}");
-            }
+            try { await JS.InvokeVoidAsync("initTinyMCE", "blogDescription"); }
+            catch (Exception ex) { Console.Error.WriteLine($"TinyMCE: {ex.Message}"); }
         }
+    }
+
+    private async Task SaveDraft()
+    {
+        try
+        {
+            postRequest.Content = await JS.InvokeAsync<string>("getTinyMCEContent", "blogDescription");
+            postRequest.IsPublished = false;
+            await PostService.CreatePostAsync(postRequest);
+            NavigationManager.NavigateTo("/admin/blog");
+        }
+        catch (Exception ex) { errorMessage = ex.Message; }
+    }
+
+    private async Task Publish()
+    {
+        try
+        {
+            postRequest.Content = await JS.InvokeAsync<string>("getTinyMCEContent", "blogDescription");
+            postRequest.IsPublished = true;
+            await PostService.CreatePostAsync(postRequest);
+            NavigationManager.NavigateTo("/admin/blog");
+        }
+        catch (Exception ex) { errorMessage = ex.Message; }
     }
 }

@@ -1,0 +1,146 @@
+@page "/admin/blog/edit/{Id:guid}"
+@* Page admin : édition d'article avec éditeur riche. *@
+@using DotnetNiger.UI.Models.Requests
+@using DotnetNiger.UI.Models.Responses
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@inject IPostService PostService
+
+<div class="min-h-screen bg-[#F4F2F2] p-6">
+    <div class="mb-6 flex items-center justify-between">
+        <span class="H3 text-gray-800">Blog <span class="text-gray-400">></span> Édition</span>
+        <button @onclick='() => NavigationManager.NavigateTo("/admin/blog")' class="bg-red-500 hover:bg-red-600 text-white min-h-12 px-4 py-2 rounded-lg flex items-center gap-2 transition">
+            <i class="fas fa-arrow-left"></i>
+            Retour
+        </button>
+    </div>
+
+    <div class="rounded-xl bg-white p-6 shadow">
+        <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div>
+                <label class="mb-2 block text-sm font-semibold text-gray-700">Titre</label>
+                <input @bind="postRequest.Title" type="text" class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500" />
+            </div>
+            <div>
+                <label class="mb-2 block text-sm font-semibold text-gray-700">Catégorie</label>
+                <select @bind="postRequest.PostType" class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500">
+                    <option value="">Sélectionner</option>
+                    <option value="Tutorial">Tutorial</option>
+                    <option value="Article">Article</option>
+                    <option value="Interview">Interview</option>
+                </select>
+            </div>
+            <div>
+                <label class="mb-2 block text-sm font-semibold text-gray-700">Image de couverture</label>
+                <div class="flex items-center overflow-hidden rounded-lg border border-gray-300">
+                    <label class="cursor-pointer bg-gray-200 px-4 py-3 text-sm text-gray-700">
+                        Choisir un fichier
+                        <input type="file" class="hidden" />
+                    </label>
+                    <span class="px-3 text-sm text-gray-500">Aucun fichier choisi</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-6">
+            <textarea id="blogDescriptionEdit" class="w-full min-h-96"></textarea>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(errorMessage))
+        {
+            <div class="mt-4 rounded-md bg-red-50 p-3 text-sm text-red-600">@errorMessage</div>
+        }
+
+        <div class="mt-6 flex flex-wrap gap-4">
+            <button @onclick="SaveDraft" class="flex items-center gap-2 rounded-lg bg-blue-500 px-6 py-3 text-white transition hover:bg-blue-600">
+                <i class="fas fa-save"></i>
+                Mettre en brouillon
+            </button>
+            <button @onclick="Publish" class="flex items-center gap-2 rounded-lg bg-green-500 px-6 py-3 text-white transition hover:bg-green-600">
+                <i class="fas fa-paper-plane"></i>
+                Publier
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+
+    private UpdatePostRequest postRequest = new();
+    private string errorMessage = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var post = await PostService.GetPostByIdAsync(Id);
+        if (post is null)
+        {
+            errorMessage = "Article introuvable.";
+            return;
+        }
+
+        postRequest = MapToUpdateRequest(post);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("initTinyMCE", "blogDescriptionEdit");
+                await JS.InvokeVoidAsync("setTinyMCEContent", "blogDescriptionEdit", postRequest.Content ?? string.Empty);
+            }
+            catch (Exception ex)
+            {
+                errorMessage = ex.Message;
+            }
+        }
+    }
+
+    private async Task SaveDraft()
+    {
+        await SaveAsync(isPublished: false);
+    }
+
+    private async Task Publish()
+    {
+        await SaveAsync(isPublished: true);
+    }
+
+    private async Task SaveAsync(bool isPublished)
+    {
+        try
+        {
+            postRequest.Content = await JS.InvokeAsync<string>("getTinyMCEContent", "blogDescriptionEdit");
+            postRequest.IsPublished = isPublished;
+            var updated = await PostService.UpdatePostAsync(Id, postRequest);
+            if (updated is null)
+            {
+                errorMessage = "Impossible de mettre à jour l'article.";
+                return;
+            }
+
+            NavigationManager.NavigateTo("/admin/blog");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+    }
+
+    private static UpdatePostRequest MapToUpdateRequest(PostDto post)
+    {
+        return new UpdatePostRequest
+        {
+            Title = post.Title,
+            Content = post.ContentHTML,
+            Excerpt = post.Excerpt,
+            CoverImageUrl = post.CoverImageUrl,
+            PostType = post.PostType,
+            CategoryIds = post.Categories.Select(c => c.Id).ToList(),
+            TagNames = post.Tags.Select(t => t.Name).ToList(),
+            IsPublished = post.PublishedAt != DateTime.MinValue
+        };
+    }
+}

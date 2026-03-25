@@ -16,6 +16,7 @@ public class EventDto
     public int Capacity { get; set; }
     public int RegisteredCount { get; set; }
     public bool IsPublished { get; set; }
+    public bool IsArchived { get; set; }
     public string MeetupLink { get; set; } = string.Empty;
     public List<EventMediaDto> Medias { get; set; } = new();
 }

@@ -5,7 +5,7 @@ public class PostDto
     public Guid Id { get; set; }
     public string Title { get; set; } = string.Empty;
     public string Slug { get; set; } = string.Empty;
-    public string Content { get; set; } = string.Empty;
+    public string ContentHTML { get; set; } = string.Empty;
     public string Excerpt { get; set; } = string.Empty;
     public string CoverImageUrl { get; set; } = string.Empty;
     public Guid AuthorId { get; set; }
@@ -16,9 +16,4 @@ public class PostDto
     public int ViewCount { get; set; }
     public List<CategoryDto> Categories { get; set; } = new();
     public List<TagDto> Tags { get; set; } = new();
-
-    // Ajout de donnée 
-
-    public string Role { get; set; } = "Member";
-    public string Status {get; set; } = "published";
 }
