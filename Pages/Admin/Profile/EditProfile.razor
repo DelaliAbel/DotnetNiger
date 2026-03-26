@@ -38,8 +38,61 @@
     </EditForm>
 </div>
 
+<div class="max-w-2xl mx-auto mt-6 bg-[#F4F2F2] rounded-xl shadow-lg p-6">
+    <h2 class="text-xl font-bold mb-4">Mes liens sociaux</h2>
+
+    @if (!string.IsNullOrWhiteSpace(messageSocial))
+    {
+        <p class="mb-3 text-sm text-gray-700">@messageSocial</p>
+    }
+
+    @if (socialLinks.Count == 0)
+    {
+        <p class="text-sm text-gray-600 mb-4">Aucun lien social enregistré.</p>
+    }
+    else
+    {
+        <ul class="space-y-2 mb-4">
+            @foreach (var link in socialLinks)
+            {
+                <li class="flex items-center justify-between rounded-lg border bg-white p-3">
+                    <div class="text-sm text-gray-800">
+                        <span class="font-semibold">@link.Platform</span>
+                        <span class="mx-2 text-gray-400">•</span>
+                        <a href="@link.Url" target="_blank" class="text-blue-600 hover:underline">@link.Url</a>
+                    </div>
+                    <button type="button"
+                            @onclick="() => DeleteSocialLink(link.Id)"
+                            class="bg-gray-200 px-3 py-1 rounded-lg hover:bg-gray-300 text-sm">
+                        Supprimer
+                    </button>
+                </li>
+            }
+        </ul>
+    }
+
+    <EditForm Model="socialModel" OnValidSubmit="HandleAddSocialLink">
+        <div class="space-y-3">
+            <div>
+                <label class="block font-medium mb-1">Plateforme</label>
+                <InputText @bind-Value="socialModel.Platform" class="w-full p-2 border rounded-lg" />
+            </div>
+            <div>
+                <label class="block font-medium mb-1">URL</label>
+                <InputText @bind-Value="socialModel.Url" class="w-full p-2 border rounded-lg" />
+            </div>
+            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+                Ajouter
+            </button>
+        </div>
+    </EditForm>
+</div>
+
 @code {
     private UpdateProfileRequest model = new();
+    private AddSocialLinkRequest socialModel = new();
+    private List<SocialLinkDto> socialLinks = new();
+    private string? messageSocial;
 
     protected override async Task OnInitializedAsync()
     {
@@ -52,12 +105,51 @@
             AvatarUrl = profil.AvatarUrl,
             Bio = profil.Bio
         };
+
+        socialLinks = await ProfileService.GetSocialLinksAsync();
     }
 
     private async Task HandleSubmit()
     {
         await ProfileService.UpdateProfileAsync(model);
         Navigation.NavigateTo("/admin/profile");
+    }
+
+    private async Task HandleAddSocialLink()
+    {
+        messageSocial = null;
+
+        if (string.IsNullOrWhiteSpace(socialModel.Platform) || string.IsNullOrWhiteSpace(socialModel.Url))
+        {
+            messageSocial = "La plateforme et l'URL sont obligatoires.";
+            return;
+        }
+
+        var created = await ProfileService.AddSocialLinkAsync(socialModel);
+        if (created is null)
+        {
+            messageSocial = "Impossible d'ajouter le lien social.";
+            return;
+        }
+
+        socialLinks = await ProfileService.GetSocialLinksAsync();
+        socialModel = new AddSocialLinkRequest();
+        messageSocial = "Lien social ajouté avec succès.";
+    }
+
+    private async Task DeleteSocialLink(Guid id)
+    {
+        messageSocial = null;
+
+        var deleted = await ProfileService.DeleteSocialLinkAsync(id);
+        if (!deleted)
+        {
+            messageSocial = "Impossible de supprimer le lien social.";
+            return;
+        }
+
+        socialLinks = await ProfileService.GetSocialLinksAsync();
+        messageSocial = "Lien social supprimé avec succès.";
     }
 
     private void Annuler() => Navigation.NavigateTo("/admin/profile");

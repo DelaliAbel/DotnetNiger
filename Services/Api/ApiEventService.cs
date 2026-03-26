@@ -2,6 +2,7 @@ using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -10,6 +11,7 @@ public class ApiEventService : IEventService
     private readonly HttpClient _http;
     private const string PublicBase = "api/events";
     private const string AdminBase = "api/community/admin/events";
+    private const string SearchBase = "api/search";
 
     public ApiEventService(HttpClient http)
     {
@@ -18,12 +20,16 @@ public class ApiEventService : IEventService
 
     public async Task<List<EventDto>> GetAllEventsAsync()
     {
-        return await _http.GetFromJsonAsync<List<EventDto>>(PublicBase) ?? new List<EventDto>();
+        return await GetCollectionAsync<EventDto>(PublicBase);
     }
 
     public async Task<List<EventDto>> GetPublishedEventsAsync()
     {
-        var events = await GetAllEventsAsync();
+        var events = await GetCollectionAsync<EventDto>(PublicBase, new Dictionary<string, string?>
+        {
+            ["published"] = "true"
+        });
+
         return events.Where(e => e.IsPublished).ToList();
     }
 
@@ -34,7 +40,11 @@ public class ApiEventService : IEventService
 
     public async Task<List<EventDto>> GetPastEventsAsync()
     {
-        var events = await GetAllEventsAsync();
+        var events = await GetCollectionAsync<EventDto>(PublicBase, new Dictionary<string, string?>
+        {
+            ["past"] = "true"
+        });
+
         return events.Where(e => e.EndDate < DateTime.Now).OrderByDescending(e => e.StartDate).ToList();
     }
 
@@ -45,13 +55,43 @@ public class ApiEventService : IEventService
 
     public async Task<EventDto?> GetEventBySlugAsync(string slug)
     {
-        var events = await GetAllEventsAsync();
+        var events = await SearchEventsAsync(slug);
+        var bySlug = events.FirstOrDefault(e => e.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase));
+        if (bySlug is not null)
+            return bySlug;
+
+        events = await GetAllEventsAsync();
         return events.FirstOrDefault(e => e.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase));
     }
 
     public async Task<List<EventDto>> SearchEventsAsync(string query)
     {
-        var events = await GetAllEventsAsync();
+        var searchResults = await GetCollectionAsync<SearchResultDto>(SearchBase, new Dictionary<string, string?>
+        {
+            ["query"] = query,
+            ["type"] = "Event",
+            ["page"] = "1",
+            ["pageSize"] = "100"
+        });
+
+        var ids = searchResults
+            .Where(r => r.Type.Equals("Event", StringComparison.OrdinalIgnoreCase))
+            .Select(r => r.Id)
+            .Distinct()
+            .ToList();
+
+        if (ids.Count > 0)
+        {
+            var fetchTasks = ids.Select(GetEventByIdAsync);
+            var eventsByIds = await Task.WhenAll(fetchTasks);
+            return eventsByIds.Where(e => e is not null).Select(e => e!).ToList();
+        }
+
+        var events = await GetCollectionAsync<EventDto>(PublicBase, new Dictionary<string, string?>
+        {
+            ["query"] = query
+        });
+
         return events.Where(e =>
                 e.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                 e.Description.Contains(query, StringComparison.OrdinalIgnoreCase) ||
@@ -61,7 +101,11 @@ public class ApiEventService : IEventService
 
     public async Task<List<EventDto>> GetEventsByTypeAsync(string eventType)
     {
-        var events = await GetAllEventsAsync();
+        var events = await GetCollectionAsync<EventDto>(PublicBase, new Dictionary<string, string?>
+        {
+            ["eventType"] = eventType
+        });
+
         return events.Where(e => e.EventType.Equals(eventType, StringComparison.OrdinalIgnoreCase)).ToList();
     }
 
@@ -127,5 +171,38 @@ public class ApiEventService : IEventService
     public async Task<List<EventRegistrationDto>> GetRegistrationsByEventAsync(Guid eventId)
     {
         return await _http.GetFromJsonAsync<List<EventRegistrationDto>>($"api/events/{eventId}/registrations") ?? new List<EventRegistrationDto>();
+    }
+
+    private async Task<List<T>> GetCollectionAsync<T>(string path, Dictionary<string, string?>? query = null)
+    {
+        var url = BuildUrl(path, query);
+        var response = await _http.GetAsync(url);
+        if (!response.IsSuccessStatusCode)
+            return new List<T>();
+
+        var json = await response.Content.ReadAsStringAsync();
+        if (string.IsNullOrWhiteSpace(json))
+            return new List<T>();
+
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+
+        var list = JsonSerializer.Deserialize<List<T>>(json, options);
+        if (list is not null)
+            return list;
+
+        var paginated = JsonSerializer.Deserialize<PaginatedDto<T>>(json, options);
+        return paginated?.Items ?? new List<T>();
+    }
+
+    private static string BuildUrl(string path, Dictionary<string, string?>? query = null)
+    {
+        if (query is null || query.Count == 0)
+            return path;
+
+        var queryString = string.Join("&", query
+            .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
+            .Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value!)}"));
+
+        return string.IsNullOrWhiteSpace(queryString) ? path : $"{path}?{queryString}";
     }
 }

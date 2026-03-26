@@ -1,6 +1,5 @@
 @page "/login"
 @* Page d'authentification : connexion utilisateur. *@
-@layout DotnetNiger.UI.Layouts.MainLayout
 @inject AuthService Auth
 @inject NavigationManager Navigation
 
@@ -72,10 +71,13 @@
 
         if (result.Success)
         {
-            var destination = Auth.GetPostLoginRedirectPath(result.Token?.AccessToken);
-            Navigation.NavigateTo(destination);
+            System.Console.WriteLine(result);
+            // Redirection basée sur les rôles de l'utilisateur
+            var destination = Auth.GetPostLoginRedirectPath(result.Data.User.Roles);
+            Navigation.NavigateTo(destination);    
         }
         else
+            System.Console.WriteLine(result.Message);   
             errorMessage = result.Message;
     }
 }
