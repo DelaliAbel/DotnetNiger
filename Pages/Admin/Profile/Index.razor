@@ -87,12 +87,43 @@
                               </div>
                         </section>
                   </div>
+
+                  <section class="rounded-lg border border-gray-300 bg-white p-4 shadow-sm md:p-5">
+                        <div class="mb-3 flex items-start justify-between">
+                              <h2 class="text-2xl font-semibold text-gray-900">Liens sociaux</h2>
+                              <button @onclick='() => Navigation.NavigateTo("/admin/profile/informations")'
+                                      class="inline-flex h-8 w-8 items-center justify-center rounded-md border border-gray-300 text-gray-600 hover:bg-gray-100"
+                                      title="Gérer les liens sociaux">
+                                    <i class="fas fa-pen text-xs"></i>
+                              </button>
+                        </div>
+                        @if (socialLinks.Count == 0)
+                        {
+                              <p class="text-sm text-gray-600">Aucun lien social enregistré.</p>
+                        }
+                        else
+                        {
+                              <div class="flex flex-wrap gap-3">
+                                    @foreach (var link in socialLinks)
+                                    {
+                                          <a href="@link.Url" 
+                                             target="_blank" 
+                                             rel="noopener noreferrer"
+                                             class="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-gray-700 hover:bg-gray-100 hover:border-gray-300">
+                                                <i class="@link.Icone text-lg"></i>
+                                                <span class="text-sm font-medium">@link.Platform</span>
+                                          </a>
+                                    }
+                              </div>
+                        }
+                  </section>
             </div>
       }
 </div>
 
 @code {
       private UserDto? profil;
+      private List<SocialLinkDto> socialLinks = new();
       private static readonly string[] Skills = ["C#", "ASP.NET Core", "Entity Framework", "Azure"];
 
       private string LastLoginLabel => profil?.LastLoginAt?.ToString("dd/MM/yyyy HH:mm") ?? "Jamais";
@@ -100,6 +131,7 @@
       protected override async Task OnInitializedAsync()
       {
             profil = await ProfileService.GetProfileAsync();
+            socialLinks = await ProfileService.GetSocialLinksAsync();
       }
 
       private static string DisplayOrFallback(string? value, string fallback)

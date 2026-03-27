@@ -15,7 +15,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
 // Client HTTP dédié pour AuthService — configurez ApiBaseUrl dans wwwroot/appsettings.json
-var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "https://localhost:7000";
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"];
 builder.Services.AddScoped<ClientIdentifierProvider>();
 
 builder.Services.AddScoped<AuthService>(sp => new AuthService(
@@ -60,9 +60,13 @@ else
             sp.GetRequiredService<ClientIdentifierProvider>(),
             sp.GetRequiredService<ILogger<ClientIdHeaderHandler>>())));
 
-    // Le layout admin injecte IProfileService (Topbar). Sans cet enregistrement,
-    // l'accès aux pages /admin échoue en mode API.
-    builder.Services.AddScoped<IProfileService, ProfileService>();
+    builder.Services.AddScoped<IProfileService>(sp =>
+        new ApiProfileService(
+            CreateGatewayHttpClient(
+                apiBaseUrl,
+                sp.GetRequiredService<ClientIdentifierProvider>(),
+                sp.GetRequiredService<ILogger<ClientIdHeaderHandler>>()),
+            sp.GetRequiredService<CustomAuthStateProvider>()));
 }
 
 await builder.Build().RunAsync();

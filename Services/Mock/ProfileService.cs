@@ -43,5 +43,27 @@ namespace DotnetNiger.UI.Services.Mock
                   user.City = request.City;
                   return await Task.FromResult(user); 
             }
+
+            public async Task<List<SocialLinkDto>> GetSocialLinksAsync()
+                  => await Task.FromResult(_User.SocialLinks);
+
+            public async Task<SocialLinkDto?> AddSocialLinkAsync(AddSocialLinkRequest request)
+            {
+                  var link = new SocialLinkDto
+                  {
+                        Id = Guid.NewGuid(),
+                        Platform = request.Platform,
+                        Url = request.Url
+                  };
+
+                  _User.SocialLinks.Add(link);
+                  return await Task.FromResult(link);
+            }
+
+            public async Task<bool> DeleteSocialLinkAsync(Guid id)
+            {
+                  var removed = _User.SocialLinks.RemoveAll(link => link.Id == id) > 0;
+                  return await Task.FromResult(removed);
+            }
       }
 }

@@ -2,6 +2,7 @@ using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -10,6 +11,7 @@ public class ApiResourceService : IResourceService
     private readonly HttpClient _http;
     private const string PublicBase = "api/resources";
     private const string AdminBase = "api/community/admin/resources";
+    private const string SearchBase = "api/search";
 
     public ApiResourceService(HttpClient http)
     {
@@ -18,7 +20,7 @@ public class ApiResourceService : IResourceService
 
     public async Task<List<ResourceDto>> GetAllResourcesAsync()
     {
-        return await _http.GetFromJsonAsync<List<ResourceDto>>(PublicBase) ?? new List<ResourceDto>();
+        return await GetCollectionAsync<ResourceDto>(PublicBase);
     }
 
     public async Task<ResourceDto?> GetResourceByIdAsync(Guid id)
@@ -28,25 +30,63 @@ public class ApiResourceService : IResourceService
 
     public async Task<ResourceDto?> GetResourceBySlugAsync(string slug)
     {
-        var resources = await GetAllResourcesAsync();
+        var resources = await SearchResourcesAsync(slug);
+        var bySlug = resources.FirstOrDefault(r => r.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase));
+        if (bySlug is not null)
+            return bySlug;
+
+        resources = await GetAllResourcesAsync();
         return resources.FirstOrDefault(r => r.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase));
     }
 
     public async Task<List<ResourceDto>> GetResourcesByTypeAsync(string resourceType)
     {
-        var resources = await GetAllResourcesAsync();
+        var resources = await GetCollectionAsync<ResourceDto>(PublicBase, new Dictionary<string, string?>
+        {
+            ["resourceType"] = resourceType
+        });
+
         return resources.Where(r => r.ResourceType.Equals(resourceType, StringComparison.OrdinalIgnoreCase)).ToList();
     }
 
     public async Task<List<ResourceDto>> GetResourcesByLevelAsync(string level)
     {
-        var resources = await GetAllResourcesAsync();
+        var resources = await GetCollectionAsync<ResourceDto>(PublicBase, new Dictionary<string, string?>
+        {
+            ["level"] = level
+        });
+
         return resources.Where(r => r.Level.Equals(level, StringComparison.OrdinalIgnoreCase)).ToList();
     }
 
     public async Task<List<ResourceDto>> SearchResourcesAsync(string query)
     {
-        var resources = await GetAllResourcesAsync();
+        var searchResults = await GetCollectionAsync<SearchResultDto>(SearchBase, new Dictionary<string, string?>
+        {
+            ["query"] = query,
+            ["type"] = "Resource",
+            ["page"] = "1",
+            ["pageSize"] = "100"
+        });
+
+        var ids = searchResults
+            .Where(r => r.Type.Equals("Resource", StringComparison.OrdinalIgnoreCase))
+            .Select(r => r.Id)
+            .Distinct()
+            .ToList();
+
+        if (ids.Count > 0)
+        {
+            var fetchTasks = ids.Select(GetResourceByIdAsync);
+            var resourcesByIds = await Task.WhenAll(fetchTasks);
+            return resourcesByIds.Where(r => r is not null).Select(r => r!).ToList();
+        }
+
+        var resources = await GetCollectionAsync<ResourceDto>(PublicBase, new Dictionary<string, string?>
+        {
+            ["query"] = query
+        });
+
         return resources.Where(r =>
                 r.Title.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                 r.Description.Contains(query, StringComparison.OrdinalIgnoreCase) ||
@@ -56,13 +96,23 @@ public class ApiResourceService : IResourceService
 
     public async Task<List<string>> GetResourceTypesAsync()
     {
-        var resources = await GetAllResourcesAsync();
+        var resources = await GetCollectionAsync<ResourceDto>(PublicBase, new Dictionary<string, string?>
+        {
+            ["page"] = "1",
+            ["pageSize"] = "500"
+        });
+
         return resources.Select(r => r.ResourceType).Distinct().OrderBy(t => t).ToList();
     }
 
     public async Task<List<string>> GetLevelsAsync()
     {
-        var resources = await GetAllResourcesAsync();
+        var resources = await GetCollectionAsync<ResourceDto>(PublicBase, new Dictionary<string, string?>
+        {
+            ["page"] = "1",
+            ["pageSize"] = "500"
+        });
+
         return resources.Select(r => r.Level).Distinct().ToList();
     }
 
@@ -100,5 +150,38 @@ public class ApiResourceService : IResourceService
     public async Task IncrementViewCountAsync(Guid id)
     {
         await _http.PostAsync($"{PublicBase}/{id}/views", null);
+    }
+
+    private async Task<List<T>> GetCollectionAsync<T>(string path, Dictionary<string, string?>? query = null)
+    {
+        var url = BuildUrl(path, query);
+        var response = await _http.GetAsync(url);
+        if (!response.IsSuccessStatusCode)
+            return new List<T>();
+
+        var json = await response.Content.ReadAsStringAsync();
+        if (string.IsNullOrWhiteSpace(json))
+            return new List<T>();
+
+        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+
+        var list = JsonSerializer.Deserialize<List<T>>(json, options);
+        if (list is not null)
+            return list;
+
+        var paginated = JsonSerializer.Deserialize<PaginatedDto<T>>(json, options);
+        return paginated?.Items ?? new List<T>();
+    }
+
+    private static string BuildUrl(string path, Dictionary<string, string?>? query = null)
+    {
+        if (query is null || query.Count == 0)
+            return path;
+
+        var queryString = string.Join("&", query
+            .Where(kv => !string.IsNullOrWhiteSpace(kv.Value))
+            .Select(kv => $"{Uri.EscapeDataString(kv.Key)}={Uri.EscapeDataString(kv.Value!)}"));
+
+        return string.IsNullOrWhiteSpace(queryString) ? path : $"{path}?{queryString}";
     }
 }

@@ -17,7 +17,7 @@ public class AuthService
         _authProvider = authProvider;
     }
 
-    public async Task<AuthDto> LoginAsync(LoginRequest request)
+    public async Task<ApiSuccessResponse<AuthDto>> LoginAsync(LoginRequest request)
     {
         try
         {
@@ -34,7 +34,7 @@ public class AuthService
                 {
                 }
 
-                return new AuthDto
+                return new ApiSuccessResponse<AuthDto>
                 {
                     Success = false,
                     Message = !string.IsNullOrWhiteSpace(errorPayload?.Message)
@@ -43,25 +43,25 @@ public class AuthService
                 };
             }
 
-            var result = await response.Content.ReadFromJsonAsync<AuthDto>()
-                         ?? new AuthDto { Success = false, Message = "Erreur de connexion." };
+            var result = await response.Content.ReadFromJsonAsync<ApiSuccessResponse<AuthDto>>()
+                         ?? new ApiSuccessResponse<AuthDto> { Success = false, Message = "Erreur de connexion." };
 
-            if (result.Success && result.Token is not null)
-                await _authProvider.SaveTokensAsync(result.Token.AccessToken, result.Token.RefreshToken);
+            if (result.Success && result.Data is not null)
+                await _authProvider.SaveTokensAsync(result.Data.Token.AccessToken, result.Data.Token.RefreshToken);
 
             return result;
         }
-        catch (HttpRequestException)
+        catch (HttpRequestException ex)
         {
-            return new AuthDto
+            return new ()
             {
                 Success = false,
-                Message = "Impossible de joindre le serveur d'authentification. Vérifiez que l'API est démarrée et accessible."
-            };
+                Message =  ex.Message  }; //"Impossible de joindre le serveur d'authentification. Vérifiez que l'API est démarrée et accessible."
+         
         }
         catch (TaskCanceledException)
         {
-            return new AuthDto
+            return new ApiSuccessResponse<AuthDto>
             {
                 Success = false,
                 Message = "Le serveur a mis trop de temps à répondre."
@@ -101,7 +101,38 @@ public class AuthService
         }
     }
 
-    public string GetPostLoginRedirectPath(string? accessToken)
+    /// <summary>
+    /// Détermine le chemin de redirection après connexion basé sur les rôles de l'utilisateur.
+    /// </summary>
+    /// <param name="roles">Liste des rôles de l'utilisateur</param>
+    /// <returns>Le chemin vers lequel rediriger l'utilisateur</returns>
+    public string GetPostLoginRedirectPath(List<string>? roles)
+    {
+        if (roles == null || roles.Count == 0)
+            return "/";
+
+        // Vérifier les rôles par ordre de priorité
+        var rolesLower = roles.Select(r => r.ToLowerInvariant()).ToList();
+
+        if (rolesLower.Contains("superadmin"))
+            return "/admin/dashboard";
+        
+        if (rolesLower.Contains("admin"))
+            return "/admin/dashboard";
+        
+        if (rolesLower.Contains("moderator"))
+            return "/admin/dashboard";
+
+        // Rôles utilisateur normal
+        return "/";
+    }
+
+    /// <summary>
+    /// Détermine le chemin de redirection après connexion basé sur le token d'accès (obsolète).
+    /// Utiliser GetPostLoginRedirectPath(List&lt;string&gt;) avec les rôles de l'utilisateur.
+    /// </summary>
+    [Obsolete("Utilisez GetPostLoginRedirectPath(List<string> roles) avec les rôles du UserDto")]
+    public string GetPostLoginRedirectPathFromToken(string? accessToken)
     {
         var role = GetRoleFromAccessToken(accessToken);
         if (string.IsNullOrWhiteSpace(role))
