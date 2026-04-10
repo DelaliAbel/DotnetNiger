@@ -7,13 +7,14 @@
             <!-- Logo / Marque -->
             <div class="flex items-center">
                 <NavLink href="/" class="flex items-center space-x-2">
-                    <img src="Logo.svg" alt="logo dotnet.niger" class="h-9 w-9">
+                    <img src="/Logo.svg" alt="logo dotnet.niger" class="h-9 w-9">
                 </NavLink>
             </div>
 
             <!-- Navigation Desktop (à droite) -->
             <div class="hidden items-center space-x-8 md:flex">
-                <NavLink href="/" class="text-secondary transition duration-150 ease-in-out hover:text-hover" Match="NavLinkMatch.All">
+                <NavLink href="/" class="text-secondary transition duration-150 ease-in-out hover:text-hover"
+                         Match="NavLinkMatch.All">
                     <span class="text-sm font-normal">Accueil</span>
                 </NavLink>
                 <NavLink href="/communaute" class="text-secondary transition duration-150 ease-in-out hover:text-hover">
@@ -22,7 +23,8 @@
                 <NavLink href="/ressources" class="text-secondary transition duration-150 ease-in-out hover:text-hover">
                     <span class="text-sm font-normal">Ressources</span>
                 </NavLink>
-                <NavLink href="/partenaires" class="text-secondary transition duration-150 ease-in-out hover:text-hover">
+                <NavLink href="/partenaires"
+                         class="text-secondary transition duration-150 ease-in-out hover:text-hover">
                     <span class="text-sm font-normal">Partenaires</span>
                 </NavLink>
                 <NavLink href="/evenements" class="text-secondary transition duration-150 ease-in-out hover:text-hover">
@@ -37,27 +39,22 @@
                 <NavLink href="/contact" class="text-secondary transition duration-150 ease-in-out hover:text-hover">
                     <span class="text-sm font-normal">Contact</span>
                 </NavLink>
-                <NavLink href="/admin/dashboard" class="text-secondary transition duration-150 ease-in-out hover:text-hover">
+                <NavLink href="/admin/dashboard"
+                         class="text-secondary transition duration-150 ease-in-out hover:text-hover">
                     <span class="text-sm font-normal">Admin</span>
                 </NavLink>
                 
-                <button @onclick='() => NavigationManager.NavigateTo("/login")' class="gap-2 rounded-lg bg-secondary px-3 py-2 text-white transition duration-150 ease-in-out hover:bg-hover">
+                <button type="button" @onclick='() => NavigationManager.NavigateTo("/login")'
+                        class="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-white transition duration-150 ease-in-out hover:bg-hover">
                     <i class="fas fa-sign-in-alt text-2xl"></i>
-                    <span class="text-sm font-semibold text-white">Connexion</span> 
+                    <span class="text-sm font-semibold text-white">Connexion</span>
                 </button>
             </div>
 
             <!-- Bouton menu mobile -->
             <div class="flex items-center md:hidden">
                 <button @onclick="ToggleMobileMenu" class="text-secondary hover:text-hover focus:outline-none">
-                        @if (!mobileMenuOpen)
-                        {
-                            <i class="bi bi-list text-[40px]"></i>
-                        }
-                        else
-                        {
-                            <i class="bi bi-x text-[40px]"></i>
-                        }
+                    <i class="fa-solid fa-bars text-2xl"></i>
                 </button>
             </div>
         </div>
@@ -65,71 +62,82 @@
 
     <!-- Menu Mobile -->
     @if (mobileMenuOpen)
-    {
-        <div class="border-t border-gray-200 bg-white md:hidden">
-            <div class="space-y-1 px-2 pb-3 pt-2">
-                <NavLink href="/" class="block px-3 py-2 text-secondary transition duration-150 ease-in-out hover:text-hover" Match="NavLinkMatch.All" @onclick="CloseMobileMenu">
-                    <span class="text-sm font-normal">Accueil</span>
-                </NavLink>
-                <NavLink href="/communaute" class="block px-3 py-2 text-secondary transition duration-150 ease-in-out hover:text-hover" @onclick="CloseMobileMenu">
-                    <span class="text-sm font-normal">Communauté</span>
-                </NavLink>
-                <NavLink href="/ressources" class="block px-3 py-2 text-secondary transition duration-150 ease-in-out hover:text-hover" @onclick="CloseMobileMenu">
-                    <span class="text-sm font-normal">Ressources</span>
-                </NavLink>
-                <NavLink href="/partenaires" class="block px-3 py-2 text-secondary transition duration-150 ease-in-out hover:text-hover" @onclick="CloseMobileMenu">
-                    <span class="text-sm font-normal">Partenaires</span>
-                </NavLink>
-                <NavLink href="/evenements" class="block px-3 py-2 text-secondary transition duration-150 ease-in-out hover:text-hover" @onclick="CloseMobileMenu">
-                    <span class="text-sm font-normal">Événements</span>
-                </NavLink>
-                <NavLink href="/blog" class="block px-3 py-2 text-secondary transition duration-150 ease-in-out hover:text-hover" @onclick="CloseMobileMenu">
-                    <span class="text-sm font-normal">Blog</span>
-                </NavLink>
-                <NavLink href="/propos" class="block px-3 py-2 text-secondary transition duration-150 ease-in-out hover:text-hover" @onclick="CloseMobileMenu">
-                    <span class="text-sm font-normal">À Propos</span>
-                </NavLink>
-                <NavLink href="/contact" class="block px-3 py-2 text-secondary transition duration-150 ease-in-out hover:text-hover" @onclick="CloseMobileMenu">
-                    <span class="text-sm font-normal">Contact</span>
-                </NavLink>
-                
-                
-                
-                <div class="px-3 py-2">
-                    <button class="flex w-full items-center justify-center rounded-lg bg-secondary px-3 py-2 text-white transition duration-150 ease-in-out hover:bg-hover" @onclick="CloseMobileMenu">
-                    <span class="text-sm font-semibold text-white">Connexion</span> 
-                </button>
+    {   
+        <div class="absolute top-0 w-full h-screen z-10 inset-0 bg-black/50 md:hidden @(mobileMenuOpen ? string.Empty : "hidden")" @onclick="ToggleMobileMenu"></div>
+        <div
+            class="absolute z-30 flex flex-col justify-between top-0 right-0 w-full h-screen sm:w-96 border-t border-gray-200 bg-white md:hidden @(mobileMenuOpen ? "translate-x-0" : "-translate-x-full")">
+            <div>
+                <div class="h-16 flex items-center justify-end px-2">
+                    <button class="" @onclick="ToggleMobileMenu">
+                        <i class="fa-solid fa-xmark text-xl text-secondary"></i>
+                    </button>
                 </div>
+                <div class="flex flex-col gap-4 px-2 pb-3 pt-2">
+                    <NavLink href="/"
+                             class="block px-3 py-2 text-secondary rounded-lg transition duration-150 ease-in-out hover:text-hover" ActiveClass="bg-active text-white"
+                             Match="NavLinkMatch.All" @onclick="ToggleMobileMenu">
+                        <span class="text-sm font-normal">Accueil</span>
+                    </NavLink>
+                    <NavLink href="/communaute"
+                             class="block px-3 py-2 text-secondary rounded-lg transition duration-150 ease-in-out hover:text-hover" ActiveClass="bg-active text-white"
+                             @onclick="ToggleMobileMenu">
+                        <span class="text-sm font-normal">Communauté</span>
+                    </NavLink>
+                    <NavLink href="/ressources"
+                             class="block px-3 py-2 text-secondary rounded-lg transition duration-150 ease-in-out hover:text-hover" ActiveClass="bg-active text-white"
+                             @onclick="ToggleMobileMenu">
+                        <span class="text-sm font-normal">Ressources</span>
+                    </NavLink>
+                    <NavLink href="/partenaires"
+                             class="block px-3 py-2 text-secondary rounded-lg transition duration-150 ease-in-out hover:text-hover" ActiveClass="bg-active text-white"
+                             @onclick="ToggleMobileMenu">
+                        <span class="text-sm font-normal">Partenaires</span>
+                    </NavLink>
+                    <NavLink href="/evenements"
+                             class="block px-3 py-2 text-secondary rounded-lg transition duration-150 ease-in-out hover:text-hover" ActiveClass="bg-active text-white"
+                             @onclick="ToggleMobileMenu">
+                        <span class="text-sm font-normal">Événements</span>
+                    </NavLink>
+                    <NavLink href="/blog"
+                             class="block px-3 py-2 text-secondary rounded-lg transition duration-150 ease-in-out hover:text-hover" ActiveClass="bg-active text-white"
+                             @onclick="ToggleMobileMenu">
+                        <span class="text-sm font-normal">Blog</span>
+                    </NavLink>
+                    <NavLink href="/propos"
+                             class="block px-3 py-2 text-secondary rounded-lg transition duration-150 ease-in-out hover:text-hover" ActiveClass="bg-active text-white"
+                             @onclick="ToggleMobileMenu">
+                        <span class="text-sm font-normal">À Propos</span>
+                    </NavLink>
+                    <NavLink href="/contact"
+                             class="block px-3 py-2 text-secondary rounded-lg transition duration-150 ease-in-out hover:text-hover" ActiveClass="bg-active text-white"
+                             @onclick="ToggleMobileMenu">
+                        <span class="text-sm font-normal">Contact</span>
+                    </NavLink>
+                </div>
+            </div>
+            <div class="px-3 py-2 mb-4">
+                <button type="button"
+                        class="flex w-full items-center justify-center rounded-lg bg-secondary px-3 py-2 text-white transition duration-150 ease-in-out hover:bg-hover"
+                        @onclick="NavigateToLoginFromMobile">
+                    <span class="text-sm font-semibold text-white">Connexion</span>
+                </button>
             </div>
         </div>
     }
 </nav>
 
 @code {
-    private bool dropdownOpen = false;
     private bool mobileMenuOpen = false;
-    private bool mobileDropdownOpen = false;
-
-    private void ToggleDropdown()
-    {
-        dropdownOpen = !dropdownOpen;
-    }
 
     private void ToggleMobileMenu()
     {
         mobileMenuOpen = !mobileMenuOpen;
-        // Fermer le dropdown mobile quand on ouvre/ferme le menu principal
-        if (!mobileMenuOpen) mobileDropdownOpen = false;
     }
 
-    private void ToggleMobileDropdown()
-    {
-        mobileDropdownOpen = !mobileDropdownOpen;
-    }
 
-    private void CloseMobileMenu()
+    private void NavigateToLoginFromMobile()
     {
-        mobileMenuOpen = false;
-        mobileDropdownOpen = false;
+        ToggleMobileMenu();
+        NavigationManager.NavigateTo("/login");
     }
 }

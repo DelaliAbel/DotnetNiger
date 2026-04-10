@@ -4,11 +4,13 @@
 @inject IEventService EventService
 @inject IResourceService ResourceService
 @inject IProfileService ProfileService
+@inject NavigationManager Navigation
 
 <div class="px-4 py-6 md:px-8 md:py-8 bg-[#F4F2F2]">
+	<AdminBreadcrumb />
+
 	@* En-tête principal du dashboard *@
 	<section>
-		<h1 class="H3 text-black">Tableau De Bord</h1>
 		<p class="body-regular text-text">Aperçu rapide des performances et activités clés du site.</p>
 	</section>
 
@@ -22,7 +24,7 @@
 					<p class="H3 leading-none text-text">@metric.Value</p>
 					<p class="body-small text-text">@metric.Label</p>
 				</div>
-				<button type="button" class="w-full bg-[#EEEAFE] hover:bg-hover py-2 Button text-text transition hover:brightness-95">
+				<button type="button" class="w-full bg-[#EEEAFE] hover:bg-hover py-2 Button text-text transition hover:brightness-95" @onclick='() => Navigation.NavigateTo(metric.Url)'>
 					Voir Les Détails <i class="fas fa-angle-double-right ml-1"></i>
 				</button>
 			</article>
@@ -83,10 +85,10 @@
 	// Données affichées dans les cartes KPI.
 	private List<DashboardMetric> Metrics { get; set; } =
 	[
-		new() { IconClass = "fas fa-users", Value = 0, Label = "Utilisateurs" },
-		new() { IconClass = "fas fa-calendar-alt", Value = 0, Label = "Événements" },
-		new() { IconClass = "fas fa-newspaper", Value = 0, Label = "Blogs" },
-		new() { IconClass = "fas fa-newspaper", Value = 0, Label = "Ressources" }
+		new() { IconClass = "fas fa-users", Value = 0, Label = "Utilisateurs" ,Url = "/admin/Users" },
+		new() { IconClass = "fas fa-calendar-alt", Value = 0, Label = "Événements" ,Url = "/admin/events"},
+		new() { IconClass = "fas fa-newspaper", Value = 0, Label = "Blogs" ,Url = "/admin/blog" },
+		new() { IconClass = "fas fa-newspaper", Value = 0, Label = "Ressources" ,Url = "/admin/ressources" }
 	];
 
 	private List<DashboardItem> Events { get; set; } = [];
@@ -105,10 +107,10 @@
 			// Mise à jour des compteurs KPI.
 			Metrics =
 			[
-				new() { IconClass = "fas fa-users", Value = profile is null ? 0 : 1, Label = "Utilisateurs" },
-				new() { IconClass = "fas fa-calendar-alt", Value = events.Count, Label = "Événements" },
-				new() { IconClass = "fas fa-newspaper", Value = posts.Count, Label = "Blogs" },
-				new() { IconClass = "fas fa-newspaper", Value = resources.Count, Label = "Ressources" }
+				new() { IconClass = "fas fa-users", Value = profile is null ? 0 : 1, Label = "Utilisateurs",Url = "/admin/Users" },
+				new() { IconClass = "fas fa-calendar-alt", Value = events.Count, Label = "Événements",Url = "/admin/events" },
+				new() { IconClass = "fas fa-newspaper", Value = posts.Count, Label = "Blogs",Url = "/admin/blog" },
+				new() { IconClass = "fas fa-newspaper", Value = resources.Count, Label = "Ressources",Url = "/admin/ressources" }
 			];
 
 			// Données récentes affichées dans les deux colonnes.
@@ -147,6 +149,7 @@
 		public required string IconClass { get; set; }
 		public int Value { get; set; }
 		public required string Label { get; set; }
+		public required string Url {get;set;}
 	}
 
 	private sealed class DashboardItem

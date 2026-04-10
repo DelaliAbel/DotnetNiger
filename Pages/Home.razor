@@ -1,40 +1,164 @@
 ﻿@page "/"
 @* Page d'accueil publique du site .NET Niger. *@
+@using DotnetNiger.UI.Components
 
 <PageTitle>Accueil - .NET Niger</PageTitle>
 
-<div class="relative min-h-screen bg-[url('wwwroot/Images/Fond1.jpeg')] bg-cover bg-center">
-    <!-- white overlay across full screen -->
-    <!--<div class="absolute inset-0 bg-[#f1f0f0]/50"></div>-->
-    <!-- main flex container sits above overlay -->
-    <div class="relative flex flex-col items-center justify-start text-center px-6 min-h-screen"> 
-        <!-- top: logo centered -->
-    <div class="pt-6">
-        <NavLink href="/" class="flex items-center justify-center">
-            <img src="Logo.svg" alt="logo dotnet.niger" class="h-20 w-20" />
-        </NavLink>
-    </div>
+<!-- HERO SECTION -->
+<div class="relative min-h-screen bg-[url('/Images/Fond1.jpeg')] bg-cover bg-center px-4 py-6 md:px-8 md:py-8">
+    <div class="absolute inset-0 bg-black/25"></div>
+    <div class="relative flex flex-col items-center justify-center text-center px-6 min-h-screen">
+        <!-- Logo -->
+        <div class="mb-8">
+            <NavLink href="/" class="flex items-center justify-center">
+                <img src="Logo.svg" alt="logo dotnet.niger" class="h-24 w-24" />
+            </NavLink>
+        </div>
 
-    <!-- middle: title + paragraph -->
-    <div class="flex flex-col items-center justify-center mt-6 p-6 w-full max-w-4xl">
-        <h1 class="font-bold text-6xl text-blue-600">
-            La communauté des développeurs .NET au Niger
-        </h1>
-        <p class=" text-lg md:text-2xl max-w-2xl mt-6 ">
-            Connecter les développeurs .NET, organiser des événements, partager
-            des ressources techniques. La communauté Dotnet Niger est une équipe passionnée par le développement
-            web et les nouvelles technologies. Notre objectif est de créer un environnement propice à l'apprentissage et à l'échange.
+        <!-- Title & Paragraph -->
+        <div class="flex flex-col items-center justify-center max-w-3xl">
+            <h1 class="font-bold text-4xl sm:text-2xl text-white drop-shadow-lg">
+                La communauté des développeurs .NET au Niger
+            </h1>
+            <p class="text-2xl md:text-xl text-white mt-6 leading-relaxed drop-shadow-md">
+                Connecter les développeurs .NET, organiser des événements, partager
+                des ressources techniques. La communauté Dotnet Niger est une équipe passionnée par le développement
+                web et les nouvelles technologies.
+            </p>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex flex-col sm:flex-row gap-4 mt-10">
+            <button class="px-8 py-3 text-lg font-semibold bg-secondary text-white rounded-lg hover:bg-blue-700 transition shadow-lg">
+                Rejoindre la communauté
+            </button>
+            <button class="px-8 py-3 text-lg font-semibold bg-white text-secondary rounded-lg hover:bg-gray-100 transition shadow-lg">
+                Explorer les ressources
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- POURQUOI REJOINDRE SECTION -->
+<section class="py-16 md:py-24 bg-gradient-to-b from-white to-gray-50">
+    <div class="max-w-6xl mx-auto px-6">
+        <h2 class="text-4xl md:text-5xl font-bold text-center text-secondary mb-4">
+            Pourquoi rejoindre .NET Niger ?
+        </h2>
+        <p class="text-center text-gray-600 text-lg mb-16 max-w-2xl mx-auto">
+            Découvrez les avantages de faire partie de notre communauté dynamique et engagée
         </p>
-    </div>
 
-    <!-- bottom: buttons centered and fixed -->
-    <div class="gap-4 mt-6 ">
-        <button class="px-8 py-3 text-lg font-semibold border border-blue-600 text-white bg-blue-600 rounded-lg hover:bg-white hover:text-white transition">
-            Rejoindre la communauté
-        </button>
-        <button class="px-8 py-3 text-lg font-semibold text-blue-600 bg-white border border-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition">
-            Explorer les ressources
-        </button>
+        <!-- Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <!-- Card 1 -->
+            <div class="bg-white rounded-lg shadow-lg p-8 text-center hover:shadow-xl transition">
+                <div class="inline-block bg-secondary text-white p-4 rounded-lg mb-4">
+                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-3">Excelller</h3>
+                <p class="text-gray-600">
+                    Développez vos compétences en .NET avec des experts de la communauté et des ressources de qualité continuellement mises à jour.
+                </p>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="bg-white rounded-lg shadow-lg p-8 text-center hover:shadow-xl transition">
+                <div class="inline-block bg-secondary text-white p-4 rounded-lg mb-4">
+                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-3">Excelller</h3>
+                <p class="text-gray-600">
+                    Participez à des événements réguliers, des conférences et des ateliers pour rester à jour avec les dernières technologies.
+                </p>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="bg-white rounded-lg shadow-lg p-8 text-center hover:shadow-xl transition">
+                <div class="inline-block bg-secondary text-white p-4 rounded-lg mb-4">
+                    <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M20 0H4v2h16V0zm1 4H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm-1 16H4V6h16v14zm-5.04-6.71l-2.75 3.54-2.12-2.66c-.3-.38-.85-.5-1.3-.35-.48.15-.8.58-.8 1.08 0 .89.8 1.67 1.77 1.67.6 0 1.14-.28 1.5-.73l2.74-3.52 2.74 3.52c.36.45.9.73 1.5.73.98 0 1.77-.78 1.77-1.67 0-.5-.32-.93-.8-1.08-.45-.15-1 0-1.3.35l-2.12 2.66z"/>
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-gray-800 mb-3">Excelller</h3>
+                <p class="text-gray-600">
+                    Connectez-vous avec d'autres développeurs, partagez vos projets et trouvez des opportunités de collaboration professionnelle.
+                </p>
+            </div>
+        </div>
     </div>
-</div>
-</div>
+</section>
+
+<!-- EVENTS SECTION -->
+<section class="py-16 md:py-24 bg-fond_transparent">
+    <div class="max-w-6xl mx-auto px-6">
+        <h2 class="text-4xl md:text-5xl font-bold text-center text-secondary mb-4">
+            Événements à venir
+        </h2>
+        <p class="text-center text-gray-600 text-lg mb-16 max-w-2xl mx-auto">
+            Découvrez nos prochaines conférences, ateliers et rencontres communautaires
+        </p>
+
+        <!-- Events Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            @for(int i = 0;i< 3; i++)
+            {
+                <EventCard />
+            }
+        </div>
+
+        <div class="text-center mt-12">
+            <button class="px-8 py-3 border-2 border-secondary text-secondary font-semibold rounded-lg hover:bg-blue-50 transition">
+                Voir tous les événements
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- RESOURCES SECTION -->
+<section class="py-16 md:py-24 bg-gray-50">
+    <div class="max-w-6xl mx-auto px-6">
+        <h2 class="text-4xl md:text-5xl font-bold text-center text-secondary mb-4">
+            Ressources populaires
+        </h2>
+        <p class="text-center text-gray-600 text-lg mb-16 max-w-2xl mx-auto">
+            Accédez à nos documents, tutoriels et ressources d'apprentissage
+        </p>
+
+        <!-- Resources Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            @for(int i = 0; i<3; i++)
+            {
+                <RessourceCard />
+            }
+        </div>
+    </div>
+</section>
+
+<!-- COMMUNITY CONNECTION SECTION -->
+<section class="py-14 md:py-20 bg-fond_transparent">
+    <div class="max-w-4xl mx-auto px-6 text-center">
+        <h2 class="text-4xl md:text-5xl font-bold text-secondary mb-6">
+            Restez connecté avec la communauté 
+        </h2>
+        <p class="text-gray-600 text-lg mb-10">
+            Rejoignez nos canaux de communication et restez informé de toutes les actualités, événements et opportunités
+        </p>
+
+        <!-- Social Links -->
+        <div class="flex justify-center gap-6 mb-12">
+            <a href="#" class="text-4xl text-secondary hover:scale-110 transition" title="Discord"><i class="fab fa-discord"></i></a>
+            <a href="#" class="text-4xl text-secondary hover:scale-110 transition" title="Community"><i class="fas fa-users"></i></a>
+            <a href="#" class="text-4xl text-secondary hover:scale-110 transition" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+            <a href="#" class="text-4xl text-secondary hover:scale-110 transition" title="X (Twitter)"><i class="fab fa-x-twitter"></i></a>
+            <a href="#" class="text-4xl text-secondary hover:scale-110 transition" title="Instagram"><i class="fab fa-instagram"></i></a>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<Footer />

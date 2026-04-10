@@ -1,0 +1,133 @@
+@inject NavigationManager Navigation
+@implements IDisposable
+
+@if (Items.Count > 0)
+{
+    <nav aria-label="Fil d'ariane" class="pt-5">
+        <ol class="flex flex-wrap items-center gap-2 text-xl text-slate-500">
+            @for (var i = 0; i < Items.Count; i++)
+            {
+                var item = Items[i];
+                var isLast = i == Items.Count - 1;
+
+                <li class="flex items-center gap-2">
+                    @if (!isLast && !string.IsNullOrWhiteSpace(item.Href))
+                    {
+                        <a href="@item.Href" class="transition-colors hover:text-slate-700">@item.Label</a>
+                    }
+                    else
+                    {
+                        <span class="font-semibold text-slate-700">@item.Label</span>
+                    }
+
+                    @if (!isLast)
+                    {
+                        <i class="fas fa-angle-right text-xs text-slate-400" aria-hidden="true"></i>
+                    }
+                </li>
+            }
+        </ol>
+    </nav>
+}
+
+@code {
+    private readonly Dictionary<string, string> _segmentLabels = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["admin"] = "Admin",
+        ["dashboard"] = "Tableau de bord",
+        ["users"] = "Utilisateurs",
+        ["blog"] = "Blog",
+        ["create"] = "Creation",
+        ["edit"] = "Edition",
+        ["events"] = "Evenements",
+        ["ressources"] = "Ressources",
+        ["profile"] = "Profil",
+        ["informations"] = "Informations",
+        ["nouveau"] = "Nouveau",
+    };
+
+    private List<BreadcrumbItem> Items { get; set; } = [];
+
+    protected override void OnInitialized()
+    {
+        BuildItems();
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        BuildItems();
+        _ = InvokeAsync(StateHasChanged);
+    }
+
+    private void BuildItems()
+    {
+        var relativePath = Navigation.ToBaseRelativePath(Navigation.Uri);
+        var cleanPath = relativePath.Split('?', '#')[0].Trim('/');
+
+        if (string.IsNullOrWhiteSpace(cleanPath))
+        {
+            Items = [];
+            return;
+        }
+
+        var segments = cleanPath
+            .Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToList();
+
+        if (segments.Count == 0 || !string.Equals(segments[0], "admin", StringComparison.OrdinalIgnoreCase))
+        {
+            Items = [];
+            return;
+        }
+
+        var items = new List<BreadcrumbItem>
+        {
+            new("Admin", "/admin/dashboard")
+        };
+
+        var href = "/admin";
+
+        for (var i = 1; i < segments.Count; i++)
+        {
+            var segment = segments[i];
+
+            if (Guid.TryParse(segment, out _))
+            {
+                items.Add(new BreadcrumbItem("Detail", string.Empty));
+                continue;
+            }
+
+            href += $"/{segment}";
+            items.Add(new BreadcrumbItem(GetLabel(segment), href));
+        }
+
+        Items = items;
+    }
+
+    private string GetLabel(string segment)
+    {
+        if (_segmentLabels.TryGetValue(segment, out var label))
+        {
+            return label;
+        }
+
+        var normalized = Uri.UnescapeDataString(segment)
+            .Replace('-', ' ')
+            .Replace('_', ' ');
+
+        if (normalized.Length == 0)
+        {
+            return segment;
+        }
+
+        return char.ToUpperInvariant(normalized[0]) + normalized[1..];
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
+
+    private sealed record BreadcrumbItem(string Label, string Href);
+}
