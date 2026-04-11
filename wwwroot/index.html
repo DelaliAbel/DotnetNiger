@@ -17,24 +17,25 @@
     <link rel="stylesheet" href="lib/tinymce/skins/ui/oxide/skin.min.css" />
     <link rel="stylesheet" href="lib/tinymce/skins/ui/oxide/content.min.css" />
 
-    <link href="DotnetNiger.UI.styles.css" rel="stylesheet" />
+    <!--<link href="DotnetNiger.UI.styles.css" rel="stylesheet" />-->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 </head>
 
 <body>
-    <div id="app" class="bg-[#F4F2F2]">
-        <svg class="loading-progress">
-            <circle r="40%" cx="50%" cy="50%" />
-            <circle r="40%" cx="50%" cy="50%" />
-        </svg>
+    <div id="app" class="bg-[#F4F2F2] min-h-screen">
+        <div class="flex justify-center items-center min-h-screen">
+            <div class="flex flex-col items-center space-y-4">
+                <div class="w-28 h-28 border-8 border-gray-300 border-t-secondary rounded-full animate-spin"></div>
+            </div>
+        </div>
         <div class="loading-progress-text"></div>
     </div>
-
+    <!-- 
     <div id="blazor-error-ui" class="bg-red-600 text-white px-4 py-2 rounded-md">
         An unhandled error has occurred.
         <a href="" class="reload">Reload</a>
         <a class="dismiss">🗙</a>
-    </div>
+    </div> -->
 
     <!-- Charger TinyMCE depuis npm (mode hors ligne) -->
     <script src="lib/tinymce/tinymce.min.js"></script>

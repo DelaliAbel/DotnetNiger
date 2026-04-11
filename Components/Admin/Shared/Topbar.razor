@@ -1,12 +1,17 @@
 ﻿@* Composant admin : barre supérieure avec profil et actions rapides. *@
+<<<<<<< HEAD
 @inject IProfileService ProfileService
 @inject AuthService AuthService
 @inject NavigationManager Navigation
 <header class="sticky w-full flex h-16 items-center justify-between bg-white px-8 sm:px-4 md:px-6 shadow-md">
+=======
+<header class="sticky z-20 w-full flex h-16 items-center justify-between bg-white px-8 sm:px-4 md:px-6 shadow-md">
+>>>>>>> 48639daf092a64a186231fd78b8156083d6fa62e
       <div class="flex gap-4">
             <button class="sm:hidden" @onclick="ToggleSidebar">
                   <i class="fas fa-bars text-xl"></i>
             </button>
+<<<<<<< HEAD
             <a href="/admin/profile" class="flex gap-2">
                   <div class="flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-full">
                         <img src="@(profil?.AvatarUrl)" class="h-auto w-[46px]" alt="">
@@ -16,6 +21,12 @@
                         <span class="Badge block text-[#04FE00]">@PrimaryRole</span>
                   </div>
             </a>
+=======
+            <div class="flex items-center text-2xl font-bold">
+                  <img src="/Logo.svg" alt="Logo du dotnet Niger" class="w-10 h-10">
+                  <span class="Link">Dotnet Niger</span>
+            </div>
+>>>>>>> 48639daf092a64a186231fd78b8156083d6fa62e
       </div>
       <div class="flex items-center space-x-4">
             <div>
@@ -31,13 +42,12 @@
 @code {
       [Parameter]
       public EventCallback ToggleSidebar { get; set; }
+<<<<<<< HEAD
       private UserDto? profil;
       private string PrimaryRole => profil?.Roles?.FirstOrDefault() ?? "Membre";
+=======
+>>>>>>> 48639daf092a64a186231fd78b8156083d6fa62e
 
-      protected override async Task OnInitializedAsync()
-      {
-            profil = await ProfileService.GetProfileAsync();
-      }
 
       private async Task HandleLogout()
       {

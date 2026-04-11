@@ -18,7 +18,7 @@ module.exports = {
                 active: 'var(--color-active)',
                 focus: 'var(--color-focus)',
                 white: 'var(--color-white)',
-                fond_tranparent: 'var(--color-soft)'
+                fond_transparent: 'var(--color-soft)'
             },
         },
     },

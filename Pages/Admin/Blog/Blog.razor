@@ -7,7 +7,7 @@
 <div class="min-h-screen p-6 bg-[#F4F2F2]">
     <div class="mb-8">
         <div class="mb-6 flex items-center justify-between">
-            <h1 class="H3 text-text">Blog</h1>
+            <AdminBreadcrumb />
             <button @onclick='() => NavigationManager.NavigateTo("/admin/blog/create")'
                     class="bg-red-500 hover:bg-red-600 text-white min-h-12 px-4 py-2 rounded-lg Button flex items-center gap-2 transition">
                 <i class="fas fa-plus text-xl"></i>
@@ -18,7 +18,7 @@
         <div class="mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center">
             <div class="flex-1 bg-white">
                 <div class="relative">
-                    <i class="fas fa-search -translate-y-1/2 absolute left-4 top-8 transform text-gray-400"></i>
+                    <i class="fas fa-search absolute left-4 top-4 transform text-gray-400"></i>
                     <input type="text" placeholder="Rechercher un article..."
                            @bind="searchQuery" @bind:event="oninput"
                            class="w-full rounded-lg border border-gray-300 py-3 pl-12 pr-4 focus:outline-none" />
