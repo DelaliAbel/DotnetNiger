@@ -25,20 +25,13 @@ public class AuthService
 
             if (!response.IsSuccessStatusCode)
             {
-                AuthDto? errorPayload = null;
-                try
-                {
-                    errorPayload = await response.Content.ReadFromJsonAsync<AuthDto>();
-                }
-                catch
-                {
-                }
+                var errorMessage = await TryReadErrorMessageAsync(response.Content);
 
                 return new ApiSuccessResponse<AuthDto>
                 {
                     Success = false,
-                    Message = !string.IsNullOrWhiteSpace(errorPayload?.Message)
-                        ? errorPayload.Message
+                    Message = !string.IsNullOrWhiteSpace(errorMessage)
+                        ? errorMessage
                         : $"Connexion impossible (HTTP {(int)response.StatusCode})."
                 };
             }
@@ -53,11 +46,12 @@ public class AuthService
         }
         catch (HttpRequestException ex)
         {
-            return new ()
+            return new()
             {
                 Success = false,
-                Message =  ex.Message  }; //"Impossible de joindre le serveur d'authentification. Vérifiez que l'API est démarrée et accessible."
-         
+                Message = ex.Message
+            }; //"Impossible de joindre le serveur d'authentification. Vérifiez que l'API est démarrée et accessible."
+
         }
         catch (TaskCanceledException)
         {
@@ -116,10 +110,10 @@ public class AuthService
 
         if (rolesLower.Contains("superadmin"))
             return "/admin/dashboard";
-        
+
         if (rolesLower.Contains("admin"))
             return "/admin/dashboard";
-        
+
         if (rolesLower.Contains("moderator"))
             return "/admin/dashboard";
 
@@ -147,14 +141,31 @@ public class AuthService
         };
     }
 
-    public async Task<AuthDto> RegisterAsync(RegisterRequest request)
+    public async Task<ApiSuccessResponse<AuthDto>> RegisterAsync(RegisterRequest request)
     {
         var response = await _http.PostAsJsonAsync("api/auth/register", request);
-        var result = await response.Content.ReadFromJsonAsync<AuthDto>()
-                     ?? new AuthDto { Success = false, Message = "Erreur lors de l'inscription." };
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await TryReadErrorMessageAsync(response.Content);
 
-        if (result.Success && result.Token is not null)
-            await _authProvider.SaveTokensAsync(result.Token.AccessToken, result.Token.RefreshToken);
+            return new ApiSuccessResponse<AuthDto>
+            {
+                Success = false,
+                Message = !string.IsNullOrWhiteSpace(errorMessage)
+                    ? errorMessage
+                    : $"Inscription impossible (HTTP {(int)response.StatusCode})."
+            };
+        }
+
+        var wrapped = await response.Content.ReadFromJsonAsync<ApiSuccessResponse<AuthDto>>();
+        var result = wrapped ?? new ApiSuccessResponse<AuthDto>
+        {
+            Success = false,
+            Message = "Erreur lors de l'inscription."
+        };
+
+        if (result.Success && result.Data?.Token is not null)
+            await _authProvider.SaveTokensAsync(result.Data.Token.AccessToken, result.Data.Token.RefreshToken);
 
         return result;
     }
@@ -191,8 +202,9 @@ public class AuthService
             return null;
         }
 
-        var result = await response.Content.ReadFromJsonAsync<AuthDto>();
-        if (result?.Success == true && result.Token is not null)
+        var wrapped = await response.Content.ReadFromJsonAsync<ApiSuccessResponse<AuthDto>>();
+        var result = wrapped?.Data;
+        if (result?.Token is not null)
             await _authProvider.SaveTokensAsync(result.Token.AccessToken, result.Token.RefreshToken);
 
         return result;
@@ -204,26 +216,37 @@ public class AuthService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<AuthDto?> ResetPasswordAsync(ResetPasswordRequest request)
+    public async Task<ApiSuccessResponse<object>> ResetPasswordAsync(ResetPasswordRequest request)
     {
         var response = await _http.PostAsJsonAsync("api/auth/reset-password", request);
-        if (!response.IsSuccessStatusCode) return null;
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorMessage = await TryReadErrorMessageAsync(response.Content);
+
+            return new ApiSuccessResponse<object>
+            {
+                Success = false,
+                Message = !string.IsNullOrWhiteSpace(errorMessage)
+                    ? errorMessage
+                    : "Erreur lors de la réinitialisation."
+            };
+        }
 
         if (response.Content.Headers.ContentLength is null or 0)
         {
-            return new AuthDto
+            return new ApiSuccessResponse<object>
             {
                 Success = true,
                 Message = "Mot de passe réinitialisé avec succès."
             };
         }
 
-        return await response.Content.ReadFromJsonAsync<AuthDto>()
-               ?? new AuthDto
-               {
-                   Success = true,
-                   Message = "Mot de passe réinitialisé avec succès."
-               };
+        var wrapped = await response.Content.ReadFromJsonAsync<ApiSuccessResponse<object>>();
+        return new ApiSuccessResponse<object>
+        {
+            Success = true,
+            Message = wrapped?.Message ?? "Mot de passe réinitialisé avec succès."
+        };
     }
 
     public async Task<bool> RequestEmailVerificationAsync(RequestEmailVerificationRequest request)
@@ -272,5 +295,33 @@ public class AuthService
             3 => Convert.FromBase64String(base64 + "="),
             _ => Convert.FromBase64String(base64),
         };
+    }
+
+    private static async Task<string?> TryReadErrorMessageAsync(HttpContent content)
+    {
+        try
+        {
+            var json = await content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(json))
+                return null;
+
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("detail", out var detail) && detail.ValueKind == JsonValueKind.String)
+                return detail.GetString();
+
+            if (root.TryGetProperty("message", out var message) && message.ValueKind == JsonValueKind.String)
+                return message.GetString();
+
+            if (root.TryGetProperty("error", out var error) && error.ValueKind == JsonValueKind.String)
+                return error.GetString();
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

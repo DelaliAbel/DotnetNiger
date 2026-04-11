@@ -120,9 +120,12 @@
         var result = await Auth.RegisterAsync(model);
         isLoading = false;
 
-        if (result.Success)
-            Navigation.NavigateTo("/");
+        if (result.Success && result.Data is not null)
+        {
+            var destination = Auth.GetPostLoginRedirectPath(result.Data.User?.Roles);
+            Navigation.NavigateTo(destination);
+        }
         else
-            errorMessage = result.Message;
+            errorMessage = result.Message ?? "Erreur lors de l'inscription.";
     }
 }

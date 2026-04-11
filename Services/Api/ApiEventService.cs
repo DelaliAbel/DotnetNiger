@@ -2,7 +2,6 @@ using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using System.Net.Http.Json;
-using System.Text.Json;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -35,7 +34,11 @@ public class ApiEventService : IEventService
 
     public async Task<List<EventDto>> GetUpcomingEventsAsync()
     {
-        return await _http.GetFromJsonAsync<List<EventDto>>($"{PublicBase}/upcoming/10") ?? new List<EventDto>();
+        var response = await _http.GetAsync($"{PublicBase}/upcoming?page=1&pageSize=10");
+        if (!response.IsSuccessStatusCode)
+            return new List<EventDto>();
+
+        return await ApiResponseReader.ReadCollectionAsync<EventDto>(response);
     }
 
     public async Task<List<EventDto>> GetPastEventsAsync()
@@ -50,7 +53,11 @@ public class ApiEventService : IEventService
 
     public async Task<EventDto?> GetEventByIdAsync(Guid id)
     {
-        return await _http.GetFromJsonAsync<EventDto>($"{PublicBase}/{id}");
+        var response = await _http.GetAsync($"{PublicBase}/{id}");
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await ApiResponseReader.ReadAsync<EventDto>(response);
     }
 
     public async Task<EventDto?> GetEventBySlugAsync(string slug)
@@ -111,24 +118,25 @@ public class ApiEventService : IEventService
 
     public async Task<EventDto> CreateEventAsync(CreateEventRequest request)
     {
-        var response = await _http.PostAsJsonAsync(AdminBase, request);
+        var response = await _http.PostAsJsonAsync(PublicBase, request);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<EventDto>()
+
+        return await ApiResponseReader.ReadAsync<EventDto>(response)
                ?? throw new InvalidOperationException("La réponse API est vide pour la création de l'événement.");
     }
 
     public async Task<EventDto?> UpdateEventAsync(Guid id, CreateEventRequest request)
     {
-        var response = await _http.PutAsJsonAsync($"{AdminBase}/{id}", request);
+        var response = await _http.PutAsJsonAsync($"{PublicBase}/{id}", request);
         if (!response.IsSuccessStatusCode)
             return null;
 
-        return await response.Content.ReadFromJsonAsync<EventDto>();
+        return await ApiResponseReader.ReadAsync<EventDto>(response);
     }
 
     public async Task<bool> DeleteEventAsync(Guid id)
     {
-        var response = await _http.DeleteAsync($"{AdminBase}/{id}");
+        var response = await _http.DeleteAsync($"{PublicBase}/{id}");
         return response.IsSuccessStatusCode;
     }
 
@@ -148,29 +156,26 @@ public class ApiEventService : IEventService
 
     public async Task<EventRegistrationDto?> RegisterToEventAsync(RegisterEventRequest request, Guid userId, string userName)
     {
-        var payload = new
-        {
-            request.EventId,
-            UserId = userId,
-            UserName = userName
-        };
-
-        var response = await _http.PostAsJsonAsync("api/events/registrations", payload);
+        var response = await _http.PostAsJsonAsync("api/events/registrations", request);
         if (!response.IsSuccessStatusCode)
             return null;
 
-        return await response.Content.ReadFromJsonAsync<EventRegistrationDto>();
+        return await ApiResponseReader.ReadAsync<EventRegistrationDto>(response);
     }
 
     public async Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId)
     {
-        var response = await _http.DeleteAsync($"api/events/{eventId}/registrations/{userId}");
+        var response = await _http.DeleteAsync($"api/events/{eventId}/registrations");
         return response.IsSuccessStatusCode;
     }
 
     public async Task<List<EventRegistrationDto>> GetRegistrationsByEventAsync(Guid eventId)
     {
-        return await _http.GetFromJsonAsync<List<EventRegistrationDto>>($"api/events/{eventId}/registrations") ?? new List<EventRegistrationDto>();
+        var response = await _http.GetAsync($"api/events/{eventId}/registrations");
+        if (!response.IsSuccessStatusCode)
+            return new List<EventRegistrationDto>();
+
+        return await ApiResponseReader.ReadCollectionAsync<EventRegistrationDto>(response);
     }
 
     private async Task<List<T>> GetCollectionAsync<T>(string path, Dictionary<string, string?>? query = null)
@@ -180,18 +185,7 @@ public class ApiEventService : IEventService
         if (!response.IsSuccessStatusCode)
             return new List<T>();
 
-        var json = await response.Content.ReadAsStringAsync();
-        if (string.IsNullOrWhiteSpace(json))
-            return new List<T>();
-
-        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-
-        var list = JsonSerializer.Deserialize<List<T>>(json, options);
-        if (list is not null)
-            return list;
-
-        var paginated = JsonSerializer.Deserialize<PaginatedDto<T>>(json, options);
-        return paginated?.Items ?? new List<T>();
+        return await ApiResponseReader.ReadCollectionAsync<T>(response);
     }
 
     private static string BuildUrl(string path, Dictionary<string, string?>? query = null)

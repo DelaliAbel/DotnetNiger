@@ -29,7 +29,7 @@ public class ApiProfileService : IProfileService
         if (!response.IsSuccessStatusCode)
             return new UserDto();
 
-        return await response.Content.ReadFromJsonAsync<UserDto>() ?? new UserDto();
+        return await ApiResponseReader.ReadAsync<UserDto>(response) ?? new UserDto();
     }
 
     public async Task<UserDto> UpdateProfileAsync(UpdateProfileRequest request)
@@ -47,7 +47,7 @@ public class ApiProfileService : IProfileService
         if (response.Content.Headers.ContentLength is null or 0)
             return await GetProfileAsync();
 
-        var updated = await response.Content.ReadFromJsonAsync<UserDto>();
+        var updated = await ApiResponseReader.ReadAsync<UserDto>(response);
         return updated ?? await GetProfileAsync();
     }
 
@@ -60,7 +60,7 @@ public class ApiProfileService : IProfileService
         if (!response.IsSuccessStatusCode)
             return new List<SocialLinkDto>();
 
-        return await response.Content.ReadFromJsonAsync<List<SocialLinkDto>>() ?? new List<SocialLinkDto>();
+        return await ApiResponseReader.ReadCollectionAsync<SocialLinkDto>(response);
     }
 
     public async Task<SocialLinkDto?> AddSocialLinkAsync(AddSocialLinkRequest request)
@@ -83,7 +83,7 @@ public class ApiProfileService : IProfileService
                 link.Url.Equals(request.Url, StringComparison.OrdinalIgnoreCase));
         }
 
-        return await response.Content.ReadFromJsonAsync<SocialLinkDto>();
+        return await ApiResponseReader.ReadAsync<SocialLinkDto>(response);
     }
 
     public async Task<bool> DeleteSocialLinkAsync(Guid id)

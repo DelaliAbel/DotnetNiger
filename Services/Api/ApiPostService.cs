@@ -2,7 +2,6 @@ using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using System.Net.Http.Json;
-using System.Text.Json;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -10,7 +9,6 @@ public class ApiPostService : IPostService
 {
     private readonly HttpClient _http;
     private const string PublicBase = "api/posts";
-    private const string AdminBase = "api/community/admin/posts";
     private const string SearchBase = "api/search";
 
     public ApiPostService(HttpClient http)
@@ -75,24 +73,25 @@ public class ApiPostService : IPostService
 
     public async Task<PostDto> CreatePostAsync(CreatePostRequest request)
     {
-        var response = await _http.PostAsJsonAsync(AdminBase, request);
+        var response = await _http.PostAsJsonAsync(PublicBase, request);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<PostDto>()
+
+        return await ApiResponseReader.ReadAsync<PostDto>(response)
                ?? throw new InvalidOperationException("La réponse API est vide pour la création du post.");
     }
 
     public async Task<PostDto?> UpdatePostAsync(Guid id, UpdatePostRequest request)
     {
-        var response = await _http.PutAsJsonAsync($"{AdminBase}/{id}", request);
+        var response = await _http.PutAsJsonAsync($"{PublicBase}/{id}", request);
         if (!response.IsSuccessStatusCode)
             return null;
 
-        return await response.Content.ReadFromJsonAsync<PostDto>();
+        return await ApiResponseReader.ReadAsync<PostDto>(response);
     }
 
     public async Task<bool> DeletePostAsync(Guid id)
     {
-        var response = await _http.DeleteAsync($"{AdminBase}/{id}");
+        var response = await _http.DeleteAsync($"{PublicBase}/{id}");
         return response.IsSuccessStatusCode;
     }
 
@@ -138,18 +137,7 @@ public class ApiPostService : IPostService
         if (!response.IsSuccessStatusCode)
             return new List<T>();
 
-        var json = await response.Content.ReadAsStringAsync();
-        if (string.IsNullOrWhiteSpace(json))
-            return new List<T>();
-
-        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-
-        var list = JsonSerializer.Deserialize<List<T>>(json, options);
-        if (list is not null)
-            return list;
-
-        var paginated = JsonSerializer.Deserialize<PaginatedDto<T>>(json, options);
-        return paginated?.Items ?? new List<T>();
+        return await ApiResponseReader.ReadCollectionAsync<T>(response);
     }
 
     private static string BuildUrl(string path, Dictionary<string, string?>? query = null)

@@ -15,13 +15,14 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 
 // Client HTTP dédié pour AuthService — configurez ApiBaseUrl dans wwwroot/appsettings.json
-var apiBaseUrl = builder.Configuration["ApiBaseUrl"];
+var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? builder.HostEnvironment.BaseAddress;
 builder.Services.AddScoped<ClientIdentifierProvider>();
 
 builder.Services.AddScoped<AuthService>(sp => new AuthService(
     CreateGatewayHttpClient(
         apiBaseUrl,
         sp.GetRequiredService<ClientIdentifierProvider>(),
+        sp.GetRequiredService<CustomAuthStateProvider>(),
         sp.GetRequiredService<ILogger<ClientIdHeaderHandler>>()),
     sp.GetRequiredService<CustomAuthStateProvider>()
 ));
@@ -48,16 +49,19 @@ else
         new ApiPostService(CreateGatewayHttpClient(
             apiBaseUrl,
             sp.GetRequiredService<ClientIdentifierProvider>(),
+            sp.GetRequiredService<CustomAuthStateProvider>(),
             sp.GetRequiredService<ILogger<ClientIdHeaderHandler>>())));
     builder.Services.AddScoped<IEventService>(sp =>
         new ApiEventService(CreateGatewayHttpClient(
             apiBaseUrl,
             sp.GetRequiredService<ClientIdentifierProvider>(),
+            sp.GetRequiredService<CustomAuthStateProvider>(),
             sp.GetRequiredService<ILogger<ClientIdHeaderHandler>>())));
     builder.Services.AddScoped<IResourceService>(sp =>
         new ApiResourceService(CreateGatewayHttpClient(
             apiBaseUrl,
             sp.GetRequiredService<ClientIdentifierProvider>(),
+            sp.GetRequiredService<CustomAuthStateProvider>(),
             sp.GetRequiredService<ILogger<ClientIdHeaderHandler>>())));
 
     builder.Services.AddScoped<IProfileService>(sp =>
@@ -65,6 +69,7 @@ else
             CreateGatewayHttpClient(
                 apiBaseUrl,
                 sp.GetRequiredService<ClientIdentifierProvider>(),
+                sp.GetRequiredService<CustomAuthStateProvider>(),
                 sp.GetRequiredService<ILogger<ClientIdHeaderHandler>>()),
             sp.GetRequiredService<CustomAuthStateProvider>()));
 }
@@ -74,9 +79,10 @@ await builder.Build().RunAsync();
 static HttpClient CreateGatewayHttpClient(
     string baseUrl,
     ClientIdentifierProvider clientIdentifierProvider,
+    CustomAuthStateProvider authStateProvider,
     ILogger<ClientIdHeaderHandler> logger)
 {
-    var headerHandler = new ClientIdHeaderHandler(clientIdentifierProvider, logger)
+    var headerHandler = new ClientIdHeaderHandler(clientIdentifierProvider, authStateProvider, logger)
     {
         InnerHandler = new HttpClientHandler()
     };

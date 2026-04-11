@@ -1,4 +1,4 @@
-ï»¿using DotnetNiger.UI.Models.Requests;
+using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 
@@ -15,10 +15,10 @@ namespace DotnetNiger.UI.Services.Mock
                 new PostDto
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Les nouveautÃ©s de .NET 9",
+                    Title = "Les nouveautés de .NET 9",
                     Slug = "les-nouveautes-de-dotnet-9",
-                    Excerpt = "DÃ©couvrez les derniÃ¨res fonctionnalitÃ©s...",
-                    ContentHTML = "<h1>Introduction</h1><p>...</p>",
+                    Excerpt = "Découvrez les dernières fonctionnalités...",
+                    Content = "<h1>Introduction</h1><p>...</p>",
                     CoverImageUrl = "/images/dotnet9.jpg",
                     AuthorId = Guid.NewGuid(),
                     AuthorName = "Jean Dupont",
@@ -39,10 +39,10 @@ namespace DotnetNiger.UI.Services.Mock
                 new PostDto
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Introduction Ã  Blazor WebAssembly",
+                    Title = "Introduction à Blazor WebAssembly",
                     Slug = "introduction-a-blazor-webassembly",
                     Excerpt = "Apprenez les bases de Blazor WASM...",
-                    ContentHTML = "<h1>Blazor WASM</h1><p>...</p>",
+                    Content = "<h1>Blazor WASM</h1><p>...</p>",
                     CoverImageUrl = "/images/blazor.jpg",
                     AuthorId = Guid.NewGuid(),
                     AuthorName = "Marie Martin",
@@ -66,7 +66,7 @@ namespace DotnetNiger.UI.Services.Mock
                     Title = "Les meilleures pratiques en C#",
                     Slug = "les-meilleures-pratiques-en-csharp",
                     Excerpt = "Guide complet des bonnes pratiques...",
-                    ContentHTML = "<h1>Pratiques</h1><p>...</p>",
+                    Content = "<h1>Pratiques</h1><p>...</p>",
                     CoverImageUrl = "/images/csharp.jpg",
                     AuthorId = Guid.NewGuid(),
                     AuthorName = "Pierre Dubois",
@@ -87,10 +87,10 @@ namespace DotnetNiger.UI.Services.Mock
                 new PostDto
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Introduction Ã  Blazor WebAssembly",
+                    Title = "Introduction à Blazor WebAssembly",
                     Slug = "introduction-a-blazor-webassembly",
                     Excerpt = "Apprenez les bases de Blazor WASM...",
-                    ContentHTML = "<h1>Blazor WASM</h1><p>...</p>",
+                    Content = "<h1>Blazor WASM</h1><p>...</p>",
                     CoverImageUrl = "/images/blazor.jpg",
                     AuthorId = Guid.NewGuid(),
                     AuthorName = "Marie Martin",
@@ -111,10 +111,10 @@ namespace DotnetNiger.UI.Services.Mock
                 new PostDto
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Introduction Ã  Blazor WebAssembly",
+                    Title = "Introduction à Blazor WebAssembly",
                     Slug = "introduction-a-blazor-webassembly",
                     Excerpt = "Apprenez les bases de Blazor WASM...",
-                    ContentHTML = "<h1>Blazor WASM</h1><p>...</p>",
+                    Content = "<h1>Blazor WASM</h1><p>...</p>",
                     CoverImageUrl = "/images/blazor.jpg",
                     AuthorId = Guid.NewGuid(),
                     AuthorName = "Marie Martin",
@@ -135,10 +135,10 @@ namespace DotnetNiger.UI.Services.Mock
                 new PostDto
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Introduction Ã  Blazor WebAssembly",
+                    Title = "Introduction à Blazor WebAssembly",
                     Slug = "introduction-a-blazor-webassembly",
                     Excerpt = "Apprenez les bases de Blazor WASM...",
-                    ContentHTML = "<h1>Blazor WASM</h1><p>...</p>",
+                    Content = "<h1>Blazor WASM</h1><p>...</p>",
                     CoverImageUrl = "/images/blazor.jpg",
                     AuthorId = Guid.NewGuid(),
                     AuthorName = "Marie Martin",
@@ -159,10 +159,10 @@ namespace DotnetNiger.UI.Services.Mock
                 new PostDto
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Introduction Ã  Blazor WebAssembly",
+                    Title = "Introduction à Blazor WebAssembly",
                     Slug = "introduction-a-blazor-webassembly",
                     Excerpt = "Apprenez les bases de Blazor WASM...",
-                    ContentHTML = "<h1>Blazor WASM</h1><p>...</p>",
+                    Content = "<h1>Blazor WASM</h1><p>...</p>",
                     CoverImageUrl = "/images/blazor.jpg",
                     AuthorId = Guid.NewGuid(),
                     AuthorName = "Marie Martin",
@@ -183,10 +183,10 @@ namespace DotnetNiger.UI.Services.Mock
                 new PostDto
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Introduction Ã  Blazor WebAssembly",
+                    Title = "Introduction à Blazor WebAssembly",
                     Slug = "introduction-a-blazor-webassembly",
                     Excerpt = "Apprenez les bases de Blazor WASM...",
-                    ContentHTML = "<h1>Blazor WASM</h1><p>...</p>",
+                    Content = "<h1>Blazor WASM</h1><p>...</p>",
                     CoverImageUrl = "/images/blazor.jpg",
                     AuthorId = Guid.NewGuid(),
                     AuthorName = "Marie Martin",
@@ -207,10 +207,10 @@ namespace DotnetNiger.UI.Services.Mock
                 new PostDto
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Introduction Ã  Blazor WebAssembly",
+                    Title = "Introduction à Blazor WebAssembly",
                     Slug = "introduction-a-blazor-webassembly",
                     Excerpt = "Apprenez les bases de Blazor WASM...",
-                    ContentHTML = "<h1>Blazor WASM</h1><p>...</p>",
+                    Content = "<h1>Blazor WASM</h1><p>...</p>",
                     CoverImageUrl = "/images/blazor.jpg",
                     AuthorId = Guid.NewGuid(),
                     AuthorName = "Marie Martin",
@@ -231,10 +231,10 @@ namespace DotnetNiger.UI.Services.Mock
                 new PostDto
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Introduction Ã  Blazor WebAssembly",
+                    Title = "Introduction à Blazor WebAssembly",
                     Slug = "introduction-a-blazor-webassembly",
                     Excerpt = "Apprenez les bases de Blazor WASM...",
-                    ContentHTML = "<h1>Blazor WASM</h1><p>...</p>",
+                    Content = "<h1>Blazor WASM</h1><p>...</p>",
                     CoverImageUrl = "/images/blazor.jpg",
                     AuthorId = Guid.NewGuid(),
                     AuthorName = "Marie Martin",
@@ -255,10 +255,10 @@ namespace DotnetNiger.UI.Services.Mock
                 new PostDto
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Introduction Ã  Blazor WebAssembly",
+                    Title = "Introduction à Blazor WebAssembly",
                     Slug = "introduction-a-blazor-webassembly",
                     Excerpt = "Apprenez les bases de Blazor WASM...",
-                    ContentHTML = "<h1>Blazor WASM</h1><p>...</p>",
+                    Content = "<h1>Blazor WASM</h1><p>...</p>",
                     CoverImageUrl = "/images/blazor.jpg",
                     AuthorId = Guid.NewGuid(),
                     AuthorName = "Marie Martin",
@@ -279,10 +279,10 @@ namespace DotnetNiger.UI.Services.Mock
                 new PostDto
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Introduction Ã  Blazor WebAssembly",
+                    Title = "Introduction à Blazor WebAssembly",
                     Slug = "introduction-a-blazor-webassembly",
                     Excerpt = "Apprenez les bases de Blazor WASM...",
-                    ContentHTML = "<h1>Blazor WASM</h1><p>...</p>",
+                    Content = "<h1>Blazor WASM</h1><p>...</p>",
                     CoverImageUrl = "/images/blazor.jpg",
                     AuthorId = Guid.NewGuid(),
                     AuthorName = "Marie Martin",
@@ -303,10 +303,10 @@ namespace DotnetNiger.UI.Services.Mock
                 new PostDto
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Introduction Ã  Blazor WebAssembly",
+                    Title = "Introduction à Blazor WebAssembly",
                     Slug = "introduction-a-blazor-webassembly",
                     Excerpt = "Apprenez les bases de Blazor WASM...",
-                    ContentHTML = "<h1>Blazor WASM</h1><p>...</p>",
+                    Content = "<h1>Blazor WASM</h1><p>...</p>",
                     CoverImageUrl = "/images/blazor.jpg",
                     AuthorId = Guid.NewGuid(),
                     AuthorName = "Marie Martin",
@@ -327,10 +327,10 @@ namespace DotnetNiger.UI.Services.Mock
                 new PostDto
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Introduction Ã  Blazor WebAssembly",
+                    Title = "Introduction à Blazor WebAssembly",
                     Slug = "introduction-a-blazor-webassembly",
                     Excerpt = "Apprenez les bases de Blazor WASM...",
-                    ContentHTML = "<h1>Blazor WASM</h1><p>...</p>",
+                    Content = "<h1>Blazor WASM</h1><p>...</p>",
                     CoverImageUrl = "/images/blazor.jpg",
                     AuthorId = Guid.NewGuid(),
                     AuthorName = "Marie Martin",
@@ -351,10 +351,10 @@ namespace DotnetNiger.UI.Services.Mock
                 new PostDto
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Introduction Ã  Blazor WebAssembly",
+                    Title = "Introduction à Blazor WebAssembly",
                     Slug = "introduction-a-blazor-webassembly",
                     Excerpt = "Apprenez les bases de Blazor WASM...",
-                    ContentHTML = "<h1>Blazor WASM</h1><p>...</p>",
+                    Content = "<h1>Blazor WASM</h1><p>...</p>",
                     CoverImageUrl = "/images/blazor.jpg",
                     AuthorId = Guid.NewGuid(),
                     AuthorName = "Marie Martin",
@@ -375,10 +375,10 @@ namespace DotnetNiger.UI.Services.Mock
                 new PostDto
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Introduction Ã  Blazor WebAssembly",
+                    Title = "Introduction à Blazor WebAssembly",
                     Slug = "introduction-a-blazor-webassembly",
                     Excerpt = "Apprenez les bases de Blazor WASM...",
-                    ContentHTML = "<h1>Blazor WASM</h1><p>...</p>",
+                    Content = "<h1>Blazor WASM</h1><p>...</p>",
                     CoverImageUrl = "/images/blazor.jpg",
                     AuthorId = Guid.NewGuid(),
                     AuthorName = "Marie Martin",
@@ -399,10 +399,10 @@ namespace DotnetNiger.UI.Services.Mock
                 new PostDto
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Introduction Ã  Blazor WebAssembly",
+                    Title = "Introduction à Blazor WebAssembly",
                     Slug = "introduction-a-blazor-webassembly",
                     Excerpt = "Apprenez les bases de Blazor WASM...",
-                    ContentHTML = "<h1>Blazor WASM</h1><p>...</p>",
+                    Content = "<h1>Blazor WASM</h1><p>...</p>",
                     CoverImageUrl = "/images/blazor.jpg",
                     AuthorId = Guid.NewGuid(),
                     AuthorName = "Marie Martin",
@@ -423,10 +423,10 @@ namespace DotnetNiger.UI.Services.Mock
                 new PostDto
                 {
                     Id = Guid.NewGuid(),
-                    Title = "Introduction Ã  Blazor WebAssembly",
+                    Title = "Introduction à Blazor WebAssembly",
                     Slug = "introduction-a-blazor-webassembly",
                     Excerpt = "Apprenez les bases de Blazor WASM...",
-                    ContentHTML = "<h1>Blazor WASM</h1><p>...</p>",
+                    Content = "<h1>Blazor WASM</h1><p>...</p>",
                     CoverImageUrl = "/images/blazor.jpg",
                     AuthorId = Guid.NewGuid(),
                     AuthorName = "Marie Martin",
@@ -455,9 +455,9 @@ namespace DotnetNiger.UI.Services.Mock
                 Title = request.Title,
                 Slug = GenerateSlug(request.Title),
                 Excerpt = request.Excerpt,
-                ContentHTML = request.Content,
+                Content = request.Content,
                 CoverImageUrl = request.CoverImageUrl ?? "/images/default.jpg",
-                AuthorId = Guid.NewGuid(), // Ã€ remplacer par l'utilisateur connectÃ©
+                AuthorId = Guid.NewGuid(), // À remplacer par l'utilisateur connecté
                 AuthorName = "Admin",
                 AuthorAvatar = "/images/avatars/default.jpg",
                 PostType = request.PostType,
@@ -528,7 +528,7 @@ namespace DotnetNiger.UI.Services.Mock
             if (post == null)
                 return await Task.FromResult<PostDto?>(null);
 
-            // IncrÃ©menter les vues
+            // Incrémenter les vues
             post.ViewCount++;
 
             return await Task.FromResult<PostDto?>(post);
@@ -541,7 +541,7 @@ namespace DotnetNiger.UI.Services.Mock
             if (post == null)
                 return await Task.FromResult<PostDto?>(null);
 
-            // IncrÃ©menter les vues
+            // Incrémenter les vues
             post.ViewCount++;
 
             return await Task.FromResult<PostDto?>(post);
@@ -556,7 +556,7 @@ namespace DotnetNiger.UI.Services.Mock
 
             post.Title = request.Title;
             post.Slug = GenerateSlug(request.Title);
-            post.ContentHTML = request.Content;
+            post.Content = request.Content;
             post.Excerpt = request.Excerpt;
             post.CoverImageUrl = request.CoverImageUrl;
             post.PostType = request.PostType;
@@ -582,17 +582,17 @@ namespace DotnetNiger.UI.Services.Mock
             return title
                 .ToLowerInvariant()
                 .Replace(" ", "-")
-                .Replace("Ã ", "a")
-                .Replace("Ã©", "e")
-                .Replace("Ã¨", "e")
-                .Replace("Ãª", "e")
-                .Replace("Ã«", "e")
-                .Replace("Ã®", "i")
-                .Replace("Ã¯", "i")
-                .Replace("Ã´", "o")
-                .Replace("Ã¹", "u")
-                .Replace("Ã»", "u")
-                .Replace("Ã§", "c")
+                .Replace("à", "a")
+                .Replace("é", "e")
+                .Replace("è", "e")
+                .Replace("ê", "e")
+                .Replace("ë", "e")
+                .Replace("î", "i")
+                .Replace("ï", "i")
+                .Replace("ô", "o")
+                .Replace("ù", "u")
+                .Replace("û", "u")
+                .Replace("ç", "c")
                 .Replace("'", "-")
                 .Replace("\"", "")
                 .Replace(",", "")

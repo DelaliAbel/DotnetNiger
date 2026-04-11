@@ -2,7 +2,6 @@ using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using System.Net.Http.Json;
-using System.Text.Json;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -10,7 +9,6 @@ public class ApiResourceService : IResourceService
 {
     private readonly HttpClient _http;
     private const string PublicBase = "api/resources";
-    private const string AdminBase = "api/community/admin/resources";
     private const string SearchBase = "api/search";
 
     public ApiResourceService(HttpClient http)
@@ -25,7 +23,11 @@ public class ApiResourceService : IResourceService
 
     public async Task<ResourceDto?> GetResourceByIdAsync(Guid id)
     {
-        return await _http.GetFromJsonAsync<ResourceDto>($"{PublicBase}/{id}");
+        var response = await _http.GetAsync($"{PublicBase}/{id}");
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await ApiResponseReader.ReadAsync<ResourceDto>(response);
     }
 
     public async Task<ResourceDto?> GetResourceBySlugAsync(string slug)
@@ -118,32 +120,34 @@ public class ApiResourceService : IResourceService
 
     public async Task<ResourceDto> CreateResourceAsync(CreateResourceRequest request)
     {
-        var response = await _http.PostAsJsonAsync(AdminBase, request);
+        var response = await _http.PostAsJsonAsync(PublicBase, request);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<ResourceDto>()
+
+        return await ApiResponseReader.ReadAsync<ResourceDto>(response)
                ?? throw new InvalidOperationException("La réponse API est vide pour la création de la ressource.");
     }
 
     public async Task<ResourceDto> AddResourceAsync(AddResourceRequest request)
     {
-        var response = await _http.PostAsJsonAsync(AdminBase, request);
+        var response = await _http.PostAsJsonAsync(PublicBase, request);
         response.EnsureSuccessStatusCode();
-        return await response.Content.ReadFromJsonAsync<ResourceDto>()
+
+        return await ApiResponseReader.ReadAsync<ResourceDto>(response)
                ?? throw new InvalidOperationException("La réponse API est vide pour l'ajout de la ressource.");
     }
 
     public async Task<ResourceDto?> UpdateResourceAsync(Guid id, CreateResourceRequest request)
     {
-        var response = await _http.PutAsJsonAsync($"{AdminBase}/{id}", request);
+        var response = await _http.PutAsJsonAsync($"{PublicBase}/{id}", request);
         if (!response.IsSuccessStatusCode)
             return null;
 
-        return await response.Content.ReadFromJsonAsync<ResourceDto>();
+        return await ApiResponseReader.ReadAsync<ResourceDto>(response);
     }
 
     public async Task<bool> DeleteResourceAsync(Guid id)
     {
-        var response = await _http.DeleteAsync($"{AdminBase}/{id}");
+        var response = await _http.DeleteAsync($"{PublicBase}/{id}");
         return response.IsSuccessStatusCode;
     }
 
@@ -159,18 +163,7 @@ public class ApiResourceService : IResourceService
         if (!response.IsSuccessStatusCode)
             return new List<T>();
 
-        var json = await response.Content.ReadAsStringAsync();
-        if (string.IsNullOrWhiteSpace(json))
-            return new List<T>();
-
-        var options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
-
-        var list = JsonSerializer.Deserialize<List<T>>(json, options);
-        if (list is not null)
-            return list;
-
-        var paginated = JsonSerializer.Deserialize<PaginatedDto<T>>(json, options);
-        return paginated?.Items ?? new List<T>();
+        return await ApiResponseReader.ReadCollectionAsync<T>(response);
     }
 
     private static string BuildUrl(string path, Dictionary<string, string?>? query = null)
