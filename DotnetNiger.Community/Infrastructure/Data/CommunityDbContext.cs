@@ -16,6 +16,7 @@ public class CommunityDbContext : DbContext
     public DbSet<Event> Events { get; set; } = null!;
     public DbSet<EventMedia> EventMedias { get; set; } = null!;
     public DbSet<EventRegistration> EventRegistrations { get; set; } = null!;
+    public DbSet<NewsletterSubscription> NewsletterSubscriptions { get; set; } = null!;
     public DbSet<Partner> Partners { get; set; } = null!;
     public DbSet<PostCategory> PostCategories { get; set; } = null!;
     public DbSet<PostTag> PostTags { get; set; } = null!;
@@ -24,12 +25,15 @@ public class CommunityDbContext : DbContext
     public DbSet<Resource> Resources { get; set; } = null!;
     public DbSet<ResourceCategory> ResourceCategories { get; set; } = null!;
     public DbSet<Tag> Tags { get; set; } = null!;
-    public DbSet<Member> Members { get; set; } = null!;
-    public DbSet<MemberSkill> MemberSkills { get; set; } = null!;
+    public DbSet<TeamMember> Members { get; set; } = null!;
+    public DbSet<TeamMemberSkill> MemberSkills { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.HasDefaultSchema("community");
+        ConfigureNewsletterSubscriptionEntity(modelBuilder);
 
         // Configuration des relations et des clés primaires
         ConfigurePostEntity(modelBuilder);
@@ -43,6 +47,24 @@ public class CommunityDbContext : DbContext
         ConfigureMemberEntity(modelBuilder);
     }
 
+    private void ConfigureNewsletterSubscriptionEntity(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<NewsletterSubscription>()
+            .HasKey(ns => ns.Id);
+
+        modelBuilder.Entity<NewsletterSubscription>()
+            .HasIndex(ns => ns.Email)
+            .IsUnique();
+
+        modelBuilder.Entity<NewsletterSubscription>()
+            .HasIndex(ns => new { ns.IsActive, ns.IsVerified });
+
+        modelBuilder.Entity<NewsletterSubscription>()
+            .HasOne(ns => ns.Member)
+            .WithMany()
+            .HasForeignKey(ns => ns.MemberId)
+            .OnDelete(DeleteBehavior.SetNull);
+    }
     private void ConfigurePostEntity(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Post>()
@@ -69,6 +91,12 @@ public class CommunityDbContext : DbContext
         modelBuilder.Entity<Post>()
             .HasIndex(p => p.Slug)
             .IsUnique();
+
+        modelBuilder.Entity<Post>()
+            .HasIndex(p => new { p.IsPublished, p.PublishedAt });
+
+        modelBuilder.Entity<Post>()
+            .HasIndex(p => p.CreatedAt);
     }
 
     private void ConfigureCategoryEntity(ModelBuilder modelBuilder)
@@ -109,6 +137,9 @@ public class CommunityDbContext : DbContext
             .IsUnique();
 
         modelBuilder.Entity<Event>()
+            .HasIndex(e => new { e.IsPublished, e.StartDate });
+
+        modelBuilder.Entity<Event>()
             .HasMany(e => e.Medias)
             .WithOne(em => em.Event)
             .HasForeignKey(em => em.EventId)
@@ -141,6 +172,9 @@ public class CommunityDbContext : DbContext
             .IsUnique();
 
         modelBuilder.Entity<Project>()
+            .HasIndex(p => p.CreatedAt);
+
+        modelBuilder.Entity<Project>()
             .HasMany(p => p.Contributors)
             .WithOne(pc => pc.Project)
             .HasForeignKey(pc => pc.ProjectId)
@@ -156,12 +190,15 @@ public class CommunityDbContext : DbContext
             .HasIndex(r => r.Slug)
             .IsUnique();
 
+        modelBuilder.Entity<Resource>()
+            .HasIndex(r => new { r.IsApproved, r.CreatedAt });
+
         modelBuilder.Entity<ResourceCategory>()
             .HasKey(rc => new { rc.ResourceId, rc.CategoryId });
 
         modelBuilder.Entity<ResourceCategory>()
             .HasOne(rc => rc.Category)
-            .WithMany()
+            .WithMany(c => c.ResourceCategories)
             .HasForeignKey(rc => rc.CategoryId)
             .OnDelete(DeleteBehavior.Cascade);
 
@@ -193,10 +230,10 @@ public class CommunityDbContext : DbContext
 
     private void ConfigureMemberEntity(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<Member>()
+        modelBuilder.Entity<TeamMember>()
             .HasKey(tm => tm.Id);
 
-        modelBuilder.Entity<Member>()
+        modelBuilder.Entity<TeamMember>()
             .HasMany(tm => tm.Skills)
             .WithOne(tms => tms.Member)
             .HasForeignKey(tms => tms.MemberId)

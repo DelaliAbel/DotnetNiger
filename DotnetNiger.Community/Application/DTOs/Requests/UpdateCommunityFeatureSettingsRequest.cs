@@ -1,7 +1,7 @@
 namespace DotnetNiger.Community.Application.DTOs.Requests;
 
 /// <summary>
-/// Request DTO for updating community feature settings.
+/// Request for updating community feature settings.
 /// Allows admins to enable/disable specific features dynamically.
 /// </summary>
 public record UpdateCommunityFeatureSettingsRequest

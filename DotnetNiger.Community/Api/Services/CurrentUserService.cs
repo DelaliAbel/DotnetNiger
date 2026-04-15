@@ -20,6 +20,7 @@ public class CurrentUserService : ICurrentUserService
         }
 
         var userIdClaim = context.User.FindFirstValue("user")
+            ?? context.User.FindFirstValue("sub")
             ?? context.User.FindFirstValue(ClaimTypes.NameIdentifier)
             ?? context.Request.Headers["X-User-Id"].FirstOrDefault();
 

@@ -1,9 +1,9 @@
 namespace DotnetNiger.Community.Application.DTOs.Requests;
 
 /// <summary>
-/// Request DTO for updating an existing member.
+/// Request for updating an existing member.
 /// </summary>
-public class UpdateMemberRequest
+public class UpdateTeamMemberRequest
 {
     /// <summary>Gets or sets the member's name.</summary>
     public string? Name { get; set; }

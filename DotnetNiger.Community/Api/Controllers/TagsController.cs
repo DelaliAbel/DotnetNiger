@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using DotnetNiger.Community.Application.DTOs.Requests;
 using DotnetNiger.Community.Application.Mappers;
 using DotnetNiger.Community.Application.Services.Interfaces;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
@@ -11,7 +12,7 @@ namespace DotnetNiger.Community.Api.Controllers;
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/v{version:apiVersion}/tags")]
 public class TagsController : ApiControllerBase
 {
     private readonly ITagService _tagService;
@@ -28,6 +29,7 @@ public class TagsController : ApiControllerBase
     /// </summary>
     /// <returns>Liste des tags</returns>
     [HttpGet]
+    [OutputCache(PolicyName = "HotReadPolicy")]
     public async Task<IActionResult> GetTags()
     {
         var tags = await _tagService.GetAllTagsAsync();
@@ -40,6 +42,7 @@ public class TagsController : ApiControllerBase
     /// <param name="id">ID du tag</param>
     /// <returns>Détails du tag</returns>
     [HttpGet("{id}")]
+    [OutputCache(PolicyName = "HotReadPolicy")]
     public async Task<IActionResult> GetTagById(string id)
     {
         var tagId = ParseGuidOrThrow(id, nameof(id), "ID du tag invalide");

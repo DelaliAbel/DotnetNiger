@@ -45,7 +45,3 @@ dotnet run
 - Priorites admin:
   - IdentityAdminRoute priorite 1
   - CommunityAdminRoute priorite 2
-
-## Limitation Ocelot
-
-Ocelot ne propose pas de definition globale unique pour DownstreamScheme et DownstreamHostAndPorts.

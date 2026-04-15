@@ -5,6 +5,8 @@ using DotnetNiger.Community.Domain.Entities;
 using DotnetNiger.Community.Application.DTOs.Requests;
 using DotnetNiger.Community.Application.Mappers;
 using DotnetNiger.Community.Application.Services.Interfaces;
+using Microsoft.AspNetCore.OutputCaching;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
@@ -13,7 +15,7 @@ namespace DotnetNiger.Community.Api.Controllers;
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/v{version:apiVersion}/posts")]
 public class PostsController : ApiControllerBase
 {
     private readonly IPostService _postService;
@@ -37,6 +39,7 @@ public class PostsController : ApiControllerBase
     /// <param name="pageSize">Nombre de posts par page (par défaut 10)</param>
     /// <returns>Liste paginée des posts</returns>
     [HttpGet]
+    [OutputCache(PolicyName = "HotReadPolicy")]
     public async Task<IActionResult> GetPosts([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         if (page < 1 || pageSize < 1 || pageSize > 100)
@@ -52,6 +55,7 @@ public class PostsController : ApiControllerBase
     /// <param name="id">ID du post</param>
     /// <returns>Détails du post</returns>
     [HttpGet("{id}")]
+    [OutputCache(PolicyName = "HotReadPolicy")]
     public async Task<IActionResult> GetPostById(string id)
     {
         var postId = ParseGuidOrThrow(id, nameof(id), "ID du post invalide");
@@ -69,6 +73,7 @@ public class PostsController : ApiControllerBase
     /// <param name="request">Données du post</param>
     /// <returns>Post créé</returns>
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> CreatePost([FromBody] CreatePostRequest request)
     {
         if (request == null || string.IsNullOrEmpty(request.Title))
@@ -88,6 +93,7 @@ public class PostsController : ApiControllerBase
     /// <param name="request">Données à mettre à jour</param>
     /// <returns>Post mis à jour</returns>
     [HttpPut("{id}")]
+    [Authorize]
     public async Task<IActionResult> UpdatePost(string id, [FromBody] UpdatePostRequest request)
     {
         var postId = ParseGuidOrThrow(id, nameof(id), "ID du post invalide");
@@ -95,6 +101,11 @@ public class PostsController : ApiControllerBase
         var post = await _postService.GetPostByIdAsync(postId);
         if (post == null)
             return NotFoundProblem("Post non trouve");
+
+        var currentUserId = _currentUserService.GetRequiredUserId();
+        var canModerate = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+        if (post.AuthorId != currentUserId && !canModerate)
+            return Forbid();
 
         _requestMapper.ApplyPostUpdates(post, request);
         var updatedPost = await _postService.UpdatePostAsync(post);
@@ -107,9 +118,19 @@ public class PostsController : ApiControllerBase
     /// <param name="id">ID du post</param>
     /// <returns>Confirmation de suppression</returns>
     [HttpDelete("{id}")]
+    [Authorize]
     public async Task<IActionResult> DeletePost(string id)
     {
         var postId = ParseGuidOrThrow(id, nameof(id), "ID du post invalide");
+
+        var post = await _postService.GetPostByIdAsync(postId);
+        if (post == null)
+            return NotFoundProblem("Post non trouve");
+
+        var currentUserId = _currentUserService.GetRequiredUserId();
+        var canModerate = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+        if (post.AuthorId != currentUserId && !canModerate)
+            return Forbid();
 
         var deleted = await _postService.DeletePostAsync(postId);
         if (!deleted)

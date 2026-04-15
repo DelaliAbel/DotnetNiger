@@ -1,5 +1,5 @@
 using DotnetNiger.Community.Application.Services.Interfaces;
-using DotnetNiger.Community.Infrastructure.Repositories;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Domain.Entities;
 using DotnetNiger.Community.Application.Constants;
 
@@ -7,10 +7,10 @@ namespace DotnetNiger.Community.Application.Services;
 
 public class ResourceService : IResourceService
 {
-    private readonly IResourceRepository _resourceRepository;
+    private readonly IResourcePersistence _resourceRepository;
     private readonly ISlugGenerator _slugGenerator;
 
-    public ResourceService(IResourceRepository resourceRepository, ISlugGenerator slugGenerator)
+    public ResourceService(IResourcePersistence resourceRepository, ISlugGenerator slugGenerator)
     {
         _resourceRepository = resourceRepository;
         _slugGenerator = slugGenerator;

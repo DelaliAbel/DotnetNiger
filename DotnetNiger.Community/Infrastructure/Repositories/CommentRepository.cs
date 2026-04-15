@@ -1,12 +1,12 @@
 using DotnetNiger.Community.Domain.Entities;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Infrastructure.Repositories;
 
-public interface ICommentRepository : IRepository<Comment>
+public interface ICommentRepository : IRepository<Comment>, ICommentPersistence
 {
-    Task<IEnumerable<Comment>> GetByPostIdAsync(Guid postId);
 }
 
 public class CommentRepository : BaseRepository<Comment>, ICommentRepository

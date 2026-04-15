@@ -7,11 +7,17 @@ namespace DotnetNiger.Identity.Application.Services.Interfaces;
 // Contrat pour les operations d'administration.
 public interface IAdminService
 {
-    Task<FileUploadSettingsDto> GetFileUploadSettingsAsync();
-    Task<FileUploadSettingsDto> UpdateFileUploadSettingsAsync(UpdateFileUploadSettingsRequest request);
-    Task<FeatureSettingsDto> GetFeatureSettingsAsync();
-    Task<FeatureSettingsDto> UpdateFeatureSettingsAsync(UpdateFeatureSettingsRequest request);
-    Task<PaginatedDto<UserSummaryDto>> GetUsersAsync(
+    Task<FileUploadSettingsResponse> GetFileUploadSettingsAsync();
+    Task<FileUploadSettingsResponse> UpdateFileUploadSettingsAsync(UpdateFileUploadSettingsRequest request);
+    Task<FeatureSettingsResponse> GetFeatureSettingsAsync();
+    Task<FeatureSettingsResponse> UpdateFeatureSettingsAsync(UpdateFeatureSettingsRequest request);
+    Task<AccountDeletionSettingsResponse> GetAccountDeletionSettingsAsync();
+    Task<AccountDeletionSettingsResponse> UpdateAccountDeletionSettingsAsync(UpdateAccountDeletionSettingsRequest request, Guid? updatedByUserId);
+    Task<AuthSettingsResponse> GetAuthSettingsAsync();
+    Task<AuthSettingsResponse> UpdateAuthSettingsAsync(UpdateAuthSettingsRequest request, Guid? updatedByUserId);
+    Task<IReadOnlyList<OAuthProviderSettingsResponse>> GetOAuthProviderSettingsAsync();
+    Task<OAuthProviderSettingsResponse> UpdateOAuthProviderSettingsAsync(string provider, UpdateOAuthProviderSettingsRequest request, Guid? updatedByUserId);
+    Task<PaginatedResponse<UserSummaryResponse>> GetUsersAsync(
         string? search,
         bool? isActive,
         bool? emailConfirmed,
@@ -25,7 +31,8 @@ public interface IAdminService
 
     Task DeleteUserAsync(Guid userId);
     Task SetUserActiveAsync(Guid userId, bool isActive);
-    Task<PaginatedDto<ApiKeyAuditDto>> GetApiKeysAsync(
+    Task<int> ForceLogoutUserSessionsAsync(Guid userId);
+    Task<PaginatedResponse<ApiKeyAuditResponse>> GetApiKeysAsync(
         string? search,
         Guid? userId,
         bool? isActive,
@@ -38,10 +45,10 @@ public interface IAdminService
         string? sortDirection,
         int skip,
         int take);
-    Task<ApiKeySecretDto> RotateApiKeyAsync(Guid apiKeyId);
+    Task<ApiKeySecretResponse> RotateApiKeyAsync(Guid apiKeyId);
     Task RevokeApiKeyAsync(Guid apiKeyId);
     Task RevokeUserApiKeysAsync(Guid userId);
-    Task<PaginatedDto<AdminAuditLogDto>> GetAdminAuditLogsAsync(
+    Task<PaginatedResponse<AdminAuditLogResponse>> GetAdminAuditLogsAsync(
         Guid? adminUserId,
         string? action,
         string? targetType,

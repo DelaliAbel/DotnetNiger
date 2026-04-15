@@ -10,7 +10,7 @@ namespace DotnetNiger.Community.Api.Controllers;
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/v{version:apiVersion}/search")]
 public class SearchController : ApiControllerBase
 {
     private readonly ISearchService _searchService;
@@ -55,31 +55,31 @@ public class SearchController : ApiControllerBase
         var resourcesResults = await _searchService.SearchResourcesAsync(query, page, pageSize);
         var projectsResults = await _searchService.SearchProjectsAsync(query, page, pageSize);
 
-        var searchResults = new SearchResultsDto
+        var searchResults = new SearchResultsResponse
         {
             Query = query,
-            Posts = postsResults.Select(p => new SearchPostResultDto
+            Posts = postsResults.Select(p => new SearchPostResultResponse
             {
                 Id = p.Id,
                 Title = p.Title,
                 Content = p.Content,
                 CreatedAt = p.CreatedAt
             }).ToList(),
-            Events = eventsResults.Select(e => new SearchEventResultDto
+            Events = eventsResults.Select(e => new SearchEventResultResponse
             {
                 Id = e.Id,
                 Title = e.Title,
                 Description = e.Description,
                 StartDateTime = e.StartDateTime
             }).ToList(),
-            Projects = projectsResults.Select(pr => new SearchProjectResultDto
+            Projects = projectsResults.Select(pr => new SearchProjectResultResponse
             {
                 Id = pr.Id,
                 Name = pr.Name,
                 Description = pr.Description,
                 CreatedAt = pr.CreatedAt
             }).ToList(),
-            Resources = resourcesResults.Select(r => new SearchResourceResultDto
+            Resources = resourcesResults.Select(r => new SearchResourceResultResponse
             {
                 Id = r.Id,
                 Title = r.Title,

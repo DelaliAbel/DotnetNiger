@@ -265,7 +265,7 @@ public static class DatabaseSeeder
         await context.Partners.AddRangeAsync(partners);
 
         // 9. Créer des membres d'équipe
-        var Members = new List<Member>
+        var Members = new List<TeamMember>
         {
             new()
             {
@@ -304,7 +304,7 @@ public static class DatabaseSeeder
         await context.Members.AddRangeAsync(Members);
 
         // 10. Créer des skills pour les membres
-        var skills = new List<MemberSkill>
+        var skills = new List<TeamMemberSkill>
         {
             new() { Id = Guid.NewGuid(), MemberId = Members[0].Id, SkillName = "C#", Level = "Expert" },
             new() { Id = Guid.NewGuid(), MemberId = Members[0].Id, SkillName = ".NET", Level = "Expert" },

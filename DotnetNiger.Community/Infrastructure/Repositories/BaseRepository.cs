@@ -11,6 +11,7 @@ public class BaseRepository<TEntity> : IRepository<TEntity> where TEntity : clas
 {
     protected readonly CommunityDbContext _context;
     protected readonly DbSet<TEntity> _dbSet;
+    private static readonly string? DefaultOrderProperty = ResolveDefaultOrderProperty();
 
     public BaseRepository(CommunityDbContext context)
     {
@@ -20,14 +21,14 @@ public class BaseRepository<TEntity> : IRepository<TEntity> where TEntity : clas
 
     public async Task<IEnumerable<TEntity>> GetAllAsync()
     {
-        return await _dbSet.ToListAsync();
+        return await _dbSet.AsNoTracking().ToListAsync();
     }
 
     public async Task<IEnumerable<TEntity>> GetPagedAsync(int page = 1, int pageSize = 10)
     {
         page = Math.Max(1, page);
-        pageSize = Math.Min(pageSize, 100); // Cap pageSize at 100 for safety
-        return await _dbSet
+        pageSize = Math.Min(Math.Max(1, pageSize), 100); // Clamp pageSize to [1..100]
+        return await ApplyDefaultOrdering(_dbSet.AsNoTracking())
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -46,7 +47,7 @@ public class BaseRepository<TEntity> : IRepository<TEntity> where TEntity : clas
         page = Math.Max(1, page);
         pageSize = Math.Min(Math.Max(1, pageSize), 100);
 
-        IQueryable<TEntity> query = _dbSet;
+        IQueryable<TEntity> query = _dbSet.AsNoTracking();
 
         if (predicate != null)
             query = query.Where(predicate);
@@ -57,7 +58,7 @@ public class BaseRepository<TEntity> : IRepository<TEntity> where TEntity : clas
         if (orderBy != null)
             query = orderBy(query);
         else
-            query = query.OrderByDescending(e => EF.Property<object>(e, "CreatedAt"));
+            query = ApplyDefaultOrdering(query);
 
         var items = await query
             .Skip((page - 1) * pageSize)
@@ -78,11 +79,31 @@ public class BaseRepository<TEntity> : IRepository<TEntity> where TEntity : clas
         page = Math.Max(1, page);
         pageSize = Math.Min(Math.Max(1, pageSize), 100);
 
-        return await _dbSet
-            .Where(predicate)
+        return await ApplyDefaultOrdering(_dbSet.Where(predicate))
+            .AsNoTracking()
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
+    }
+
+    private static IQueryable<TEntity> ApplyDefaultOrdering(IQueryable<TEntity> query)
+    {
+        return DefaultOrderProperty == null
+            ? query
+            : query.OrderByDescending(e => EF.Property<object>(e, DefaultOrderProperty));
+    }
+
+    private static string? ResolveDefaultOrderProperty()
+    {
+        var type = typeof(TEntity);
+        if (type.GetProperty("CreatedAt") != null)
+            return "CreatedAt";
+        if (type.GetProperty("JoinedAt") != null)
+            return "JoinedAt";
+        if (type.GetProperty("Id") != null)
+            return "Id";
+
+        return null;
     }
 
     public async Task<TEntity?> GetByIdAsync(Guid id)
@@ -92,12 +113,12 @@ public class BaseRepository<TEntity> : IRepository<TEntity> where TEntity : clas
 
     public async Task<IEnumerable<TEntity>> FindAsync(Expression<Func<TEntity, bool>> predicate)
     {
-        return await _dbSet.Where(predicate).ToListAsync();
+        return await _dbSet.AsNoTracking().Where(predicate).ToListAsync();
     }
 
     public async Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate)
     {
-        return await _dbSet.FirstOrDefaultAsync(predicate);
+        return await _dbSet.AsNoTracking().FirstOrDefaultAsync(predicate);
     }
 
     public async Task<TEntity> AddAsync(TEntity entity)

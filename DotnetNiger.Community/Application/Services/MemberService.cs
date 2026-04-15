@@ -1,19 +1,19 @@
 using DotnetNiger.Community.Application.Exceptions;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Application.Services.Interfaces;
 using DotnetNiger.Community.Domain.Entities;
-using DotnetNiger.Community.Infrastructure.Repositories;
 
 namespace DotnetNiger.Community.Application.Services;
 
 /// <summary>
 /// Service de gestion des membres de l'équipe/communauté
 /// </summary>
-public class MemberService : IMemberService
+public class TeamMemberService : ITeamMemberService
 {
-    private readonly IMemberRepository _memberRepository;
-    private readonly ILogger<MemberService> _logger;
+    private readonly ITeamMemberPersistence _memberRepository;
+    private readonly ILogger<TeamMemberService> _logger;
 
-    public MemberService(IMemberRepository memberRepository, ILogger<MemberService> logger)
+    public TeamMemberService(ITeamMemberPersistence memberRepository, ILogger<TeamMemberService> logger)
     {
         _memberRepository = memberRepository;
         _logger = logger;
@@ -22,7 +22,7 @@ public class MemberService : IMemberService
     /// <summary>
     /// Récupère tous les membres avec pagination
     /// </summary>
-    public async Task<IEnumerable<Member>> GetAllMembersAsync(int page = 1, int pageSize = 10)
+    public async Task<IEnumerable<TeamMember>> GetAllMembersAsync(int page = 1, int pageSize = 10)
     {
         try
         {
@@ -41,7 +41,7 @@ public class MemberService : IMemberService
     /// <summary>
     /// Récupère les membres actifs
     /// </summary>
-    public async Task<IEnumerable<Member>> GetActiveMembersAsync()
+    public async Task<IEnumerable<TeamMember>> GetActiveMembersAsync()
     {
         try
         {
@@ -57,7 +57,7 @@ public class MemberService : IMemberService
     /// <summary>
     /// Récupère un membre par son ID
     /// </summary>
-    public async Task<Member?> GetMemberByIdAsync(Guid id)
+    public async Task<TeamMember?> GetMemberByIdAsync(Guid id)
     {
         if (id == Guid.Empty)
             throw new ArgumentException("L'ID du membre est requis", nameof(id));
@@ -79,7 +79,7 @@ public class MemberService : IMemberService
     /// <summary>
     /// Crée un nouveau membre
     /// </summary>
-    public async Task<Member> CreateMemberAsync(Member member)
+    public async Task<TeamMember> CreateMemberAsync(TeamMember member)
     {
         if (member == null)
             throw new ArgumentNullException(nameof(member));
@@ -105,7 +105,7 @@ public class MemberService : IMemberService
     /// <summary>
     /// Met à jour un membre existant
     /// </summary>
-    public async Task<Member> UpdateMemberAsync(Guid id, Member member)
+    public async Task<TeamMember> UpdateMemberAsync(Guid id, TeamMember member)
     {
         if (id == Guid.Empty)
             throw new ArgumentException("L'ID du membre est requis", nameof(id));
@@ -171,7 +171,7 @@ public class MemberService : IMemberService
     /// <summary>
     /// Valide un membre
     /// </summary>
-    private void ValidateMember(Member member)
+    private void ValidateMember(TeamMember member)
     {
         if (string.IsNullOrWhiteSpace(member.Name))
             throw new ArgumentException("Le nom du membre est requis");

@@ -1,15 +1,15 @@
 using DotnetNiger.Community.Application.Services.Interfaces;
-using DotnetNiger.Community.Infrastructure.Repositories;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Domain.Entities;
 
 namespace DotnetNiger.Community.Application.Services;
 
 public class TagService : ITagService
 {
-    private readonly ITagRepository _tagRepository;
+    private readonly ITagPersistence _tagRepository;
     private readonly ISlugGenerator _slugGenerator;
 
-    public TagService(ITagRepository tagRepository, ISlugGenerator slugGenerator)
+    public TagService(ITagPersistence tagRepository, ISlugGenerator slugGenerator)
     {
         _tagRepository = tagRepository;
         _slugGenerator = slugGenerator;

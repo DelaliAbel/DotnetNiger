@@ -4,6 +4,7 @@ using DotnetNiger.Community.Api.Services;
 using DotnetNiger.Community.Application.DTOs.Requests;
 using DotnetNiger.Community.Application.Mappers;
 using DotnetNiger.Community.Application.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
@@ -12,7 +13,7 @@ namespace DotnetNiger.Community.Api.Controllers;
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/v{version:apiVersion}/comments")]
 public class CommentsController : ApiControllerBase
 {
     private readonly ICommentService _commentService;
@@ -68,6 +69,7 @@ public class CommentsController : ApiControllerBase
     /// <param name="request">Données du commentaire</param>
     /// <returns>Commentaire créé</returns>
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> CreateComment([FromBody] CreateCommentRequest request)
     {
         if (request == null || string.IsNullOrEmpty(request.Content))
@@ -88,6 +90,7 @@ public class CommentsController : ApiControllerBase
     /// <param name="request">Contenu à mettre à jour</param>
     /// <returns>Commentaire mis à jour</returns>
     [HttpPut("{id}")]
+    [Authorize]
     public async Task<IActionResult> UpdateComment(string id, [FromBody] UpdateCommentRequest request)
     {
         var commentId = ParseGuidOrThrow(id, nameof(id), "ID du commentaire invalide");
@@ -95,6 +98,11 @@ public class CommentsController : ApiControllerBase
         var comment = await _commentService.GetCommentByIdAsync(commentId);
         if (comment == null)
             return NotFoundProblem("Commentaire non trouve");
+
+        var currentUserId = _currentUserService.GetRequiredUserId();
+        var canModerate = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+        if (comment.UserId != currentUserId && !canModerate)
+            return Forbid();
 
         _requestMapper.ApplyCommentUpdates(comment, request);
         var updatedComment = await _commentService.UpdateCommentAsync(comment);
@@ -107,9 +115,19 @@ public class CommentsController : ApiControllerBase
     /// <param name="id">ID du commentaire</param>
     /// <returns>Confirmation de suppression</returns>
     [HttpDelete("{id}")]
+    [Authorize]
     public async Task<IActionResult> DeleteComment(string id)
     {
         var commentId = ParseGuidOrThrow(id, nameof(id), "ID du commentaire invalide");
+
+        var comment = await _commentService.GetCommentByIdAsync(commentId);
+        if (comment == null)
+            return NotFoundProblem("Commentaire non trouve");
+
+        var currentUserId = _currentUserService.GetRequiredUserId();
+        var canModerate = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+        if (comment.UserId != currentUserId && !canModerate)
+            return Forbid();
 
         var deleted = await _commentService.DeleteCommentAsync(commentId);
         if (!deleted)

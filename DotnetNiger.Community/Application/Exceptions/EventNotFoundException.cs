@@ -5,12 +5,12 @@ namespace DotnetNiger.Community.Application.Exceptions;
 /// </summary>
 public class EventNotFoundException : NotFoundException
 {
-    public EventNotFoundException(string eventId) 
+    public EventNotFoundException(string eventId)
         : base($"Événement avec l'ID '{eventId}' n'a pas été trouvé.")
     {
     }
 
-    public EventNotFoundException(string message, Exception innerException) 
+    public EventNotFoundException(string message, Exception innerException)
         : base(message, innerException)
     {
     }

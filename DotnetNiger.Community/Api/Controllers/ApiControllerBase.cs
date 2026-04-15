@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using DotnetNiger.Community.Application.DTOs.Responses;
 
@@ -5,6 +6,17 @@ namespace DotnetNiger.Community.Api.Controllers;
 
 public abstract class ApiControllerBase : ControllerBase
 {
+    /// <summary>
+    /// Extraire le UserId du JWT token (sécurisé, du serveur)
+    /// </summary>
+    protected Guid RequireAuthenticatedUserId()
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdValue, out var userId))
+            throw new UnauthorizedAccessException("Invalid user ID in token");
+        return userId;
+    }
+
     protected Guid ParseGuidOrThrow(string value, string parameterName, string invalidMessage)
     {
         if (!Guid.TryParse(value, out var parsed))

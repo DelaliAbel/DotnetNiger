@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using DotnetNiger.Community.Application.Services.Interfaces;
 
 namespace DotnetNiger.Community.Api.Controllers;
@@ -9,24 +10,18 @@ namespace DotnetNiger.Community.Api.Controllers;
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/v{version:apiVersion}/stats")]
 public class StatsController : ApiControllerBase
 {
-    private readonly IPostService _postService;
+    private readonly IStatisticsService _statisticsService;
     private readonly IEventService _eventService;
-    private readonly IProjectService _projectService;
-    private readonly IResourceService _resourceService;
 
     public StatsController(
-        IPostService postService,
-        IEventService eventService,
-        IProjectService projectService,
-        IResourceService resourceService)
+        IStatisticsService statisticsService,
+        IEventService eventService)
     {
-        _postService = postService;
+        _statisticsService = statisticsService;
         _eventService = eventService;
-        _projectService = projectService;
-        _resourceService = resourceService;
     }
 
     /// <summary>
@@ -34,21 +29,20 @@ public class StatsController : ApiControllerBase
     /// </summary>
     /// <returns>Statistiques du service</returns>
     [HttpGet]
+    [OutputCache(PolicyName = "StatsPolicy")]
     public async Task<IActionResult> GetStatistics()
     {
-        var posts = await _postService.GetAllPublishedPostsAsync(1, 1000);
-        var events = await _eventService.GetAllEventsAsync(1, 1000);
-        var projects = await _projectService.GetAllProjectsAsync(1, 1000);
-        var resources = await _resourceService.GetAllResourcesAsync(1, 1000);
+        var stats = await _statisticsService.GetCommunityStatsAsync();
+        var upcomingEvents = await _eventService.GetUpcomingEventsAsync(1000);
 
         return Success(new
         {
-            totalPosts = posts.Count(),
-            totalEvents = events.Count(),
-            totalProjects = projects.Count(),
-            totalResources = resources.Count(),
-            upcomingEvents = events.Count(e => e.StartDate > DateTime.UtcNow),
-            activeProjects = projects.Count(),
+            totalPosts = stats.TotalPosts,
+            totalEvents = stats.TotalEvents,
+            totalProjects = stats.TotalProjects,
+            totalResources = stats.TotalResources,
+            upcomingEvents = upcomingEvents.Count(),
+            activeProjects = stats.TotalProjects,
             lastUpdated = DateTime.UtcNow
         });
     }

@@ -4,6 +4,7 @@ using DotnetNiger.Community.Api.Services;
 using DotnetNiger.Community.Application.DTOs.Requests;
 using DotnetNiger.Community.Application.Mappers;
 using DotnetNiger.Community.Application.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
@@ -12,7 +13,8 @@ namespace DotnetNiger.Community.Api.Controllers;
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/v{version:apiVersion}/resources")]
+[Route("api/v{version:apiVersion}/ressources")]
 public class ResourcesController : ApiControllerBase
 {
     private readonly IResourceService _resourceService;
@@ -68,6 +70,7 @@ public class ResourcesController : ApiControllerBase
     /// <param name="request">Données de la ressource</param>
     /// <returns>Ressource créée</returns>
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> CreateResource([FromBody] CreateResourceRequest request)
     {
         if (request == null || string.IsNullOrEmpty(request.Title))
@@ -87,6 +90,7 @@ public class ResourcesController : ApiControllerBase
     /// <param name="request">Données à mettre à jour</param>
     /// <returns>Ressource mise à jour</returns>
     [HttpPut("{id}")]
+    [Authorize]
     public async Task<IActionResult> UpdateResource(string id, [FromBody] UpdateResourceRequest request)
     {
         var resourceId = ParseGuidOrThrow(id, nameof(id), "ID de la ressource invalide");
@@ -94,6 +98,11 @@ public class ResourcesController : ApiControllerBase
         var resource = await _resourceService.GetResourceByIdAsync(resourceId);
         if (resource == null)
             return NotFoundProblem("Ressource non trouvee");
+
+        var currentUserId = _currentUserService.GetRequiredUserId();
+        var canModerate = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+        if (resource.CreatedBy != currentUserId && !canModerate)
+            return Forbid();
 
         _requestMapper.ApplyResourceUpdates(resource, request);
         var updatedResource = await _resourceService.UpdateResourceAsync(resource);
@@ -106,9 +115,19 @@ public class ResourcesController : ApiControllerBase
     /// <param name="id">ID de la ressource</param>
     /// <returns>Confirmation de suppression</returns>
     [HttpDelete("{id}")]
+    [Authorize]
     public async Task<IActionResult> DeleteResource(string id)
     {
         var resourceId = ParseGuidOrThrow(id, nameof(id), "ID de la ressource invalide");
+
+        var resource = await _resourceService.GetResourceByIdAsync(resourceId);
+        if (resource == null)
+            return NotFoundProblem("Ressource non trouvee");
+
+        var currentUserId = _currentUserService.GetRequiredUserId();
+        var canModerate = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+        if (resource.CreatedBy != currentUserId && !canModerate)
+            return Forbid();
 
         var deleted = await _resourceService.DeleteResourceAsync(resourceId);
         if (!deleted)

@@ -14,79 +14,79 @@ namespace DotnetNiger.Identity.Application.Services;
 // Gestion des liens sociaux associes aux utilisateurs.
 public class SocialLinkService : ISocialLinkService
 {
-	// Gestion des liens sociaux utilisateur.
-	private readonly DotnetNigerIdentityDbContext _dbContext;
-	private readonly UserManager<ApplicationUser> _userManager;
+    // Gestion des liens sociaux utilisateur.
+    private readonly DotnetNigerIdentityDbContext _dbContext;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-	public SocialLinkService(DotnetNigerIdentityDbContext dbContext, UserManager<ApplicationUser> userManager)
-	{
-		_dbContext = dbContext;
-		_userManager = userManager;
-	}
+    public SocialLinkService(DotnetNigerIdentityDbContext dbContext, UserManager<ApplicationUser> userManager)
+    {
+        _dbContext = dbContext;
+        _userManager = userManager;
+    }
 
-	public async Task<IReadOnlyList<SocialLinkDto>> GetForUserAsync(Guid userId)
-	{
-		var user = await _userManager.FindByIdAsync(userId.ToString());
-		if (user == null)
-		{
-			throw new UserNotFoundException();
-		}
+    public async Task<IReadOnlyList<SocialLinkResponse>> GetForUserAsync(Guid userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null)
+        {
+            throw new UserNotFoundException();
+        }
 
-		return await _dbContext.SocialLinks
-			.Where(link => link.UserId == user.Id)
-			.OrderByDescending(link => link.CreatedAt)
-			.Select(link => new SocialLinkDto
-			{
-				Id = link.Id,
-				Platform = link.Platform,
-				Url = link.Url
-			})
-			.ToListAsync();
-	}
+        return await _dbContext.SocialLinks
+            .Where(link => link.UserId == user.Id)
+            .OrderByDescending(link => link.CreatedAt)
+            .Select(link => new SocialLinkResponse
+            {
+                Id = link.Id,
+                Platform = link.Platform,
+                Url = link.Url
+            })
+            .ToListAsync();
+    }
 
-	public async Task<SocialLinkDto> AddAsync(Guid userId, AddSocialLinkRequest request)
-	{
-		AddSocialLinkValidator.ValidateAndThrow(request);
-		var user = await _userManager.FindByIdAsync(userId.ToString());
-		if (user == null)
-		{
-			throw new UserNotFoundException();
-		}
+    public async Task<SocialLinkResponse> AddAsync(Guid userId, AddSocialLinkRequest request)
+    {
+        AddSocialLinkValidator.ValidateAndThrow(request);
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null)
+        {
+            throw new UserNotFoundException();
+        }
 
-		var link = new SocialLink
-		{
-			UserId = user.Id,
-			Platform = request.Platform?.Trim() ?? string.Empty,
-			Url = request.Url?.Trim() ?? string.Empty
-		};
+        var link = new SocialLink
+        {
+            UserId = user.Id,
+            Platform = request.Platform?.Trim() ?? string.Empty,
+            Url = request.Url?.Trim() ?? string.Empty
+        };
 
-		_dbContext.SocialLinks.Add(link);
-		await _dbContext.SaveChangesAsync();
+        _dbContext.SocialLinks.Add(link);
+        await _dbContext.SaveChangesAsync();
 
-		return new SocialLinkDto
-		{
-			Id = link.Id,
-			Platform = link.Platform,
-			Url = link.Url
-		};
-	}
+        return new SocialLinkResponse
+        {
+            Id = link.Id,
+            Platform = link.Platform,
+            Url = link.Url
+        };
+    }
 
-	public async Task DeleteAsync(Guid userId, Guid linkId)
-	{
-		var user = await _userManager.FindByIdAsync(userId.ToString());
-		if (user == null)
-		{
-			throw new UserNotFoundException();
-		}
+    public async Task DeleteAsync(Guid userId, Guid linkId)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null)
+        {
+            throw new UserNotFoundException();
+        }
 
-		var link = await _dbContext.SocialLinks
-			.FirstOrDefaultAsync(item => item.Id == linkId && item.UserId == user.Id);
-		if (link == null)
-		{
-			throw new IdentityException("Social link not found.", 404);
-		}
+        var link = await _dbContext.SocialLinks
+            .FirstOrDefaultAsync(item => item.Id == linkId && item.UserId == user.Id);
+        if (link == null)
+        {
+            throw new IdentityException("Social link not found.", 404);
+        }
 
-		_dbContext.SocialLinks.Remove(link);
-		await _dbContext.SaveChangesAsync();
-	}
+        _dbContext.SocialLinks.Remove(link);
+        await _dbContext.SaveChangesAsync();
+    }
 }

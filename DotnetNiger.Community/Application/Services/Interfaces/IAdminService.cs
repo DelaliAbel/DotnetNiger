@@ -34,6 +34,6 @@ public interface IAdminService
     Task<bool> DeleteProjectAsync(Guid projectId);
 
     // Settings
-    Task<CommunityFeatureSettingsDto> GetCommunityFeatureSettingsAsync();
-    Task<CommunityFeatureSettingsDto> UpdateCommunityFeatureSettingsAsync(UpdateCommunityFeatureSettingsRequest request);
+    Task<CommunityFeatureSettingsResponse> GetCommunityFeatureSettingsAsync();
+    Task<CommunityFeatureSettingsResponse> UpdateCommunityFeatureSettingsAsync(UpdateCommunityFeatureSettingsRequest request);
 }

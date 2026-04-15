@@ -1,129 +1,62 @@
-# API Reference - DotnetNiger
+# API Reference (Operationnelle)
 
-Derniere mise a jour: 2026-03-23
+## Base URLs (dev)
 
-Base URL Gateway (dev): <http://localhost:5000>
+- Gateway: http://localhost:5000
+- Identity (direct): http://localhost:5075
+- Community (direct): http://localhost:5269
 
 ## Swagger
 
-- Gateway: <http://localhost:5000/swagger>
-- Identity direct: <http://localhost:5075/swagger>
-- Community direct: <http://localhost:5269/swagger>
+- Gateway: http://localhost:5000/swagger
+- Identity: http://localhost:5075/swagger
+- Community: http://localhost:5269/swagger
 
-## Identity (via Gateway)
+## Endpoints sante
 
-### Auth
+### Gateway
 
-- POST /api/auth/register
-- POST /api/auth/login
-- POST /api/auth/forgot-password
-- POST /api/auth/reset-password
-- POST /api/auth/request-email-verification
-- POST /api/auth/verify-email
-- POST /api/auth/refresh
-- POST /api/auth/logout
+- `GET /health`
+- `GET /health/downstream`
+- `GET /health/ready`
+- `GET /metrics/latency`
 
-### Compte
+### Identity
 
-- GET /api/users
-- PUT /api/users
-- POST /api/users/avatar
-- GET /api/users/avatar
-- DELETE /api/users/avatar
-- POST /api/users/change-password
+- `GET /api/v1/diagnostics/ping`
+- `GET /api/v1/diagnostics/health`
 
-### Diagnostics
+### Community
 
-- GET /api/diagnostics/ping
-- GET /api/diagnostics/health
+- `GET /api/v1/test/health`
 
-### Admin Identity
+## Conventions de versioning
 
-- GET /api/admin/users
-- GET /api/admin/users/{id}
-- PUT /api/admin/users/{id}/status
-- GET /api/admin/roles
-- GET /api/admin/audit/logs
+Identity et Community utilisent des routes versionnees:
 
-## Community (via Gateway)
+- `/api/v1/...`
 
-Routes Community exposees sous /api/... (pas /api/community/...)
+Le Gateway expose des routes simplifiees et les mappe vers les routes aval versionnees.
 
-### Public (GET)
+## Exemples de mapping Gateway
 
-- GET /api/posts
-- GET /api/comments
-- GET /api/events
-- GET /api/projects
-- GET /api/resources
-- GET /api/categories
-- GET /api/tags
-- GET /api/partners
-- GET /api/members
-- GET /api/stats
-- GET /api/search
+Exemples observes dans [DotnetNiger.Gateway/ocelot.json](../DotnetNiger.Gateway/ocelot.json):
 
-### Ecriture (JWT requis)
+- `/api/auth/{everything}` -> Identity `/api/v1/auth/{everything}`
+- `/api/me/{everything}` -> Identity `/api/v1/me/{everything}`
+- `/api/tokens/{everything}` -> Identity `/api/v1/tokens/{everything}`
+- `/api/identity/admin/{everything}` -> Identity `/api/v1/admin/{everything}`
+- `/api/diagnostics/{everything}` -> Identity `/api/v1/diagnostics/{everything}`
+- `/api/test/{everything}` -> Community `/api/v1/test/{everything}`
+- `/api/newsletters/subscribe` -> Community `/api/v1/newsletters/subscribe`
 
-- POST|PUT|DELETE /api/posts/{id?}
-- POST|PUT|DELETE /api/comments/{id?}
-- POST|PUT|DELETE /api/events/{id?}
-- POST|PUT|DELETE /api/projects/{id?}
-- POST|PUT|DELETE /api/resources/{id?}
-- POST|PUT|DELETE /api/categories/{id?}
-- POST|PUT|DELETE /api/tags/{id?}
-- POST|PUT|DELETE /api/partners/{id?}
-- POST|PUT|DELETE /api/members/{id?}
+## Authentification
 
-### Admin Community
+- JWT Bearer pour les routes protegees.
+- Certains endpoints admin/techniques utilisent des mecanismes complementaires (ex: cle API selon contexte service).
 
-- GET|POST|PUT|DELETE|PATCH /api/admin/community/{everything}
+## Headers utiles
 
-Requis:
-
-- JWT valide (Gateway)
-- X-Admin-Key
-- X-Admin-Role (admin, super-admin, moderator)
-
-## Endpoints importants ajoutes
-
-### Community Updates
-
-- PUT /api/events/{id}
-- PUT /api/projects/{id}
-- PUT /api/resources/{id}
-- GET /api/test/identity-health
-
-### Identity Diagnostics
-
-- GET /api/diagnostics/ping
-- GET /api/diagnostics/health
-
-## Erreurs standards
-
-- 400, 401, 403, 404, 429, 500
-
-## Contrat de reponse
-
-### Success
-
-Les services Community et Identity renvoient des succes JSON uniformes sous la forme:
-
-```json
-{
-  "success": true,
-  "message": "optional human-readable message",
-  "data": {},
-  "meta": {}
-}
-```
-
-Notes:
-
-- `data` contient le payload principal.
-- `meta` est utilise pour pagination, compteurs, ou contexte annexe.
-- Les endpoints de telechargement de fichiers restent des reponses HTTP natives et ne sont pas enveloppes.
-
-### Errors
-
-Les erreurs applicatives sont normalisees en `application/problem+json` via `ProblemDetails`.
+- `Authorization: Bearer <token>`
+- `X-Request-ID` (propage par Gateway)
+- `ClientId` / `Oc-Client` (rate limiting Ocelot)

@@ -1,22 +1,27 @@
 # Documentation DotnetNiger
 
-Documentation du projet DotnetNiger — plateforme communautaire microservices .NET 8.
+Ce dossier centralise la documentation technique actuelle du monorepo.
 
-> Dernière mise à jour : **2026-03-14**
+## Fichiers
 
-## Documents
+- [SETUP.md](SETUP.md): installation locale, prerequis, execution des services.
+- [ARCHITECTURE.md](ARCHITECTURE.md): architecture microservices et regles de dependances.
+- [API.md](API.md): routes principales, URLs et conventions API.
+- [HEALTH_REPORT.md](HEALTH_REPORT.md): etat de sante technique et controles CI.
 
-| Fichier                                              | Description                            |
-| ---------------------------------------------------- | -------------------------------------- |
-| [SETUP](./SETUP.md)                                  | Installation et démarrage local        |
-| [ARCHITECTURE](./ARCHITECTURE.md)                    | Vue des services et sécurité           |
-| [API](./API.md)                                      | Endpoints Gateway, Identity, Community |
-| [HEALTH_REPORT](./HEALTH_REPORT.md)                  | Santé technique et dette               |
-| [Gateway README](../DotnetNiger.Gateway/README.md)   | Routing Ocelot et rate limiting        |
-| [Identity README](../DotnetNiger.Identity/README.md) | Exploitation du service Identity       |
+## Portee
 
-## Notes
+Cette documentation couvre:
 
-- Ports: Gateway `5000`, Identity `5075`, Community `5269`
-- Versioning backend: `/api/v1/...`
-- Exposition Gateway: `/api/...`
+- DotnetNiger.Gateway
+- DotnetNiger.Identity
+- DotnetNiger.Community
+- DotnetNiger.Architecture.Tests
+
+## Source de verite
+
+La source de verite reste le code. En cas d'ecart, prioriser:
+
+1. Les fichiers de configuration runtime ([DotnetNiger.Gateway/appsettings.Development.json](../DotnetNiger.Gateway/appsettings.Development.json), [DotnetNiger.Identity/appsettings.Development.json](../DotnetNiger.Identity/appsettings.Development.json), [DotnetNiger.Community/appsettings.Development.json](../DotnetNiger.Community/appsettings.Development.json))
+2. Les workflows CI ([.github/workflows/ci.yml](../.github/workflows/ci.yml), [.github/workflows/tests.yml](../.github/workflows/tests.yml))
+3. Les tests d'architecture ([DotnetNiger.Architecture.Tests/ApplicationLayerDependencyGuardsTests.cs](../DotnetNiger.Architecture.Tests/ApplicationLayerDependencyGuardsTests.cs))

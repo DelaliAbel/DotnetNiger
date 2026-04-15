@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using DotnetNiger.Community.Application.DTOs.Requests;
 using DotnetNiger.Community.Application.Mappers;
 using DotnetNiger.Community.Application.Services.Interfaces;
+using Microsoft.AspNetCore.OutputCaching;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
@@ -11,7 +12,7 @@ namespace DotnetNiger.Community.Api.Controllers;
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/v{version:apiVersion}/categories")]
 public class CategoriesController : ApiControllerBase
 {
     private readonly ICategoryService _categoryService;
@@ -28,6 +29,7 @@ public class CategoriesController : ApiControllerBase
     /// </summary>
     /// <returns>Liste des catégories</returns>
     [HttpGet]
+    [OutputCache(PolicyName = "HotReadPolicy")]
     public async Task<IActionResult> GetCategories()
     {
         var categories = await _categoryService.GetAllCategoriesAsync();
@@ -40,6 +42,7 @@ public class CategoriesController : ApiControllerBase
     /// <param name="id">ID de la catégorie</param>
     /// <returns>Détails de la catégorie</returns>
     [HttpGet("{id}")]
+    [OutputCache(PolicyName = "HotReadPolicy")]
     public async Task<IActionResult> GetCategoryById(string id)
     {
         var categoryId = ParseGuidOrThrow(id, nameof(id), "ID de la categorie invalide");

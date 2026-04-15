@@ -1,4 +1,3 @@
-// DTO request Identity: LoginRequest
 using System.ComponentModel.DataAnnotations;
 
 namespace DotnetNiger.Identity.Application.DTOs.Requests;

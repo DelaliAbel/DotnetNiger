@@ -14,5 +14,10 @@ public enum RoleType
     /// <summary>
     /// Administrateur avec acces complet.
     /// </summary>
-    Admin
+    Admin,
+
+    /// <summary>
+    /// Super administrateur avec tous les droits sensibles.
+    /// </summary>
+    SuperAdmin
 }

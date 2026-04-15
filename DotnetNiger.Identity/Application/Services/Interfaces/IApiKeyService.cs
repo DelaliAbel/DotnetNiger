@@ -7,9 +7,9 @@ namespace DotnetNiger.Identity.Application.Services.Interfaces;
 // Contrat pour la gestion des cles API.
 public interface IApiKeyService
 {
-	Task<ApiKeySecretDto> CreateAsync(Guid userId, CreateApiKeyRequest request);
-	Task<IReadOnlyList<ApiKeyDto>> ListAsync(Guid userId);
-	Task<ApiKeySecretDto> RotateAsync(Guid userId, Guid apiKeyId);
-	Task RevokeAsync(Guid userId, Guid apiKeyId);
-	Task RevokeAllAsync(Guid userId);
+    Task<ApiKeySecretResponse> CreateAsync(Guid userId, CreateApiKeyRequest request);
+    Task<IReadOnlyList<ApiKeyResponse>> ListAsync(Guid userId);
+    Task<ApiKeySecretResponse> RotateAsync(Guid userId, Guid apiKeyId);
+    Task RevokeAsync(Guid userId, Guid apiKeyId);
+    Task RevokeAllAsync(Guid userId);
 }

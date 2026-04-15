@@ -10,7 +10,7 @@ public class EmailVerificationCodeService : IEmailVerificationCodeService
 {
     private const int MaxAttempts = 5;
     private static readonly TimeSpan CodeLifetime = TimeSpan.FromMinutes(10);
-    private static readonly char[] Alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".ToCharArray();
+    private static readonly char[] Alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789".ToCharArray();
 
     private readonly IDistributedCache _cache;
 
@@ -21,7 +21,7 @@ public class EmailVerificationCodeService : IEmailVerificationCodeService
 
     public async Task<string> CreateCodeAsync(string email, string identityToken, CancellationToken ct = default)
     {
-        var code = GenerateCode(5);
+        var code = GenerateCode(6);
         var entry = new VerificationCodeEntry
         {
             Email = email.Trim().ToLowerInvariant(),

@@ -1,9 +1,8 @@
 using DotnetNiger.Community.Domain.Entities;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 
 namespace DotnetNiger.Community.Infrastructure.Repositories;
 
-public interface IProjectRepository : IRepository<Project>
+public interface IProjectRepository : IRepository<Project>, IProjectPersistence
 {
-    Task<Project?> GetBySlugAsync(string slug);
-    Task<IEnumerable<Project>> GetActiveProjectsAsync();
 }

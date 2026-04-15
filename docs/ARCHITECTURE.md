@@ -1,62 +1,51 @@
-# Architecture DotnetNiger
+# Architecture
 
-Derniere mise a jour: 2026-03-23
+## Vue d'ensemble
 
-## Topologie runtime
+DotnetNiger est organise en microservices .NET 8:
 
-```text
-Client Web/Mobile
-  |
-  v
-Gateway (Ocelot) :5000
-  |
-  +--> Identity :5075
-  |
-  +--> Community :5269
-```
+- Gateway (Ocelot): point d'entree unique, aggregation Swagger, routage, rate-limiting, health endpoints.
+- Identity: authentification/authorization, utilisateurs, roles, permissions, API keys, account deletion.
+- Community: contenus communautaires (posts, comments, events, resources, projects, tags, categories, newsletters).
 
-## Responsabilites
+## Regles de dependances
 
-### Gateway
+### Regle principale
 
-- Routage centralise via ocelot.json
-- Validation JWT (Bearer)
-- Rate limiting et QoS
-- Swagger agrege
+La couche Application ne doit pas referencer `Infrastructure.Repositories`.
 
-### Identity
+### Enforcement
 
-- Authentification JWT + API Key
-- Gestion utilisateurs, roles, permissions
-- Endpoints diagnostics (/api/v1/diagnostics/ping, /api/v1/diagnostics/health)
-- Reponses de succes uniformisees via enveloppe `success/message/data/meta`
-- Erreurs metier converties en `ProblemDetails` par filtre global
+Cette regle est enforcee par des tests dans:
 
-### Community
+- [DotnetNiger.Architecture.Tests/ApplicationLayerDependencyGuardsTests.cs](../DotnetNiger.Architecture.Tests/ApplicationLayerDependencyGuardsTests.cs)
 
-- Domaine communautaire: posts, comments, events, projects, resources, categories, tags, partners
-- Endpoints admin (/api/v1/admin/...) proteges par filtre (X-Admin-Key, X-Admin-Role)
-- Communication sortante vers Identity via IIdentityApiClient
-- Reponses de succes uniformisees via enveloppe `success/message/data/meta`
-- Erreurs converties globalement en `ProblemDetails` par middleware
+Les workflows CI executent ces gardes dans un job dedie `architecture-guards`.
 
-## Securite
+## Pattern utilise
 
-- Cle JWT partagee entre les trois services (Jwt:Key)
-- Auth obligatoire sur les routes write et admin
-- Rate limiting explicite sur routes Ocelot
+Pour Community et Identity:
 
-## Routing Ocelot important
+- Les services Application consomment des abstractions de persistance (Application/Abstractions/Persistence).
+- Les repositories Infrastructure implementent ces abstractions.
+- L'injection de dependances mappe abstraction -> implementation dans les extensions de services API.
 
-- Routes Community exposees via /api/...
-- Route admin Community: /api/admin/community/{everything}
-- Route admin Identity: /api/admin/{everything}
-- Priorites de matching:
-  - CommunityAdminRoute: Priority = 2
-  - IdentityAdminRoute: Priority = 1
+## Communication inter-services
 
-## Limitation connue
+- Community appelle Identity via un client HTTP typé.
+- Gateway route les appels vers Identity et Community via Ocelot.
 
-Ocelot ne permet pas nativement de definir une seule fois DownstreamScheme + DownstreamHostAndPorts pour toutes les routes.
+## Sante et observabilite
 
-Fin du document.
+- Endpoints `/health`, `/health/downstream`, `/health/ready` sur Gateway.
+- Endpoint latency metrics expose via `/metrics/latency` sur Gateway et services.
+- Logs structurees via Serilog.
+
+## Fichiers cle
+
+- [DotnetNiger.Gateway/Program.cs](../DotnetNiger.Gateway/Program.cs)
+- [DotnetNiger.Gateway/ocelot.json](../DotnetNiger.Gateway/ocelot.json)
+- [DotnetNiger.Identity/Program.cs](../DotnetNiger.Identity/Program.cs)
+- [DotnetNiger.Community/Program.cs](../DotnetNiger.Community/Program.cs)
+- [DotnetNiger.Community/Api/Extensions/ServiceExtensions.cs](../DotnetNiger.Community/Api/Extensions/ServiceExtensions.cs)
+- [DotnetNiger.Identity/Api/Extensions/ServiceExtensions.cs](../DotnetNiger.Identity/Api/Extensions/ServiceExtensions.cs)

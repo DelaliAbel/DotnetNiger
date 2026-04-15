@@ -1,5 +1,5 @@
 using DotnetNiger.Community.Application.Services.Interfaces;
-using DotnetNiger.Community.Infrastructure.Repositories;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Domain.Entities;
 using System.Web;
 using DotnetNiger.Community.Application.Constants;
@@ -8,9 +8,9 @@ namespace DotnetNiger.Community.Application.Services;
 
 public class CommentService : ICommentService
 {
-    private readonly ICommentRepository _commentRepository;
+    private readonly ICommentPersistence _commentRepository;
 
-    public CommentService(ICommentRepository commentRepository)
+    public CommentService(ICommentPersistence commentRepository)
     {
         _commentRepository = commentRepository;
     }

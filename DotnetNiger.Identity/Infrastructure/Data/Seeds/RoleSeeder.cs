@@ -6,13 +6,13 @@ using Microsoft.Extensions.Logging;
 namespace DotnetNiger.Identity.Infrastructure.Data.Seeds;
 
 /// <summary>
-/// Cree les roles par defaut (Admin, Member) si absents.
+/// Cree les roles par defaut si absents.
 /// </summary>
 public static class RoleSeeder
 {
     public static async Task SeedAsync(RoleManager<Role> roleManager, ILogger logger)
     {
-        string[] roles = ["Admin", "Member"];
+        string[] roles = ["SuperAdmin", "Admin", "Member"];
 
         foreach (var roleName in roles)
         {

@@ -1,15 +1,15 @@
 using DotnetNiger.Community.Application.Services.Interfaces;
-using DotnetNiger.Community.Infrastructure.Repositories;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Domain.Entities;
 
 namespace DotnetNiger.Community.Application.Services;
 
 public class PostService : IPostService
 {
-    private readonly IPostRepository _postRepository;
+    private readonly IPostPersistence _postRepository;
     private readonly ISlugGenerator _slugGenerator;
 
-    public PostService(IPostRepository postRepository, ISlugGenerator slugGenerator)
+    public PostService(IPostPersistence postRepository, ISlugGenerator slugGenerator)
     {
         _postRepository = postRepository;
         _slugGenerator = slugGenerator;

@@ -1,10 +1,9 @@
 using DotnetNiger.Community.Domain.Entities;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 
 namespace DotnetNiger.Community.Infrastructure.Repositories;
 
-public interface IEventRepository : IRepository<Event>
+public interface IEventRepository : IRepository<Event>, IEventPersistence
 {
     Task<Event?> GetBySlugAsync(string slug);
-    Task<IEnumerable<Event>> GetUpcomingEventsAsync(int limit = 10);
-    Task<IEnumerable<Event>> GetPastEventsAsync(int limit = 10);
 }

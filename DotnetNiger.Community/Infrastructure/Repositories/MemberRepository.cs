@@ -1,21 +1,21 @@
 using DotnetNiger.Community.Domain.Entities;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Infrastructure.Repositories;
 
-public interface IMemberRepository : IRepository<Member>
+public interface ITeamMemberRepository : IRepository<TeamMember>, ITeamMemberPersistence
 {
-    Task<IEnumerable<Member>> GetActiveMembersAsync();
 }
 
-public class MemberRepository : BaseRepository<Member>, IMemberRepository
+public class TeamMemberRepository : BaseRepository<TeamMember>, ITeamMemberRepository
 {
-    public MemberRepository(CommunityDbContext context) : base(context)
+    public TeamMemberRepository(CommunityDbContext context) : base(context)
     {
     }
 
-    public async Task<IEnumerable<Member>> GetActiveMembersAsync()
+    public async Task<IEnumerable<TeamMember>> GetActiveMembersAsync()
     {
         return await _dbSet
             .Include(tm => tm.Skills)

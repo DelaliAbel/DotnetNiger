@@ -4,6 +4,7 @@ using DotnetNiger.Community.Api.Services;
 using DotnetNiger.Community.Application.DTOs.Requests;
 using DotnetNiger.Community.Application.Mappers;
 using DotnetNiger.Community.Application.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
@@ -12,7 +13,7 @@ namespace DotnetNiger.Community.Api.Controllers;
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/v{version:apiVersion}/projects")]
 public class ProjectsController : ApiControllerBase
 {
     private readonly IProjectService _projectService;
@@ -73,7 +74,11 @@ public class ProjectsController : ApiControllerBase
             return BadRequestProblem("Invalid pagination parameters");
 
         var projects = await _projectService.GetActiveProjectsAsync();
-        var paginatedProjects = projects.Skip((page - 1) * pageSize).Take(pageSize).ToList();
+        var paginatedProjects = projects
+            .OrderByDescending(p => p.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
         return Success(paginatedProjects, meta: new { page, pageSize, total = projects.Count() });
     }
 
@@ -83,6 +88,7 @@ public class ProjectsController : ApiControllerBase
     /// <param name="request">Données du projet</param>
     /// <returns>Projet créé</returns>
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> CreateProject([FromBody] CreateProjectRequest request)
     {
         if (request == null || string.IsNullOrEmpty(request.Name))
@@ -102,6 +108,7 @@ public class ProjectsController : ApiControllerBase
     /// <param name="request">Données à mettre à jour</param>
     /// <returns>Projet mis à jour</returns>
     [HttpPut("{id}")]
+    [Authorize]
     public async Task<IActionResult> UpdateProject(string id, [FromBody] UpdateProjectRequest request)
     {
         var projectId = ParseGuidOrThrow(id, nameof(id), "ID du projet invalide");
@@ -109,6 +116,11 @@ public class ProjectsController : ApiControllerBase
         var project = await _projectService.GetProjectByIdAsync(projectId);
         if (project == null)
             return NotFoundProblem("Projet non trouve");
+
+        var currentUserId = _currentUserService.GetRequiredUserId();
+        var canModerate = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+        if (project.OwnerId != currentUserId && !canModerate)
+            return Forbid();
 
         _requestMapper.ApplyProjectUpdates(project, request);
         var updatedProject = await _projectService.UpdateProjectAsync(project);
@@ -121,9 +133,19 @@ public class ProjectsController : ApiControllerBase
     /// <param name="id">ID du projet</param>
     /// <returns>Confirmation de suppression</returns>
     [HttpDelete("{id}")]
+    [Authorize]
     public async Task<IActionResult> DeleteProject(string id)
     {
         var projectId = ParseGuidOrThrow(id, nameof(id), "ID du projet invalide");
+
+        var project = await _projectService.GetProjectByIdAsync(projectId);
+        if (project == null)
+            return NotFoundProblem("Projet non trouve");
+
+        var currentUserId = _currentUserService.GetRequiredUserId();
+        var canModerate = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+        if (project.OwnerId != currentUserId && !canModerate)
+            return Forbid();
 
         var deleted = await _projectService.DeleteProjectAsync(projectId);
         if (!deleted)

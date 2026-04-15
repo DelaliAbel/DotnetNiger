@@ -1,15 +1,15 @@
 using DotnetNiger.Community.Application.Services.Interfaces;
-using DotnetNiger.Community.Infrastructure.Repositories;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Domain.Entities;
 
 namespace DotnetNiger.Community.Application.Services;
 
 public class ProjectService : IProjectService
 {
-    private readonly IProjectRepository _projectRepository;
+    private readonly IProjectPersistence _projectRepository;
     private readonly ISlugGenerator _slugGenerator;
 
-    public ProjectService(IProjectRepository projectRepository, ISlugGenerator slugGenerator)
+    public ProjectService(IProjectPersistence projectRepository, ISlugGenerator slugGenerator)
     {
         _projectRepository = projectRepository;
         _slugGenerator = slugGenerator;

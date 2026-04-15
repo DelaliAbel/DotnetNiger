@@ -13,7 +13,7 @@ namespace DotnetNiger.Community.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/admin")]
-[AuthorizeFilter("admin", "super-admin", "moderator")]
+[AuthorizeFilter("Admin", "SuperAdmin")]
 public class AdminController : ApiControllerBase
 {
     private readonly IAdminService _adminService;

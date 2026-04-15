@@ -12,13 +12,13 @@ namespace DotnetNiger.Community.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/members")]
-public class MembersController : ApiControllerBase
+public class TeamMembersController : ApiControllerBase
 {
     // Endpoints pour la gestion des members.
-    private readonly IMemberService _memberService;
-    private readonly ILogger<MembersController> _logger;
+    private readonly ITeamMemberService _memberService;
+    private readonly ILogger<TeamMembersController> _logger;
 
-    public MembersController(IMemberService memberService, ILogger<MembersController> logger)
+    public TeamMembersController(ITeamMemberService memberService, ILogger<TeamMembersController> logger)
     {
         _memberService = memberService;
         _logger = logger;
@@ -102,14 +102,14 @@ public class MembersController : ApiControllerBase
     /// <returns>Member créé</returns>
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> CreateMember([FromBody] CreateMemberRequest request)
+    public async Task<IActionResult> CreateMember([FromBody] CreateTeamMemberRequest request)
     {
         if (request == null)
             return BadRequestProblem("Les données du member sont requises");
 
         try
         {
-            var memberEntity = new Member
+            var memberEntity = new TeamMember
             {
                 UserId = request.UserId,
                 Name = request.Name,
@@ -143,7 +143,7 @@ public class MembersController : ApiControllerBase
     /// <returns>Member mis à jour</returns>
     [HttpPut("{id}")]
     [Authorize]
-    public async Task<IActionResult> UpdateMember(Guid id, [FromBody] UpdateMemberRequest request)
+    public async Task<IActionResult> UpdateMember(Guid id, [FromBody] UpdateTeamMemberRequest request)
     {
         if (id == Guid.Empty)
             return BadRequestProblem("L'ID du member est requis");
@@ -217,10 +217,10 @@ public class MembersController : ApiControllerBase
         }
     }
 
-    /// <summary>Maps a Member entity to a TeamMemberDto.</summary>
-    private static TeamMemberDto MapToDto(Member member)
+    /// <summary>Maps a TeamMember entity to a TeamMemberResponse.</summary>
+    private static TeamMemberResponse MapToDto(TeamMember member)
     {
-        return new TeamMemberDto
+        return new TeamMemberResponse
         {
             Id = member.Id,
             UserId = member.UserId,

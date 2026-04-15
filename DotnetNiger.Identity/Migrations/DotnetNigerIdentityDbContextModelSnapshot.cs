@@ -17,6 +17,51 @@ namespace DotnetNiger.Identity.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.23");
 
+            modelBuilder.Entity("DotnetNiger.Identity.Domain.Entities.AccountDeletionRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ExecutedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReviewReason")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ScheduledDeletionAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ReviewedByUserId");
+
+                    b.HasIndex("ScheduledDeletionAt");
+
+                    b.HasIndex("UserId", "Status");
+
+                    b.ToTable("AccountDeletionRequests");
+                });
+
             modelBuilder.Entity("DotnetNiger.Identity.Domain.Entities.AdminActionLog", b =>
                 {
                     b.Property<Guid>("Id")
@@ -96,6 +141,28 @@ namespace DotnetNiger.Identity.Migrations
                     b.ToTable("ApiKeys");
                 });
 
+            modelBuilder.Entity("DotnetNiger.Identity.Domain.Entities.AppSetting", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("UpdatedByUserId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Key");
+
+                    b.ToTable("AppSettings");
+                });
+
             modelBuilder.Entity("DotnetNiger.Identity.Domain.Entities.ApplicationUser", b =>
                 {
                     b.Property<Guid>("Id")
@@ -126,6 +193,9 @@ namespace DotnetNiger.Identity.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Email")
                         .HasMaxLength(256)
                         .HasColumnType("TEXT");
@@ -138,6 +208,9 @@ namespace DotnetNiger.Identity.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsActive")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("INTEGER");
 
                     b.Property<DateTime?>("LastLoginAt")
@@ -460,6 +533,24 @@ namespace DotnetNiger.Identity.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("DotnetNiger.Identity.Domain.Entities.AccountDeletionRequest", b =>
+                {
+                    b.HasOne("DotnetNiger.Identity.Domain.Entities.ApplicationUser", "ReviewedByUser")
+                        .WithMany()
+                        .HasForeignKey("ReviewedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("DotnetNiger.Identity.Domain.Entities.ApplicationUser", "User")
+                        .WithMany("AccountDeletionRequests")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ReviewedByUser");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("DotnetNiger.Identity.Domain.Entities.AdminActionLog", b =>
                 {
                     b.HasOne("DotnetNiger.Identity.Domain.Entities.ApplicationUser", "AdminUser")
@@ -587,6 +678,8 @@ namespace DotnetNiger.Identity.Migrations
 
             modelBuilder.Entity("DotnetNiger.Identity.Domain.Entities.ApplicationUser", b =>
                 {
+                    b.Navigation("AccountDeletionRequests");
+
                     b.Navigation("LoginHistories");
 
                     b.Navigation("RefreshTokens");

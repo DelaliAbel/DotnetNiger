@@ -1,4 +1,3 @@
-// DTO request Identity: UpdateProfileRequest
 namespace DotnetNiger.Identity.Application.DTOs.Requests;
 
 // Mise a jour partielle du profil. Seuls les champs non-null sont appliques.

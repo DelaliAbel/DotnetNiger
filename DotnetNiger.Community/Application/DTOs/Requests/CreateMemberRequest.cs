@@ -1,9 +1,9 @@
 namespace DotnetNiger.Community.Application.DTOs.Requests;
 
 /// <summary>
-/// Request DTO for creating a new member.
+/// Request for creating a new member.
 /// </summary>
-public class CreateMemberRequest
+public class CreateTeamMemberRequest
 {
     /// <summary>Gets or sets the user ID (FK to Identity service).</summary>
     public Guid UserId { get; set; }

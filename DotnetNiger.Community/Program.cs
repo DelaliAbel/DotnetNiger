@@ -1,21 +1,43 @@
-
-
+// Composant Community: Program
+using System.IO.Compression;
+using System.Text;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using DotnetNiger.Community.Api.Extensions;
 using DotnetNiger.Community.Api.Middleware;
-using DotnetNiger.Community.Api.Services;
-using DotnetNiger.Community.Application.Mappers;
+using DotnetNiger.Community.Application.Services;
 using DotnetNiger.Community.Application.Services.Interfaces;
-using Microsoft.OpenApi.Models;
-using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Community.Infrastructure.Data;
 using DotnetNiger.Community.Infrastructure.Data.Seeds;
-using DotnetNiger.Community.Infrastructure.Repositories;
-using DotnetNiger.Community.Application.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Configuration Serilog avec sinks definis dans appsettings.
+builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+    loggerConfiguration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext());
+
+// Configuration principale du service Community.
+var connectionString = builder.Configuration.GetConnectionString("DotnetNigerDb")
+    ?? throw new InvalidOperationException("Connection string 'DotnetNigerDb' introuvable.");
+
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "DotnetNiger.Identity";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "DotnetNiger.Identity.Client";
+var jwtKey = builder.Configuration["Jwt:Key"];
+
+if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.StartsWith("__") || jwtKey.Length < 32)
+{
+    throw new InvalidOperationException(
+        "La cle JWT n'est pas configuree. Definissez Jwt:Key (minimum 32 caracteres).");
+}
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -33,76 +55,88 @@ builder.Services.AddApiVersioning(options =>
     options.SubstituteApiVersionInUrl = true;
 });
 
-// Configurer SQLite avec la base partagée
-var connectionString = builder.Configuration.GetConnectionString("DotnetNigerDb")
-    ?? "Data Source=DotnetNiger.db";
 builder.Services.AddDbContext<CommunityDbContext>(options =>
-    options.UseSqlite(connectionString)
-);
+    options.UseSqlite(connectionString));
 
-// Enregistrer les repositories
-builder.Services.AddScoped<IPostRepository, PostRepository>();
-builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-builder.Services.AddScoped<ICommentRepository, CommentRepository>();
-builder.Services.AddScoped<IEventRepository, EventRepository>();
-builder.Services.AddScoped<IProjectRepository, ProjectRepository>();
-builder.Services.AddScoped<IResourceRepository, ResourceRepository>();
-builder.Services.AddScoped<ITagRepository, TagRepository>();
-builder.Services.AddScoped<IPartnerRepository, PartnerRepository>();
+builder.Services.AddCommunityRepositories();
+builder.Services.AddCommunityApplicationServices();
 
-// Enregistrer les services
-builder.Services.AddScoped<IPostService, PostService>();
-builder.Services.AddScoped<ICategoryService, CategoryService>();
-builder.Services.AddScoped<IEventService, EventService>();
-builder.Services.AddScoped<IProjectService, ProjectService>();
-builder.Services.AddScoped<IResourceService, ResourceService>();
-builder.Services.AddScoped<ICommentService, CommentService>();
-builder.Services.AddScoped<ITagService, TagService>();
-builder.Services.AddScoped<IPartnerService, PartnerService>();
-builder.Services.AddScoped<IAdminService, AdminService>();
-builder.Services.AddScoped<ISearchService, SearchService>();
-builder.Services.AddScoped<IStatisticsService, StatisticsService>();
-builder.Services.AddScoped<ISlugGenerator, SlugGenerator>();
-builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-builder.Services.AddScoped<ICommunityRequestMapper, CommunityRequestMapper>();
-// builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddHttpClient<IIdentityApiClient, IdentityApiClient>((sp, client) =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
     var identityBaseUrl = configuration["IdentityApi:BaseUrl"] ?? "http://localhost:5075/";
     client.BaseAddress = new Uri(identityBaseUrl, UriKind.Absolute);
     client.Timeout = TimeSpan.FromSeconds(5);
+})
+.ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+{
+    ConnectTimeout = TimeSpan.FromSeconds(2),
+    PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+    PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+    MaxConnectionsPerServer = 20
 });
 
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/json" });
+});
 
-//-----CORS Configuration: Environment-based policies--------
-var env = builder.Environment;
+builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
+
+builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
+
+builder.Services.AddOutputCache(options =>
+{
+    options.AddPolicy("HotReadPolicy", policy =>
+        policy.Expire(TimeSpan.FromSeconds(30))
+              .SetVaryByQuery(new[] { "page", "pageSize", "search", "sortBy", "sortDirection" }));
+
+    options.AddPolicy("StatsPolicy", policy =>
+        policy.Expire(TimeSpan.FromSeconds(15)));
+});
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+        ClockSkew = TimeSpan.FromMinutes(1)
+    };
+});
+
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOrSuperAdmin", policy =>
+        policy.RequireRole("Admin", "SuperAdmin"));
+});
+
 builder.Services.AddCors(options =>
 {
-    if (env.IsProduction())
-    {
-        // Production: Restrict CORS to specific trusted origins
-        var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>()
-            ?? new[] { "https://yourdomain.com", "https://app.yourdomain.com" };
-
-        options.AddPolicy("Production",
-            policy => policy
-                .WithOrigins(allowedOrigins)
-                .AllowAnyMethod()
-                .AllowAnyHeader()
-                .AllowCredentials());
-    }
-    else
-    {
-        // Development: Allow any origin for easier testing
-        options.AddPolicy("Development",
-            policy => policy
-                .AllowAnyOrigin()
-                .AllowAnyMethod()
-                .AllowAnyHeader());
-    }
+    options.AddPolicy("GatewayOnly", policy =>
+        policy.AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader());
 });
-//-----------------------------------------------
 
 // Configure Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
@@ -111,13 +145,7 @@ builder.Services.ConfigureOptions<ConfigureSwaggerOptions>();
 
 var app = builder.Build();
 
-// Appliquer les migrations automatiquement et seeder les données
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<CommunityDbContext>();
-    dbContext.Database.Migrate();
-    await DatabaseSeeder.SeedDataAsync(dbContext);
-}
+await EnsureCommunityDataAsync(app);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -130,6 +158,7 @@ if (app.Environment.IsDevelopment())
         {
             options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", $"Community Service {description.GroupName}");
         }
+
         options.RoutePrefix = "swagger";
         options.DocumentTitle = "Community Service - API Documentation";
         options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
@@ -138,23 +167,27 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-
 app.UseHttpsRedirection();
+app.UseCors("GatewayOnly");
 
-// Apply environment-specific CORS policy
-if (app.Environment.IsProduction())
-{
-    app.UseCors("Production");
-}
-else
-{
-    app.UseCors("Development");
-}
-
-app.UseMiddleware<ErrorHandlingMiddleware>();
-
+app.UseSerilogRequestLogging();
+app.UseResponseCompression();
+app.UseAuthentication();
+app.UseCommunityMiddleware();
 app.UseAuthorization();
+app.UseOutputCache();
+
+app.MapGet("/metrics/latency", () => Results.Ok(EndpointLatencyMetricsMiddleware.GetSnapshot()))
+    .AllowAnonymous();
 
 app.MapControllers();
-
 app.Run();
+
+// Migrations et seed au demarrage.
+static async Task EnsureCommunityDataAsync(WebApplication app)
+{
+    using var scope = app.Services.CreateScope();
+    var dbContext = scope.ServiceProvider.GetRequiredService<CommunityDbContext>();
+    dbContext.Database.Migrate();
+    await DatabaseSeeder.SeedDataAsync(dbContext);
+}

@@ -7,10 +7,10 @@ namespace DotnetNiger.Identity.Application.Services.Interfaces;
 // Contrat pour la gestion des roles.
 public interface IRoleService
 {
-	Task<IReadOnlyList<RoleDto>> GetAllAsync();
-	Task<RoleDto> CreateAsync(AddRoleRequest request);
-	Task DeleteAsync(Guid roleId);
-	Task AssignToUserAsync(AssignRoleRequest request);
-	Task RemoveFromUserAsync(AssignRoleRequest request);
-	Task<IReadOnlyList<string>> GetUserRolesAsync(Guid userId);
+    Task<IReadOnlyList<RoleResponse>> GetAllAsync();
+    Task<RoleResponse> CreateAsync(AddRoleRequest request);
+    Task DeleteAsync(Guid roleId);
+    Task AssignToUserAsync(AssignRoleRequest request);
+    Task RemoveFromUserAsync(AssignRoleRequest request);
+    Task<IReadOnlyList<string>> GetUserRolesAsync(Guid userId);
 }

@@ -3,6 +3,7 @@ using Asp.Versioning;
 using DotnetNiger.Identity.Application.DTOs.Requests;
 using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Services.Interfaces;
+using DotnetNiger.Identity.Infrastructure.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,26 +20,50 @@ public class AuthController : ApiControllerBase
     private readonly ITokenService _tokenService;
     private readonly IClientRateLimiter _rateLimiter;
     private readonly IFeatureToggleService _featureToggleService;
+    private readonly IOAuthService _oAuthService;
+    private readonly IAppSettingRepository _appSettingRepository;
     private readonly IWebHostEnvironment _environment;
-    private const int MaxLoginAttempts = 5;
-    private const int RateLimitWindowMinutes = 15;
+    private const int DefaultRegisterMaxAttempts = 3;
+    private const int DefaultLoginMaxAttempts = 5;
+    private const int DefaultPasswordResetMaxAttempts = 5;
+    private const int DefaultRateLimitWindowMinutes = 1;
 
     public AuthController(
         IAuthService authService,
         ITokenService tokenService,
         IClientRateLimiter rateLimiter,
         IFeatureToggleService featureToggleService,
+        IOAuthService oAuthService,
+        IAppSettingRepository appSettingRepository,
         IWebHostEnvironment environment)
     {
         _authService = authService;
         _tokenService = tokenService;
         _rateLimiter = rateLimiter;
         _featureToggleService = featureToggleService;
+        _oAuthService = oAuthService;
+        _appSettingRepository = appSettingRepository;
         _environment = environment;
     }
 
+    [HttpGet("oauth/providers")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetOAuthProviders()
+    {
+        var providers = await _oAuthService.GetEnabledProvidersAsync();
+        return Success(new { providers });
+    }
+
+    [HttpPost("oauth/exchange")]
+    [AllowAnonymous]
+    public async Task<IActionResult> ExchangeOAuthAccessToken([FromBody] OAuthExchangeRequest request, CancellationToken cancellationToken)
+    {
+        var result = await _oAuthService.ExchangeAccessTokenAsync(request, cancellationToken);
+        return Success(result, "OAuth authentication successful.");
+    }
+
     /// <summary>
-    /// Register new user (rate limited: 3 attempts per 15 min per IP)
+    /// Register new user (rate limited: 3 attempts per 1 min per IP)
     /// </summary>
     [HttpPost("register")]
     [AllowAnonymous]
@@ -47,7 +72,8 @@ public class AuthController : ApiControllerBase
         if (!_featureToggleService.IsRegistrationEnabled())
             return StatusCode(503, new ProblemDetails { Title = "Feature disabled", Detail = "Registration is currently disabled.", Status = 503 });
 
-        if (!TryConsumeRateLimit("register", 3, out var retryAfter))
+        var registerMaxAttempts = GetRateLimitSetting("Auth:RateLimit:RegisterMaxAttempts", DefaultRegisterMaxAttempts);
+        if (!TryConsumeRateLimit("register", registerMaxAttempts, out var retryAfter))
             return StatusCode(429, new { error = $"Too many registration attempts. Retry in {(int)Math.Ceiling((retryAfter ?? TimeSpan.Zero).TotalMinutes)} minutes." });
 
         var result = await _authService.RegisterAsync(request);
@@ -55,7 +81,7 @@ public class AuthController : ApiControllerBase
     }
 
     /// <summary>
-    /// Login endpoint with brute-force protection (5 attempts per 15 min per IP)
+    /// Login endpoint with brute-force protection (5 attempts per 1 min per IP)
     /// </summary>
     [HttpPost("login")]
     [AllowAnonymous]
@@ -64,7 +90,8 @@ public class AuthController : ApiControllerBase
         if (!_featureToggleService.IsLoginEnabled())
             return StatusCode(503, new ProblemDetails { Title = "Feature disabled", Detail = "Login is currently disabled.", Status = 503 });
 
-        if (!TryConsumeRateLimit("login", MaxLoginAttempts, out var retryAfter))
+        var loginMaxAttempts = GetRateLimitSetting("Auth:RateLimit:LoginMaxAttempts", DefaultLoginMaxAttempts);
+        if (!TryConsumeRateLimit("login", loginMaxAttempts, out var retryAfter))
             return StatusCode(429, new { error = $"Too many login attempts. Retry in {(int)Math.Ceiling((retryAfter ?? TimeSpan.Zero).TotalMinutes)} minutes." });
 
         try
@@ -86,7 +113,8 @@ public class AuthController : ApiControllerBase
         if (!_featureToggleService.IsPasswordResetEnabled())
             return StatusCode(503, new ProblemDetails { Title = "Feature disabled", Detail = "Password reset is currently disabled.", Status = 503 });
 
-        if (!TryConsumeRateLimit("forgot-password", 3, out var retryAfter))
+        var passwordResetMaxAttempts = GetRateLimitSetting("Auth:RateLimit:PasswordResetMaxAttempts", DefaultPasswordResetMaxAttempts);
+        if (!TryConsumeRateLimit("forgot-password", passwordResetMaxAttempts, out var retryAfter))
             return StatusCode(429, new { error = $"Too many password reset attempts. Retry in {(int)Math.Ceiling((retryAfter ?? TimeSpan.Zero).TotalMinutes)} minutes." });
 
         var token = await _authService.RequestPasswordResetAsync(request);
@@ -105,7 +133,8 @@ public class AuthController : ApiControllerBase
         if (!_featureToggleService.IsEmailVerificationEnabled())
             return StatusCode(503, new ProblemDetails { Title = "Feature disabled", Detail = "Email verification is currently disabled.", Status = 503 });
 
-        if (!TryConsumeRateLimit("request-email-verification", 3, out var retryAfter))
+        var passwordResetMaxAttempts = GetRateLimitSetting("Auth:RateLimit:PasswordResetMaxAttempts", DefaultPasswordResetMaxAttempts);
+        if (!TryConsumeRateLimit("request-email-verification", passwordResetMaxAttempts, out var retryAfter))
             return StatusCode(429, new { error = $"Too many verification requests. Retry in {(int)Math.Ceiling((retryAfter ?? TimeSpan.Zero).TotalMinutes)} minutes." });
 
         var token = await _authService.RequestEmailVerificationAsync(request);
@@ -178,6 +207,13 @@ public class AuthController : ApiControllerBase
     private bool TryConsumeRateLimit(string action, int limit, out TimeSpan? retryAfter)
     {
         var clientId = GetClientIpAddress();
-        return _rateLimiter.TryConsume(action, clientId, limit, TimeSpan.FromMinutes(RateLimitWindowMinutes), out retryAfter);
+        var windowMinutes = GetRateLimitSetting("Auth:RateLimit:WindowMinutes", DefaultRateLimitWindowMinutes);
+        return _rateLimiter.TryConsume(action, clientId, limit, TimeSpan.FromMinutes(windowMinutes), out retryAfter);
+    }
+
+    private int GetRateLimitSetting(string key, int fallback)
+    {
+        var value = _appSettingRepository.GetValue(key);
+        return int.TryParse(value, out var parsed) ? parsed : fallback;
     }
 }

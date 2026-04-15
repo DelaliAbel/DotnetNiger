@@ -1,7 +1,7 @@
 using DotnetNiger.Community.Application.DTOs.Requests;
 using DotnetNiger.Community.Application.DTOs.Responses;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Application.Services.Interfaces;
-using DotnetNiger.Community.Infrastructure.Repositories;
 
 namespace DotnetNiger.Community.Application.Services;
 
@@ -11,16 +11,16 @@ namespace DotnetNiger.Community.Application.Services;
 /// </summary>
 public class SearchService : ISearchService
 {
-    private readonly IPostRepository _postRepository;
-    private readonly IEventRepository _eventRepository;
-    private readonly IResourceRepository _resourceRepository;
-    private readonly IProjectRepository _projectRepository;
+    private readonly IPostPersistence _postRepository;
+    private readonly IEventPersistence _eventRepository;
+    private readonly IResourcePersistence _resourceRepository;
+    private readonly IProjectPersistence _projectRepository;
 
     public SearchService(
-        IPostRepository postRepository,
-        IEventRepository eventRepository,
-        IResourceRepository resourceRepository,
-        IProjectRepository projectRepository)
+        IPostPersistence postRepository,
+        IEventPersistence eventRepository,
+        IResourcePersistence resourceRepository,
+        IProjectPersistence projectRepository)
     {
         _postRepository = postRepository;
         _eventRepository = eventRepository;
@@ -28,10 +28,10 @@ public class SearchService : ISearchService
         _projectRepository = projectRepository;
     }
 
-    public async Task<IEnumerable<SearchResultDto>> SearchPostsAsync(string query, int page = 1, int pageSize = 10)
+    public async Task<IEnumerable<SearchResultResponse>> SearchPostsAsync(string query, int page = 1, int pageSize = 10)
     {
         if (string.IsNullOrWhiteSpace(query))
-            return Enumerable.Empty<SearchResultDto>();
+            return Enumerable.Empty<SearchResultResponse>();
 
         var normalizedQuery = query.Trim().ToLowerInvariant();
 
@@ -44,7 +44,7 @@ public class SearchService : ISearchService
             page,
             pageSize);
 
-        return results.Select(p => new SearchResultDto
+        return results.Select(p => new SearchResultResponse
         {
             Type = "Post",
             Id = p.Id,
@@ -58,10 +58,10 @@ public class SearchService : ISearchService
         });
     }
 
-    public async Task<IEnumerable<SearchResultDto>> SearchEventsAsync(string query, int page = 1, int pageSize = 10)
+    public async Task<IEnumerable<SearchResultResponse>> SearchEventsAsync(string query, int page = 1, int pageSize = 10)
     {
         if (string.IsNullOrWhiteSpace(query))
-            return Enumerable.Empty<SearchResultDto>();
+            return Enumerable.Empty<SearchResultResponse>();
 
         var normalizedQuery = query.Trim().ToLowerInvariant();
 
@@ -73,7 +73,7 @@ public class SearchService : ISearchService
             page,
             pageSize);
 
-        return results.Select(e => new SearchResultDto
+        return results.Select(e => new SearchResultResponse
         {
             Type = "Event",
             Id = e.Id,
@@ -87,10 +87,10 @@ public class SearchService : ISearchService
         });
     }
 
-    public async Task<IEnumerable<SearchResultDto>> SearchResourcesAsync(string query, int page = 1, int pageSize = 10)
+    public async Task<IEnumerable<SearchResultResponse>> SearchResourcesAsync(string query, int page = 1, int pageSize = 10)
     {
         if (string.IsNullOrWhiteSpace(query))
-            return Enumerable.Empty<SearchResultDto>();
+            return Enumerable.Empty<SearchResultResponse>();
 
         var normalizedQuery = query.Trim().ToLowerInvariant();
 
@@ -102,7 +102,7 @@ public class SearchService : ISearchService
             page,
             pageSize);
 
-        return results.Select(r => new SearchResultDto
+        return results.Select(r => new SearchResultResponse
         {
             Type = "Resource",
             Id = r.Id,
@@ -115,10 +115,10 @@ public class SearchService : ISearchService
         });
     }
 
-    public async Task<IEnumerable<SearchResultDto>> SearchProjectsAsync(string query, int page = 1, int pageSize = 10)
+    public async Task<IEnumerable<SearchResultResponse>> SearchProjectsAsync(string query, int page = 1, int pageSize = 10)
     {
         if (string.IsNullOrWhiteSpace(query))
-            return Enumerable.Empty<SearchResultDto>();
+            return Enumerable.Empty<SearchResultResponse>();
 
         var normalizedQuery = query.Trim().ToLowerInvariant();
 
@@ -129,7 +129,7 @@ public class SearchService : ISearchService
             page,
             pageSize);
 
-        return results.Select(p => new SearchResultDto
+        return results.Select(p => new SearchResultResponse
         {
             Type = "Project",
             Id = p.Id,
@@ -143,12 +143,12 @@ public class SearchService : ISearchService
         });
     }
 
-    public async Task<IEnumerable<SearchResultDto>> SearchAsync(SearchQueryRequest request)
+    public async Task<IEnumerable<SearchResultResponse>> SearchAsync(SearchQueryRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Query))
-            return Enumerable.Empty<SearchResultDto>();
+            return Enumerable.Empty<SearchResultResponse>();
 
-        var results = new List<SearchResultDto>();
+        var results = new List<SearchResultResponse>();
 
         // Search by specific type if provided
         if (!string.IsNullOrWhiteSpace(request.Type))
@@ -159,7 +159,7 @@ public class SearchService : ISearchService
                 "event" => await SearchEventsAsync(request.Query, request.Page, request.PageSize),
                 "resource" => await SearchResourcesAsync(request.Query, request.Page, request.PageSize),
                 "project" => await SearchProjectsAsync(request.Query, request.Page, request.PageSize),
-                _ => Enumerable.Empty<SearchResultDto>()
+                _ => Enumerable.Empty<SearchResultResponse>()
             };
         }
 

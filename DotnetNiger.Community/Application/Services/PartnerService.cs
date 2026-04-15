@@ -1,15 +1,15 @@
 using DotnetNiger.Community.Application.Services.Interfaces;
-using DotnetNiger.Community.Infrastructure.Repositories;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Domain.Entities;
 
 namespace DotnetNiger.Community.Application.Services;
 
 public class PartnerService : IPartnerService
 {
-    private readonly IPartnerRepository _partnerRepository;
+    private readonly IPartnerPersistence _partnerRepository;
     private readonly ISlugGenerator _slugGenerator;
 
-    public PartnerService(IPartnerRepository partnerRepository, ISlugGenerator slugGenerator)
+    public PartnerService(IPartnerPersistence partnerRepository, ISlugGenerator slugGenerator)
     {
         _partnerRepository = partnerRepository;
         _slugGenerator = slugGenerator;

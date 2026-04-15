@@ -6,53 +6,52 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.VisualStudio.TestPlatform.TestHost;
 
 namespace DotnetNiger.Identity.IntegrationTests;
 
-public class IdentityWebApplicationFactory : WebApplicationFactory<Program>
+public class IdentityWebApplicationFactory : WebApplicationFactory<DotnetNigerIdentityDbContext>
 {
-	private SqliteConnection? _connection;
+    private SqliteConnection? _connection;
 
-	protected override void ConfigureWebHost(IWebHostBuilder builder)
-	{
-		builder.ConfigureAppConfiguration(config =>
-		{
-			var settings = new Dictionary<string, string?>
-			{
-				["Jwt:Issuer"] = "DotnetNiger.Identity",
-				["Jwt:Audience"] = "DotnetNiger.Identity.Client",
-				["Jwt:Key"] = "test-secret-key-1234567890-extra-padding-for-32!",
-				["Email:Enabled"] = "false",
-				["FileUpload:CleanupEnabled"] = "false"
-			};
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
+    {
+        builder.ConfigureAppConfiguration(config =>
+        {
+            var settings = new Dictionary<string, string?>
+            {
+                ["Jwt:Issuer"] = "DotnetNiger.Identity",
+                ["Jwt:Audience"] = "DotnetNiger.Identity.Client",
+                ["Jwt:Key"] = "test-secret-key-1234567890-extra-padding-for-32!",
+                ["Email:Enabled"] = "false",
+                ["FileUpload:CleanupEnabled"] = "false"
+            };
 
-			config.AddInMemoryCollection(settings);
-		});
+            config.AddInMemoryCollection(settings);
+        });
 
-		builder.ConfigureServices(services =>
-		{
-			services.RemoveAll<DbContextOptions<DotnetNigerIdentityDbContext>>();
+        builder.ConfigureServices(services =>
+        {
+            services.RemoveAll<DbContextOptions<DotnetNigerIdentityDbContext>>();
 
-			_connection = new SqliteConnection("DataSource=:memory:");
-			_connection.Open();
+            _connection = new SqliteConnection("DataSource=:memory:");
+            _connection.Open();
 
-			services.AddDbContext<DotnetNigerIdentityDbContext>(options =>
-				options.UseSqlite(_connection));
+            services.AddDbContext<DotnetNigerIdentityDbContext>(options =>
+                options.UseSqlite(_connection));
 
-			using var scope = services.BuildServiceProvider().CreateScope();
-			var db = scope.ServiceProvider.GetRequiredService<DotnetNigerIdentityDbContext>();
-			db.Database.EnsureCreated();
-		});
-	}
+            using var scope = services.BuildServiceProvider().CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<DotnetNigerIdentityDbContext>();
+            db.Database.EnsureCreated();
+        });
+    }
 
-	protected override void Dispose(bool disposing)
-	{
-		base.Dispose(disposing);
-		if (disposing)
-		{
-			_connection?.Dispose();
-			_connection = null;
-		}
-	}
+    protected override void Dispose(bool disposing)
+    {
+        base.Dispose(disposing);
+        if (disposing)
+        {
+            _connection?.Dispose();
+            _connection = null;
+        }
+    }
 }

@@ -1,18 +1,24 @@
 using DotnetNiger.Community.Application.Services.Interfaces;
-using DotnetNiger.Community.Infrastructure.Repositories;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Domain.Entities;
 using DotnetNiger.Community.Application.Constants;
+using DotnetNiger.Community.Application.DTOs.Responses;
 
 namespace DotnetNiger.Community.Application.Services;
 
 public class EventService : IEventService
 {
-    private readonly IEventRepository _eventRepository;
+    private readonly IEventPersistence _eventRepository;
+    private readonly IEventRegistrationPersistence _registrationRepository;
     private readonly ISlugGenerator _slugGenerator;
 
-    public EventService(IEventRepository eventRepository, ISlugGenerator slugGenerator)
+    public EventService(
+        IEventPersistence eventRepository,
+        IEventRegistrationPersistence registrationRepository,
+        ISlugGenerator slugGenerator)
     {
         _eventRepository = eventRepository;
+        _registrationRepository = registrationRepository;
         _slugGenerator = slugGenerator;
     }
 
@@ -68,5 +74,121 @@ public class EventService : IEventService
     public async Task<bool> DeleteEventAsync(Guid id)
     {
         return await _eventRepository.DeleteAsync(id);
+    }
+
+    // ====== Event Registration Methods - SECURE ======
+
+    /// <summary>
+    /// Enregistrer l'utilisateur actuel (depuis JWT) à un événement
+    /// SÉCURISÉ: UserId vient du JWT token, pas du client
+    /// </summary>
+    public async Task<EventRegistrationResponse> RegisterToEventAsync(Guid eventId, Guid userId)
+    {
+        if (eventId == Guid.Empty)
+            throw new ArgumentException("Event ID cannot be empty", nameof(eventId));
+        if (userId == Guid.Empty)
+            throw new ArgumentException("User ID cannot be empty", nameof(userId));
+
+        // Vérifier que l'événement existe
+        var @event = await _eventRepository.GetByIdAsync(eventId);
+        if (@event == null)
+            throw new InvalidOperationException($"Event with ID {eventId} not found");
+
+        // Vérifier que l'utilisateur n'est pas déjà enregistré
+        if (await _registrationRepository.IsUserRegisteredAsync(eventId, userId))
+            throw new InvalidOperationException("User is already registered to this event");
+
+        // Créer l'enregistrement
+        var registration = new EventRegistration
+        {
+            Id = Guid.NewGuid(),
+            EventId = eventId,
+            UserId = userId,
+            RegisteredAt = DateTime.UtcNow,
+            IsAttended = false,
+            RegistrationStatus = "Registered"
+        };
+
+        var createdRegistration = await _registrationRepository.AddAsync(registration);
+        return MapToDto(createdRegistration, @event.Title);
+    }
+
+    /// <summary>
+    /// Annuler l'enregistrement avec vérification de propriété
+    /// SÉCURISÉ: Vérifie que l'utilisateur annule son propre enregistrement
+    /// </summary>
+    public async Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId)
+    {
+        if (eventId == Guid.Empty)
+            throw new ArgumentException("Event ID cannot be empty", nameof(eventId));
+        if (userId == Guid.Empty)
+            throw new ArgumentException("User ID cannot be empty", nameof(userId));
+
+        // Récupérer l'enregistrement existant
+        var registration = await _registrationRepository.GetUserRegistrationAsync(eventId, userId);
+        if (registration == null)
+            throw new InvalidOperationException("Registration not found");
+
+        // Marquer comme annulé au lieu de supprimer (soft delete)
+        registration.RegistrationStatus = "Cancelled";
+        await _registrationRepository.UpdateAsync(registration);
+        return true;
+    }
+
+    /// <summary>
+    /// Récupérer les enregistrements d'un événement
+    /// </summary>
+    public async Task<IEnumerable<EventRegistrationResponse>> GetEventRegistrationsAsync(Guid eventId)
+    {
+        if (eventId == Guid.Empty)
+            throw new ArgumentException("Event ID cannot be empty", nameof(eventId));
+
+        var @event = await _eventRepository.GetByIdAsync(eventId);
+        if (@event == null)
+            throw new InvalidOperationException($"Event with ID {eventId} not found");
+
+        var registrations = await _registrationRepository.GetEventRegistrationsAsync(eventId);
+        return registrations.Select(r => MapToDto(r, @event.Title)).ToList();
+    }
+
+    /// <summary>
+    /// Récupérer les enregistrements d'un utilisateur
+    /// </summary>
+    public async Task<IEnumerable<EventRegistrationResponse>> GetUserRegistrationsAsync(Guid userId)
+    {
+        if (userId == Guid.Empty)
+            throw new ArgumentException("User ID cannot be empty", nameof(userId));
+
+        var registrations = await _registrationRepository.GetUserRegistrationsAsync(userId);
+
+        // Enrichir avec les titres des événements
+        var registrationDtos = new List<EventRegistrationResponse>();
+        foreach (var reg in registrations)
+        {
+            var @event = await _eventRepository.GetByIdAsync(reg.EventId);
+            registrationDtos.Add(MapToDto(reg, @event?.Title ?? "Unknown Event"));
+        }
+
+        return registrationDtos;
+    }
+
+    // ====== Helper Methods ======
+
+    /// <summary>
+    /// Mapper EventRegistration vers EventRegistrationDto
+    /// </summary>
+    private static EventRegistrationResponse MapToDto(EventRegistration registration, string eventTitle)
+    {
+        return new EventRegistrationResponse
+        {
+            Id = registration.Id,
+            EventId = registration.EventId,
+            EventTitle = eventTitle,
+            UserId = registration.UserId,
+            UserName = string.Empty, // Sera rempli par le controller si nécessaire
+            RegisteredAt = registration.RegisteredAt,
+            IsAttended = registration.IsAttended,
+            RegistrationStatus = registration.RegistrationStatus
+        };
     }
 }

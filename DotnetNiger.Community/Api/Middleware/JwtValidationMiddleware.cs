@@ -37,7 +37,7 @@ public class JwtValidationMiddleware
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error validating JWT in middleware");
-            await _next(context);
+            throw;
         }
     }
 }

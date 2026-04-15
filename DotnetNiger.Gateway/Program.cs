@@ -1,5 +1,8 @@
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Net;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using MMLib.SwaggerForOcelot.DependencyInjection;
@@ -26,11 +29,15 @@ Log.Information("Démarrage du DotnetNiger API Gateway...");
 // ─── Builder ─────────────────────────────────────────────────────────────────
 var builder = WebApplication.CreateBuilder(args);
 
+JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+
 builder.Host.UseSerilog();
+
+var mergedOcelotFile = BuildMergedOcelotConfiguration(builder.Environment.ContentRootPath);
 
 builder.Configuration
     .SetBasePath(builder.Environment.ContentRootPath)
-    .AddJsonFile("ocelot.json", optional: false, reloadOnChange: true);
+    .AddJsonFile(mergedOcelotFile, optional: false, reloadOnChange: false);
 
 // ─── Services ────────────────────────────────────────────────────────────────
 builder.Services.AddOcelot(builder.Configuration)
@@ -56,6 +63,7 @@ if (!string.IsNullOrWhiteSpace(jwtKey) && jwtKey.Length >= 32 && !jwtKey.StartsW
     })
     .AddJwtBearer("Bearer", options =>
     {
+        options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -106,10 +114,73 @@ var app = builder.Build();
 
 app.UseCors("AllowAll");
 
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value ?? string.Empty;
+    if (path.StartsWith("/metrics/latency", StringComparison.OrdinalIgnoreCase))
+    {
+        await next();
+        return;
+    }
+
+    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+    await next();
+    stopwatch.Stop();
+
+    var route = context.GetEndpoint()?.DisplayName ?? path;
+    var key = $"{context.Request.Method} {route}";
+    GatewayEndpointLatencyMetrics.Record(key, stopwatch.Elapsed.TotalMilliseconds, context.Response.StatusCode);
+});
+
+app.MapGet("/health", () => Results.Ok(new
+{
+    status = "Healthy",
+    service = "DotnetNiger.Gateway",
+    timestamp = DateTime.UtcNow
+}));
+
+app.MapGet("/metrics/latency", () => Results.Ok(GatewayEndpointLatencyMetrics.GetSnapshot()))
+    .AllowAnonymous();
+
+app.MapGet("/health/downstream", async (IHttpClientFactory factory, IConfiguration configuration, CancellationToken cancellationToken) =>
+{
+    var identityHealthUrl = configuration["DownstreamServices:Identity:HealthUrl"] ?? "http://localhost:5075/api/v1/diagnostics/health";
+    var communityHealthUrl = configuration["DownstreamServices:Community:HealthUrl"] ?? "http://localhost:5269/api/v1/test/health";
+
+    var identityStatus = await CheckDownstreamAsync(factory, identityHealthUrl, cancellationToken);
+    var communityStatus = await CheckDownstreamAsync(factory, communityHealthUrl, cancellationToken);
+
+    var allHealthy = identityStatus.IsHealthy && communityStatus.IsHealthy;
+
+    return Results.Json(new
+    {
+        status = allHealthy ? "Healthy" : "Degraded",
+        service = "DotnetNiger.Gateway",
+        timestamp = DateTime.UtcNow,
+        downstream = new
+        {
+            identity = identityStatus,
+            community = communityStatus
+        }
+    }, statusCode: allHealthy ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable);
+});
+
+app.MapGet("/health/ready", async (IHttpClientFactory factory, IConfiguration configuration, CancellationToken cancellationToken) =>
+{
+    var identityHealthUrl = configuration["DownstreamServices:Identity:HealthUrl"] ?? "http://localhost:5075/api/v1/diagnostics/health";
+    var communityHealthUrl = configuration["DownstreamServices:Community:HealthUrl"] ?? "http://localhost:5269/api/v1/test/health";
+
+    var identityStatus = await CheckDownstreamAsync(factory, identityHealthUrl, cancellationToken);
+    var communityStatus = await CheckDownstreamAsync(factory, communityHealthUrl, cancellationToken);
+    var allHealthy = identityStatus.IsHealthy && communityStatus.IsHealthy;
+
+    return allHealthy ? Results.Ok() : Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
-    // app.Urls.Add("http://localhost:5000");
+    app.Urls.Add("http://localhost:5000");
 }
 
 // Garantit un identifiant client pour le rate limiting Ocelot
@@ -153,16 +224,20 @@ app.Use(async (context, next) =>
     }
 
     var factory = context.RequestServices.GetRequiredService<IHttpClientFactory>();
-    using var client = factory.CreateClient();
+    var configuration = context.RequestServices.GetRequiredService<IConfiguration>();
+    var identitySwaggerUrl = configuration["DownstreamServices:Identity:SwaggerUrl"] ?? "http://localhost:5075/swagger/v1/swagger.json";
+    var communitySwaggerUrl = configuration["DownstreamServices:Community:SwaggerUrl"] ?? "http://localhost:5269/swagger/v1/swagger.json";
 
-    // Appels directs vers MMLib (évite de re-passer par Ocelot)
-    string? identityJson = null, communityJson = null;
-    try { identityJson = await client.GetStringAsync("http://localhost:5000/swagger/docs/v1/identity"); } catch { }
-    try { communityJson = await client.GetStringAsync("http://localhost:5000/swagger/docs/v1/community"); } catch { }
+    // Appels directs vers les services aval (évite les boucles via Ocelot)
+    var identityJson = await FetchSwaggerJsonAsync(factory, identitySwaggerUrl, context.RequestAborted);
+    var communityJson = await FetchSwaggerJsonAsync(factory, communitySwaggerUrl, context.RequestAborted);
 
     if (identityJson == null && communityJson == null)
     {
+        Log.Warning("Swagger aggregation failed: both downstream swagger documents are unavailable");
         context.Response.StatusCode = 503;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync("{\"message\":\"Downstream swagger documents are unavailable\"}");
         return;
     }
 
@@ -227,6 +302,209 @@ app.UseSwaggerForOcelotUI(
 
 await app.UseOcelot();
 await app.RunAsync();
+
+static string BuildMergedOcelotConfiguration(string contentRootPath)
+{
+    var globalPath = Path.Combine(contentRootPath, "ocelot.global.json");
+    var identityPath = Path.Combine(contentRootPath, "ocelot.identity.routes.json");
+    var communityPath = Path.Combine(contentRootPath, "ocelot.community.routes.json");
+
+    if (!File.Exists(globalPath) || !File.Exists(identityPath) || !File.Exists(communityPath))
+    {
+        throw new FileNotFoundException("One or more split Ocelot config files are missing.");
+    }
+
+    var globalNode = JsonNode.Parse(File.ReadAllText(globalPath))?.AsObject()
+        ?? throw new InvalidOperationException("Invalid JSON in ocelot.global.json");
+    var identityNode = JsonNode.Parse(File.ReadAllText(identityPath))?.AsObject()
+        ?? throw new InvalidOperationException("Invalid JSON in ocelot.identity.routes.json");
+    var communityNode = JsonNode.Parse(File.ReadAllText(communityPath))?.AsObject()
+        ?? throw new InvalidOperationException("Invalid JSON in ocelot.community.routes.json");
+
+    var mergedRoutes = new JsonArray();
+    AppendRoutes(mergedRoutes, identityNode, "ocelot.identity.routes.json");
+    AppendRoutes(mergedRoutes, communityNode, "ocelot.community.routes.json");
+
+    var merged = new JsonObject
+    {
+        ["Routes"] = mergedRoutes,
+        ["GlobalConfiguration"] = globalNode["GlobalConfiguration"]?.DeepClone(),
+        ["SwaggerEndPoints"] = globalNode["SwaggerEndPoints"]?.DeepClone()
+    };
+
+    var mergedPath = Path.Combine(contentRootPath, "ocelot.json");
+    File.WriteAllText(mergedPath, merged.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+
+    return "ocelot.json";
+}
+
+static void AppendRoutes(JsonArray target, JsonObject source, string fileName)
+{
+    if (source["Routes"] is not JsonArray routes)
+    {
+        throw new InvalidOperationException($"Missing Routes array in {fileName}");
+    }
+
+    foreach (var route in routes)
+    {
+        if (route != null)
+        {
+            target.Add(route.DeepClone());
+        }
+    }
+}
+
+static async Task<string?> FetchSwaggerJsonAsync(IHttpClientFactory factory, string url, CancellationToken cancellationToken)
+{
+    try
+    {
+        using var client = factory.CreateClient();
+        client.Timeout = TimeSpan.FromSeconds(4);
+        return await client.GetStringAsync(url, cancellationToken);
+    }
+    catch (Exception ex)
+    {
+        Log.Warning(ex, "Failed to fetch swagger document from {Url}", url);
+        return null;
+    }
+}
+
+static async Task<DownstreamHealthStatus> CheckDownstreamAsync(IHttpClientFactory factory, string url, CancellationToken cancellationToken)
+{
+    try
+    {
+        using var client = factory.CreateClient();
+        client.Timeout = TimeSpan.FromSeconds(3);
+        using var response = await client.GetAsync(url, cancellationToken);
+
+        return new DownstreamHealthStatus(
+            url,
+            response.IsSuccessStatusCode,
+            (int)response.StatusCode,
+            response.ReasonPhrase);
+    }
+    catch (Exception ex)
+    {
+        return new DownstreamHealthStatus(
+            url,
+            false,
+            (int)HttpStatusCode.ServiceUnavailable,
+            ex.Message);
+    }
+}
+
+readonly record struct DownstreamHealthStatus(string Url, bool IsHealthy, int StatusCode, string? Reason);
+
+static class GatewayEndpointLatencyMetrics
+{
+    private const int MaxSamples = 2048;
+    private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, EndpointLatencyWindow> Windows = new(StringComparer.OrdinalIgnoreCase);
+
+    public static void Record(string endpointKey, double elapsedMs, int statusCode)
+    {
+        var window = Windows.GetOrAdd(endpointKey, _ => new EndpointLatencyWindow(MaxSamples));
+        window.Record(elapsedMs, statusCode);
+    }
+
+    public static object GetSnapshot(int top = 5)
+    {
+        var endpoints = Windows
+            .Select(item => new
+            {
+                endpoint = item.Key,
+                metrics = item.Value.Snapshot()
+            })
+            .Where(item => item.metrics.Count > 0)
+            .OrderByDescending(item => item.metrics.P95Ms)
+            .Take(Math.Max(1, top))
+            .ToList();
+
+        return new
+        {
+            generatedAtUtc = DateTime.UtcNow,
+            endpointCount = Windows.Count,
+            topSlowest = endpoints
+        };
+    }
+
+    private sealed class EndpointLatencyWindow
+    {
+        private readonly int _maxSamples;
+        private readonly object _lock = new();
+        private readonly Queue<double> _latencies = new();
+        private long _requestCount;
+        private long _errorCount;
+
+        public EndpointLatencyWindow(int maxSamples)
+        {
+            _maxSamples = maxSamples;
+        }
+
+        public void Record(double elapsedMs, int statusCode)
+        {
+            lock (_lock)
+            {
+                _requestCount++;
+                if (statusCode >= 500)
+                {
+                    _errorCount++;
+                }
+
+                _latencies.Enqueue(elapsedMs);
+                while (_latencies.Count > _maxSamples)
+                {
+                    _latencies.Dequeue();
+                }
+            }
+        }
+
+        public EndpointSnapshot Snapshot()
+        {
+            lock (_lock)
+            {
+                if (_latencies.Count == 0)
+                {
+                    return EndpointSnapshot.Empty;
+                }
+
+                var values = _latencies.OrderBy(value => value).ToArray();
+                return new EndpointSnapshot
+                {
+                    Count = values.Length,
+                    TotalRequests = _requestCount,
+                    TotalErrors = _errorCount,
+                    P50Ms = Percentile(values, 0.50),
+                    P95Ms = Percentile(values, 0.95),
+                    P99Ms = Percentile(values, 0.99)
+                };
+            }
+        }
+
+        private static double Percentile(double[] sortedValues, double percentile)
+        {
+            if (sortedValues.Length == 0)
+            {
+                return 0;
+            }
+
+            var index = (int)Math.Ceiling(percentile * sortedValues.Length) - 1;
+            index = Math.Clamp(index, 0, sortedValues.Length - 1);
+            return Math.Round(sortedValues[index], 2);
+        }
+    }
+
+    private sealed class EndpointSnapshot
+    {
+        public static EndpointSnapshot Empty { get; } = new();
+
+        public int Count { get; init; }
+        public long TotalRequests { get; init; }
+        public long TotalErrors { get; init; }
+        public double P50Ms { get; init; }
+        public double P95Ms { get; init; }
+        public double P99Ms { get; init; }
+    }
+}
 
 
 

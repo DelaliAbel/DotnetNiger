@@ -8,51 +8,53 @@ namespace DotnetNiger.Community.Api.Middleware;
 /// </summary>
 public class RequestLoggingMiddleware
 {
-	private readonly RequestDelegate _next;
-	private readonly ILogger<RequestLoggingMiddleware> _logger;
+    private readonly RequestDelegate _next;
+    private readonly ILogger<RequestLoggingMiddleware> _logger;
 
-	public RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
-	{
-		_next = next;
-		_logger = logger;
-	}
+    public RequestLoggingMiddleware(RequestDelegate next, ILogger<RequestLoggingMiddleware> logger)
+    {
+        _next = next;
+        _logger = logger;
+    }
 
-	public async Task InvokeAsync(HttpContext context)
-	{
-		var stopwatch = Stopwatch.StartNew();
+    public async Task InvokeAsync(HttpContext context)
+    {
+        var stopwatch = Stopwatch.StartNew();
 
-		// Log incoming request
-		_logger.LogInformation(
-			"HTTP Request: {Method} {Path} from {IP}",
-			context.Request.Method,
-			context.Request.Path,
-			context.Connection.RemoteIpAddress?.ToString() ?? "Unknown"
-		);
+        // Log incoming request
+        _logger.LogInformation(
+            "HTTP Request: {Method} {Path} from {IP}",
+            context.Request.Method,
+            context.Request.Path,
+            context.Connection.RemoteIpAddress?.ToString() ?? "Unknown"
+        );
 
-		// Copy the response stream so we can read it
-		var originalBodyStream = context.Response.Body;
-		using var responseBody = new MemoryStream();
-		context.Response.Body = responseBody;
+        // Copy the response stream so we can read it
+        var originalBodyStream = context.Response.Body;
+        using var responseBody = new MemoryStream();
+        context.Response.Body = responseBody;
 
-		try
-		{
-			await _next(context);
-		}
-		finally
-		{
-			stopwatch.Stop();
+        try
+        {
+            await _next(context);
+        }
+        finally
+        {
+            stopwatch.Stop();
+            context.Response.Body = originalBodyStream;
 
-			// Log response
-			_logger.LogInformation(
-				"HTTP Response: {Method} {Path} - Status: {StatusCode} - Duration: {DurationMs}ms",
-				context.Request.Method,
-				context.Request.Path,
-				context.Response.StatusCode,
-				stopwatch.ElapsedMilliseconds
-			);
+            // Log response
+            _logger.LogInformation(
+                "HTTP Response: {Method} {Path} - Status: {StatusCode} - Duration: {DurationMs}ms",
+                context.Request.Method,
+                context.Request.Path,
+                context.Response.StatusCode,
+                stopwatch.ElapsedMilliseconds
+            );
 
-			// Copy the response back to the original stream
-			await responseBody.CopyToAsync(originalBodyStream);
-		}
-	}
+            // Copy the response back to the original stream
+            responseBody.Seek(0, SeekOrigin.Begin);
+            await responseBody.CopyToAsync(originalBodyStream);
+        }
+    }
 }

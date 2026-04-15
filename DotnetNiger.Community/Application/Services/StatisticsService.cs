@@ -1,5 +1,5 @@
 using DotnetNiger.Community.Application.Services.Interfaces;
-using DotnetNiger.Community.Infrastructure.Repositories;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 
 namespace DotnetNiger.Community.Application.Services;
 
@@ -8,20 +8,20 @@ namespace DotnetNiger.Community.Application.Services;
 /// </summary>
 public class StatisticsService : IStatisticsService
 {
-    private readonly IPostRepository _postRepository;
-    private readonly IEventRepository _eventRepository;
-    private readonly IResourceRepository _resourceRepository;
-    private readonly IProjectRepository _projectRepository;
-    private readonly ICategoryRepository _categoryRepository;
-    private readonly ICommentRepository _commentRepository;
+    private readonly IPostPersistence _postRepository;
+    private readonly IEventPersistence _eventRepository;
+    private readonly IResourcePersistence _resourceRepository;
+    private readonly IProjectPersistence _projectRepository;
+    private readonly ICategoryPersistence _categoryRepository;
+    private readonly ICommentPersistence _commentRepository;
 
     public StatisticsService(
-        IPostRepository postRepository,
-        IEventRepository eventRepository,
-        IResourceRepository resourceRepository,
-        IProjectRepository projectRepository,
-        ICategoryRepository categoryRepository,
-        ICommentRepository commentRepository)
+        IPostPersistence postRepository,
+        IEventPersistence eventRepository,
+        IResourcePersistence resourceRepository,
+        IProjectPersistence projectRepository,
+        ICategoryPersistence categoryRepository,
+        ICommentPersistence commentRepository)
     {
         _postRepository = postRepository;
         _eventRepository = eventRepository;
@@ -33,20 +33,29 @@ public class StatisticsService : IStatisticsService
 
     public async Task<CommunityStatsDto> GetCommunityStatsAsync()
     {
-        var posts = await _postRepository.GetAllAsync();
-        var events = await _eventRepository.GetAllAsync();
-        var resources = await _resourceRepository.GetAllAsync();
-        var projects = await _projectRepository.GetAllAsync();
-        var comments = await _commentRepository.GetAllAsync();
+        var totalPostsTask = _postRepository.CountAsync();
+        var publishedPostsTask = _postRepository.CountAsync(post => post.IsPublished);
+        var totalEventsTask = _eventRepository.CountAsync();
+        var totalResourcesTask = _resourceRepository.CountAsync();
+        var totalProjectsTask = _projectRepository.CountAsync();
+        var totalCommentsTask = _commentRepository.CountAsync();
+
+        await Task.WhenAll(
+            totalPostsTask,
+            publishedPostsTask,
+            totalEventsTask,
+            totalResourcesTask,
+            totalProjectsTask,
+            totalCommentsTask);
 
         return new CommunityStatsDto
         {
-            TotalPosts = posts.Count(),
-            PublishedPosts = posts.Count(p => p.IsPublished),
-            TotalEvents = events.Count(),
-            TotalResources = resources.Count(),
-            TotalProjects = projects.Count(),
-            TotalComments = comments.Count(),
+            TotalPosts = totalPostsTask.Result,
+            PublishedPosts = publishedPostsTask.Result,
+            TotalEvents = totalEventsTask.Result,
+            TotalResources = totalResourcesTask.Result,
+            TotalProjects = totalProjectsTask.Result,
+            TotalComments = totalCommentsTask.Result,
             GeneratedAt = DateTime.UtcNow
         };
     }
@@ -107,6 +116,8 @@ public class StatisticsService : IStatisticsService
         // For now, we'll create a simple aggregation based on posts
         var contributors = posts
             .GroupBy(p => new { p.Id })
+            .OrderByDescending(group => group.Count())
+            .ThenBy(group => group.Key.Id)
             .Take(limit)
             .Select((group, index) => new TopContributorDto
             {
@@ -121,9 +132,7 @@ public class StatisticsService : IStatisticsService
     public async Task<IEnumerable<CategoryDistributionDto>> GetCategoryDistributionAsync()
     {
         var categories = await _categoryRepository.GetAllAsync();
-        var posts = await _postRepository.GetAllAsync();
-
-        var totalPublishedPosts = posts.Count(p => p.IsPublished);
+        var totalPublishedPosts = await _postRepository.CountAsync(post => post.IsPublished);
 
         var distribution = categories
             .Select(category => new CategoryDistributionDto
@@ -131,7 +140,7 @@ public class StatisticsService : IStatisticsService
                 Id = category.Id,
                 Name = category.Name,
                 PostCount = category.PostCount,
-                Percentage = totalPublishedPosts > 0 
+                Percentage = totalPublishedPosts > 0
                     ? Math.Round((double)category.PostCount / totalPublishedPosts * 100, 2)
                     : 0
             })

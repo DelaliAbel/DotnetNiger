@@ -11,9 +11,9 @@ public class ElasticsearchProvider : ISearchProvider
         _logger = logger;
     }
 
-    public Task<IReadOnlyList<SearchResultDto>> SearchAsync(string query, int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<SearchResultResponse>> SearchAsync(string query, int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("ElasticsearchProvider not configured, returning empty result for query '{Query}'", query);
-        return Task.FromResult<IReadOnlyList<SearchResultDto>>(Array.Empty<SearchResultDto>());
+        return Task.FromResult<IReadOnlyList<SearchResultResponse>>(Array.Empty<SearchResultResponse>());
     }
 }

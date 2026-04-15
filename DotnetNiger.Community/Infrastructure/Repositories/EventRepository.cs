@@ -1,10 +1,11 @@
 using DotnetNiger.Community.Domain.Entities;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Infrastructure.Repositories;
 
-public class EventRepository : BaseRepository<Event>, IEventRepository
+public class EventRepository : BaseRepository<Event>, IEventRepository, IEventPersistence
 {
     public EventRepository(CommunityDbContext context) : base(context)
     {

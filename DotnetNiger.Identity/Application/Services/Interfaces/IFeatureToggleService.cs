@@ -5,8 +5,8 @@ namespace DotnetNiger.Identity.Application.Services.Interfaces;
 
 public interface IFeatureToggleService
 {
-    FeatureSettingsDto GetCurrentSettings();
-    FeatureSettingsDto UpdateSettings(UpdateFeatureSettingsRequest request);
+    FeatureSettingsResponse GetCurrentSettings();
+    FeatureSettingsResponse UpdateSettings(UpdateFeatureSettingsRequest request);
 
     bool IsRegistrationEnabled();
     bool IsLoginEnabled();

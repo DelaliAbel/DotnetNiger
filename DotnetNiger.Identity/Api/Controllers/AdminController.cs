@@ -15,7 +15,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/admin")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "SuperAdmin")]
 // Endpoints d'administration et supervision des utilisateurs.
 public class AdminController : ApiControllerBase
 {
@@ -24,6 +24,7 @@ public class AdminController : ApiControllerBase
     private readonly ILoginHistoryService _loginHistoryService;
     private readonly IRoleService _roleService;
     private readonly IPermissionService _permissionService;
+    private readonly IAccountDeletionService _accountDeletionService;
     private readonly ITokenService _tokenService;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<Role> _roleManager;
@@ -35,6 +36,7 @@ public class AdminController : ApiControllerBase
         ILoginHistoryService loginHistoryService,
         IRoleService roleService,
         IPermissionService permissionService,
+        IAccountDeletionService accountDeletionService,
         ITokenService tokenService,
         UserManager<ApplicationUser> userManager,
         RoleManager<Role> roleManager,
@@ -45,6 +47,7 @@ public class AdminController : ApiControllerBase
         _loginHistoryService = loginHistoryService;
         _roleService = roleService;
         _permissionService = permissionService;
+        _accountDeletionService = accountDeletionService;
         _tokenService = tokenService;
         _userManager = userManager;
         _roleManager = roleManager;
@@ -140,6 +143,7 @@ public class AdminController : ApiControllerBase
     // --- Settings endpoints ---
 
     [HttpGet("settings/file-upload")]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> GetFileUploadSettings()
     {
         var settings = await _adminService.GetFileUploadSettingsAsync();
@@ -147,6 +151,7 @@ public class AdminController : ApiControllerBase
     }
 
     [HttpPut("settings/file-upload")]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> UpdateFileUploadSettings(
         [FromBody] UpdateFileUploadSettingsRequest request)
     {
@@ -155,6 +160,7 @@ public class AdminController : ApiControllerBase
     }
 
     [HttpGet("settings/features")]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> GetFeatureSettings()
     {
         var settings = await _adminService.GetFeatureSettingsAsync();
@@ -162,10 +168,62 @@ public class AdminController : ApiControllerBase
     }
 
     [HttpPut("settings/features")]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> UpdateFeatureSettings([FromBody] UpdateFeatureSettingsRequest request)
     {
         var settings = await _adminService.UpdateFeatureSettingsAsync(request);
         return Success(settings, "Feature settings updated successfully.");
+    }
+
+    [HttpGet("settings/account-deletion")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<IActionResult> GetAccountDeletionSettings()
+    {
+        var settings = await _adminService.GetAccountDeletionSettingsAsync();
+        return Success(settings);
+    }
+
+    [HttpPut("settings/account-deletion")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<IActionResult> UpdateAccountDeletionSettings([FromBody] UpdateAccountDeletionSettingsRequest request)
+    {
+        var reviewerId = RequireAuthenticatedUserId();
+        var settings = await _adminService.UpdateAccountDeletionSettingsAsync(request, reviewerId);
+        return Success(settings, "Account deletion settings updated successfully.");
+    }
+
+    [HttpGet("settings/auth")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<IActionResult> GetAuthSettings()
+    {
+        var settings = await _adminService.GetAuthSettingsAsync();
+        return Success(settings);
+    }
+
+    [HttpPut("settings/auth")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<IActionResult> UpdateAuthSettings([FromBody] UpdateAuthSettingsRequest request)
+    {
+        var reviewerId = RequireAuthenticatedUserId();
+        var settings = await _adminService.UpdateAuthSettingsAsync(request, reviewerId);
+        return Success(settings, "Auth settings updated successfully.");
+    }
+
+    [HttpGet("settings/oauth")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<IActionResult> GetOAuthProviderSettings()
+    {
+        var settings = await _adminService.GetOAuthProviderSettingsAsync();
+        return Success(settings);
+    }
+
+    [HttpPut("settings/oauth/{provider}")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<IActionResult> UpdateOAuthProviderSettings(string provider, [FromBody] UpdateOAuthProviderSettingsRequest request)
+    {
+        var reviewerId = RequireAuthenticatedUserId();
+        var settings = await _adminService.UpdateOAuthProviderSettingsAsync(provider, request, reviewerId);
+        return Success(settings, "OAuth provider settings updated successfully.");
     }
 
     // --- User Management endpoints ---
@@ -173,6 +231,17 @@ public class AdminController : ApiControllerBase
     [HttpPost("users")]
     public async Task<IActionResult> CreateUser([FromBody] AdminCreateUserRequest request)
     {
+        var roleName = NormalizeRoleName(request.RoleName);
+        if (roleName is null)
+        {
+            return BadRequestProblem("Role must be one of: Member, Admin, SuperAdmin.");
+        }
+
+        if ((roleName == "Admin" || roleName == "SuperAdmin") && !User.IsInRole("SuperAdmin"))
+        {
+            return Forbid();
+        }
+
         var user = new ApplicationUser
         {
             UserName = request.Email,
@@ -189,6 +258,15 @@ public class AdminController : ApiControllerBase
             return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]>
             {
                 ["identity"] = result.Errors.Select(error => error.Description).ToArray()
+            }));
+        }
+
+        var roleResult = await _userManager.AddToRoleAsync(user, roleName);
+        if (!roleResult.Succeeded)
+        {
+            return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]>
+            {
+                ["identity"] = roleResult.Errors.Select(error => error.Description).ToArray()
             }));
         }
 
@@ -253,21 +331,8 @@ public class AdminController : ApiControllerBase
     [HttpPost("users/{userId:guid}/force-logout")]
     public async Task<IActionResult> ForceLogoutUser(Guid userId)
     {
-        var tokens = await _dbContext.RefreshTokens
-            .Where(t => t.UserId == userId && t.RevokedAt == null)
-            .ToListAsync();
-
-        foreach (var token in tokens)
-        {
-            token.RevokedAt = DateTime.UtcNow;
-        }
-
-        if (tokens.Any())
-        {
-            await _dbContext.SaveChangesAsync();
-        }
-
-        return SuccessMessage("User sessions revoked successfully.");
+        var revoked = await _adminService.ForceLogoutUserSessionsAsync(userId);
+        return Success(new { revokedSessions = revoked }, "User sessions revoked successfully.");
     }
 
     [HttpPost("users/{userId:guid}/unlock")]
@@ -291,16 +356,92 @@ public class AdminController : ApiControllerBase
         return SuccessMessage("User unlocked successfully.");
     }
 
+    [HttpPost("users/{userId:guid}/lock")]
+    public async Task<IActionResult> LockUser(Guid userId, [FromQuery] int hours = 24)
+    {
+        if (hours < 1 || hours > 24 * 365)
+        {
+            return BadRequestProblem("Lock duration must be between 1 and 8760 hours.");
+        }
+
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null)
+        {
+            return NotFoundProblem("User not found.");
+        }
+
+        user.LockoutEnabled = true;
+        var lockoutEnd = DateTimeOffset.UtcNow.AddHours(hours);
+        var result = await _userManager.SetLockoutEndDateAsync(user, lockoutEnd);
+        if (!result.Succeeded)
+        {
+            return BadRequest(new ValidationProblemDetails(new Dictionary<string, string[]>
+            {
+                ["identity"] = result.Errors.Select(error => error.Description).ToArray()
+            }));
+        }
+
+        return Success(new
+        {
+            userId = user.Id,
+            lockedUntilUtc = lockoutEnd
+        }, "User locked successfully.");
+    }
+
+    [HttpGet("account-deletion-requests")]
+    public async Task<IActionResult> GetAccountDeletionRequests([FromQuery] int skip = 0, [FromQuery] int take = 20)
+    {
+        (skip, take) = NormalizePaging(skip, take);
+        var requests = await _accountDeletionService.GetPendingAsync(skip, take);
+        return Success(requests);
+    }
+
+    [HttpPost("account-deletion-requests/{requestId:guid}/approve")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<IActionResult> ApproveAccountDeletion(Guid requestId)
+    {
+        var reviewerId = RequireAuthenticatedUserId();
+        await _accountDeletionService.ApproveAsync(requestId, reviewerId);
+        return SuccessMessage("Account deletion request approved.");
+    }
+
+    [HttpPost("account-deletion-requests/{requestId:guid}/reject")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<IActionResult> RejectAccountDeletion(Guid requestId, [FromBody] RejectAccountDeletionRequest request)
+    {
+        var reviewerId = RequireAuthenticatedUserId();
+        await _accountDeletionService.RejectAsync(requestId, reviewerId, request.Reason);
+        return SuccessMessage("Account deletion request rejected.");
+    }
+
+    [HttpPost("account-deletions/execute")]
+    [Authorize(Roles = "SuperAdmin")]
+    public async Task<IActionResult> ExecuteApprovedAccountDeletions([FromQuery] int batchSize = 100)
+    {
+        var reviewerId = RequireAuthenticatedUserId();
+        var executedCount = await _accountDeletionService.ExecuteApprovedAsync(reviewerId, batchSize);
+        return Success(new { executedCount }, "Approved account deletions executed.");
+    }
+
     // --- Roles Management endpoints ---
 
     [HttpPost("roles")]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> CreateRole([FromBody] AddRoleRequest request)
     {
+        var roleName = NormalizeRoleName(request.Name);
+        if (roleName is null)
+        {
+            return BadRequestProblem("Role must be one of: Member, Admin, SuperAdmin.");
+        }
+
+        request.Name = roleName;
         var role = await _roleService.CreateAsync(request);
         return CreatedSuccess(nameof(GetRole), new { roleId = role.Id }, role, "Role created successfully.");
     }
 
     [HttpGet("roles")]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> GetRoles()
     {
         var roles = await _roleService.GetAllAsync();
@@ -308,6 +449,7 @@ public class AdminController : ApiControllerBase
     }
 
     [HttpGet("roles/{roleId:guid}")]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> GetRole(Guid roleId)
     {
         var role = await _dbContext.Roles.AsNoTracking().FirstOrDefaultAsync(r => r.Id == roleId);
@@ -316,10 +458,11 @@ public class AdminController : ApiControllerBase
             return NotFoundProblem("Role not found.");
         }
 
-        return Success(new RoleDto { Id = role.Id, Name = role.Name ?? string.Empty });
+        return Success(new RoleResponse { Id = role.Id, Name = role.Name ?? string.Empty });
     }
 
     [HttpPut("roles/{roleId:guid}")]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> UpdateRole(Guid roleId, [FromBody] UpdateRoleRequest request)
     {
         var role = await _roleManager.FindByIdAsync(roleId.ToString());
@@ -340,10 +483,11 @@ public class AdminController : ApiControllerBase
             }));
         }
 
-        return Success(new RoleDto { Id = role.Id, Name = role.Name ?? string.Empty }, "Role updated successfully.");
+        return Success(new RoleResponse { Id = role.Id, Name = role.Name ?? string.Empty }, "Role updated successfully.");
     }
 
     [HttpDelete("roles/{roleId:guid}")]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> DeleteRole(Guid roleId)
     {
         await _roleService.DeleteAsync(roleId);
@@ -351,13 +495,22 @@ public class AdminController : ApiControllerBase
     }
 
     [HttpPost("users/{userId:guid}/roles")]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> AssignRoleToUser(Guid userId, [FromBody] AssignRoleRequest request)
     {
+        var roleName = NormalizeRoleName(request.RoleName);
+        if (roleName is null)
+        {
+            return BadRequestProblem("Role must be one of: Member, Admin, SuperAdmin.");
+        }
+
+        request.RoleName = roleName;
         await _roleService.AssignToUserAsync(new AssignRoleRequest { UserId = userId, RoleName = request.RoleName });
         return SuccessMessage("Role assigned successfully.");
     }
 
     [HttpDelete("users/{userId:guid}/roles/{roleId:guid}")]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> RemoveRoleFromUser(Guid userId, Guid roleId)
     {
         var role = await _roleManager.FindByIdAsync(roleId.ToString());
@@ -371,6 +524,7 @@ public class AdminController : ApiControllerBase
     }
 
     [HttpGet("roles/{roleId:guid}/permissions")]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> GetRolePermissions(Guid roleId)
     {
         var permissions = await _permissionService.GetRolePermissionsAsync(roleId);
@@ -378,6 +532,7 @@ public class AdminController : ApiControllerBase
     }
 
     [HttpPut("roles/{roleId:guid}/permissions")]
+    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> SetRolePermissions(Guid roleId, [FromBody] SetRolePermissionsRequest request)
     {
         var role = await _roleManager.FindByIdAsync(roleId.ToString());
@@ -406,6 +561,23 @@ public class AdminController : ApiControllerBase
         return SuccessMessage("Role permissions updated successfully.");
     }
 
+    private static string? NormalizeRoleName(string? roleName)
+    {
+        if (string.IsNullOrWhiteSpace(roleName))
+        {
+            return "Member";
+        }
+
+        return roleName.Trim().ToLowerInvariant() switch
+        {
+            "member" => "Member",
+            "admin" => "Admin",
+            "superadmin" => "SuperAdmin",
+            "super-admin" => "SuperAdmin",
+            _ => null
+        };
+    }
+
     // --- Audit endpoints ---
 
     [HttpGet("audit/logs")]
@@ -427,7 +599,7 @@ public class AdminController : ApiControllerBase
             .OrderByDescending(l => l.LoginAt)
             .Skip(skip)
             .Take(take)
-            .Select(l => new LoginHistoryDto
+            .Select(l => new LoginHistoryResponse
             {
                 Id = l.Id,
                 LoginAt = l.LoginAt,
@@ -442,7 +614,7 @@ public class AdminController : ApiControllerBase
 
         var total = await _dbContext.LoginHistories.CountAsync();
 
-        return Success(new PaginatedDto<LoginHistoryDto>
+        return Success(new PaginatedResponse<LoginHistoryResponse>
         {
             Items = items,
             TotalCount = total,

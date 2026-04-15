@@ -1,12 +1,12 @@
 using DotnetNiger.Community.Domain.Entities;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Infrastructure.Repositories;
 
-public interface ICategoryRepository : IRepository<Category>
+public interface ICategoryRepository : IRepository<Category>, ICategoryPersistence
 {
-    Task<Category?> GetBySlugAsync(string slug);
 }
 
 public class CategoryRepository : BaseRepository<Category>, ICategoryRepository

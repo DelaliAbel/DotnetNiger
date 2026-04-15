@@ -1,7 +1,9 @@
 // Composant Identity: Program
+using System.IO.Compression;
 using System.Text;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
+using DotnetNiger.Identity.Api.Middleware;
 using DotnetNiger.Identity.Api.Extensions;
 using DotnetNiger.Identity.Api.Filters;
 using DotnetNiger.Identity.Domain.Entities;
@@ -11,6 +13,7 @@ using DotnetNiger.Identity.Infrastructure.External;
 using DotnetNiger.Identity.Infrastructure.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -75,12 +78,35 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<FileUploadOptions>(builder.Configuration.GetSection("FileUpload"));
+builder.Services.Configure<AccountDeletionOptions>(builder.Configuration.GetSection("AccountDeletion"));
 builder.Services.AddScoped<JwtTokenGenerator>();
 builder.Services.AddScoped<RefreshTokenGenerator>();
 builder.Services.AddHttpClient();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache(); // For rate limiting cache
 builder.Services.AddDistributedMemoryCache();
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/json" });
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
+builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
+
+builder.Services.AddOutputCache(options =>
+{
+    options.AddPolicy("IdentityReadPolicy", policy =>
+        policy.Expire(TimeSpan.FromSeconds(20))
+              .SetVaryByQuery(new[] { "page", "pageSize", "search", "sortBy", "sortDirection" }));
+});
 
 builder.Services.AddEmailProviders();
 builder.Services.AddIdentityApplicationServices();
@@ -159,7 +185,7 @@ if (string.Equals(fileUploadOptions.Provider, "Local", StringComparison.OrdinalI
     });
 }
 
-await SeedAdminAsync(app);
+await EnsureIdentityCoreDataAsync(app);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -184,24 +210,24 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors("GatewayOnly");
 // Journalisation structuree des requetes HTTP.
+app.UseResponseCompression();
+app.UseEndpointLatencyMetrics();
 app.UseSerilogRequestLogging();
 app.UseRequestLogging();
 app.UseAuthentication();
 app.UseJwtEnrichment();
 app.UseAuthorization();
+app.UseOutputCache();
+
+app.MapGet("/metrics/latency", () => Results.Ok(EndpointLatencyMetricsMiddleware.GetSnapshot()))
+    .AllowAnonymous();
+
 app.MapControllers();
 app.Run();
 
-// Seeding complet: roles, permissions, admin.
-static async Task SeedAdminAsync(WebApplication app)
+// Seeding au demarrage: roles + permissions de base.
+static async Task EnsureIdentityCoreDataAsync(WebApplication app)
 {
-    var config = app.Services.GetRequiredService<IConfiguration>();
-    var seedEnabled = config.GetValue("SEED_ADMIN", false);
-    if (!seedEnabled)
-    {
-        return;
-    }
-
     var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Seed");
-    await DefaultRolesSeeder.SeedAsync(app.Services, logger);
+    await DefaultRolesSeeder.EnsureCoreDataAsync(app.Services, logger);
 }

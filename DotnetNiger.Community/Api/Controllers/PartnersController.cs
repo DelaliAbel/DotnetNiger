@@ -11,7 +11,7 @@ namespace DotnetNiger.Community.Api.Controllers;
 /// </summary>
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/v{version:apiVersion}/patners")]
 public class PartnersController : ApiControllerBase
 {
     private readonly IPartnerService _partnerService;

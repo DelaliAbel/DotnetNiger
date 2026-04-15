@@ -6,6 +6,6 @@ namespace DotnetNiger.Identity.Infrastructure.Repositories;
 // Contrat de repository pour les utilisateurs.
 public interface IUserRepository : IRepository<ApplicationUser>
 {
-	Task<ApplicationUser?> GetByEmailAsync(string email);
-	Task<ApplicationUser?> GetByUsernameAsync(string username);
+    Task<ApplicationUser?> GetByEmailAsync(string email);
+    Task<ApplicationUser?> GetByUsernameAsync(string username);
 }

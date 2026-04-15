@@ -65,9 +65,9 @@ public static class DomainConstants
         public const string Tool = "Tool";
         public const string Library = "Library";
 
-        public static readonly string[] All = 
-        { 
-            Documentation, Tutorial, Course, Book, Video, Tool, Library 
+        public static readonly string[] All =
+        {
+            Documentation, Tutorial, Course, Book, Video, Tool, Library
         };
 
         /// <summary>Validates if the given type is a valid ResourceType</summary>

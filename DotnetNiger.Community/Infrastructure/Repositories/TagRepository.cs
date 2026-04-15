@@ -1,12 +1,12 @@
 using DotnetNiger.Community.Domain.Entities;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Infrastructure.Repositories;
 
-public interface ITagRepository : IRepository<Tag>
+public interface ITagRepository : IRepository<Tag>, ITagPersistence
 {
-    Task<Tag?> GetByNameAsync(string name);
 }
 
 public class TagRepository : BaseRepository<Tag>, ITagRepository

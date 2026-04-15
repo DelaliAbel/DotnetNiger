@@ -1,66 +1,49 @@
-# Health Report — DotnetNiger
+# Health Report
 
-Rapport de santé technique consolidé du projet.
+Date de reference: 2026-04-11
 
-> Dernière vérification : **2026-03-11**
+## Resume executif
 
-## État des services
+Etat global: Stable avec garde-fous d'architecture actifs.
 
-| Service | Statut | Notes |
-|---------|--------|-------|
-| Gateway (`DotnetNiger.Gateway`) | ✅ Opérationnel | Ocelot + Polly QoS actif |
-| Identity (`DotnetNiger.Identity`) | ✅ Opérationnel | JWT + API Key, versioning v1 |
-| Community (`DotnetNiger.Community`) | ✅ Opérationnel | Versioning v1 ajouté, CRUD complet |
+- Build solution: OK
+- Tests d'architecture: OK (2/2)
+- CI principale: configuree pour restore/build/test sur la solution
+- Job CI dedie architecture: actif
 
-## État architecture et routing
+## Controles en place
 
-- Gateway actif : Ocelot (`DotnetNiger.Gateway/ocelot.json`)
-- QoS / Circuit breaker : `Ocelot.Provider.Polly` 24.1.0 (requis — sans lui, erreur `QosDelegatingHandlerDelegate not registered`)
-- Ports :
-  - Gateway : `5000`
-  - Identity : `5075`
-  - Community : `5269`
-- Base de données : SQLite partagée `../DotnetNiger.db`
-- Scripts d'exécution : `run.sh` (point d'entrée unique)
-- Routes Community : toutes versionnées `api/v{version:apiVersion}/...` → downstream `/api/v1/...`
+### CI
 
-## Sécurité
+- [ .github/workflows/ci.yml ](../.github/workflows/ci.yml)
+  - restore solution
+  - build solution
+  - test solution
 
-| Mécanisme | Statut | Notes |
-|-----------|--------|-------|
-| JWT Bearer (Gateway + Identity + Community) | ✅ | Clé unifiée sur les 3 services |
-| API Key (Identity) | ✅ | Header `X-API-Key` |
-| Admin Community (`X-Admin-Key` + `X-Admin-Role`) | ✅ Dev | Clé à remplacer en production via `Admin__ApiKey` env var |
-| Rate limiting (Ocelot) | ✅ | Par route dans `ocelot.json` |
-| CORS | ⚠️ | À restreindre en production |
-| Secrets | ✅ | Via config / env vars — aucun secret hardcodé |
+- [ .github/workflows/tests.yml ](../.github/workflows/tests.yml)
+  - job `architecture-guards` dedie
+  - tests + couverture
+  - build quality avec warnings as errors
 
-## Observabilité
+### Architecture
 
-- Logs via Serilog (fichiers rotatifs dans `logs/`) : ✅
-- Correlation ID (`X-Request-ID`) côté Gateway : ✅
-- Endpoints de santé (`/health`) : ✅
-- Swagger par service + agrégé Gateway : ✅
+- [DotnetNiger.Architecture.Tests/ApplicationLayerDependencyGuardsTests.cs](../DotnetNiger.Architecture.Tests/ApplicationLayerDependencyGuardsTests.cs)
+  - Interdit `DotnetNiger.Community.Infrastructure.Repositories` dans Community/Application
+  - Interdit `DotnetNiger.Identity.Infrastructure.Repositories` dans Identity/Application
 
-## Tests
+## Endpoints de sante runtime
 
-| Suite | Statut | Détails |
-|-------|--------|---------|
-| Identity unit tests | ✅ 7/7 passants | `UsersControllerTests.cs` |
-| Identity integration tests | ⚠️ Partiels | `AdminEndpointsTests`, `DiagnosticsEndpointsTests` |
-| Gateway tests | ⚠️ Absent | À compléter |
-| Community tests | ⚠️ Absent | À compléter |
+- Gateway: `/health`, `/health/downstream`, `/health/ready`
+- Identity: `/api/v1/diagnostics/health`
+- Community: `/api/v1/test/health`
 
-## Risques et points de vigilance
+## Risques residuels
 
-- **Admin Community** : `Admin__ApiKey` de production doit être défini via variable d'environnement (jamais committé dans un fichier de config).
-- **JWT Key** : La clé de développement `DevOnly_...` doit être remplacée par une clé forte en production.
-- **CORS** : Politique à restreindre aux origines autorisées en production.
-- **Member feature** (Community) : Désactivée, à activer quand le domaine sera finalisé.
-- **Couverture de tests** : Gateway et Community sans tests — à prioriser.
+- Les artefacts `bin/obj/logs` peuvent reapparaitre apres build/tests (normal).
+- La robustesse des docs repose sur leur maintenance manuelle lors des changements de routes/config.
 
-## Résumé exécutif
+## Actions recommandees
 
-La base microservices est fonctionnelle et stable pour le développement.
-Les trois services démarrent, communiquent via le Gateway Ocelot, et partagent la même clé JWT.
-L'axe prioritaire est la sécurisation pour la production (variables d'env, CORS strict) et l'augmentation de la couverture de tests.
+1. Ajouter un controle de coherence docs (checklist PR).
+2. Continuer a executer les tests d'architecture avant merge.
+3. Ajouter des tests contractuels API gateway -> downstream pour routes critiques.

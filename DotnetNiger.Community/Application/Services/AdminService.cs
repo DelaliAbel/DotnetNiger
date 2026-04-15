@@ -1,5 +1,5 @@
 using DotnetNiger.Community.Domain.Entities;
-using DotnetNiger.Community.Infrastructure.Repositories;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Application.Services.Interfaces;
 using DotnetNiger.Community.Application.DTOs.Requests;
 using DotnetNiger.Community.Application.DTOs.Responses;
@@ -9,20 +9,20 @@ namespace DotnetNiger.Community.Application.Services;
 
 public class AdminService : IAdminService
 {
-    private readonly IPostRepository _postRepository;
-    private readonly IEventRepository _eventRepository;
-    private readonly IProjectRepository _projectRepository;
-    private readonly IResourceRepository _resourceRepository;
-    private readonly ICommentRepository _commentRepository;
-    private readonly IPartnerRepository _partnerRepository;
+    private readonly IPostPersistence _postRepository;
+    private readonly IEventPersistence _eventRepository;
+    private readonly IProjectPersistence _projectRepository;
+    private readonly IResourcePersistence _resourceRepository;
+    private readonly ICommentPersistence _commentRepository;
+    private readonly IPartnerPersistence _partnerRepository;
 
     public AdminService(
-        IPostRepository postRepository,
-        IEventRepository eventRepository,
-        IProjectRepository projectRepository,
-        IResourceRepository resourceRepository,
-        ICommentRepository commentRepository,
-        IPartnerRepository partnerRepository)
+        IPostPersistence postRepository,
+        IEventPersistence eventRepository,
+        IProjectPersistence projectRepository,
+        IResourcePersistence resourceRepository,
+        ICommentPersistence commentRepository,
+        IPartnerPersistence partnerRepository)
     {
         _postRepository = postRepository;
         _eventRepository = eventRepository;
@@ -222,11 +222,11 @@ public class AdminService : IAdminService
 
     // --- Settings ---
 
-    public async Task<CommunityFeatureSettingsDto> GetCommunityFeatureSettingsAsync()
+    public async Task<CommunityFeatureSettingsResponse> GetCommunityFeatureSettingsAsync()
     {
         // TODO: Implement persistent storage (Database or Cache)
         // For MVP, return default enabled state
-        return await Task.FromResult(new CommunityFeatureSettingsDto
+        return await Task.FromResult(new CommunityFeatureSettingsResponse
         {
             PostsEnabled = true,
             CommentsEnabled = true,
@@ -239,13 +239,13 @@ public class AdminService : IAdminService
         });
     }
 
-    public async Task<CommunityFeatureSettingsDto> UpdateCommunityFeatureSettingsAsync(UpdateCommunityFeatureSettingsRequest request)
+    public async Task<CommunityFeatureSettingsResponse> UpdateCommunityFeatureSettingsAsync(UpdateCommunityFeatureSettingsRequest request)
     {
         // TODO: Implement persistent storage (Database or Cache)
         // For MVP, apply updates and return
         var current = await GetCommunityFeatureSettingsAsync();
 
-        var updated = new CommunityFeatureSettingsDto
+        var updated = new CommunityFeatureSettingsResponse
         {
             PostsEnabled = request.PostsEnabled ?? current.PostsEnabled,
             CommentsEnabled = request.CommentsEnabled ?? current.CommentsEnabled,

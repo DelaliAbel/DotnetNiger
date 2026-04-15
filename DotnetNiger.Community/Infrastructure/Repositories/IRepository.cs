@@ -1,43 +1,13 @@
 using System.Linq.Expressions;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Domain.Entities;
 
 namespace DotnetNiger.Community.Infrastructure.Repositories;
 
 /// <summary>
 /// Interface générique pour les opérations CRUD
+/// Hérite des abstractions d'Application pour assurer la cohérence architecturale
 /// </summary>
-public interface IRepository<TEntity> where TEntity : class
+public interface IRepository<TEntity> : ICrudPersistence<TEntity> where TEntity : class
 {
-    // Read
-    Task<IEnumerable<TEntity>> GetAllAsync();
-    Task<IEnumerable<TEntity>> GetPagedAsync(int page = 1, int pageSize = 10);
-    Task<TEntity?> GetByIdAsync(Guid id);
-    Task<IEnumerable<TEntity>> FindAsync(Expression<Func<TEntity, bool>> predicate);
-    Task<TEntity?> FirstOrDefaultAsync(Expression<Func<TEntity, bool>> predicate);
-
-    // Create
-    Task<TEntity> AddAsync(TEntity entity);
-    Task<IEnumerable<TEntity>> AddRangeAsync(IEnumerable<TEntity> entities);
-
-    // Update
-    Task<TEntity> UpdateAsync(TEntity entity);
-
-    // Delete
-    Task<bool> DeleteAsync(Guid id);
-    Task<bool> DeleteAsync(TEntity entity);
-    Task<int> DeleteRangeAsync(Expression<Func<TEntity, bool>> predicate);
-
-    // Count
-    Task<int> CountAsync();
-    Task<int> CountAsync(Expression<Func<TEntity, bool>> predicate);
-
-    // Search
-    Task<IEnumerable<TEntity>> SearchAsync(
-        Expression<Func<TEntity, bool>> predicate,
-        int page = 1,
-        int pageSize = 20);
-
-    // Exists
-    Task<bool> ExistsAsync(Guid id);
-    Task<bool> AnyAsync(Expression<Func<TEntity, bool>> predicate);
 }

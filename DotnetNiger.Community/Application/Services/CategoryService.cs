@@ -1,15 +1,15 @@
 using DotnetNiger.Community.Application.Services.Interfaces;
-using DotnetNiger.Community.Infrastructure.Repositories;
+using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Domain.Entities;
 
 namespace DotnetNiger.Community.Application.Services;
 
 public class CategoryService : ICategoryService
 {
-    private readonly ICategoryRepository _categoryRepository;
+    private readonly ICategoryPersistence _categoryRepository;
     private readonly ISlugGenerator _slugGenerator;
 
-    public CategoryService(ICategoryRepository categoryRepository, ISlugGenerator slugGenerator)
+    public CategoryService(ICategoryPersistence categoryRepository, ISlugGenerator slugGenerator)
     {
         _categoryRepository = categoryRepository;
         _slugGenerator = slugGenerator;

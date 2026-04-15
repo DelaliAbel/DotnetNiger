@@ -9,7 +9,7 @@ public class NotFoundException : CommunityException
     {
     }
 
-    public NotFoundException(string message, Exception innerException) 
+    public NotFoundException(string message, Exception innerException)
         : base(message, 404, innerException)
     {
     }

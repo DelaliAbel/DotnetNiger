@@ -8,39 +8,40 @@ namespace DotnetNiger.Community.Api.Extensions;
 /// </summary>
 public static class MiddlewareExtensions
 {
-	/// <summary>
-	/// Ajoute le middleware de validation JWT
-	/// </summary>
-	public static IApplicationBuilder UseJwtValidation(this IApplicationBuilder app)
-	{
-		return app.UseMiddleware<JwtValidationMiddleware>();
-	}
+    /// <summary>
+    /// Ajoute le middleware de validation JWT
+    /// </summary>
+    public static IApplicationBuilder UseJwtValidation(this IApplicationBuilder app)
+    {
+        return app.UseMiddleware<JwtValidationMiddleware>();
+    }
 
-	/// <summary>
-	/// Ajoute le middleware d'enregistrement des requêtes
-	/// </summary>
-	public static IApplicationBuilder UseRequestLogging(this IApplicationBuilder app)
-	{
-		return app.UseMiddleware<RequestLoggingMiddleware>();
-	}
+    /// <summary>
+    /// Ajoute le middleware d'enregistrement des requêtes
+    /// </summary>
+    public static IApplicationBuilder UseRequestLogging(this IApplicationBuilder app)
+    {
+        return app.UseMiddleware<RequestLoggingMiddleware>();
+    }
 
-	/// <summary>
-	/// Ajoute le middleware de gestion des erreurs
-	/// </summary>
-	public static IApplicationBuilder UseErrorHandling(this IApplicationBuilder app)
-	{
-		return app.UseMiddleware<ErrorHandlingMiddleware>();
-	}
+    /// <summary>
+    /// Ajoute le middleware de gestion des erreurs
+    /// </summary>
+    public static IApplicationBuilder UseErrorHandling(this IApplicationBuilder app)
+    {
+        return app.UseMiddleware<ErrorHandlingMiddleware>();
+    }
 
-	/// <summary>
-	/// Configure tous les middlewares personnalisés pour l'API Community
-	/// </summary>
-	public static IApplicationBuilder UseCommunityMiddleware(this IApplicationBuilder app)
-	{
-		app.UseErrorHandling();
-		app.UseRequestLogging();
-		app.UseJwtValidation();
+    /// <summary>
+    /// Configure tous les middlewares personnalisés pour l'API Community
+    /// </summary>
+    public static IApplicationBuilder UseCommunityMiddleware(this IApplicationBuilder app)
+    {
+        app.UseMiddleware<EndpointLatencyMetricsMiddleware>();
+        app.UseErrorHandling();
+        app.UseRequestLogging();
+        app.UseJwtValidation();
 
-		return app;
-	}
+        return app;
+    }
 }
