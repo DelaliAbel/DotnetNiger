@@ -19,4 +19,7 @@ public interface IAuthService
     Task ResetPasswordAsync(ResetPasswordRequest request, CancellationToken ct = default);
     // Verification de l'email.
     Task VerifyEmailAsync(VerifyEmailRequest request, CancellationToken ct = default);
+
+    // Integration interne: assigne le role Member a un utilisateur apres validation Community.
+    Task AssignMemberRoleAsync(Guid userId, CancellationToken ct = default);
 }

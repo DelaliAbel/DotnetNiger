@@ -22,8 +22,8 @@ public class TokenService : ITokenService
     private readonly DotnetNigerIdentityDbContext _dbContext;
     private readonly IRefreshTokenPersistence _refreshTokenRepository;
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly JwtTokenGenerator _jwtTokenGenerator;
-    private readonly RefreshTokenGenerator _refreshTokenGenerator;
+    private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly IRefreshTokenGenerator _refreshTokenGenerator;
     private readonly JwtOptions _jwtOptions;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly ILogger<TokenService> _logger;
@@ -32,8 +32,8 @@ public class TokenService : ITokenService
         DotnetNigerIdentityDbContext dbContext,
         IRefreshTokenPersistence refreshTokenRepository,
         UserManager<ApplicationUser> userManager,
-        JwtTokenGenerator jwtTokenGenerator,
-        RefreshTokenGenerator refreshTokenGenerator,
+        IJwtTokenGenerator jwtTokenGenerator,
+        IRefreshTokenGenerator refreshTokenGenerator,
         IOptions<JwtOptions> jwtOptions,
         IHttpContextAccessor httpContextAccessor,
         ILogger<TokenService> logger)
@@ -80,7 +80,7 @@ public class TokenService : ITokenService
         _logger.LogInformation("Initiating token rotation for user {UserId}. Revoking old token and issuing new one.", storedToken.UserId);
         await _refreshTokenRepository.RevokeAsync(storedToken);
         var newRefreshTokenValue = _refreshTokenGenerator.GenerateToken();
-        var hashedToken = RefreshTokenGenerator.HashToken(newRefreshTokenValue);
+        var hashedToken = _refreshTokenGenerator.HashToken(newRefreshTokenValue);
 
         var httpContext = _httpContextAccessor.HttpContext;
         var newRefreshToken = new RefreshToken

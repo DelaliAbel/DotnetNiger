@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Community.Infrastructure.Data;
+using DotnetNiger.Community.Domain.Interfaces;
 
 namespace DotnetNiger.Community.Infrastructure.Repositories;
 
@@ -148,14 +149,34 @@ public class BaseRepository<TEntity> : IRepository<TEntity> where TEntity : clas
         if (entity == null)
             return false;
 
-        _dbSet.Remove(entity);
+        if (entity is ISoftDeletable softDeletable)
+        {
+            softDeletable.IsDeleted = true;
+            softDeletable.DeletedAt = DateTime.UtcNow;
+            _dbSet.Update(entity);
+        }
+        else
+        {
+            _dbSet.Remove(entity);
+        }
+
         await _context.SaveChangesAsync();
         return true;
     }
 
     public async Task<bool> DeleteAsync(TEntity entity)
     {
-        _dbSet.Remove(entity);
+        if (entity is ISoftDeletable softDeletable)
+        {
+            softDeletable.IsDeleted = true;
+            softDeletable.DeletedAt = DateTime.UtcNow;
+            _dbSet.Update(entity);
+        }
+        else
+        {
+            _dbSet.Remove(entity);
+        }
+
         await _context.SaveChangesAsync();
         return true;
     }

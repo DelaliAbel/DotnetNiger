@@ -1,6 +1,34 @@
 {
   "Routes": [
     {
+      "UpstreamPathTemplate": "/api/super-admin",
+      "UpstreamHttpMethod": [
+        "GET"
+      ],
+      "DownstreamPathTemplate": "/bootstrap/super-admin",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "localhost",
+          "Port": 5075
+        }
+      ],
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "1m",
+        "PeriodTimespan": 60,
+        "Limit": 30
+      },
+      "QoSOptions": {
+        "ExceptionsAllowedBeforeBreaking": 3,
+        "DurationOfBreak": 10000,
+        "TimeoutValue": 15000
+      },
+      "Key": "IdentityAuthRoute",
+      "SwaggerKey": "identity"
+    },
+    {
       "UpstreamPathTemplate": "/api/auth/{everything}",
       "UpstreamHttpMethod": [
         "GET",

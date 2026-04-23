@@ -11,6 +11,7 @@ using DotnetNiger.Identity.Infrastructure.Data;
 using DotnetNiger.Identity.Infrastructure.Security;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace DotnetNiger.Identity.Application.Services;
@@ -22,8 +23,8 @@ public class AuthService : IAuthService
     private readonly RoleManager<Role> _roleManager;
     private readonly DotnetNigerIdentityDbContext _dbContext;
     private readonly IRefreshTokenPersistence _refreshTokenRepository;
-    private readonly JwtTokenGenerator _jwtTokenGenerator;
-    private readonly RefreshTokenGenerator _refreshTokenGenerator;
+    private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly IRefreshTokenGenerator _refreshTokenGenerator;
     private readonly JwtOptions _jwtOptions;
     private readonly IEmailService _emailService;
     private readonly ILoginHistoryService _loginHistoryService;
@@ -31,20 +32,24 @@ public class AuthService : IAuthService
     private readonly IConfiguration _configuration;
     private readonly IEmailVerificationCodeService _emailVerificationCodeService;
     private readonly IAppSettingPersistence _appSettingRepository;
+    private readonly ICommunityProvisioningClient _communityProvisioningClient;
+    private readonly ILogger<AuthService> _logger;
     public AuthService(
         UserManager<ApplicationUser> userManager,
         RoleManager<Role> roleManager,
         DotnetNigerIdentityDbContext dbContext,
         IRefreshTokenPersistence refreshTokenRepository,
-        JwtTokenGenerator jwtTokenGenerator,
-        RefreshTokenGenerator refreshTokenGenerator,
+        IJwtTokenGenerator jwtTokenGenerator,
+        IRefreshTokenGenerator refreshTokenGenerator,
         IOptions<JwtOptions> jwtOptions,
         IEmailService emailService,
         ILoginHistoryService loginHistoryService,
         IHttpContextAccessor httpContextAccessor,
         IConfiguration configuration,
         IEmailVerificationCodeService emailVerificationCodeService,
-        IAppSettingPersistence appSettingRepository)
+        IAppSettingPersistence appSettingRepository,
+        ICommunityProvisioningClient communityProvisioningClient,
+        ILogger<AuthService> logger)
     {
         _userManager = userManager;
         _roleManager = roleManager;
@@ -59,6 +64,8 @@ public class AuthService : IAuthService
         _configuration = configuration;
         _emailVerificationCodeService = emailVerificationCodeService;
         _appSettingRepository = appSettingRepository;
+        _communityProvisioningClient = communityProvisioningClient;
+        _logger = logger;
     }
 
     public async Task<AuthResponse> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
@@ -107,6 +114,17 @@ public class AuthService : IAuthService
         if (await _roleManager.RoleExistsAsync(defaultRole))
         {
             await _userManager.AddToRoleAsync(user, defaultRole);
+        }
+
+        try
+        {
+            await _communityProvisioningClient.ProvisionPendingMemberAsync(user.Id, user.FullName, ct);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Community provisioning failed for user {UserId}. Rolling back Identity user creation.", user.Id);
+            await _userManager.DeleteAsync(user);
+            throw new IdentityException("Registration failed during community provisioning. Please retry later.", 503);
         }
 
         var confirmationToken = await _userManager.GenerateEmailConfirmationTokenAsync(user);
@@ -271,7 +289,7 @@ public class AuthService : IAuthService
     {
         var accessToken = await _jwtTokenGenerator.GenerateAccessTokenAsync(user);
         var refreshTokenValue = _refreshTokenGenerator.GenerateToken();
-        var hashedToken = RefreshTokenGenerator.HashToken(refreshTokenValue);
+        var hashedToken = _refreshTokenGenerator.HashToken(refreshTokenValue);
 
         var httpContext = _httpContextAccessor.HttpContext;
         var refreshToken = new RefreshToken
@@ -293,6 +311,33 @@ public class AuthService : IAuthService
             ExpiresIn = _jwtOptions.AccessTokenMinutes * 60,
             TokenType = "Bearer"
         };
+    }
+
+    public async Task AssignMemberRoleAsync(Guid userId, CancellationToken ct = default)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null)
+        {
+            throw new UserNotFoundException();
+        }
+
+        if (!await _roleManager.RoleExistsAsync("Member"))
+        {
+            throw new IdentityException("Role 'Member' does not exist.", 500);
+        }
+
+        var currentRoles = await _userManager.GetRolesAsync(user);
+        if (currentRoles.Contains("Member", StringComparer.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var result = await _userManager.AddToRoleAsync(user, "Member");
+        if (!result.Succeeded)
+        {
+            var message = string.Join(" ", result.Errors.Select(error => error.Description));
+            throw new IdentityException(message, 400);
+        }
     }
 
 }

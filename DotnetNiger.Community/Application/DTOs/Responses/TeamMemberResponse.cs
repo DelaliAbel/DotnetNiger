@@ -12,6 +12,7 @@ public class TeamMemberResponse
     public string FullName { get; set; } = string.Empty;
     public string AvatarUrl { get; set; } = string.Empty;
     public string Position { get; set; } = string.Empty;
+    public string MembershipStatus { get; set; } = string.Empty;
     public string BioOverride { get; set; } = string.Empty;
     public string RoleDescription { get; set; } = string.Empty;
     public List<SocialLinkResponse> SocialLinks { get; set; } = new();

@@ -27,6 +27,7 @@ public class AuthController : ApiControllerBase
     private const int DefaultLoginMaxAttempts = 5;
     private const int DefaultPasswordResetMaxAttempts = 5;
     private const int DefaultRateLimitWindowMinutes = 1;
+    private const string InternalProvisioningHeader = "X-Internal-Key";
 
     public AuthController(
         IAuthService authService,
@@ -44,6 +45,28 @@ public class AuthController : ApiControllerBase
         _oAuthService = oAuthService;
         _appSettingRepository = appSettingRepository;
         _environment = environment;
+    }
+
+    [HttpPost("internal/assign-member-role")]
+    [AllowAnonymous]
+    public async Task<IActionResult> AssignMemberRoleInternal([FromBody] InternalAssignMemberRoleRequest request, CancellationToken cancellationToken)
+    {
+        var expectedKey = _appSettingRepository.GetValue("Integration:ProvisioningApiKey")
+            ?? HttpContext.RequestServices.GetRequiredService<IConfiguration>()["Integration:ProvisioningApiKey"];
+
+        var providedKey = HttpContext.Request.Headers[InternalProvisioningHeader].ToString();
+        if (string.IsNullOrWhiteSpace(expectedKey) || !string.Equals(expectedKey, providedKey, StringComparison.Ordinal))
+        {
+            return Unauthorized(new ProblemDetails
+            {
+                Title = "Unauthorized",
+                Detail = "Invalid integration key.",
+                Status = StatusCodes.Status401Unauthorized
+            });
+        }
+
+        await _authService.AssignMemberRoleAsync(request.UserId, cancellationToken);
+        return SuccessMessage("Member role assigned.");
     }
 
     [HttpGet("oauth/providers")]
@@ -216,4 +239,9 @@ public class AuthController : ApiControllerBase
         var value = _appSettingRepository.GetValue(key);
         return int.TryParse(value, out var parsed) ? parsed : fallback;
     }
+}
+
+public sealed class InternalAssignMemberRoleRequest
+{
+    public Guid UserId { get; set; }
 }

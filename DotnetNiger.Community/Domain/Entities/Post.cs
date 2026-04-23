@@ -1,6 +1,8 @@
 namespace DotnetNiger.Community.Domain.Entities;
 
-public class Post
+using DotnetNiger.Community.Domain.Interfaces;
+
+public class Post : ISoftDeletable
 {
     public Guid Id { get; set; }
     public string Title { get; set; } = string.Empty;
@@ -16,6 +18,8 @@ public class Post
     public bool IsPublished { get; set; }
     public int ViewCount { get; set; } = 0;
     public string SeoDescription { get; set; } = string.Empty;
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
 
     // Relations
     public ICollection<PostCategory> PostCategories { get; set; } = new List<PostCategory>();

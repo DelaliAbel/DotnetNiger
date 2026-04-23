@@ -33,7 +33,9 @@ JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
 builder.Host.UseSerilog();
 
-var mergedOcelotFile = BuildMergedOcelotConfiguration(builder.Environment.ContentRootPath);
+var mergedOcelotFile = BuildMergedOcelotConfiguration(
+    builder.Environment.ContentRootPath,
+    builder.Environment.IsProduction());
 
 builder.Configuration
     .SetBasePath(builder.Environment.ContentRootPath)
@@ -214,64 +216,68 @@ app.Use(async (context, next) =>
 // Middleware de fusion — DOIT être AVANT UseSwaggerForOcelotUI pour court-circuiter MMLib
 app.Use(async (context, next) =>
 {
-    var isMergedSwaggerPath = context.Request.Path.Equals("/swagger/docs/v1/all", StringComparison.OrdinalIgnoreCase)
-        || context.Request.Path.Equals("/swagger/v1/swagger.json", StringComparison.OrdinalIgnoreCase);
-
-    if (!isMergedSwaggerPath)
+    try
     {
-        await next(context);
-        return;
-    }
+        var isMergedSwaggerPath = context.Request.Path.Equals("/swagger/docs/v1/all", StringComparison.OrdinalIgnoreCase)
+            || context.Request.Path.Equals("/swagger/v1/swagger.json", StringComparison.OrdinalIgnoreCase);
 
-    var factory = context.RequestServices.GetRequiredService<IHttpClientFactory>();
-    var configuration = context.RequestServices.GetRequiredService<IConfiguration>();
-    var identitySwaggerUrl = configuration["DownstreamServices:Identity:SwaggerUrl"] ?? "http://localhost:5075/swagger/v1/swagger.json";
-    var communitySwaggerUrl = configuration["DownstreamServices:Community:SwaggerUrl"] ?? "http://localhost:5269/swagger/v1/swagger.json";
+        if (!isMergedSwaggerPath)
+        {
+            await next(context);
+            return;
+        }
 
-    // Appels directs vers les services aval (évite les boucles via Ocelot)
-    var identityJson = await FetchSwaggerJsonAsync(factory, identitySwaggerUrl, context.RequestAborted);
-    var communityJson = await FetchSwaggerJsonAsync(factory, communitySwaggerUrl, context.RequestAborted);
+        var factory = context.RequestServices.GetRequiredService<IHttpClientFactory>();
+        var configuration = context.RequestServices.GetRequiredService<IConfiguration>();
+        var identitySwaggerUrl = configuration["DownstreamServices:Identity:SwaggerUrl"] ?? "http://localhost:5075/swagger/v1/swagger.json";
+        var communitySwaggerUrl = configuration["DownstreamServices:Community:SwaggerUrl"] ?? "http://localhost:5269/swagger/v1/swagger.json";
 
-    if (identityJson == null && communityJson == null)
-    {
-        Log.Warning("Swagger aggregation failed: both downstream swagger documents are unavailable");
-        context.Response.StatusCode = 503;
-        context.Response.ContentType = "application/json";
-        await context.Response.WriteAsync("{\"message\":\"Downstream swagger documents are unavailable\"}");
-        return;
-    }
+        // Appels directs vers les services aval (évite les boucles via Ocelot)
+        var identityJson = await FetchSwaggerJsonAsync(factory, identitySwaggerUrl, context.RequestAborted);
+        var communityJson = await FetchSwaggerJsonAsync(factory, communitySwaggerUrl, context.RequestAborted);
 
-    var merged = identityJson ?? communityJson!;
-    if (identityJson != null && communityJson != null)
-    {
-        var idoc = JsonNode.Parse(identityJson)!.AsObject();
-        var cdoc = JsonNode.Parse(communityJson)!.AsObject();
+        if (identityJson == null && communityJson == null)
+        {
+            Log.Warning("Swagger aggregation failed: both downstream swagger documents are unavailable");
+            context.Response.StatusCode = 503;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync("{\"message\":\"Downstream swagger documents are unavailable\"}");
+            return;
+        }
 
-        if (idoc["info"] is JsonObject info)
-            info["title"] = "DotnetNiger - All APIs";
+        var merged = identityJson ?? communityJson!;
+        if (identityJson != null && communityJson != null)
+        {
+            var idoc = JsonNode.Parse(identityJson)!.AsObject();
+            var cdoc = JsonNode.Parse(communityJson)!.AsObject();
 
-        var paths = idoc["paths"]?.AsObject() ?? new JsonObject();
-        if (cdoc["paths"] is JsonObject cPaths)
-            foreach (var p in cPaths)
-                paths[p.Key] = p.Value?.DeepClone();
-        idoc["paths"] = paths;
+            if (idoc["info"] is JsonObject info)
+                info["title"] = "DotnetNiger - All APIs";
 
-        var iComponents = idoc["components"]?.AsObject() ?? new JsonObject();
-        var iSchemas = iComponents["schemas"]?.AsObject() ?? new JsonObject();
-        if (cdoc["components"]?["schemas"] is JsonObject cSchemas)
-            foreach (var s in cSchemas)
-                if (!iSchemas.ContainsKey(s.Key))
-                    iSchemas[s.Key] = s.Value?.DeepClone();
-        iComponents["schemas"] = iSchemas;
-        idoc["components"] = iComponents;
-        merged = idoc.ToJsonString();
-    }
+            var paths = idoc["paths"]?.AsObject() ?? new JsonObject();
+            if (cdoc["paths"] is JsonObject cPaths)
+                foreach (var p in cPaths)
+                    paths[p.Key] = p.Value?.DeepClone();
+            idoc["paths"] = paths;
 
-    var gatewayServer = $"{context.Request.Scheme}://{context.Request.Host}";
-    var normalized = JsonNode.Parse(merged)?.AsObject();
-    if (normalized != null)
-    {
-        normalized["servers"] = new JsonArray
+            var iComponents = idoc["components"]?.AsObject() ?? new JsonObject();
+            var iSchemas = iComponents["schemas"]?.AsObject() ?? new JsonObject();
+            if (cdoc["components"]?["schemas"] is JsonObject cSchemas)
+                foreach (var s in cSchemas)
+                    if (!iSchemas.ContainsKey(s.Key))
+                        iSchemas[s.Key] = s.Value?.DeepClone();
+            iComponents["schemas"] = iSchemas;
+            idoc["components"] = iComponents;
+            merged = idoc.ToJsonString();
+        }
+
+
+
+        var gatewayServer = $"{context.Request.Scheme}://{context.Request.Host}";
+        var normalized = JsonNode.Parse(merged)?.AsObject();
+        if (normalized != null)
+        {
+            normalized["servers"] = new JsonArray
         {
             new JsonObject
             {
@@ -279,11 +285,19 @@ app.Use(async (context, next) =>
             }
         };
 
-        merged = normalized.ToJsonString();
+            merged = normalized.ToJsonString();
+        }
+
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(merged);
+
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("Erreur : " + ex.Message);
     }
 
-    context.Response.ContentType = "application/json";
-    await context.Response.WriteAsync(merged);
+
 });
 
 app.UseSwaggerForOcelotUI(
@@ -303,7 +317,7 @@ app.UseSwaggerForOcelotUI(
 await app.UseOcelot();
 await app.RunAsync();
 
-static string BuildMergedOcelotConfiguration(string contentRootPath)
+static string BuildMergedOcelotConfiguration(string contentRootPath, bool useContainerHosts)
 {
     var globalPath = Path.Combine(contentRootPath, "ocelot.global.json");
     var identityPath = Path.Combine(contentRootPath, "ocelot.identity.routes.json");
@@ -332,6 +346,13 @@ static string BuildMergedOcelotConfiguration(string contentRootPath)
         ["SwaggerEndPoints"] = globalNode["SwaggerEndPoints"]?.DeepClone()
     };
 
+    if (useContainerHosts)
+    {
+        RewriteDownstreamTargets(mergedRoutes, "localhost", 5075, "identity", 8081);
+        RewriteDownstreamTargets(mergedRoutes, "localhost", 5269, "community", 8082);
+        RewriteSwaggerTargets(merged);
+    }
+
     var mergedPath = Path.Combine(contentRootPath, "ocelot.json");
     File.WriteAllText(mergedPath, merged.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
 
@@ -350,6 +371,56 @@ static void AppendRoutes(JsonArray target, JsonObject source, string fileName)
         if (route != null)
         {
             target.Add(route.DeepClone());
+        }
+    }
+}
+
+static void RewriteDownstreamTargets(JsonArray routes, string fromHost, int fromPort, string toHost, int toPort)
+{
+    foreach (var routeNode in routes.OfType<JsonObject>())
+    {
+        if (routeNode["DownstreamHostAndPorts"] is not JsonArray hostAndPorts)
+        {
+            continue;
+        }
+
+        foreach (var hostPortNode in hostAndPorts.OfType<JsonObject>())
+        {
+            var host = hostPortNode["Host"]?.GetValue<string>();
+            var port = hostPortNode["Port"]?.GetValue<int?>();
+
+            if (string.Equals(host, fromHost, StringComparison.OrdinalIgnoreCase) && port == fromPort)
+            {
+                hostPortNode["Host"] = toHost;
+                hostPortNode["Port"] = toPort;
+            }
+        }
+    }
+}
+
+static void RewriteSwaggerTargets(JsonObject merged)
+{
+    if (merged["SwaggerEndPoints"] is not JsonArray swaggerEndPoints)
+    {
+        return;
+    }
+
+    foreach (var swaggerEndpoint in swaggerEndPoints.OfType<JsonObject>())
+    {
+        if (swaggerEndpoint["Key"]?.GetValue<string>() == "identity" && swaggerEndpoint["Config"] is JsonArray identityConfigs)
+        {
+            foreach (var config in identityConfigs.OfType<JsonObject>())
+            {
+                config["Url"] = "http://identity:8081/swagger/v1/swagger.json";
+            }
+        }
+
+        if (swaggerEndpoint["Key"]?.GetValue<string>() == "community" && swaggerEndpoint["Config"] is JsonArray communityConfigs)
+        {
+            foreach (var config in communityConfigs.OfType<JsonObject>())
+            {
+                config["Url"] = "http://community:8082/swagger/v1/swagger.json";
+            }
         }
     }
 }

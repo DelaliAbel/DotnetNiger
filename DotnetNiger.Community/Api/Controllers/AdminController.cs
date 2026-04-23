@@ -2,7 +2,10 @@ using Asp.Versioning;
 using DotnetNiger.Community.Api.Filters;
 using DotnetNiger.Community.Application.DTOs.Requests;
 using DotnetNiger.Community.Application.DTOs.Responses;
+using DotnetNiger.Community.Application.Features.FeatureSettings.Commands;
+using DotnetNiger.Community.Application.Features.FeatureSettings.Queries;
 using DotnetNiger.Community.Application.Services.Interfaces;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Community.Api.Controllers;
@@ -17,10 +20,12 @@ namespace DotnetNiger.Community.Api.Controllers;
 public class AdminController : ApiControllerBase
 {
     private readonly IAdminService _adminService;
+    private readonly ISender _sender;
 
-    public AdminController(IAdminService adminService)
+    public AdminController(IAdminService adminService, ISender sender)
     {
         _adminService = adminService;
+        _sender = sender;
     }
 
     // ─── Dashboard ────────────────────────────────────────────────────────────
@@ -223,7 +228,7 @@ public class AdminController : ApiControllerBase
     [HttpGet("settings/features")]
     public async Task<IActionResult> GetFeatureSettings()
     {
-        var settings = await _adminService.GetCommunityFeatureSettingsAsync();
+        var settings = await _sender.Send(new GetCommunityFeatureSettingsQuery());
         return Success(settings);
     }
 
@@ -231,8 +236,20 @@ public class AdminController : ApiControllerBase
     [HttpPut("settings/features")]
     public async Task<IActionResult> UpdateFeatureSettings([FromBody] UpdateCommunityFeatureSettingsRequest request)
     {
-        var settings = await _adminService.UpdateCommunityFeatureSettingsAsync(request);
+        var reviewerUserId = ParseReviewerUserId();
+        var settings = await _sender.Send(new UpdateCommunityFeatureSettingsCommand(request, reviewerUserId));
         return Success(settings, "Paramètres de fonctionnalités mis à jour avec succès.");
+    }
+
+    private Guid? ParseReviewerUserId()
+    {
+        var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (Guid.TryParse(claim, out var userId))
+        {
+            return userId;
+        }
+
+        return null;
     }
 }
 

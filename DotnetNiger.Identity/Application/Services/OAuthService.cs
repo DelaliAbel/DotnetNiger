@@ -24,8 +24,8 @@ public class OAuthService : IOAuthService
     private readonly RoleManager<Role> _roleManager;
     private readonly DotnetNigerIdentityDbContext _dbContext;
     private readonly IRefreshTokenPersistence _refreshTokenRepository;
-    private readonly JwtTokenGenerator _jwtTokenGenerator;
-    private readonly RefreshTokenGenerator _refreshTokenGenerator;
+    private readonly IJwtTokenGenerator _jwtTokenGenerator;
+    private readonly IRefreshTokenGenerator _refreshTokenGenerator;
     private readonly IAppSettingPersistence _appSettingRepository;
     private readonly IConfiguration _configuration;
     private readonly JwtOptions _jwtOptions;
@@ -37,8 +37,8 @@ public class OAuthService : IOAuthService
         RoleManager<Role> roleManager,
         DotnetNigerIdentityDbContext dbContext,
         IRefreshTokenPersistence refreshTokenRepository,
-        JwtTokenGenerator jwtTokenGenerator,
-        RefreshTokenGenerator refreshTokenGenerator,
+        IJwtTokenGenerator jwtTokenGenerator,
+        IRefreshTokenGenerator refreshTokenGenerator,
         IAppSettingPersistence appSettingRepository,
         IConfiguration configuration,
         IOptions<JwtOptions> jwtOptions,
@@ -185,7 +185,7 @@ public class OAuthService : IOAuthService
     {
         var accessToken = await _jwtTokenGenerator.GenerateAccessTokenAsync(user);
         var refreshTokenValue = _refreshTokenGenerator.GenerateToken();
-        var hashedToken = RefreshTokenGenerator.HashToken(refreshTokenValue);
+        var hashedToken = _refreshTokenGenerator.HashToken(refreshTokenValue);
 
         var httpContext = _httpContextAccessor.HttpContext;
         var refreshToken = new RefreshToken

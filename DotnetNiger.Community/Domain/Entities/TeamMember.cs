@@ -1,10 +1,13 @@
 namespace DotnetNiger.Community.Domain.Entities;
 
+using DotnetNiger.Community.Domain.Enums;
+using DotnetNiger.Community.Domain.Interfaces;
+
 /// <summary>
 /// Represents a core team member (e.g. Lead, Organizer, Mentor) of the community.
 /// Users from Identity API represent the general audience.
 /// </summary>
-public class TeamMember
+public class TeamMember : ISoftDeletable
 {
     /// <summary>Gets or sets the internal unique identifier for the team member record.</summary>
     public Guid Id { get; set; }
@@ -30,11 +33,26 @@ public class TeamMember
     /// <summary>Gets or sets a value indicating whether the team member is currently active in the community.</summary>
     public bool IsActive { get; set; } = true;
 
+    /// <summary>Gets or sets the membership approval status (Pending, Approved, Rejected).</summary>
+    public ApprovalStatus MembershipStatus { get; set; } = ApprovalStatus.Pending;
+
+    /// <summary>Gets or sets the date and time when this membership was reviewed.</summary>
+    public DateTime? ReviewedAt { get; set; }
+
+    /// <summary>Gets or sets the reviewer user id from Identity API.</summary>
+    public Guid? ReviewedByUserId { get; set; }
+
     /// <summary>Gets or sets a longer description of the team member's responsibilities or role.</summary>
     public string RoleDescription { get; set; } = string.Empty;
 
     /// <summary>Gets or sets the date and time when the member joined the core team.</summary>
     public DateTime JoinedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>Gets or sets whether this member has been soft deleted.</summary>
+    public bool IsDeleted { get; set; }
+
+    /// <summary>Gets or sets the UTC date/time of soft deletion.</summary>
+    public DateTime? DeletedAt { get; set; }
 
     // Relations
     /// <summary>Gets or sets the specific skills associated with this team member.</summary>

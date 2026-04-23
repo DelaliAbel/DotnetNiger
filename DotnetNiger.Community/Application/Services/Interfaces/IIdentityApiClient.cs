@@ -4,6 +4,7 @@ public interface IIdentityApiClient
 {
     Task<bool> IsReachableAsync(CancellationToken cancellationToken = default);
     Task<Guid?> RegisterAsync(IdentityRegisterRequest request, CancellationToken cancellationToken = default);
+    Task<bool> AssignMemberRoleAsync(Guid userId, CancellationToken cancellationToken = default);
     string BaseUrl { get; }
 }
 

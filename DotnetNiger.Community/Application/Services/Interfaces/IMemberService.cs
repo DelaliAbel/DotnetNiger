@@ -10,4 +10,6 @@ public interface ITeamMemberService
     Task<TeamMember> CreateMemberAsync(TeamMember member);
     Task<TeamMember> UpdateMemberAsync(Guid id, TeamMember member);
     Task<bool> DeleteMemberAsync(Guid id);
+    Task<TeamMember> ApproveMemberAsync(Guid id, Guid reviewerUserId);
+    Task<TeamMember> RejectMemberAsync(Guid id, Guid reviewerUserId);
 }

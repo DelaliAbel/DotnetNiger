@@ -1,9 +1,11 @@
 namespace DotnetNiger.Community.Domain.Entities;
 
+using DotnetNiger.Community.Domain.Interfaces;
+
 /// <summary>
 /// Represents a community event (e.g. meetup, workshop).
 /// </summary>
-public class Event
+public class Event : ISoftDeletable
 {
     /// <summary>Gets or sets the unique identifier for the event.</summary>
     public Guid Id { get; set; }
@@ -49,6 +51,12 @@ public class Event
 
     /// <summary>Gets or sets the UTC date and time the event was last updated.</summary>
     public DateTime? UpdatedAt { get; set; }
+
+    /// <summary>Gets or sets whether the event was soft deleted.</summary>
+    public bool IsDeleted { get; set; }
+
+    /// <summary>Gets or sets the UTC date/time of soft deletion.</summary>
+    public DateTime? DeletedAt { get; set; }
 
     /// <summary>Gets or sets the meeting link (e.g. Zoom, Teams) for online/hybrid events.</summary>
     public string MeetupLink { get; set; } = string.Empty; // Zoom, Teams, etc.

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Community.Domain.Entities;
+using DotnetNiger.Community.Domain.Interfaces;
 
 namespace DotnetNiger.Community.Infrastructure.Data;
 
@@ -27,12 +28,17 @@ public class CommunityDbContext : DbContext
     public DbSet<Tag> Tags { get; set; } = null!;
     public DbSet<TeamMember> Members { get; set; } = null!;
     public DbSet<TeamMemberSkill> MemberSkills { get; set; } = null!;
+    public DbSet<AppSetting> AppSettings { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.HasDefaultSchema("community");
+        if (!Database.IsSqlite())
+        {
+            modelBuilder.HasDefaultSchema("community");
+        }
+
         ConfigureNewsletterSubscriptionEntity(modelBuilder);
 
         // Configuration des relations et des clés primaires
@@ -45,6 +51,20 @@ public class CommunityDbContext : DbContext
         ConfigureResourceEntity(modelBuilder);
         ConfigureTagEntity(modelBuilder);
         ConfigureMemberEntity(modelBuilder);
+        ConfigureAppSettingEntity(modelBuilder);
+
+        // Global filter for unified soft-delete support.
+        modelBuilder.Entity<Post>().HasQueryFilter(x => !x.IsDeleted);
+        modelBuilder.Entity<Event>().HasQueryFilter(x => !x.IsDeleted);
+        modelBuilder.Entity<Resource>().HasQueryFilter(x => !x.IsDeleted);
+        modelBuilder.Entity<TeamMember>().HasQueryFilter(x => !x.IsDeleted);
+        modelBuilder.Entity<Comment>().HasQueryFilter(x => !x.Post.IsDeleted);
+        modelBuilder.Entity<EventMedia>().HasQueryFilter(x => !x.Event.IsDeleted);
+        modelBuilder.Entity<EventRegistration>().HasQueryFilter(x => !x.Event.IsDeleted);
+        modelBuilder.Entity<PostCategory>().HasQueryFilter(x => !x.Post.IsDeleted);
+        modelBuilder.Entity<PostTag>().HasQueryFilter(x => !x.Post.IsDeleted);
+        modelBuilder.Entity<ResourceCategory>().HasQueryFilter(x => !x.Resource.IsDeleted);
+        modelBuilder.Entity<TeamMemberSkill>().HasQueryFilter(x => !x.Member.IsDeleted);
     }
 
     private void ConfigureNewsletterSubscriptionEntity(ModelBuilder modelBuilder)
@@ -234,9 +254,36 @@ public class CommunityDbContext : DbContext
             .HasKey(tm => tm.Id);
 
         modelBuilder.Entity<TeamMember>()
+            .Property(tm => tm.MembershipStatus)
+            .HasConversion<string>()
+            .HasMaxLength(32);
+
+        modelBuilder.Entity<TeamMember>()
+            .HasIndex(tm => tm.MembershipStatus);
+
+        modelBuilder.Entity<TeamMember>()
             .HasMany(tm => tm.Skills)
             .WithOne(tms => tms.Member)
             .HasForeignKey(tms => tms.MemberId)
             .OnDelete(DeleteBehavior.Cascade);
+    }
+
+    private void ConfigureAppSettingEntity(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<AppSetting>()
+            .HasKey(x => x.Key);
+
+        modelBuilder.Entity<AppSetting>()
+            .Property(x => x.Key)
+            .HasMaxLength(200)
+            .IsRequired();
+
+        modelBuilder.Entity<AppSetting>()
+            .Property(x => x.Value)
+            .HasMaxLength(2000)
+            .IsRequired();
+
+        modelBuilder.Entity<AppSetting>()
+            .HasIndex(x => x.UpdatedAtUtc);
     }
 }

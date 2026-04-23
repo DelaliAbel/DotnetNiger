@@ -1,6 +1,8 @@
 namespace DotnetNiger.Community.Domain.Entities;
 
-public class Resource
+using DotnetNiger.Community.Domain.Interfaces;
+
+public class Resource : ISoftDeletable
 {
     public Guid Id { get; set; }
     public string Title { get; set; } = string.Empty;
@@ -14,6 +16,8 @@ public class Resource
     public int ViewCount { get; set; } = 0;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? ApprovedAt { get; set; }
+    public bool IsDeleted { get; set; }
+    public DateTime? DeletedAt { get; set; }
 
     // Relations
     public ICollection<ResourceCategory> ResourceCategories { get; set; } = new List<ResourceCategory>();

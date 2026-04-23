@@ -68,6 +68,10 @@ DotnetNiger.db
 DotnetNiger.db-shm
 DotnetNiger.db-wal
 
+DotnetNigerCommunity.db
+DotnetNigerCommunity.db-shm
+DotnetNigerCommunity.db-wal
+
 # OS files
 .DS_Store
 Thumbs.db
@@ -137,7 +141,6 @@ DotnetNiger/
 # Health report (contient des infos sensibles sur l'architecture)
 docs/HEALTH_REPORT.md
 
-# Documentation confidentielle
-docs/BLAZOR_WASM_INTEGRATION.md
+DotnetNiger
 
 .fake

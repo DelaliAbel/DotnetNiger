@@ -15,5 +15,5 @@ public class CreateProjectRequest
     public string GitHubUrl { get; set; } = string.Empty;
 
     public string Language { get; set; } = string.Empty;
-    public string License { get; set; } = string.Empty;
+    public string License { get; set; } = string.Empty;  // TODO
 }

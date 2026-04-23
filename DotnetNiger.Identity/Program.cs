@@ -6,6 +6,7 @@ using Asp.Versioning.ApiExplorer;
 using DotnetNiger.Identity.Api.Middleware;
 using DotnetNiger.Identity.Api.Extensions;
 using DotnetNiger.Identity.Api.Filters;
+using DotnetNiger.Identity.Application.Services.Interfaces;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure.Data;
 using DotnetNiger.Identity.Infrastructure.Data.Seeds;
@@ -79,9 +80,33 @@ builder.Services.AddIdentityCore<ApplicationUser>(options =>
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.Configure<FileUploadOptions>(builder.Configuration.GetSection("FileUpload"));
 builder.Services.Configure<AccountDeletionOptions>(builder.Configuration.GetSection("AccountDeletion"));
-builder.Services.AddScoped<JwtTokenGenerator>();
 builder.Services.AddScoped<RefreshTokenGenerator>();
 builder.Services.AddHttpClient();
+builder.Services.AddHttpClient<ICommunityProvisioningClient, CommunityProvisioningClient>((sp, client) =>
+{
+    var configuration = sp.GetRequiredService<IConfiguration>();
+
+    var configuredBaseUrl = configuration["CommunityApi:BaseUrl"] ?? "http://localhost:5269/";
+    if (!Uri.TryCreate(configuredBaseUrl, UriKind.Absolute, out var communityBaseUri) ||
+        (communityBaseUri.Scheme != Uri.UriSchemeHttp && communityBaseUri.Scheme != Uri.UriSchemeHttps))
+    {
+        throw new InvalidOperationException(
+            $"CommunityApi:BaseUrl is invalid ('{configuredBaseUrl}'). Use an absolute HTTP/HTTPS URL.");
+    }
+
+    var timeoutSeconds = configuration.GetValue<int?>("CommunityApi:TimeoutSeconds") ?? 15;
+    timeoutSeconds = Math.Clamp(timeoutSeconds, 3, 120);
+
+    client.BaseAddress = communityBaseUri;
+    client.Timeout = TimeSpan.FromSeconds(timeoutSeconds);
+})
+.ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+{
+    ConnectTimeout = TimeSpan.FromSeconds(5),
+    PooledConnectionIdleTimeout = TimeSpan.FromMinutes(2),
+    PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+    MaxConnectionsPerServer = 20
+});
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddMemoryCache(); // For rate limiting cache
 builder.Services.AddDistributedMemoryCache();

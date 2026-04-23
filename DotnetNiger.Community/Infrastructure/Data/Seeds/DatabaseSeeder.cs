@@ -1,4 +1,6 @@
 using DotnetNiger.Community.Domain.Entities;
+using DotnetNiger.Community.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Infrastructure.Data.Seeds;
 
@@ -7,7 +9,12 @@ public static class DatabaseSeeder
     public static async Task SeedDataAsync(CommunityDbContext context)
     {
         // Vérifier si les données existent déjà
-        if (context.Posts.Any() || context.Categories.Any())
+        if (context.Posts.IgnoreQueryFilters().Any()
+            || context.Categories.Any()
+            || context.Events.IgnoreQueryFilters().Any()
+            || context.Projects.Any()
+            || context.Resources.IgnoreQueryFilters().Any()
+            || context.Partners.Any())
             return;
 
         // 1. Créer les catégories
@@ -120,6 +127,40 @@ public static class DatabaseSeeder
                 MeetupLink = "https://zoom.us/j/...",
                 IsPublished = true,
                 CreatedAt = DateTime.UtcNow.AddDays(-10)
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Title = "Atelier API Gateway avec Ocelot",
+                Slug = "atelier-api-gateway-ocelot",
+                Description = "Atelier pratique sur la mise en place d'une API Gateway avec Ocelot",
+                Location = "En ligne",
+                EventType = "Online",
+                StartDate = DateTime.UtcNow.AddDays(14),
+                EndDate = DateTime.UtcNow.AddDays(14).AddHours(2),
+                CoverImageUrl = "https://via.placeholder.com/800x400",
+                CreatedBy = Guid.NewGuid(),
+                Capacity = 100,
+                MeetupLink = "https://zoom.us/j/atelier-ocelot",
+                IsPublished = true,
+                CreatedAt = DateTime.UtcNow.AddDays(-50)
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Title = "Session CI/CD pour .NET",
+                Slug = "session-cicd-dotnet",
+                Description = "Session dédiée aux pipelines CI/CD pour les applications .NET",
+                Location = "En ligne",
+                EventType = "Online",
+                StartDate = DateTime.UtcNow.AddDays(4),
+                EndDate = DateTime.UtcNow.AddDays(4).AddHours(2),
+                CoverImageUrl = "https://via.placeholder.com/800x400",
+                CreatedBy = Guid.NewGuid(),
+                Capacity = 120,
+                MeetupLink = "https://zoom.us/j/session-cicd",
+                IsPublished = true,
+                CreatedAt = DateTime.UtcNow.AddDays(-5)
             }
         };
         await context.Events.AddRangeAsync(events);
@@ -156,6 +197,36 @@ public static class DatabaseSeeder
                 Language = "C#",
                 License = "Apache-2.0",
                 CreatedAt = DateTime.UtcNow.AddDays(-60)
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Community CLI Tools",
+                Slug = "community-cli-tools",
+                Description = "Outils CLI pour automatiser les tâches communautaires",
+                GitHubUrl = "https://github.com/dotnetniger/community-cli",
+                OwnerId = Guid.NewGuid(),
+                IsFeatured = true,
+                Stars = 106,
+                ContributorsCount = 5,
+                Language = "C#",
+                License = "Apache-2.0",
+                CreatedAt = DateTime.UtcNow.AddDays(-80)
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "DotnetNiger Learning Hub",
+                Slug = "dotnetniger-learning-hub",
+                Description = "Plateforme de parcours pédagogiques pour la communauté",
+                GitHubUrl = "https://github.com/dotnetniger/learning-hub",
+                OwnerId = Guid.NewGuid(),
+                IsFeatured = true,
+                Stars = 56,
+                ContributorsCount = 20,
+                Language = "C#",
+                License = "Apache-2.0",
+                CreatedAt = DateTime.UtcNow.AddDays(-50)
             }
         };
         await context.Projects.AddRangeAsync(projects);
@@ -194,6 +265,20 @@ public static class DatabaseSeeder
             new()
             {
                 Id = Guid.NewGuid(),
+                Title = "Architecture hexagonale en .NET",
+                Slug = "architecture-hexagonale-dotnet",
+                Description = "Ressource avancée sur l'architecture hexagonale en .NET",
+                Url = "https://www.udemy.com/course/hexagonal-architecture-dotnet",
+                ResourceType = "Course",
+                Level = "Advanced",
+                CreatedBy = Guid.NewGuid(),
+                IsApproved = true,
+                ViewCount = 2100,
+                CreatedAt = DateTime.UtcNow.AddDays(-60)
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
                 Title = "Clean Code in C# - Udemy",
                 Slug = "clean-code-csharp",
                 Description = "Cours sur les bonnes pratiques de code",
@@ -202,8 +287,8 @@ public static class DatabaseSeeder
                 Level = "Advanced",
                 CreatedBy = Guid.NewGuid(),
                 IsApproved = true,
-                ViewCount = 2100,
-                CreatedAt = DateTime.UtcNow.AddDays(-60)
+                ViewCount = 200,
+                CreatedAt = DateTime.UtcNow.AddDays(-70)
             }
         };
         await context.Resources.AddRangeAsync(resources);
@@ -228,6 +313,24 @@ public static class DatabaseSeeder
                 Content = "Merci pour ce guide détaillé. Très utile pour les débutants !",
                 IsApproved = true,
                 CreatedAt = DateTime.UtcNow.AddDays(-2)
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                PostId = posts[0].Id,
+                UserId = Guid.NewGuid(),
+                Content = "Merci pour ce guide détaillé. Très utile pour les débutants !",
+                IsApproved = true,
+                CreatedAt = DateTime.UtcNow.AddDays(-3)
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                PostId = posts[0].Id,
+                UserId = Guid.NewGuid(),
+                Content = "Merci pour ce guide détaillé. Très utile pour les débutants !",
+                IsApproved = true,
+                CreatedAt = DateTime.UtcNow.AddDays(-4)
             }
         };
         await context.Comments.AddRangeAsync(comments);
@@ -260,6 +363,32 @@ public static class DatabaseSeeder
                 Level = "Gold",
                 DisplayOrder = 2,
                 CreatedAt = DateTime.UtcNow.AddDays(-200)
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "GitHub",
+                Slug = "github",
+                LogoUrl = "https://via.placeholder.com/200x100",
+                Website = "https://github.com",
+                Description = "Plateforme de collaboration et open source",
+                PartnerType = "Silver",
+                Level = "Gold",
+                DisplayOrder = 3,
+                CreatedAt = DateTime.UtcNow.AddDays(-90)
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Name = "Docker",
+                Slug = "docker",
+                LogoUrl = "https://via.placeholder.com/200x100",
+                Website = "https://www.docker.com",
+                Description = "Conteneurisation et outils cloud-native",
+                PartnerType = "Silver",
+                Level = "Gold",
+                DisplayOrder = 4,
+                CreatedAt = DateTime.UtcNow.AddDays(-210)
             }
         };
         await context.Partners.AddRangeAsync(partners);
@@ -275,6 +404,7 @@ public static class DatabaseSeeder
                 Position = "Lead",
                 Order = 1,
                 IsActive = true,
+                MembershipStatus = ApprovalStatus.Approved,
                 RoleDescription = "Fondateur et lead technique",
                 JoinedAt = DateTime.UtcNow.AddDays(-365)
             },
@@ -286,6 +416,7 @@ public static class DatabaseSeeder
                 Position = "Organizer",
                 Order = 2,
                 IsActive = true,
+                MembershipStatus = ApprovalStatus.Approved,
                 RoleDescription = "Organisateur d'événements",
                 JoinedAt = DateTime.UtcNow.AddDays(-300)
             },
@@ -297,6 +428,7 @@ public static class DatabaseSeeder
                 Position = "Mentor",
                 Order = 3,
                 IsActive = true,
+                MembershipStatus = ApprovalStatus.Approved,
                 RoleDescription = "Mentor et formateur",
                 JoinedAt = DateTime.UtcNow.AddDays(-250)
             }

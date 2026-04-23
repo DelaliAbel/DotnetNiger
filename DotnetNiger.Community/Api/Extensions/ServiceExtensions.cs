@@ -3,6 +3,7 @@ using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Application.Mappers;
 using DotnetNiger.Community.Application.Services;
 using DotnetNiger.Community.Application.Services.Interfaces;
+using DotnetNiger.Community.Infrastructure.Caching;
 using DotnetNiger.Community.Infrastructure.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -32,6 +33,7 @@ public static class ServiceExtensions
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<ICommunityRequestMapper, CommunityRequestMapper>();
         services.AddScoped<INewsletterService, NewsletterService>();
+        services.AddScoped<ICacheService, RedisCacheService>();
 
         return services;
     }
@@ -60,6 +62,8 @@ public static class ServiceExtensions
         services.AddScoped<ITeamMemberPersistence, TeamMemberRepository>();
         services.AddScoped<INewsletterSubscriptionRepository, NewsletterSubscriptionRepository>();
         services.AddScoped<INewsletterSubscriptionPersistence, NewsletterSubscriptionRepository>();
+        services.AddScoped<IAppSettingRepository, AppSettingRepository>();
+        services.AddScoped<IAppSettingPersistence, AppSettingRepository>();
 
         return services;
     }

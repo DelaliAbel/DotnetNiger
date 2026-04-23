@@ -2,6 +2,7 @@ using DotnetNiger.Community.Application.Exceptions;
 using DotnetNiger.Community.Application.Abstractions.Persistence;
 using DotnetNiger.Community.Application.Services.Interfaces;
 using DotnetNiger.Community.Domain.Entities;
+using DotnetNiger.Community.Domain.Enums;
 
 namespace DotnetNiger.Community.Application.Services;
 
@@ -90,6 +91,10 @@ public class TeamMemberService : ITeamMemberService
         {
             member.Id = Guid.NewGuid();
             member.JoinedAt = DateTime.UtcNow;
+            member.IsActive = false;
+            member.MembershipStatus = ApprovalStatus.Pending;
+            member.ReviewedAt = null;
+            member.ReviewedByUserId = null;
 
             var createdMember = await _memberRepository.AddAsync(member);
             _logger.LogInformation("Membre créé avec succès: {MemberId}", createdMember.Id);
@@ -119,7 +124,7 @@ public class TeamMemberService : ITeamMemberService
         {
             var existingMember = await _memberRepository.GetByIdAsync(id);
             if (existingMember == null)
-                throw new ResourceNotApprovedException($"Membre avec l'ID {id} non trouvé");
+                throw new NotFoundException($"Membre avec l'ID {id} non trouve");
 
             // Mise à jour des propriétés
             existingMember.Name = member.Name;
@@ -154,7 +159,7 @@ public class TeamMemberService : ITeamMemberService
         {
             var exists = await _memberRepository.GetByIdAsync(id);
             if (exists == null)
-                throw new ResourceNotApprovedException($"Membre avec l'ID {id} non trouvé");
+                throw new NotFoundException($"Membre avec l'ID {id} non trouve");
 
             var deleted = await _memberRepository.DeleteAsync(id);
             if (deleted)
@@ -166,6 +171,47 @@ public class TeamMemberService : ITeamMemberService
             _logger.LogError(ex, "Erreur lors de la suppression du membre {MemberId}", id);
             throw;
         }
+    }
+
+    public async Task<TeamMember> ApproveMemberAsync(Guid id, Guid reviewerUserId)
+    {
+        if (id == Guid.Empty)
+            throw new ArgumentException("L'ID du membre est requis", nameof(id));
+
+        if (reviewerUserId == Guid.Empty)
+            throw new ArgumentException("L'ID du validateur est requis", nameof(reviewerUserId));
+
+        var member = await _memberRepository.GetByIdAsync(id);
+        if (member == null)
+            throw new NotFoundException($"Membre avec l'ID {id} non trouve");
+
+        member.MembershipStatus = ApprovalStatus.Approved;
+        member.IsActive = true;
+        member.ReviewedAt = DateTime.UtcNow;
+        member.ReviewedByUserId = reviewerUserId;
+
+        return await _memberRepository.UpdateAsync(member);
+    }
+
+    public async Task<TeamMember> RejectMemberAsync(Guid id, Guid reviewerUserId)
+    {
+        if (id == Guid.Empty)
+            throw new ArgumentException("L'ID du membre est requis", nameof(id));
+
+        if (reviewerUserId == Guid.Empty)
+            throw new ArgumentException("L'ID du validateur est requis", nameof(reviewerUserId));
+
+        var member = await _memberRepository.GetByIdAsync(id);
+        if (member == null)
+            throw new NotFoundException($"Membre avec l'ID {id} non trouve");
+
+        member.MembershipStatus = ApprovalStatus.Rejected;
+        member.IsActive = false;
+        member.IsPublic = false;
+        member.ReviewedAt = DateTime.UtcNow;
+        member.ReviewedByUserId = reviewerUserId;
+
+        return await _memberRepository.UpdateAsync(member);
     }
 
     /// <summary>

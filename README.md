@@ -61,13 +61,12 @@ dotnet run
 | `Admin__ApiKey`        | Clé admin Community (`X-Admin-Key`)                 |
 | `IdentityApi__BaseUrl` | URL de base Identity utilisée par Community         |
 
-> En production, utiliser variables d'environnement ou user-secrets pour les secrets.
-
 ## Documentation
 
-- [docs/INDEX.md](docs/INDEX.md)
-- [docs/SETUP.md](docs/SETUP.md)
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-- [docs/API.md](docs/API.md)
+- [docs/INDEX.md](INDEX.md)
+- [docs/SETUP.md](SETUP.md)
+- [docs/ARCHITECTURE.md](ARCHITECTURE.md)
+- [docs/API.md](API.md)
+- [docs/HEALTH_REPORT.md](HEALTH_REPORT.md)
 - [DotnetNiger.Gateway/README.md](DotnetNiger.Gateway/README.md)
 - [DotnetNiger.Identity/README.md](DotnetNiger.Identity/README.md)

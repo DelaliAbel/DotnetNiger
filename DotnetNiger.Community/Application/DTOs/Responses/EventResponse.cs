@@ -13,7 +13,7 @@ public class EventResponse
     public string CoverImageUrl { get; set; } = string.Empty;
     public Guid CreatedBy { get; set; }
     public string OrganizerName { get; set; } = string.Empty;
-    public int Capacity { get; set; }
+    public int Capacity { get; set; } // TODO
     public int RegisteredCount { get; set; }
     public bool IsPublished { get; set; }
     public string MeetupLink { get; set; } = string.Empty;

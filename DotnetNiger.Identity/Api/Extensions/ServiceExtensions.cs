@@ -6,6 +6,7 @@ using DotnetNiger.Identity.Infrastructure.Caching;
 using DotnetNiger.Identity.Infrastructure.External;
 using DotnetNiger.Identity.Infrastructure.Repositories;
 using Microsoft.Extensions.DependencyInjection;
+using DotnetNiger.Identity.Infrastructure.Security;
 
 namespace DotnetNiger.Identity.Api.Extensions;
 
@@ -17,6 +18,8 @@ public static class ServiceExtensions
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserService, UserService>();
         services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
+        services.AddScoped<IRefreshTokenGenerator, RefreshTokenGenerator>();
         services.AddScoped<IEmailService, EmailService>();
         services.AddScoped<ISocialLinkService, SocialLinkService>();
         services.AddScoped<IRoleService, RoleService>();

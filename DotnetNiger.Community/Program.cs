@@ -5,10 +5,13 @@ using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using DotnetNiger.Community.Api.Extensions;
 using DotnetNiger.Community.Api.Middleware;
+using DotnetNiger.Community.Application.Common.Behaviors;
 using DotnetNiger.Community.Application.Services;
 using DotnetNiger.Community.Application.Services.Interfaces;
 using DotnetNiger.Community.Infrastructure.Data;
 using DotnetNiger.Community.Infrastructure.Data.Seeds;
+using FluentValidation;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
@@ -33,7 +36,7 @@ var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "DotnetNiger.Identity";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "DotnetNiger.Identity.Client";
 var jwtKey = builder.Configuration["Jwt:Key"];
 
-if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.StartsWith("__") || jwtKey.Length < 32)
+if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.StartsWith("__") || jwtKey.Length < 32) //TODO:a enlever
 {
     throw new InvalidOperationException(
         "La cle JWT n'est pas configuree. Definissez Jwt:Key (minimum 32 caracteres).");
@@ -43,6 +46,7 @@ if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.StartsWith("__") || jwtKey.Lengt
 builder.Services.AddControllers();
 builder.Services.AddProblemDetails();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddMemoryCache();
 
 builder.Services.AddApiVersioning(options =>
 {
@@ -60,6 +64,9 @@ builder.Services.AddDbContext<CommunityDbContext>(options =>
 
 builder.Services.AddCommunityRepositories();
 builder.Services.AddCommunityApplicationServices();
+builder.Services.AddMediatR(config => config.RegisterServicesFromAssembly(typeof(DotnetNiger.Community.Application.Features.FeatureSettings.Queries.GetCommunityFeatureSettingsQuery).Assembly));
+builder.Services.AddValidatorsFromAssembly(typeof(DotnetNiger.Community.Application.Features.FeatureSettings.Queries.GetCommunityFeatureSettingsQuery).Assembly);
+builder.Services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
 builder.Services.AddHttpClient<IIdentityApiClient, IdentityApiClient>((sp, client) =>
 {
@@ -135,7 +142,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("GatewayOnly", policy =>
         policy.AllowAnyOrigin()
             .AllowAnyMethod()
-            .AllowAnyHeader());
+            .AllowAnyHeader()); //TODO: personaliser le cors pour accepter le gateway uniquement
 });
 
 // Configure Swagger/OpenAPI
