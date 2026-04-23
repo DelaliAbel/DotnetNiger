@@ -1,6 +1,5 @@
 {
   "Routes": [
-
     {
       "UpstreamPathTemplate": "/api/super-admin",
       "UpstreamHttpMethod": ["GET", "POST"],
