@@ -1,168 +1,99 @@
-// Service applicatif Identity: RoleService
-using DotnetNiger.Identity.Application.DTOs.Requests;
-using DotnetNiger.Identity.Application.DTOs.Responses;
-using DotnetNiger.Identity.Application.Exceptions;
-using DotnetNiger.Identity.Application.Services.Interfaces;
-using DotnetNiger.Identity.Domain.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using DotnetNiger.Identity.Domain.Entities;
+using DotnetNiger.Identity.Infrastructure;
+using DotnetNiger.Identity.Application.DTOs;
 
 namespace DotnetNiger.Identity.Application.Services;
 
-// Gestion des roles via ASP.NET Core Identity.
-public class RoleService : IRoleService
+public class RoleService
 {
-    private static readonly HashSet<string> AllowedRoles = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "Member", "Admin", "SuperAdmin"
-    };
-
-    // Gestion des roles via ASP.NET Core Identity.
-    private readonly RoleManager<Role> _roleManager;
+    private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IdentityDbContext _db;
 
-    public RoleService(RoleManager<Role> roleManager, UserManager<ApplicationUser> userManager)
+    public RoleService(RoleManager<ApplicationRole> roleManager,
+        UserManager<ApplicationUser> userManager, IdentityDbContext db)
     {
         _roleManager = roleManager;
         _userManager = userManager;
+        _db = db;
     }
 
-    public async Task<IReadOnlyList<RoleResponse>> GetAllAsync()
+    public async Task<RoleResponse> CreateAsync(CreateRoleRequest request)
     {
-        return await _roleManager.Roles
-            .OrderBy(role => role.Name)
-            .Select(role => new RoleResponse
-            {
-                Id = role.Id,
-                Name = role.Name ?? string.Empty
-            })
-            .ToListAsync();
-    }
-
-    public async Task<RoleResponse> CreateAsync(AddRoleRequest request)
-    {
-        var name = request.Name?.Trim();
-        if (string.IsNullOrWhiteSpace(name))
+        var role = new ApplicationRole
         {
-            throw new IdentityException("Role name is required.", 400);
-        }
-
-        if (!AllowedRoles.Contains(name))
-        {
-            throw new IdentityException("Role must be Member, Admin, or SuperAdmin.", 400);
-        }
-
-        var existing = await _roleManager.FindByNameAsync(name);
-        if (existing != null)
-        {
-            throw new IdentityException("Role already exists.", 409);
-        }
-
-        var role = new Role(name);
+            Name = request.Name, Description = request.Description, TenantId = request.TenantId
+        };
         var result = await _roleManager.CreateAsync(role);
         if (!result.Succeeded)
-        {
-            var message = string.Join(" ", result.Errors.Select(error => error.Description));
-            throw new IdentityException(message, 400);
-        }
+            throw new InvalidOperationException(string.Join(", ", result.Errors.Select(e => e.Description)));
 
-        return new RoleResponse
-        {
-            Id = role.Id,
-            Name = role.Name ?? string.Empty
-        };
+        return new RoleResponse(role.Id, role.Name!, role.Description, role.TenantId, 0);
     }
 
-    public async Task DeleteAsync(Guid roleId)
+    public async Task<List<RoleResponse>> GetByTenantAsync(Guid tenantId)
     {
-        var role = await _roleManager.FindByIdAsync(roleId.ToString());
-        if (role == null)
+        var roles = await _db.Roles.Where(r => r.TenantId == tenantId).ToListAsync();
+        var result = new List<RoleResponse>();
+        foreach (var role in roles)
         {
-            throw new IdentityException("Role not found.", 404);
+            var count = await _db.UserRoles.CountAsync(ur => ur.RoleId == role.Id);
+            result.Add(new RoleResponse(role.Id, role.Name!, role.Description, role.TenantId, count));
         }
-
-        if (role.Name != null && AllowedRoles.Contains(role.Name))
-        {
-            throw new IdentityException("Core roles cannot be deleted.", 400);
-        }
-
-        var result = await _roleManager.DeleteAsync(role);
-        if (!result.Succeeded)
-        {
-            var message = string.Join(" ", result.Errors.Select(error => error.Description));
-            throw new IdentityException(message, 400);
-        }
+        return result;
     }
 
-    public async Task AssignToUserAsync(AssignRoleRequest request)
+    public async Task<RoleResponse> UpdateAsync(Guid id, UpdateRoleRequest request)
     {
-        var roleName = request.RoleName?.Trim();
-        if (string.IsNullOrWhiteSpace(roleName))
-        {
-            throw new IdentityException("Role name is required.", 400);
-        }
+        var role = await _roleManager.FindByIdAsync(id.ToString());
+        if (role == null) throw new KeyNotFoundException("Rôle non trouvé");
 
-        if (!AllowedRoles.Contains(roleName))
-        {
-            throw new IdentityException("Role must be Member, Admin, or SuperAdmin.", 400);
-        }
-
-        var user = await _userManager.FindByIdAsync(request.UserId.ToString());
-        if (user == null)
-        {
-            throw new IdentityException("User not found.", 404);
-        }
-
-        var role = await _roleManager.FindByNameAsync(roleName);
-        if (role == null)
-        {
-            throw new IdentityException("Role not found.", 404);
-        }
-
-        var result = await _userManager.AddToRoleAsync(user, role.Name ?? roleName);
+        role.Description = request.Description ?? role.Description;
+        var result = await _roleManager.UpdateAsync(role);
         if (!result.Succeeded)
-        {
-            var message = string.Join(" ", result.Errors.Select(error => error.Description));
-            throw new IdentityException(message, 400);
-        }
+            throw new InvalidOperationException(string.Join(", ", result.Errors.Select(e => e.Description)));
+
+        var count = await _db.UserRoles.CountAsync(ur => ur.RoleId == role.Id);
+        return new RoleResponse(role.Id, role.Name!, role.Description, role.TenantId, count);
     }
 
-    public async Task RemoveFromUserAsync(AssignRoleRequest request)
+    public async Task DeleteAsync(Guid id)
     {
-        var roleName = request.RoleName?.Trim();
-        if (string.IsNullOrWhiteSpace(roleName))
-        {
-            throw new IdentityException("Role name is required.", 400);
-        }
-
-        if (!AllowedRoles.Contains(roleName))
-        {
-            throw new IdentityException("Role must be Member, Admin, or SuperAdmin.", 400);
-        }
-
-        var user = await _userManager.FindByIdAsync(request.UserId.ToString());
-        if (user == null)
-        {
-            throw new IdentityException("User not found.", 404);
-        }
-
-        var result = await _userManager.RemoveFromRoleAsync(user, roleName);
-        if (!result.Succeeded)
-        {
-            var message = string.Join(" ", result.Errors.Select(error => error.Description));
-            throw new IdentityException(message, 400);
-        }
+        var role = await _roleManager.FindByIdAsync(id.ToString());
+        if (role != null) await _roleManager.DeleteAsync(role);
     }
 
-    public async Task<IReadOnlyList<string>> GetUserRolesAsync(Guid userId)
+    public async Task AssignToUserAsync(Guid userId, Guid roleId)
     {
         var user = await _userManager.FindByIdAsync(userId.ToString());
-        if (user == null)
-        {
-            throw new IdentityException("User not found.", 404);
-        }
+        var role = await _roleManager.FindByIdAsync(roleId.ToString());
+        if (user == null || role == null) throw new KeyNotFoundException();
 
-        var roles = await _userManager.GetRolesAsync(user);
-        return roles.ToList();
+        await _userManager.AddToRoleAsync(user, role.Name!);
+    }
+
+    public async Task RemoveFromUserAsync(Guid userId, Guid roleId)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        var role = await _roleManager.FindByIdAsync(roleId.ToString());
+        if (user == null || role == null) throw new KeyNotFoundException();
+
+        await _userManager.RemoveFromRoleAsync(user, role.Name!);
+    }
+
+    public async Task<List<RoleResponse>> GetUserRolesAsync(Guid userId)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null) throw new KeyNotFoundException();
+
+        var roleNames = await _userManager.GetRolesAsync(user);
+        var roles = await _db.Roles
+            .Where(r => roleNames.Contains(r.Name!))
+            .ToListAsync();
+
+        return roles.Select(r => new RoleResponse(
+            r.Id, r.Name!, r.Description, r.TenantId, 0)).ToList();
     }
 }

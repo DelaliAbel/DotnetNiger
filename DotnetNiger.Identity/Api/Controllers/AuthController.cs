@@ -1,247 +1,196 @@
-// Controleur API Identity: AuthController
-using Asp.Versioning;
-using DotnetNiger.Identity.Application.DTOs.Requests;
-using DotnetNiger.Identity.Application.DTOs.Responses;
-using DotnetNiger.Identity.Application.Services.Interfaces;
-using DotnetNiger.Identity.Infrastructure.Repositories;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using OpenIddict.Abstractions;
+using OpenIddict.Server.AspNetCore;
+using DotnetNiger.Identity.Domain.Entities;
+using DotnetNiger.Identity.Application.DTOs;
+using DotnetNiger.Identity.Application.Services;
 
 namespace DotnetNiger.Identity.Api.Controllers;
 
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/auth")]
-// Endpoints publics pour authentification et reinitialisation.
-public class AuthController : ApiControllerBase
+public class AuthController : ControllerBase
 {
-    // Endpoints publics pour l'authentification.
-    private readonly IAuthService _authService;
-    private readonly ITokenService _tokenService;
-    private readonly IClientRateLimiter _rateLimiter;
-    private readonly IFeatureToggleService _featureToggleService;
-    private readonly IOAuthService _oAuthService;
-    private readonly IAppSettingRepository _appSettingRepository;
-    private readonly IWebHostEnvironment _environment;
-    private const int DefaultRegisterMaxAttempts = 3;
-    private const int DefaultLoginMaxAttempts = 5;
-    private const int DefaultPasswordResetMaxAttempts = 5;
-    private const int DefaultRateLimitWindowMinutes = 1;
-    private const string InternalProvisioningHeader = "X-Internal-Key";
+    private readonly AuthService _authService;
+    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
 
-    public AuthController(
-        IAuthService authService,
-        ITokenService tokenService,
-        IClientRateLimiter rateLimiter,
-        IFeatureToggleService featureToggleService,
-        IOAuthService oAuthService,
-        IAppSettingRepository appSettingRepository,
-        IWebHostEnvironment environment)
+    public AuthController(AuthService authService,
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager)
     {
         _authService = authService;
-        _tokenService = tokenService;
-        _rateLimiter = rateLimiter;
-        _featureToggleService = featureToggleService;
-        _oAuthService = oAuthService;
-        _appSettingRepository = appSettingRepository;
-        _environment = environment;
+        _userManager = userManager;
+        _signInManager = signInManager;
     }
 
-    [HttpPost("internal/assign-member-role")]
-    [AllowAnonymous]
-    public async Task<IActionResult> AssignMemberRoleInternal([FromBody] InternalAssignMemberRoleRequest request, CancellationToken cancellationToken)
+    [HttpPost("~/connect/token"), IgnoreAntiforgeryToken, Produces("application/json")]
+    [ApiExplorerSettings(IgnoreApi = true)]
+    public async Task<IActionResult> TokenExchange()
     {
-        var expectedKey = _appSettingRepository.GetValue("Integration:ProvisioningApiKey")
-            ?? HttpContext.RequestServices.GetRequiredService<IConfiguration>()["Integration:ProvisioningApiKey"];
+        var grantType = Request.Form["grant_type"].FirstOrDefault();
 
-        var providedKey = HttpContext.Request.Headers[InternalProvisioningHeader].ToString();
-        if (string.IsNullOrWhiteSpace(expectedKey) || !string.Equals(expectedKey, providedKey, StringComparison.Ordinal))
+        if (grantType == "refresh_token")
         {
-            return Unauthorized(new ProblemDetails
+            var result = await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+            if (result?.Principal == null)
+                throw new InvalidOperationException("The refresh token is invalid");
+
+            var userId = result.Principal.FindFirst(OpenIddictConstants.Claims.Subject)?.Value;
+            if (userId != null)
             {
-                Title = "Unauthorized",
-                Detail = "Invalid integration key.",
-                Status = StatusCodes.Status401Unauthorized
-            });
+                var refreshUser = await _userManager.FindByIdAsync(userId);
+                if (refreshUser == null || !refreshUser.IsActive)
+                    throw new InvalidOperationException("User no longer exists or is inactive");
+            }
+
+            return SignIn(result.Principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 
-        await _authService.AssignMemberRoleAsync(request.UserId, cancellationToken);
-        return SuccessMessage("Member role assigned.");
+        if (grantType != "password")
+            throw new InvalidOperationException("Unsupported grant type");
+
+        var (loginUser, roles) = await _authService.ValidateCredentialsAsync(
+            Request.Form["username"]!, Request.Form["password"]!, null);
+
+        var loginPrincipal = await _signInManager.CreateUserPrincipalAsync(loginUser);
+        loginPrincipal.SetClaim(OpenIddictConstants.Claims.Subject, loginUser.Id.ToString());
+        foreach (var role in roles)
+        {
+            loginPrincipal.SetClaim(ClaimTypes.Role, role);
+            loginPrincipal.SetClaim("role", role);
+        }
+        loginPrincipal.SetClaim("tenant_id", loginUser.TenantId.ToString());
+        loginPrincipal.SetClaim(OpenIddictConstants.Claims.GivenName, loginUser.FirstName);
+        loginPrincipal.SetClaim(OpenIddictConstants.Claims.FamilyName, loginUser.LastName);
+        loginPrincipal.SetClaim(OpenIddictConstants.Claims.Name, $"{loginUser.FirstName} {loginUser.LastName}".Trim());
+        loginPrincipal.SetClaim(OpenIddictConstants.Claims.Email, loginUser.Email);
+        var scopes = Request.Form["scope"];
+        loginPrincipal.SetScopes(scopes.Count > 0
+            ? scopes.SelectMany(s => s.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            : ["openid", "profile", "email", "roles"]);
+
+        var rememberMe = string.Equals(Request.Form["remember_me"].FirstOrDefault(), "true",
+            StringComparison.OrdinalIgnoreCase);
+        loginPrincipal.SetAccessTokenLifetime(
+            rememberMe ? TimeSpan.FromDays(7) : TimeSpan.FromHours(1));
+
+        loginPrincipal.SetDestinations(claim => claim.Type switch
+        {
+            OpenIddictConstants.Claims.Subject
+                => [OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken],
+            OpenIddictConstants.Claims.Name or OpenIddictConstants.Claims.Email
+                or OpenIddictConstants.Claims.GivenName or OpenIddictConstants.Claims.FamilyName
+                => [OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken],
+            ClaimTypes.Role or "role"
+                => [OpenIddictConstants.Destinations.AccessToken],
+            "tenant_id"
+                => [OpenIddictConstants.Destinations.AccessToken],
+            _ => [OpenIddictConstants.Destinations.AccessToken]
+        });
+
+        return SignIn(loginPrincipal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
-    [HttpGet("oauth/providers")]
-    [AllowAnonymous]
-    public async Task<IActionResult> GetOAuthProviders()
-    {
-        var providers = await _oAuthService.GetEnabledProvidersAsync();
-        return Success(new { providers });
-    }
-
-    [HttpPost("oauth/exchange")]
-    [AllowAnonymous]
-    public async Task<IActionResult> ExchangeOAuthAccessToken([FromBody] OAuthExchangeRequest request, CancellationToken cancellationToken)
-    {
-        var result = await _oAuthService.ExchangeAccessTokenAsync(request, cancellationToken);
-        return Success(result, "OAuth authentication successful.");
-    }
-
-    /// <summary>
-    /// Register new user (rate limited: 3 attempts per 1 min per IP)
-    /// </summary>
-    [HttpPost("register")]
-    [AllowAnonymous]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
-    {
-        if (!_featureToggleService.IsRegistrationEnabled())
-            return StatusCode(503, new ProblemDetails { Title = "Feature disabled", Detail = "Registration is currently disabled.", Status = 503 });
-
-        var registerMaxAttempts = GetRateLimitSetting("Auth:RateLimit:RegisterMaxAttempts", DefaultRegisterMaxAttempts);
-        if (!TryConsumeRateLimit("register", registerMaxAttempts, out var retryAfter))
-            return StatusCode(429, new { error = $"Too many registration attempts. Retry in {(int)Math.Ceiling((retryAfter ?? TimeSpan.Zero).TotalMinutes)} minutes." });
-
-        var result = await _authService.RegisterAsync(request);
-        return Success(result, "Registration successful.");
-    }
-
-    /// <summary>
-    /// Login endpoint with brute-force protection (5 attempts per 1 min per IP)
-    /// </summary>
     [HttpPost("login")]
-    [AllowAnonymous]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    public async Task<ActionResult<UserInfoResponse>> Login([FromBody] LoginRequest request)
     {
-        if (!_featureToggleService.IsLoginEnabled())
-            return StatusCode(503, new ProblemDetails { Title = "Feature disabled", Detail = "Login is currently disabled.", Status = 503 });
+        var (user, roles) = await _authService.ValidateCredentialsAsync(
+            request.Email, request.Password, request.TenantId);
 
-        var loginMaxAttempts = GetRateLimitSetting("Auth:RateLimit:LoginMaxAttempts", DefaultLoginMaxAttempts);
-        if (!TryConsumeRateLimit("login", loginMaxAttempts, out var retryAfter))
-            return StatusCode(429, new { error = $"Too many login attempts. Retry in {(int)Math.Ceiling((retryAfter ?? TimeSpan.Zero).TotalMinutes)} minutes." });
+        return Ok(new UserInfoResponse(
+            user.Id, user.Email!, user.FirstName, user.LastName, user.AvatarUrl,
+            user.TenantId, user.IsActive, roles, new List<string>(), request.RememberMe));
+    }
 
-        try
+    [HttpPost("register")]
+    public async Task<ActionResult<object>> Register([FromBody] RegisterRequest request)
+    {
+        var (user, code) = await _authService.RegisterAsync(
+            request.Email, request.Password, request.FirstName, request.LastName, request.TenantId);
+
+        return Ok(new
         {
-            var result = await _authService.LoginAsync(request);
-            return Success(result, "Login successful.");
-        }
-        catch
-        {
-            // Failed login keeps counter until window expires
-            throw;
-        }
+            message = "Compte créé. Un code de confirmation vous a été envoyé par email.",
+            userId = user.Id,
+            email = user.Email,
+            code = string.IsNullOrEmpty(HttpContext.RequestServices
+                .GetRequiredService<Microsoft.Extensions.Options.IOptions<Infrastructure.SmtpOptions>>().Value.Host)
+                ? code : null
+        });
     }
 
-    [HttpPost("forgot-password")]
-    [AllowAnonymous]
-    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    [HttpPost("confirm-email")]
+    public async Task<ActionResult<object>> ConfirmEmail([FromBody] ConfirmEmailRequest request)
     {
-        if (!_featureToggleService.IsPasswordResetEnabled())
-            return StatusCode(503, new ProblemDetails { Title = "Feature disabled", Detail = "Password reset is currently disabled.", Status = 503 });
-
-        var passwordResetMaxAttempts = GetRateLimitSetting("Auth:RateLimit:PasswordResetMaxAttempts", DefaultPasswordResetMaxAttempts);
-        if (!TryConsumeRateLimit("forgot-password", passwordResetMaxAttempts, out var retryAfter))
-            return StatusCode(429, new { error = $"Too many password reset attempts. Retry in {(int)Math.Ceiling((retryAfter ?? TimeSpan.Zero).TotalMinutes)} minutes." });
-
-        var token = await _authService.RequestPasswordResetAsync(request);
-        if (_environment.IsDevelopment())
-        {
-            return Success(new { token }, "Reset token generated.");
-        }
-
-        return SuccessMessage("If the email exists, a reset link was sent.");
+        await _authService.ConfirmEmailAsync(request.Email, request.Code);
+        return Ok(new { message = "Email confirmé avec succès. Vous pouvez maintenant vous connecter." });
     }
 
-    [HttpPost("request-email-verification")]
-    [AllowAnonymous]
-    public async Task<IActionResult> RequestEmailVerification([FromBody] RequestEmailVerificationRequest request)
+    [HttpGet("confirm-email")]
+    public async Task<IActionResult> ConfirmEmailGet([FromQuery] string email, [FromQuery] string code)
     {
-        if (!_featureToggleService.IsEmailVerificationEnabled())
-            return StatusCode(503, new ProblemDetails { Title = "Feature disabled", Detail = "Email verification is currently disabled.", Status = 503 });
-
-        var passwordResetMaxAttempts = GetRateLimitSetting("Auth:RateLimit:PasswordResetMaxAttempts", DefaultPasswordResetMaxAttempts);
-        if (!TryConsumeRateLimit("request-email-verification", passwordResetMaxAttempts, out var retryAfter))
-            return StatusCode(429, new { error = $"Too many verification requests. Retry in {(int)Math.Ceiling((retryAfter ?? TimeSpan.Zero).TotalMinutes)} minutes." });
-
-        var token = await _authService.RequestEmailVerificationAsync(request);
-        if (_environment.IsDevelopment())
-        {
-            return Success(new { token }, "Verification token generated.");
-        }
-
-        return SuccessMessage("If the email exists, a verification email was sent.");
+        await _authService.ConfirmEmailAsync(email, code);
+        return Content("<html><body style='font-family:Segoe UI;text-align:center;padding:60px;background:#f2f2f2'>"
+            + "<div style='max-width:480px;margin:auto;background:white;border-radius:8px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,0.08)'>"
+            + "<h1 style='color:#512BD4'>DotnetNiger</h1>"
+            + "<p style='font-size:18px;color:#333'>Votre email a été confirmé avec succès !</p>"
+            + "<p style='color:#666'>Vous pouvez fermer cette fenêtre et vous connecter.</p>"
+            + "</div></body></html>", "text/html");
     }
 
-    [HttpPost("reset-password")]
-    [AllowAnonymous]
-    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    [HttpPost("resend-code")]
+    public async Task<ActionResult<object>> ResendCode([FromBody] ForgotPasswordRequest request)
     {
-        if (!_featureToggleService.IsPasswordResetEnabled())
-            return StatusCode(503, new ProblemDetails { Title = "Feature disabled", Detail = "Password reset is currently disabled.", Status = 503 });
-
-        await _authService.ResetPasswordAsync(request);
-        return SuccessMessage("Password reset successful.");
-    }
-
-    [HttpPost("verify-email")]
-    [AllowAnonymous]
-    public async Task<IActionResult> VerifyEmail([FromBody] VerifyEmailRequest request)
-    {
-        if (!_featureToggleService.IsEmailVerificationEnabled())
-            return StatusCode(503, new ProblemDetails { Title = "Feature disabled", Detail = "Email verification is currently disabled.", Status = 503 });
-
-        await _authService.VerifyEmailAsync(request);
-        return SuccessMessage("Email verified.");
-    }
-
-    [HttpPost("refresh")]
-    [AllowAnonymous]
-    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
-    {
-        var result = await _tokenService.RefreshAsync(request);
-        return Success(result, "Token refreshed.");
+        await _authService.ResendConfirmationCodeAsync(request.Email);
+        return Ok(new { message = "Un nouveau code de confirmation vous a été envoyé." });
     }
 
     [HttpPost("logout")]
     [Authorize]
-    public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request)
+    public async Task<IActionResult> Logout()
     {
-        var userId = RequireAuthenticatedUserId();
-        await _tokenService.LogoutAsync(userId, request);
-        return SuccessMessage("Logout successful.");
+        await _signInManager.SignOutAsync();
+        return Ok(new { message = "Déconnecté" });
     }
 
-    /// <summary>
-    /// Helper: Get client IP address from HTTP context
-    /// </summary>
-    private string GetClientIpAddress()
+    [HttpGet("external-login")]
+    public IActionResult ExternalLogin([FromQuery] string provider, [FromQuery] string? returnUrl)
     {
-        if (HttpContext?.Connection?.RemoteIpAddress != null)
-        {
-            return HttpContext.Connection.RemoteIpAddress.ToString();
-        }
-
-        var forwardedFor = HttpContext?.Request.Headers["X-Forwarded-For"].FirstOrDefault();
-        if (!string.IsNullOrEmpty(forwardedFor))
-        {
-            return forwardedFor.Split(",").First().Trim();
-        }
-
-        return "unknown";
+        var redirectUrl = Url.Action(nameof(ExternalCallback), new { returnUrl });
+        var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
+        return Challenge(properties, provider);
     }
 
-    private bool TryConsumeRateLimit(string action, int limit, out TimeSpan? retryAfter)
+    [HttpGet("external-callback")]
+    public async Task<ActionResult<UserInfoResponse>> ExternalCallback(
+        [FromQuery] string? returnUrl = null, [FromQuery] bool rememberMe = false)
     {
-        var clientId = GetClientIpAddress();
-        var windowMinutes = GetRateLimitSetting("Auth:RateLimit:WindowMinutes", DefaultRateLimitWindowMinutes);
-        return _rateLimiter.TryConsume(action, clientId, limit, TimeSpan.FromMinutes(windowMinutes), out retryAfter);
+        var result = await _authService.HandleExternalLoginAsync("external");
+        return Ok(new UserInfoResponse(
+            result.user.Id, result.user.Email!, result.user.FirstName, result.user.LastName,
+            result.user.AvatarUrl, result.user.TenantId, result.user.IsActive,
+            result.roles, new List<string>(), rememberMe));
     }
 
-    private int GetRateLimitSetting(string key, int fallback)
+    [HttpGet("userinfo")]
+    [Authorize]
+    public async Task<ActionResult<UserInfoResponse>> UserInfo()
     {
-        var value = _appSettingRepository.GetValue(key);
-        return int.TryParse(value, out var parsed) ? parsed : fallback;
-    }
-}
+        var userId = User.FindFirst(OpenIddictConstants.Claims.Subject)?.Value;
+        if (userId == null) return Unauthorized();
 
-public sealed class InternalAssignMemberRoleRequest
-{
-    public Guid UserId { get; set; }
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return Unauthorized();
+
+        var roles = await _userManager.GetRolesAsync(user);
+        return Ok(new UserInfoResponse(
+            user.Id, user.Email!, user.FirstName, user.LastName, user.AvatarUrl,
+            user.TenantId, user.IsActive, roles, new List<string>()));
+    }
 }
