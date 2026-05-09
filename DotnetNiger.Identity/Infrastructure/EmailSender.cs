@@ -16,6 +16,7 @@ public class SmtpOptions
     public string Password { get; set; } = "";
     public string FromEmail { get; set; } = "noreply@dotnetniger.com";
     public string FromName { get; set; } = "DotnetNiger";
+    public string AppBaseUrl { get; set; } = "http://localhost:5075";
 }
 
 public class EmailSender : IEmailSender<ApplicationUser>
@@ -124,7 +125,7 @@ public class EmailSender : IEmailSender<ApplicationUser>
 <p style=""font-size:13px;color:#666"">Ce code expire dans 15 minutes.</p>"));
     }
 
-    public Task SendConfirmationCodeAsync(ApplicationUser user, string email, string code)
+    public Task SendConfirmationCodeAsync(ApplicationUser user, string email, string code, string? confirmationLink = null)
     {
         return SendEmailAsync(email, "Votre code de confirmation — DotnetNiger",
             BuildTemplate(
@@ -134,9 +135,9 @@ public class EmailSender : IEmailSender<ApplicationUser>
 <p style=""text-align:center;margin:24px 0;padding:16px;background:#f5f2ff;border-radius:8px"">
   <span style=""font-size:36px;font-weight:700;letter-spacing:10px;color:#512BD4;font-family:'Courier New',monospace"">{code}</span>
 </p>
-<p style=""text-align:center;margin:24px 0"">
-  <a href=""{{CONFIRM_URL}}"" style=""display:inline-block;padding:12px 28px;background:#512BD4;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600"">Confirmer mon compte</a>
-</p>
+{(confirmationLink != null ? $@"<p style=""text-align:center;margin:24px 0"">
+  <a href=""{confirmationLink}"" style=""display:inline-block;padding:12px 28px;background:#512BD4;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600"">Confirmer mon compte</a>
+</p>" : "")}
 <p style=""font-size:13px;color:#666"">Ce code expire dans 15 minutes. Si vous n'avez pas créé de compte, ignorez cet email.</p>"));
     }
 }
