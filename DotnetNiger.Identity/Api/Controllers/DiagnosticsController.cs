@@ -7,6 +7,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [Route("api/v{version:apiVersion}/diagnostics")]
 public class DiagnosticsController : ControllerBase
 {
+    /// <summary>Health check — retourne l'état du service Identity.</summary>
     [HttpGet("health")]
     public IActionResult Health()
     {

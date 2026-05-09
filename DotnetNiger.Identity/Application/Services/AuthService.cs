@@ -203,11 +203,11 @@ public class AuthService
     {
         if (!string.IsNullOrEmpty(_smtp.Host))
         {
-            var confirmUrl = $"{_smtp.FromEmail?.Replace("noreply", "app") ?? "http://localhost:5075"}/api/v1/auth/confirm-email?email={Uri.EscapeDataString(user.Email!)}&code={Uri.EscapeDataString(code)}";
+            var confirmUrl = $"{_smtp.AppBaseUrl}/api/v1/auth/confirm-email?email={Uri.EscapeDataString(user.Email!)}&code={Uri.EscapeDataString(code)}";
             await _emailSender.SendConfirmationLinkAsync(user, user.Email!, confirmUrl);
 
             if (_emailSender is EmailSender typed)
-                await typed.SendConfirmationCodeAsync(user, user.Email!, code);
+                await typed.SendConfirmationCodeAsync(user, user.Email!, code, confirmUrl);
         }
     }
 }

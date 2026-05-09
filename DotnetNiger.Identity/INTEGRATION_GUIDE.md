@@ -92,6 +92,7 @@ Réponse :
 {
   "message": "Compte créé. Un code de confirmation vous a été envoyé par email.",
   "userId": "guid-...",
+  "email": "user@example.com",
   "code": "A3F9K2"
 }
 ```
@@ -196,7 +197,11 @@ Réponse :
   "email": "user@example.com",
   "firstName": "Jean",
   "lastName": "Dupont",
+  "avatarUrl": null,
+  "tenantId": "guid-...",
+  "isActive": true,
   "roles": ["User"],
+  "permissions": [],
   "rememberMe": true
 }
 ```
@@ -220,7 +225,11 @@ GET /api/v1/auth/external-login?provider=Google
   "email": "user@gmail.com",
   "firstName": "Jean",
   "lastName": "Dupont",
-  "roles": ["User"]
+  "avatarUrl": null,
+  "tenantId": null,
+  "isActive": true,
+  "roles": ["User"],
+  "permissions": []
 }
 ```
 
@@ -288,12 +297,15 @@ Dans `appsettings.json` ou `user-secrets` :
     "Username": "votre@email.com",
     "Password": "votre-mot-de-passe",
     "FromEmail": "noreply@dotnetniger.com",
-    "FromName": "DotnetNiger"
+    "FromName": "DotnetNiger",
+    "AppBaseUrl": "http://localhost:5075"
   }
 }
 ```
 
 > Si `Host` est vide (défaut), l'email est loggé dans la console — pas d'envoi réel. Le code de confirmation est alors retourné directement dans la réponse de `/register`.
+
+> `AppBaseUrl` est utilisé pour construire le lien de confirmation dans l'email. Remplacez-la par l'URL réelle de votre déploiement en production.
 
 ---
 

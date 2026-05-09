@@ -197,15 +197,16 @@ public static class ServiceExtensions
             {
                 Title = "DotnetNiger Identity API",
                 Version = "v1.0",
-                Description = "Identity Provider multi-tenant - Gère l'authentification, l'autorisation, " +
-                              "les utilisateurs, rôles et permissions avec isolation complète par tenant.\n\n" +
-                              "**Pour obtenir un JWT** : utiliser `POST /connect/token` avec Content-Type `application/x-www-form-urlencoded` " +
-                              "et le body `grant_type=password&username=...&password=...&scope=api+roles`. " +
-                              "Exemple avec curl :\n" +
+                Description = "Identity Provider multi-tenant avec OpenIddict (OAuth2/OIDC).\n\n" +
+                              "**Auth locale** : `POST /api/v1/auth/login` puis `POST /connect/token`\n" +
+                              "**Auth externe** : `GET /api/v1/auth/external-login?provider=Google|GitHub|Microsoft`\n" +
+                              "**Inscription** : `POST /api/v1/auth/register` + confirmation email\n" +
+                              "**Health** : `GET /health` ou `GET /api/v1/diagnostics/health`\n\n" +
+                              "### Obtenir un JWT\n" +
                               "```\n" +
                               "curl -X POST http://localhost:5075/connect/token \\\n" +
                               "  -H \"Content-Type: application/x-www-form-urlencoded\" \\\n" +
-                              "  -d \"grant_type=password&username=admin@dotnetniger.com&password=Admin%40123456&scope=api+roles\"\n" +
+                              "  -d \"grant_type=password&username=admin@dotnetniger.com&password=Admin%40123456&scope=openid+profile+email+roles+offline_access&remember_me=true\"\n" +
                               "```"
             });
 
