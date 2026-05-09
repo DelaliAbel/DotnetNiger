@@ -72,6 +72,9 @@ DotnetNigerCommunity.db
 DotnetNigerCommunity.db-shm
 DotnetNigerCommunity.db-wal
 
+# Uploads
+uploads/
+
 # OS files
 .DS_Store
 Thumbs.db
