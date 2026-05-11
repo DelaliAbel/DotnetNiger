@@ -1,194 +1,238 @@
-using DotnetNiger.Community.Application.Services.Interfaces;
-using DotnetNiger.Community.Application.Abstractions.Persistence;
+using DotnetNiger.Community.Infrastructure;
+using DotnetNiger.Community.Application.DTOs;
 using DotnetNiger.Community.Domain.Entities;
-using DotnetNiger.Community.Application.Constants;
-using DotnetNiger.Community.Application.DTOs.Responses;
+using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Application.Services;
 
-public class EventService : IEventService
+public class EventService(AppDbContext db) : IEventService
 {
-    private readonly IEventPersistence _eventRepository;
-    private readonly IEventRegistrationPersistence _registrationRepository;
-    private readonly ISlugGenerator _slugGenerator;
-
-    public EventService(
-        IEventPersistence eventRepository,
-        IEventRegistrationPersistence registrationRepository,
-        ISlugGenerator slugGenerator)
+    public async Task<PaginatedResponse<EventResponse>> GetAllAsync(string? published, string? past, string? eventType, string? query, int page = 1, int pageSize = 10)
     {
-        _eventRepository = eventRepository;
-        _registrationRepository = registrationRepository;
-        _slugGenerator = slugGenerator;
+        var q = db.Events
+            .Include(e => e.Medias)
+            .AsQueryable();
+
+        if (published == "true") q = q.Where(e => e.IsPublished);
+        if (published == "false") q = q.Where(e => !e.IsPublished);
+        if (past == "true") q = q.Where(e => e.EndDate < DateTime.UtcNow);
+        if (past == "false") q = q.Where(e => e.EndDate >= DateTime.UtcNow);
+        if (!string.IsNullOrWhiteSpace(eventType)) q = q.Where(e => e.EventType == eventType);
+        if (!string.IsNullOrWhiteSpace(query))
+            q = q.Where(e => e.Title.Contains(query) || e.Description.Contains(query));
+
+        var total = await q.CountAsync();
+        var items = await q
+            .OrderByDescending(e => e.StartDate)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(e => MapEvent(e))
+            .ToListAsync();
+
+        return new PaginatedResponse<EventResponse> { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }
 
-    public async Task<IEnumerable<Event>> GetAllEventsAsync(int page = ValidationConstants.DefaultPage, int pageSize = ValidationConstants.DefaultPageSize)
+    public async Task<List<EventResponse>> GetUpcomingAsync(int page = 1, int pageSize = 10)
     {
-        // Server-side pagination: Query executed in database, not on client
-        // Proper database-side Skip/Take prevents loading entire table into memory
-        page = Math.Max(1, page);
-        pageSize = Math.Min(pageSize, ValidationConstants.MaxPageSize); // Cap at 100 for safety
-
-        return await _eventRepository.GetPagedAsync(page, pageSize);
+        return await db.Events
+            .Include(e => e.Medias)
+            .Where(e => e.IsPublished && e.EndDate >= DateTime.UtcNow)
+            .OrderBy(e => e.StartDate)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(e => MapEvent(e))
+            .ToListAsync();
     }
 
-    public async Task<Event?> GetEventByIdAsync(Guid id)
+    public async Task<EventResponse?> GetByIdAsync(Guid id)
     {
-        return await _eventRepository.GetByIdAsync(id);
+        var ev = await db.Events.Include(e => e.Medias).FirstOrDefaultAsync(e => e.Id == id);
+        return ev is null ? null : MapEvent(ev);
     }
 
-    public async Task<IEnumerable<Event>> GetUpcomingEventsAsync(int limit = 10)
+    public async Task<EventResponse?> GetBySlugAsync(string slug)
     {
-        return await _eventRepository.GetUpcomingEventsAsync(limit);
+        var ev = await db.Events.Include(e => e.Medias).FirstOrDefaultAsync(e => e.Slug == slug);
+        return ev is null ? null : MapEvent(ev);
     }
 
-    public async Task<IEnumerable<Event>> GetPastEventsAsync(int limit = 10)
+    public async Task<EventResponse> CreateAsync(CreateEventRequest request, Guid userId)
     {
-        return await _eventRepository.GetPastEventsAsync(limit);
+        var ev = new Event
+        {
+            Id = Guid.NewGuid(),
+            Title = request.Title,
+            Slug = GenerateSlug(request.Title),
+            Description = request.Description,
+            Location = request.Location,
+            EventType = request.EventType,
+            StartDate = request.StartDate,
+            EndDate = request.EndDate,
+            CoverImageUrl = request.CoverImageUrl,
+            CreatedBy = userId,
+            Capacity = request.Capacity,
+            MeetupLink = request.MeetupLink,
+            IsPublished = request.IsPublished,
+            IsArchived = request.IsArchived,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        db.Events.Add(ev);
+        await db.SaveChangesAsync();
+        return MapEvent(ev);
     }
 
-    public async Task<Event> CreateEventAsync(Event @event)
+    public async Task<EventResponse?> UpdateAsync(Guid id, CreateEventRequest request)
     {
-        if (@event == null)
-            throw new ArgumentNullException(nameof(@event), "Event cannot be null");
+        var ev = await db.Events.Include(e => e.Medias).FirstOrDefaultAsync(e => e.Id == id);
+        if (ev is null) return null;
 
-        @event.Id = Guid.NewGuid();
-        @event.CreatedAt = DateTime.UtcNow;
-        @event.Slug = _slugGenerator.Generate(@event.Title);
-        return await _eventRepository.AddAsync(@event);
+        ev.Title = request.Title;
+        ev.Slug = GenerateSlug(request.Title);
+        ev.Description = request.Description;
+        ev.Location = request.Location;
+        ev.EventType = request.EventType;
+        ev.StartDate = request.StartDate;
+        ev.EndDate = request.EndDate;
+        ev.CoverImageUrl = request.CoverImageUrl;
+        ev.Capacity = request.Capacity;
+        ev.MeetupLink = request.MeetupLink;
+        ev.IsPublished = request.IsPublished;
+        ev.IsArchived = request.IsArchived;
+        ev.UpdatedAt = DateTime.UtcNow;
+
+        await db.SaveChangesAsync();
+        return MapEvent(ev);
     }
 
-    public async Task<Event> UpdateEventAsync(Event @event)
+    public async Task<bool> DeleteAsync(Guid id)
     {
-        if (@event == null)
-            throw new ArgumentNullException(nameof(@event), "Event cannot be null");
-
-        if (@event.Id == Guid.Empty)
-            throw new ArgumentException("Event ID cannot be empty", nameof(@event));
-
-        @event.UpdatedAt = DateTime.UtcNow;
-        @event.Slug = _slugGenerator.Generate(@event.Title);
-        return await _eventRepository.UpdateAsync(@event);
+        var ev = await db.Events.FindAsync(id);
+        if (ev is null) return false;
+        db.Events.Remove(ev);
+        await db.SaveChangesAsync();
+        return true;
     }
 
-    public async Task<bool> DeleteEventAsync(Guid id)
+    public async Task<EventResponse?> PublishAsync(Guid id)
     {
-        return await _eventRepository.DeleteAsync(id);
+        var ev = await db.Events.Include(e => e.Medias).FirstOrDefaultAsync(e => e.Id == id);
+        if (ev is null) return null;
+        ev.IsPublished = true;
+        ev.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+        return MapEvent(ev);
     }
 
-    // ====== Event Registration Methods - SECURE ======
-
-    /// <summary>
-    /// Enregistrer l'utilisateur actuel (depuis JWT) à un événement
-    /// SÉCURISÉ: UserId vient du JWT token, pas du client
-    /// </summary>
-    public async Task<EventRegistrationResponse> RegisterToEventAsync(Guid eventId, Guid userId)
+    public async Task<EventResponse?> UnpublishAsync(Guid id)
     {
-        if (eventId == Guid.Empty)
-            throw new ArgumentException("Event ID cannot be empty", nameof(eventId));
-        if (userId == Guid.Empty)
-            throw new ArgumentException("User ID cannot be empty", nameof(userId));
+        var ev = await db.Events.Include(e => e.Medias).FirstOrDefaultAsync(e => e.Id == id);
+        if (ev is null) return null;
+        ev.IsPublished = false;
+        ev.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+        return MapEvent(ev);
+    }
 
-        // Vérifier que l'événement existe
-        var @event = await _eventRepository.GetByIdAsync(eventId);
-        if (@event == null)
-            throw new InvalidOperationException($"Event with ID {eventId} not found");
+    public async Task<EventRegistrationResponse> RegisterAsync(Guid eventId, Guid userId, string userName)
+    {
+        var ev = await db.Events.FindAsync(eventId) ?? throw new InvalidOperationException("Event not found");
 
-        // Vérifier que l'utilisateur n'est pas déjà enregistré
-        if (await _registrationRepository.IsUserRegisteredAsync(eventId, userId))
-            throw new InvalidOperationException("User is already registered to this event");
+        var existing = await db.EventRegistrations.AnyAsync(r => r.EventId == eventId && r.UserId == userId);
+        if (existing) throw new InvalidOperationException("Already registered");
 
-        // Créer l'enregistrement
+        if (ev.RegisteredCount >= ev.Capacity) throw new InvalidOperationException("Event is full");
+
         var registration = new EventRegistration
         {
             Id = Guid.NewGuid(),
             EventId = eventId,
             UserId = userId,
+            UserName = userName,
             RegisteredAt = DateTime.UtcNow,
-            IsAttended = false,
-            RegistrationStatus = "Registered"
+            RegistrationStatus = "Confirmed"
         };
 
-        var createdRegistration = await _registrationRepository.AddAsync(registration);
-        return MapToDto(createdRegistration, @event.Title);
+        ev.RegisteredCount++;
+        db.EventRegistrations.Add(registration);
+        await db.SaveChangesAsync();
+
+        return MapRegistration(registration, ev.Title);
     }
 
-    /// <summary>
-    /// Annuler l'enregistrement avec vérification de propriété
-    /// SÉCURISÉ: Vérifie que l'utilisateur annule son propre enregistrement
-    /// </summary>
     public async Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId)
     {
-        if (eventId == Guid.Empty)
-            throw new ArgumentException("Event ID cannot be empty", nameof(eventId));
-        if (userId == Guid.Empty)
-            throw new ArgumentException("User ID cannot be empty", nameof(userId));
+        var reg = await db.EventRegistrations.FirstOrDefaultAsync(r => r.EventId == eventId && r.UserId == userId);
+        if (reg is null) return false;
 
-        // Récupérer l'enregistrement existant
-        var registration = await _registrationRepository.GetUserRegistrationAsync(eventId, userId);
-        if (registration == null)
-            throw new InvalidOperationException("Registration not found");
+        var ev = await db.Events.FindAsync(eventId);
+        if (ev is not null) ev.RegisteredCount--;
 
-        // Marquer comme annulé au lieu de supprimer (soft delete)
-        registration.RegistrationStatus = "Cancelled";
-        await _registrationRepository.UpdateAsync(registration);
+        db.EventRegistrations.Remove(reg);
+        await db.SaveChangesAsync();
         return true;
     }
 
-    /// <summary>
-    /// Récupérer les enregistrements d'un événement
-    /// </summary>
-    public async Task<IEnumerable<EventRegistrationResponse>> GetEventRegistrationsAsync(Guid eventId)
+    public async Task<List<EventRegistrationResponse>> GetRegistrationsAsync(Guid eventId)
     {
-        if (eventId == Guid.Empty)
-            throw new ArgumentException("Event ID cannot be empty", nameof(eventId));
-
-        var @event = await _eventRepository.GetByIdAsync(eventId);
-        if (@event == null)
-            throw new InvalidOperationException($"Event with ID {eventId} not found");
-
-        var registrations = await _registrationRepository.GetEventRegistrationsAsync(eventId);
-        return registrations.Select(r => MapToDto(r, @event.Title)).ToList();
+        return await db.EventRegistrations
+            .Where(r => r.EventId == eventId)
+            .Select(r => MapRegistration(r, ""))
+            .ToListAsync();
     }
 
-    /// <summary>
-    /// Récupérer les enregistrements d'un utilisateur
-    /// </summary>
-    public async Task<IEnumerable<EventRegistrationResponse>> GetUserRegistrationsAsync(Guid userId)
+    private static EventResponse MapEvent(Event e) => new()
     {
-        if (userId == Guid.Empty)
-            throw new ArgumentException("User ID cannot be empty", nameof(userId));
-
-        var registrations = await _registrationRepository.GetUserRegistrationsAsync(userId);
-
-        // Enrichir avec les titres des événements
-        var registrationDtos = new List<EventRegistrationResponse>();
-        foreach (var reg in registrations)
+        Id = e.Id,
+        Title = e.Title,
+        Slug = e.Slug,
+        Description = e.Description,
+        Location = e.Location,
+        EventType = e.EventType,
+        StartDate = e.StartDate,
+        EndDate = e.EndDate,
+        CoverImageUrl = e.CoverImageUrl,
+        CreatedBy = e.CreatedBy,
+        OrganizerName = e.OrganizerName,
+        Capacity = e.Capacity,
+        RegisteredCount = e.RegisteredCount,
+        IsPublished = e.IsPublished,
+        IsArchived = e.IsArchived,
+        MeetupLink = e.MeetupLink,
+        CreatedAt = e.CreatedAt,
+        Medias = e.Medias.Select(m => new EventMediaResponse
         {
-            var @event = await _eventRepository.GetByIdAsync(reg.EventId);
-            registrationDtos.Add(MapToDto(reg, @event?.Title ?? "Unknown Event"));
-        }
+            Id = m.Id,
+            Type = m.Type,
+            Url = m.Url,
+            Title = m.Title
+        }).ToList()
+    };
 
-        return registrationDtos;
-    }
-
-    // ====== Helper Methods ======
-
-    /// <summary>
-    /// Mapper EventRegistration vers EventRegistrationDto
-    /// </summary>
-    private static EventRegistrationResponse MapToDto(EventRegistration registration, string eventTitle)
+    private static EventRegistrationResponse MapRegistration(EventRegistration r, string eventTitle) => new()
     {
-        return new EventRegistrationResponse
-        {
-            Id = registration.Id,
-            EventId = registration.EventId,
-            EventTitle = eventTitle,
-            UserId = registration.UserId,
-            UserName = string.Empty, // Sera rempli par le controller si nécessaire
-            RegisteredAt = registration.RegisteredAt,
-            IsAttended = registration.IsAttended,
-            RegistrationStatus = registration.RegistrationStatus
-        };
+        Id = r.Id,
+        EventId = r.EventId,
+        EventTitle = eventTitle,
+        UserId = r.UserId,
+        UserName = r.UserName,
+        RegisteredAt = r.RegisteredAt,
+        IsAttended = r.IsAttended,
+        RegistrationStatus = r.RegistrationStatus
+    };
+
+    private static string GenerateSlug(string text)
+    {
+        return text.ToLowerInvariant()
+            .Replace(" ", "-")
+            .Replace("'", "").Replace(".", "").Replace(",", "")
+            .Replace("é", "e").Replace("è", "e").Replace("ê", "e")
+            .Replace("à", "a").Replace("â", "a")
+            .Replace("ù", "u").Replace("û", "u")
+            .Replace("ô", "o").Replace("ö", "o")
+            .Replace("î", "i").Replace("ï", "i")
+            .Replace("ç", "c")
+            .Replace("\"", "").Replace("'", "");
     }
 }

@@ -1,66 +1,62 @@
-// Controleur API Identity: PermissionsController
-using Asp.Versioning;
-using DotnetNiger.Identity.Application.DTOs.Requests;
-using DotnetNiger.Identity.Application.DTOs.Responses;
-using DotnetNiger.Identity.Application.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using DotnetNiger.Identity.Application.DTOs;
+using DotnetNiger.Identity.Application.Services;
 
 namespace DotnetNiger.Identity.Api.Controllers;
 
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/permissions")]
-[Authorize(Roles = "SuperAdmin")]
-// Endpoints pour la gestion des permissions.
-public class PermissionsController : ApiControllerBase
+[Route("api/v{version:apiVersion}/{tenantId:guid}/permissions")]
+[Authorize(Roles = "Admin")]
+public class PermissionsController : ControllerBase
 {
-    private readonly IPermissionService _permissionService;
+    private readonly PermissionService _permissionService;
 
-    public PermissionsController(IPermissionService permissionService)
-    {
-        _permissionService = permissionService;
-    }
+    public PermissionsController(PermissionService permissionService) => _permissionService = permissionService;
 
-    [HttpGet]
-    public async Task<IActionResult> GetPermissions()
-    {
-        var permissions = await _permissionService.GetAllAsync();
-        return Success(permissions);
-    }
-
+    /// <summary>Crée une nouvelle permission dans le tenant.</summary>
     [HttpPost]
-    public async Task<IActionResult> CreatePermission([FromBody] AddPermissionRequest request)
+    public async Task<ActionResult<PermissionResponse>> Create(Guid tenantId,
+        [FromBody] CreatePermissionRequest request)
     {
+        if (request.TenantId != tenantId)
+            return BadRequest(new ErrorResponse("Tenant mismatch"));
+
         var permission = await _permissionService.CreateAsync(request);
-        return Success(permission, "Permission created successfully.");
+        return CreatedAtAction(nameof(GetAll), new { tenantId }, permission);
     }
 
+    /// <summary>Liste toutes les permissions du tenant.</summary>
+    [HttpGet]
+    public async Task<ActionResult<List<PermissionResponse>>> GetAll(Guid tenantId)
+    {
+        var permissions = await _permissionService.GetByTenantAsync(tenantId);
+        return Ok(permissions);
+    }
+
+    /// <summary>Liste les permissions groupées par catégorie.</summary>
+    [HttpGet("grouped")]
+    public async Task<ActionResult<List<PermissionGroupResponse>>> GetGrouped(Guid tenantId)
+    {
+        var grouped = await _permissionService.GetGroupedByTenantAsync(tenantId);
+        return Ok(grouped);
+    }
+
+    /// <summary>Supprime une permission.</summary>
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> DeletePermission(Guid id)
+    public async Task<IActionResult> Delete(Guid tenantId, Guid id)
     {
         await _permissionService.DeleteAsync(id);
-        return SuccessMessage("Permission deleted successfully.");
+        return NoContent();
     }
 
+    /// <summary>Assigne des permissions à un rôle.</summary>
     [HttpPost("assign")]
-    public async Task<IActionResult> AssignPermission([FromBody] AssignPermissionRequest request)
+    public async Task<IActionResult> AssignToRole(Guid tenantId,
+        [FromBody] AssignPermissionsRequest request)
     {
-        await _permissionService.AssignToRoleAsync(request);
-        return SuccessMessage("Permission assigned successfully.");
-    }
-
-    [HttpPost("remove")]
-    public async Task<IActionResult> RemovePermission([FromBody] AssignPermissionRequest request)
-    {
-        await _permissionService.RemoveFromRoleAsync(request);
-        return SuccessMessage("Permission removed successfully.");
-    }
-
-    [HttpGet("role/{roleId:guid}")]
-    public async Task<IActionResult> GetRolePermissions(Guid roleId)
-    {
-        var permissions = await _permissionService.GetRolePermissionsAsync(roleId);
-        return Success(permissions);
+        await _permissionService.AssignToRoleAsync(request.RoleId, request.PermissionIds.ToList());
+        return NoContent();
     }
 }

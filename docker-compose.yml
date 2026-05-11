@@ -36,7 +36,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8081
-      - ConnectionStrings__DotnetNigerDb=Data Source=/tmp/DotnetNiger.Identity.db
+      - ConnectionStrings__DefaultConnection=Data Source=/data/DotnetNigerIdentity.db
       - CommunityApi__BaseUrl=http://community:8082/
       - CommunityApi__ProvisioningApiKey=dev-internal-provisioning-key-change-me
       - Integration__ProvisioningApiKey=dev-internal-provisioning-key-change-me

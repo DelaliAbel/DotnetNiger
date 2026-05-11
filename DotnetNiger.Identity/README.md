@@ -1,37 +1,51 @@
 # DotnetNiger.Identity
 
-Service Identity pour l'authentification et la gestion des utilisateurs.
+Service d'authentification et d'autorisation multi-tenant basé sur **ASP.NET Core Identity** + **OpenIddict** (OAuth2/OIDC).
 
-Derniere mise a jour: 2026-03-14
+## Technologies
 
-## Demarrage rapide
+- .NET 9.0
+- ASP.NET Core Identity (users, rôles, email)
+- OpenIddict (OAuth2/OIDC — password flow, refresh token)
+- SQLite (EF Core)
+- Swagger / OpenAPI
+- Serilog
+- FluentValidation
+- MailKit (SMTP)
+- Google, Microsoft, GitHub OAuth
+
+## Démarrage
 
 ```bash
-dotnet restore
 cd DotnetNiger.Identity
-dotnet ef database update
 dotnet run
 ```
 
-Swagger: <http://localhost:5075/swagger>
+Service disponible sur `http://localhost:5075`.
 
-## Endpoints importants
+## Endpoints principaux
 
-- POST /api/v1/auth/login
-- POST /api/v1/auth/register
-- GET /api/v1/me
-- PUT /api/v1/me
-- GET /api/v1/admin/users
-- GET /api/v1/diagnostics/ping
-- GET /api/v1/diagnostics/health
+| Méthode | Endpoint | Description |
+|---------|----------|-------------|
+| POST | `/connect/token` | Obtenir un JWT (password/refresh token) |
+| POST | `/api/v1/auth/register` | Créer un compte |
+| POST | `/api/v1/auth/login` | Login JSON (validation) |
+| POST | `/api/v1/auth/confirm-email` | Confirmer l'email |
+| GET | `/api/v1/auth/userinfo` | Infos utilisateur connecté |
+| GET | `/api/v1/diagnostics/health` | Health check |
+| GET | `/.well-known/openid-configuration` | Métadonnées OIDC |
+| GET | `/.well-known/jwks` | Clés publiques RSA |
 
-## Build
+## Configuration
 
-Le warning NU1900 est neutralise dans le projet Identity pour les environnements reseau restreints.
-
-## Tests
+Utiliser `user-secrets` pour les clés sensibles :
 
 ```bash
-dotnet test DotnetNiger.Identity.Tests
-dotnet test DotnetNiger.Identity.IntegrationTests
+dotnet user-secrets set "Smtp:Password" "votre-mot-de-passe"
+dotnet user-secrets set "Authentication:Google:ClientId" "..."
+dotnet user-secrets set "Authentication:Google:ClientSecret" "..."
 ```
+
+## Documentation intégration
+
+Voir [INTEGRATION_GUIDE.md](INTEGRATION_GUIDE.md) pour le guide complet d'intégration client (JWT, social login, multi-tenant, endpoints).

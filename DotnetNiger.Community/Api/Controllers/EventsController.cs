@@ -1,261 +1,96 @@
-using Asp.Versioning;
-using Microsoft.AspNetCore.Mvc;
-using DotnetNiger.Community.Api.Services;
-using DotnetNiger.Community.Application.DTOs.Requests;
-using DotnetNiger.Community.Application.Mappers;
-using DotnetNiger.Community.Application.Services.Interfaces;
+using System.Security.Claims;
+using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
-/// <summary>
-/// Controller pour gérer les événements
-/// </summary>
 [ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/events")]
-public class EventsController : ApiControllerBase
+[Route("api/v1/[controller]")]
+public class EventsController(IEventService eventService) : ControllerBase
 {
-    private readonly IEventService _eventService;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly ICommunityRequestMapper _requestMapper;
-
-    public EventsController(
-        IEventService eventService,
-        ICurrentUserService currentUserService,
-        ICommunityRequestMapper requestMapper)
-    {
-        _eventService = eventService;
-        _currentUserService = currentUserService;
-        _requestMapper = requestMapper;
-    }
-
-    /// <summary>
-    /// Récupérer tous les événements
-    /// </summary>
-    /// <param name="page">Numéro de page (par défaut 1)</param>
-    /// <param name="pageSize">Nombre d'événements par page (par défaut 10)</param>
-    /// <returns>Liste paginée des événements</returns>
     [HttpGet]
-    public async Task<IActionResult> GetEvents([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAll([FromQuery] string? published, [FromQuery] string? past, [FromQuery] string? eventType, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        if (page < 1 || pageSize < 1 || pageSize > 100)
-            return BadRequestProblem("Parametres de pagination invalides");
-
-        var events = await _eventService.GetAllEventsAsync(page, pageSize);
-        return Success(events, meta: new { page, pageSize, total = events.Count() });
+        var result = await eventService.GetAllAsync(published, past, eventType, query, page, pageSize);
+        return Ok(new { Success = true, Data = result });
     }
 
-    /// <summary>
-    /// Récupérer un événement par ID
-    /// </summary>
-    /// <param name="id">ID de l'événement</param>
-    /// <returns>Détails de l'événement</returns>
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetEventById(string id)
-    {
-        var eventId = ParseGuidOrThrow(id, nameof(id), "ID de l'evenement invalide");
-
-        var @event = await _eventService.GetEventByIdAsync(eventId);
-        if (@event == null)
-            return NotFoundProblem("Evenement non trouve");
-
-        return Success(@event);
-    }
-
-    /// <summary>
-    /// Récupérer les événements à venir
-    /// </summary>
-    /// <param name="limit">Nombre d'événements (par défaut 10)</param>
-    /// <returns>Événements à venir</returns>
     [HttpGet("upcoming")]
-    public async Task<IActionResult> GetUpcomingEvents([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetUpcoming([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        if (page < 1 || pageSize < 1 || pageSize > 100)
-            return BadRequestProblem("Invalid pagination parameters");
-
-        var events = await _eventService.GetUpcomingEventsAsync(pageSize);
-        var paginatedEvents = events
-            .OrderBy(e => e.StartDate)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-        return Success(paginatedEvents, meta: new { page, pageSize, total = events.Count() });
+        var events = await eventService.GetUpcomingAsync(page, pageSize);
+        return Ok(new { Success = true, Data = events });
     }
 
-    /// <summary>
-    /// Créer un nouvel événement
-    /// </summary>
-    /// <param name="request">Données de l'événement</param>
-    /// <returns>Événement créé</returns>
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        var ev = await eventService.GetByIdAsync(id);
+        if (ev is null) return NotFound(new { Success = false, Message = "Event not found" });
+        return Ok(new { Success = true, Data = ev });
+    }
+
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> CreateEvent([FromBody] CreateEventRequest request)
+    public async Task<IActionResult> Create([FromBody] CreateEventRequest request)
     {
-        if (request == null || string.IsNullOrEmpty(request.Title))
-            return BadRequestProblem("Titre requis");
-
-        var currentUserId = _currentUserService.GetRequiredUserId();
-        var @event = _requestMapper.MapToEvent(request, currentUserId);
-
-        var createdEvent = await _eventService.CreateEventAsync(@event);
-        return CreatedSuccess(nameof(GetEventById), new { id = createdEvent.Id }, createdEvent, "Evenement cree avec succes");
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var ev = await eventService.CreateAsync(request, userId);
+        return CreatedAtAction(nameof(GetById), new { id = ev.Id }, new { Success = true, Data = ev });
     }
 
-    /// <summary>
-    /// Mettre à jour un événement
-    /// </summary>
-    /// <param name="id">ID de l'événement</param>
-    /// <param name="request">Données à mettre à jour</param>
-    /// <returns>Événement mis à jour</returns>
-    [HttpPut("{id}")]
+    [HttpPut("{id:guid}")]
     [Authorize]
-    public async Task<IActionResult> UpdateEvent(string id, [FromBody] UpdateEventRequest request)
+    public async Task<IActionResult> Update(Guid id, [FromBody] CreateEventRequest request)
     {
-        var eventId = ParseGuidOrThrow(id, nameof(id), "ID de l'evenement invalide");
-
-        var @event = await _eventService.GetEventByIdAsync(eventId);
-        if (@event == null)
-            return NotFoundProblem("Evenement non trouve");
-
-        var currentUserId = _currentUserService.GetRequiredUserId();
-        var canModerate = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
-        if (@event.CreatedBy != currentUserId && !canModerate)
-            return Forbid();
-
-        _requestMapper.ApplyEventUpdates(@event, request);
-        var updatedEvent = await _eventService.UpdateEventAsync(@event);
-        return Success(updatedEvent, "Evenement mis a jour avec succes");
+        var ev = await eventService.UpdateAsync(id, request);
+        if (ev is null) return NotFound(new { Success = false, Message = "Event not found" });
+        return Ok(new { Success = true, Data = ev });
     }
 
-    /// <summary>
-    /// Supprimer un événement
-    /// </summary>
-    /// <param name="id">ID de l'événement</param>
-    /// <returns>Confirmation de suppression</returns>
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:guid}")]
     [Authorize]
-    public async Task<IActionResult> DeleteEvent(string id)
+    public async Task<IActionResult> Delete(Guid id)
     {
-        var eventId = ParseGuidOrThrow(id, nameof(id), "ID de l'evenement invalide");
-
-        var @event = await _eventService.GetEventByIdAsync(eventId);
-        if (@event == null)
-            return NotFoundProblem("Evenement non trouve");
-
-        var currentUserId = _currentUserService.GetRequiredUserId();
-        var canModerate = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
-        if (@event.CreatedBy != currentUserId && !canModerate)
-            return Forbid();
-
-        var deleted = await _eventService.DeleteEventAsync(eventId);
-        if (!deleted)
-            return NotFoundProblem("Evenement non trouve");
-
-        return SuccessMessage("Evenement supprime avec succes");
+        var deleted = await eventService.DeleteAsync(id);
+        if (!deleted) return NotFound(new { Success = false, Message = "Event not found" });
+        return Ok(new { Success = true, Message = "Event deleted" });
     }
 
-    // ====== Event Registration Endpoints - SECURE ======
-
-    /// <summary>
-    /// Enregistrer l'utilisateur actuel à un événement
-    /// SÉCURISÉ: UserId vient du JWT token, pas du client
-    /// </summary>
-    /// <param name="request">Données d'enregistrement (juste EventId)</param>
-    /// <returns>Détails de l'enregistrement</returns>
     [HttpPost("registrations")]
     [Authorize]
-    public async Task<IActionResult> RegisterToEvent([FromBody] RegisterEventRequest request)
+    public async Task<IActionResult> Register([FromBody] RegisterEventRequest request)
     {
-        if (request == null || request.EventId == Guid.Empty)
-            return BadRequestProblem("EventId requis et doit être valide");
-
         try
         {
-            // SÉCURISÉ: Extraire UserId du JWT token (pas du client)
-            var userId = RequireAuthenticatedUserId();
-
-            var registration = await _eventService.RegisterToEventAsync(request.EventId, userId);
-
-            return CreatedSuccess(
-                nameof(GetEventById),
-                new { id = request.EventId },
-                registration,
-                "Enregistrement à l'événement réussi");
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var userName = User.FindFirstValue("full_name") ?? "Unknown";
+            var registration = await eventService.RegisterAsync(request.EventId, userId, userName);
+            return Ok(new { Success = true, Data = registration });
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequestProblem(ex.Message);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Unauthorized(new ProblemDetails
-            {
-                Title = "Non autorisé",
-                Detail = "Vous devez être connecté pour vous enregistrer à un événement",
-                Status = StatusCodes.Status401Unauthorized
-            });
+            return BadRequest(new { Success = false, Message = ex.Message });
         }
     }
 
-    /// <summary>
-    /// Annuler l'enregistrement de l'utilisateur actuel à un événement
-    /// SÉCURISÉ: Vérifie que l'utilisateur annule son propre enregistrement
-    /// </summary>
-    /// <param name="eventId">ID de l'événement</param>
-    /// <returns>Confirmation d'annulation</returns>
-    [HttpDelete("{eventId}/registrations")]
+    [HttpDelete("{eventId:guid}/registrations")]
     [Authorize]
-    public async Task<IActionResult> CancelRegistration(string eventId)
+    public async Task<IActionResult> CancelRegistration(Guid eventId)
     {
-        var eventIdParsed = ParseGuidOrThrow(eventId, nameof(eventId), "ID de l'événement invalide");
-
-        try
-        {
-            // SÉCURISÉ: Extraire UserId du JWT token
-            var userId = RequireAuthenticatedUserId();
-
-            var result = await _eventService.CancelRegistrationAsync(eventIdParsed, userId);
-
-            if (result)
-                return SuccessMessage("Enregistrement annulé avec succès");
-
-            return NotFoundProblem("Enregistrement non trouvé");
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFoundProblem(ex.Message);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Unauthorized(new ProblemDetails
-            {
-                Title = "Non autorisé",
-                Detail = "Vous devez être connecté pour annuler votre enregistrement",
-                Status = StatusCodes.Status401Unauthorized
-            });
-        }
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var cancelled = await eventService.CancelRegistrationAsync(eventId, userId);
+        if (!cancelled) return NotFound(new { Success = false, Message = "Registration not found" });
+        return Ok(new { Success = true, Message = "Registration cancelled" });
     }
 
-    /// <summary>
-    /// Récupérer les enregistrements d'un événement (admin)
-    /// </summary>
-    /// <param name="eventId">ID de l'événement</param>
-    /// <returns>Liste des enregistrements</returns>
-    [HttpGet("{eventId}/registrations")]
-    [Authorize(Roles = "Admin,SuperAdmin")]
-    public async Task<IActionResult> GetEventRegistrations(string eventId)
+    [HttpGet("{eventId:guid}/registrations")]
+    [Authorize]
+    public async Task<IActionResult> GetRegistrations(Guid eventId)
     {
-        var eventIdParsed = ParseGuidOrThrow(eventId, nameof(eventId), "ID de l'événement invalide");
-
-        try
-        {
-            var registrations = await _eventService.GetEventRegistrationsAsync(eventIdParsed);
-            return Success(registrations, meta: new { count = registrations.Count() });
-        }
-        catch (InvalidOperationException ex)
-        {
-            return NotFoundProblem(ex.Message);
-        }
+        var registrations = await eventService.GetRegistrationsAsync(eventId);
+        return Ok(new { Success = true, Data = registrations });
     }
 }

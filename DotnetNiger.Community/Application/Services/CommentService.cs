@@ -1,58 +1,121 @@
-using DotnetNiger.Community.Application.Services.Interfaces;
-using DotnetNiger.Community.Application.Abstractions.Persistence;
+using DotnetNiger.Community.Infrastructure;
+using DotnetNiger.Community.Application.DTOs;
 using DotnetNiger.Community.Domain.Entities;
-using System.Web;
-using DotnetNiger.Community.Application.Constants;
+using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Application.Services;
 
-public class CommentService : ICommentService
+public class CommentService(AppDbContext db) : ICommentService
 {
-    private readonly ICommentPersistence _commentRepository;
-
-    public CommentService(ICommentPersistence commentRepository)
+    public async Task<List<CommentResponse>> GetByPostIdAsync(Guid postId)
     {
-        _commentRepository = commentRepository;
+        var comments = await db.Comments
+            .Where(c => c.PostId == postId)
+            .OrderByDescending(c => c.CreatedAt)
+            .ToListAsync();
+        return BuildTree(comments);
     }
 
-    public async Task<IEnumerable<Comment>> GetAllCommentsAsync(int page = ValidationConstants.DefaultPage, int pageSize = 20)
+    public async Task<List<CommentResponse>> GetByEventIdAsync(Guid eventId)
     {
-        // Server-side pagination: Use database-side Skip/Take
-        page = Math.Max(1, page);
-        pageSize = Math.Min(pageSize, ValidationConstants.MaxPageSize); // Cap at 100 for safety
-        return await _commentRepository.GetPagedAsync(page, pageSize);
+        var comments = await db.Comments
+            .Where(c => c.EventId == eventId)
+            .OrderByDescending(c => c.CreatedAt)
+            .ToListAsync();
+        return BuildTree(comments);
     }
 
-    public async Task<Comment?> GetCommentByIdAsync(Guid id)
+    public async Task<CommentResponse?> GetByIdAsync(Guid id)
     {
-        return await _commentRepository.GetByIdAsync(id);
+        var comment = await db.Comments.FindAsync(id);
+        return comment is null ? null : MapComment(comment);
     }
 
-    public async Task<IEnumerable<Comment>> GetCommentsByPostIdAsync(Guid postId)
+    public async Task<CommentResponse> CreateAsync(CreateCommentRequest request, Guid userId, string authorName, string authorAvatar)
     {
-        return await _commentRepository.GetByPostIdAsync(postId);
+        var comment = new Comment
+        {
+            Id = Guid.NewGuid(),
+            Content = request.Content,
+            UserId = userId,
+            AuthorName = authorName,
+            AuthorAvatar = authorAvatar,
+            PostId = request.PostId,
+            EventId = request.EventId,
+            ParentCommentId = request.ParentCommentId,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        db.Comments.Add(comment);
+        await db.SaveChangesAsync();
+        return MapComment(comment);
     }
 
-    public async Task<Comment> CreateCommentAsync(Comment comment)
+    public async Task<CommentResponse?> UpdateAsync(Guid id, UpdateCommentRequest request, Guid userId)
     {
-        // XSS Protection: Encode HTML content to prevent script injection
-        comment.Content = HttpUtility.HtmlEncode(comment.Content);
-        comment.Id = Guid.NewGuid();
-        comment.CreatedAt = DateTime.UtcNow;
-        comment.IsApproved = true;
-        return await _commentRepository.AddAsync(comment);
-    }
+        var comment = await db.Comments.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
+        if (comment is null) return null;
 
-    public async Task<Comment> UpdateCommentAsync(Comment comment)
-    {
-        // XSS Protection: Encode HTML content to prevent script injection
-        comment.Content = HttpUtility.HtmlEncode(comment.Content);
+        comment.Content = request.Content;
         comment.UpdatedAt = DateTime.UtcNow;
-        return await _commentRepository.UpdateAsync(comment);
+        await db.SaveChangesAsync();
+        return MapComment(comment);
     }
 
-    public async Task<bool> DeleteCommentAsync(Guid id)
+    public async Task<bool> DeleteAsync(Guid id, Guid userId, bool deleteAllReplies = false)
     {
-        return await _commentRepository.DeleteAsync(id);
+        var comment = await db.Comments.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
+        if (comment is null) return false;
+
+        if (deleteAllReplies)
+        {
+            var replies = await db.Comments.Where(c => c.ParentCommentId == id).ToListAsync();
+            db.Comments.RemoveRange(replies);
+        }
+        else
+        {
+            var hasReplies = await db.Comments.AnyAsync(c => c.ParentCommentId == id);
+            if (hasReplies)
+            {
+                comment.Content = "[Supprimé]";
+                comment.UserId = Guid.Empty;
+                await db.SaveChangesAsync();
+                return true;
+            }
+        }
+
+        db.Comments.Remove(comment);
+        await db.SaveChangesAsync();
+        return true;
     }
+
+    private static List<CommentResponse> BuildTree(List<Comment> comments)
+    {
+        var map = comments.Select(MapComment).ToDictionary(c => c.Id);
+        var roots = new List<CommentResponse>();
+
+        foreach (var c in map.Values)
+        {
+            if (c.ParentCommentId is null || !map.ContainsKey(c.ParentCommentId.Value))
+                roots.Add(c);
+            else if (map.TryGetValue(c.ParentCommentId.Value, out var parent))
+                parent.Replies.Add(c);
+        }
+
+        return roots;
+    }
+
+    private static CommentResponse MapComment(Comment c) => new()
+    {
+        Id = c.Id,
+        Content = c.Content,
+        UserId = c.UserId,
+        AuthorName = c.AuthorName,
+        AuthorAvatar = c.AuthorAvatar,
+        PostId = c.PostId ?? Guid.Empty,
+        EventId = c.EventId ?? Guid.Empty,
+        ParentCommentId = c.ParentCommentId,
+        CreatedAt = c.CreatedAt,
+        UpdatedAt = c.UpdatedAt
+    };
 }

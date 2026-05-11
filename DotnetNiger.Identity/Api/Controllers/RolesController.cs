@@ -1,67 +1,77 @@
-// Controleur API Identity: RolesController
-using Asp.Versioning;
-using DotnetNiger.Identity.Application.DTOs.Requests;
-using DotnetNiger.Identity.Application.DTOs.Responses;
-using DotnetNiger.Identity.Application.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using DotnetNiger.Identity.Application.DTOs;
+using DotnetNiger.Identity.Application.Services;
 
 namespace DotnetNiger.Identity.Api.Controllers;
 
 [ApiController]
 [ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/roles")]
-[Authorize(Roles = "SuperAdmin")]
-// Endpoints pour la gestion des roles.
-public class RolesController : ApiControllerBase
+[Route("api/v{version:apiVersion}/{tenantId:guid}/roles")]
+[Authorize(Roles = "Admin")]
+public class RolesController : ControllerBase
 {
-    // Endpoints proteges pour les roles.
-    private readonly IRoleService _roleService;
+    private readonly RoleService _roleService;
 
-    public RolesController(IRoleService roleService)
-    {
-        _roleService = roleService;
-    }
+    public RolesController(RoleService roleService) => _roleService = roleService;
 
-    [HttpGet]
-    public async Task<IActionResult> GetRoles()
-    {
-        var roles = await _roleService.GetAllAsync();
-        return Success(roles);
-    }
-
+    /// <summary>Crée un nouveau rôle dans le tenant spécifié.</summary>
     [HttpPost]
-    public async Task<IActionResult> CreateRole([FromBody] AddRoleRequest request)
+    public async Task<ActionResult<RoleResponse>> Create(Guid tenantId, [FromBody] CreateRoleRequest request)
     {
+        if (request.TenantId != tenantId)
+            return BadRequest(new ErrorResponse("Tenant mismatch"));
+
         var role = await _roleService.CreateAsync(request);
-        return Success(role, "Role created successfully.");
+        return CreatedAtAction(nameof(GetAll), new { tenantId }, role);
     }
 
+    /// <summary>Liste tous les rôles du tenant.</summary>
+    [HttpGet]
+    public async Task<ActionResult<List<RoleResponse>>> GetAll(Guid tenantId)
+    {
+        var roles = await _roleService.GetByTenantAsync(tenantId);
+        return Ok(roles);
+    }
+
+    /// <summary>Met à jour un rôle (description uniquement).</summary>
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<RoleResponse>> Update(Guid tenantId, Guid id,
+        [FromBody] UpdateRoleRequest request)
+    {
+        var role = await _roleService.UpdateAsync(id, request);
+        return Ok(role);
+    }
+
+    /// <summary>Supprime un rôle.</summary>
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> DeleteRole(Guid id)
+    public async Task<IActionResult> Delete(Guid tenantId, Guid id)
     {
         await _roleService.DeleteAsync(id);
-        return SuccessMessage("Role deleted successfully.");
+        return NoContent();
     }
 
-    [HttpPost("assign")]
-    public async Task<IActionResult> AssignRole([FromBody] AssignRoleRequest request)
+    /// <summary>Assigne un rôle à un utilisateur.</summary>
+    [HttpPost("{roleId:guid}/users/{userId:guid}")]
+    public async Task<IActionResult> AssignUser(Guid tenantId, Guid roleId, Guid userId)
     {
-        await _roleService.AssignToUserAsync(request);
-        return SuccessMessage("Role assigned successfully.");
+        await _roleService.AssignToUserAsync(userId, roleId);
+        return NoContent();
     }
 
-    [HttpPost("remove")]
-    public async Task<IActionResult> RemoveRole([FromBody] AssignRoleRequest request)
+    /// <summary>Retire un rôle à un utilisateur.</summary>
+    [HttpDelete("{roleId:guid}/users/{userId:guid}")]
+    public async Task<IActionResult> RemoveUser(Guid tenantId, Guid roleId, Guid userId)
     {
-        await _roleService.RemoveFromUserAsync(request);
-        return SuccessMessage("Role removed successfully.");
+        await _roleService.RemoveFromUserAsync(userId, roleId);
+        return NoContent();
     }
 
+    /// <summary>Retourne les rôles d'un utilisateur.</summary>
     [HttpGet("user/{userId:guid}")]
-    public async Task<IActionResult> GetUserRoles(Guid userId)
+    public async Task<ActionResult<List<RoleResponse>>> GetUserRoles(Guid tenantId, Guid userId)
     {
         var roles = await _roleService.GetUserRolesAsync(userId);
-        return Success(roles);
+        return Ok(roles);
     }
 }

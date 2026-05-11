@@ -1,141 +1,55 @@
-using Asp.Versioning;
-using Microsoft.AspNetCore.Mvc;
-using DotnetNiger.Community.Api.Services;
-using DotnetNiger.Community.Domain.Entities;
-using DotnetNiger.Community.Application.DTOs.Requests;
-using DotnetNiger.Community.Application.Mappers;
-using DotnetNiger.Community.Application.Services.Interfaces;
-using Microsoft.AspNetCore.OutputCaching;
+using System.Security.Claims;
+using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
-/// <summary>
-/// Controller pour gérer les posts de la communauté
-/// </summary>
 [ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/posts")]
-public class PostsController : ApiControllerBase
+[Route("api/v1/[controller]")]
+public class PostsController(IPostService postService) : ControllerBase
 {
-    private readonly IPostService _postService;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly ICommunityRequestMapper _requestMapper;
-
-    public PostsController(
-        IPostService postService,
-        ICurrentUserService currentUserService,
-        ICommunityRequestMapper requestMapper)
-    {
-        _postService = postService;
-        _currentUserService = currentUserService;
-        _requestMapper = requestMapper;
-    }
-
-    /// <summary>
-    /// Récupérer tous les posts avec pagination
-    /// </summary>
-    /// <param name="page">Numéro de page (par défaut 1)</param>
-    /// <param name="pageSize">Nombre de posts par page (par défaut 10)</param>
-    /// <returns>Liste paginée des posts</returns>
     [HttpGet]
-    [OutputCache(PolicyName = "HotReadPolicy")]
-    public async Task<IActionResult> GetPosts([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAll([FromQuery] string? published, [FromQuery] string? category, [FromQuery] string? tag, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        if (page < 1 || pageSize < 1 || pageSize > 100)
-            return BadRequestProblem("Parametres de pagination invalides");
-
-        var posts = await _postService.GetAllPublishedPostsAsync(page, pageSize);
-        return Success(posts, meta: new { page, pageSize, total = posts.Count() });
+        var result = await postService.GetAllAsync(published, category, tag, query, page, pageSize);
+        return Ok(new { Success = true, Data = result });
     }
 
-    /// <summary>
-    /// Récupérer un post par ID
-    /// </summary>
-    /// <param name="id">ID du post</param>
-    /// <returns>Détails du post</returns>
-    [HttpGet("{id}")]
-    [OutputCache(PolicyName = "HotReadPolicy")]
-    public async Task<IActionResult> GetPostById(string id)
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id)
     {
-        var postId = ParseGuidOrThrow(id, nameof(id), "ID du post invalide");
-
-        var post = await _postService.GetPostByIdAsync(postId);
-        if (post == null)
-            return NotFoundProblem("Post non trouve");
-
-        return Success(post);
+        var post = await postService.GetByIdAsync(id);
+        if (post is null) return NotFound(new { Success = false, Message = "Post not found" });
+        return Ok(new { Success = true, Data = post });
     }
 
-    /// <summary>
-    /// Créer un nouveau post
-    /// </summary>
-    /// <param name="request">Données du post</param>
-    /// <returns>Post créé</returns>
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> CreatePost([FromBody] CreatePostRequest request)
+    public async Task<IActionResult> Create([FromBody] CreatePostRequest request)
     {
-        if (request == null || string.IsNullOrEmpty(request.Title))
-            return BadRequestProblem("Titre requis");
-
-        var currentUserId = _currentUserService.GetRequiredUserId();
-        var post = _requestMapper.MapToPost(request, currentUserId);
-
-        var createdPost = await _postService.CreatePostAsync(post);
-        return CreatedSuccess(nameof(GetPostById), new { id = createdPost.Id }, createdPost, "Post cree avec succes");
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var userName = User.FindFirstValue("full_name") ?? User.FindFirstValue(ClaimTypes.Name) ?? "Unknown";
+        var post = await postService.CreateAsync(request, userId, userName);
+        return CreatedAtAction(nameof(GetById), new { id = post.Id }, new { Success = true, Data = post });
     }
 
-    /// <summary>
-    /// Mettre à jour un post
-    /// </summary>
-    /// <param name="id">ID du post</param>
-    /// <param name="request">Données à mettre à jour</param>
-    /// <returns>Post mis à jour</returns>
-    [HttpPut("{id}")]
+    [HttpPut("{id:guid}")]
     [Authorize]
-    public async Task<IActionResult> UpdatePost(string id, [FromBody] UpdatePostRequest request)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePostRequest request)
     {
-        var postId = ParseGuidOrThrow(id, nameof(id), "ID du post invalide");
-
-        var post = await _postService.GetPostByIdAsync(postId);
-        if (post == null)
-            return NotFoundProblem("Post non trouve");
-
-        var currentUserId = _currentUserService.GetRequiredUserId();
-        var canModerate = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
-        if (post.AuthorId != currentUserId && !canModerate)
-            return Forbid();
-
-        _requestMapper.ApplyPostUpdates(post, request);
-        var updatedPost = await _postService.UpdatePostAsync(post);
-        return Success(updatedPost, "Post mis a jour avec succes");
+        var post = await postService.UpdateAsync(id, request);
+        if (post is null) return NotFound(new { Success = false, Message = "Post not found" });
+        return Ok(new { Success = true, Data = post });
     }
 
-    /// <summary>
-    /// Supprimer un post
-    /// </summary>
-    /// <param name="id">ID du post</param>
-    /// <returns>Confirmation de suppression</returns>
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:guid}")]
     [Authorize]
-    public async Task<IActionResult> DeletePost(string id)
+    public async Task<IActionResult> Delete(Guid id)
     {
-        var postId = ParseGuidOrThrow(id, nameof(id), "ID du post invalide");
-
-        var post = await _postService.GetPostByIdAsync(postId);
-        if (post == null)
-            return NotFoundProblem("Post non trouve");
-
-        var currentUserId = _currentUserService.GetRequiredUserId();
-        var canModerate = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
-        if (post.AuthorId != currentUserId && !canModerate)
-            return Forbid();
-
-        var deleted = await _postService.DeletePostAsync(postId);
-        if (!deleted)
-            return NotFoundProblem("Post non trouve");
-
-        return SuccessMessage("Post supprime avec succes");
+        var deleted = await postService.DeleteAsync(id);
+        if (!deleted) return NotFound(new { Success = false, Message = "Post not found" });
+        return Ok(new { Success = true, Message = "Post deleted" });
     }
 }

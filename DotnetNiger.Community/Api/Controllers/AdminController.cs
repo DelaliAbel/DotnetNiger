@@ -1,255 +1,104 @@
-using Asp.Versioning;
-using DotnetNiger.Community.Api.Filters;
-using DotnetNiger.Community.Application.DTOs.Requests;
-using DotnetNiger.Community.Application.DTOs.Responses;
-using DotnetNiger.Community.Application.Features.FeatureSettings.Commands;
-using DotnetNiger.Community.Application.Features.FeatureSettings.Queries;
-using DotnetNiger.Community.Application.Services.Interfaces;
-using MediatR;
+using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
-/// <summary>
-/// Endpoints dédiés à l'administration de la communauté.
-/// </summary>
 [ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/admin")]
-[AuthorizeFilter("Admin", "SuperAdmin")]
-public class AdminController : ApiControllerBase
+[Route("api/v1/admin")]
+[Authorize(Roles = "Admin")]
+public class AdminController(IAdminService adminService, IEventService eventService) : ControllerBase
 {
-    private readonly IAdminService _adminService;
-    private readonly ISender _sender;
-
-    public AdminController(IAdminService adminService, ISender sender)
-    {
-        _adminService = adminService;
-        _sender = sender;
-    }
-
-    // ─── Dashboard ────────────────────────────────────────────────────────────
-
-    /// <summary>Tableau de bord admin : totaux, modération, publication.</summary>
     [HttpGet("dashboard")]
     public async Task<IActionResult> GetDashboard()
     {
-        var dashboard = await _adminService.GetDashboardAsync();
-        return Success(dashboard);
+        var stats = await adminService.GetDashboardAsync();
+        return Ok(new { Success = true, Data = stats });
     }
 
-    // ─── Resources ────────────────────────────────────────────────────────────
-
-    /// <summary>Ressources en attente de modération.</summary>
-    [HttpGet("resources")]
-    public async Task<IActionResult> GetPendingResources([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    [HttpPatch("events/{id:guid}/publish")]
+    public async Task<IActionResult> PublishEvent(Guid id)
     {
-        if (page < 1 || pageSize < 1 || pageSize > 100)
-            return BadRequestProblem("Parametres de pagination invalides");
-
-        var resources = await _adminService.GetPendingResourcesAsync(page, pageSize);
-        return Success(resources, meta: new { page, pageSize });
+        var ev = await eventService.PublishAsync(id);
+        if (ev is null) return NotFound(new { Success = false, Message = "Event not found" });
+        return Ok(new { Success = true, Data = ev });
     }
 
-    /// <summary>Approuver ou rejeter une ressource.</summary>
-    [HttpPatch("resources/{id}")]
-    public async Task<IActionResult> ModerateResource(string id, [FromBody] ModerateResourceRequest request)
+    [HttpPatch("events/{id:guid}/unpublish")]
+    public async Task<IActionResult> UnpublishEvent(Guid id)
     {
-        var resourceId = ParseGuidOrThrow(id, nameof(id), "ID de la ressource invalide");
-
-        var updated = await _adminService.ModerateResourceAsync(resourceId, request.IsApproved);
-        if (!updated)
-            return NotFoundProblem("Ressource non trouvee");
-
-        return SuccessMessage(request.IsApproved ? "Ressource approuvee" : "Ressource rejetee et supprimee");
+        var ev = await eventService.UnpublishAsync(id);
+        if (ev is null) return NotFound(new { Success = false, Message = "Event not found" });
+        return Ok(new { Success = true, Data = ev });
     }
 
-    // ─── Posts ────────────────────────────────────────────────────────────────
-
-    /// <summary>Tous les posts (publiés et brouillons) avec pagination.</summary>
-    [HttpGet("posts")]
-    public async Task<IActionResult> GetAllPosts([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    [HttpGet("users")]
+    public async Task<IActionResult> GetUsers()
     {
-        if (page < 1 || pageSize < 1 || pageSize > 100)
-            return BadRequestProblem("Parametres de pagination invalides");
-
-        var posts = await _adminService.GetAllPostsAsync(page, pageSize);
-        return Success(posts, meta: new { page, pageSize });
+        var users = await adminService.GetUsersAsync();
+        return Ok(new { Success = true, Data = users });
     }
 
-    /// <summary>Publier un post.</summary>
-    [HttpPatch("posts/{id}/publish")]
-    public async Task<IActionResult> PublishPost(string id)
+    [HttpGet("users/{id:guid}")]
+    public async Task<IActionResult> GetUser(Guid id)
     {
-        var postId = ParseGuidOrThrow(id, nameof(id), "ID du post invalide");
-
-        var ok = await _adminService.PublishPostAsync(postId);
-        if (!ok)
-            return NotFoundProblem("Post non trouve");
-
-        return SuccessMessage("Post publie");
+        var user = await adminService.GetUserAsync(id);
+        if (user is null) return NotFound(new { Success = false, Message = "User not found" });
+        return Ok(new { Success = true, Data = user });
     }
 
-    /// <summary>Dépublier un post.</summary>
-    [HttpPatch("posts/{id}/unpublish")]
-    public async Task<IActionResult> UnpublishPost(string id)
+    [HttpPatch("users/{id:guid}/status")]
+    public async Task<IActionResult> UpdateUserStatus(Guid id, [FromBody] UpdateUserStatusRequest request)
     {
-        var postId = ParseGuidOrThrow(id, nameof(id), "ID du post invalide");
-
-        var ok = await _adminService.UnpublishPostAsync(postId);
-        if (!ok)
-            return NotFoundProblem("Post non trouve");
-
-        return SuccessMessage("Post depublie");
+        var updated = await adminService.UpdateUserStatusAsync(id, request.IsActive);
+        if (!updated) return NotFound(new { Success = false, Message = "User not found" });
+        return Ok(new { Success = true, Message = "User status updated" });
     }
 
-    /// <summary>Supprimer un post.</summary>
-    [HttpDelete("posts/{id}")]
-    public async Task<IActionResult> DeletePost(string id)
+    [HttpGet("roles")]
+    public async Task<IActionResult> GetRoles()
     {
-        var postId = ParseGuidOrThrow(id, nameof(id), "ID du post invalide");
-
-        var ok = await _adminService.DeletePostAsync(postId);
-        if (!ok)
-            return NotFoundProblem("Post non trouve");
-
-        return SuccessMessage("Post supprime avec succes");
+        var roles = await adminService.GetRolesAsync();
+        return Ok(new { Success = true, Data = roles });
     }
 
-    // ─── Events ───────────────────────────────────────────────────────────────
-
-    /// <summary>Tous les événements (publiés et brouillons) avec pagination.</summary>
-    [HttpGet("events")]
-    public async Task<IActionResult> GetAllEvents([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    [HttpPost("roles")]
+    public async Task<IActionResult> CreateRole([FromBody] CreateRoleRequest request)
     {
-        if (page < 1 || pageSize < 1 || pageSize > 100)
-            return BadRequestProblem("Parametres de pagination invalides");
-
-        var events = await _adminService.GetAllEventsAsync(page, pageSize);
-        return Success(events, meta: new { page, pageSize });
+        var role = await adminService.CreateRoleAsync(request.Name);
+        if (role is null) return BadRequest(new { Success = false, Message = "Failed to create role" });
+        return Ok(new { Success = true, Data = role });
     }
 
-    /// <summary>Publier un événement.</summary>
-    [HttpPatch("events/{id}/publish")]
-    public async Task<IActionResult> PublishEvent(string id)
+    [HttpGet("permissions")]
+    public async Task<IActionResult> GetPermissions()
     {
-        var eventId = ParseGuidOrThrow(id, nameof(id), "ID de l'evenement invalide");
-
-        var ok = await _adminService.PublishEventAsync(eventId);
-        if (!ok)
-            return NotFoundProblem("Evenement non trouve");
-
-        return SuccessMessage("Evenement publie");
+        var permissions = await adminService.GetPermissionsAsync();
+        return Ok(new { Success = true, Data = permissions });
     }
 
-    /// <summary>Dépublier un événement.</summary>
-    [HttpPatch("events/{id}/unpublish")]
-    public async Task<IActionResult> UnpublishEvent(string id)
+    [HttpPost("permissions")]
+    public async Task<IActionResult> CreatePermission([FromBody] CreatePermissionRequest request)
     {
-        var eventId = ParseGuidOrThrow(id, nameof(id), "ID de l'evenement invalide");
-
-        var ok = await _adminService.UnpublishEventAsync(eventId);
-        if (!ok)
-            return NotFoundProblem("Evenement non trouve");
-
-        return SuccessMessage("Evenement depublie");
+        var permission = await adminService.CreatePermissionAsync(request.Name, request.Description);
+        if (permission is null) return BadRequest(new { Success = false, Message = "Failed to create permission" });
+        return Ok(new { Success = true, Data = permission });
     }
 
-    /// <summary>Supprimer un événement.</summary>
-    [HttpDelete("events/{id}")]
-    public async Task<IActionResult> DeleteEvent(string id)
+    [HttpPost("roles/{roleId:guid}/permissions")]
+    public async Task<IActionResult> AssignPermissionToRole(Guid roleId, [FromBody] AssignPermissionRequest request)
     {
-        var eventId = ParseGuidOrThrow(id, nameof(id), "ID de l'evenement invalide");
-
-        var ok = await _adminService.DeleteEventAsync(eventId);
-        if (!ok)
-            return NotFoundProblem("Evenement non trouve");
-
-        return SuccessMessage("Evenement supprime avec succes");
+        var assigned = await adminService.AssignPermissionToRoleAsync(roleId, request.PermissionId);
+        if (!assigned) return BadRequest(new { Success = false, Message = "Failed to assign permission" });
+        return Ok(new { Success = true, Message = "Permission assigned" });
     }
 
-    // ─── Comments ─────────────────────────────────────────────────────────────
-
-    /// <summary>Supprimer un commentaire.</summary>
-    [HttpDelete("comments/{id}")]
-    public async Task<IActionResult> DeleteComment(string id)
+    [HttpPost("users/{userId:guid}/roles")]
+    public async Task<IActionResult> AssignRoleToUser(Guid userId, [FromBody] AssignRoleRequest request)
     {
-        var commentId = ParseGuidOrThrow(id, nameof(id), "ID du commentaire invalide");
-
-        var ok = await _adminService.DeleteCommentAsync(commentId);
-        if (!ok)
-            return NotFoundProblem("Commentaire non trouve");
-
-        return SuccessMessage("Commentaire supprime avec succes");
-    }
-
-    // ─── Projects ─────────────────────────────────────────────────────────────
-
-    /// <summary>Tous les projets avec pagination.</summary>
-    [HttpGet("projects")]
-    public async Task<IActionResult> GetAllProjects([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-    {
-        if (page < 1 || pageSize < 1 || pageSize > 100)
-            return BadRequestProblem("Parametres de pagination invalides");
-
-        var projects = await _adminService.GetAllProjectsAsync(page, pageSize);
-        return Success(projects, meta: new { page, pageSize });
-    }
-
-    /// <summary>Mettre en avant ou retirer un projet.</summary>
-    [HttpPatch("projects/{id}/feature")]
-    public async Task<IActionResult> FeatureProject(string id, [FromBody] FeatureProjectRequest request)
-    {
-        var projectId = ParseGuidOrThrow(id, nameof(id), "ID du projet invalide");
-
-        var ok = await _adminService.FeatureProjectAsync(projectId, request.IsFeatured);
-        if (!ok)
-            return NotFoundProblem("Projet non trouve");
-
-        return SuccessMessage(request.IsFeatured ? "Projet mis en avant" : "Projet retire de la mise en avant");
-    }
-
-    /// <summary>Supprimer un projet.</summary>
-    [HttpDelete("projects/{id}")]
-    public async Task<IActionResult> DeleteProject(string id)
-    {
-        var projectId = ParseGuidOrThrow(id, nameof(id), "ID du projet invalide");
-
-        var ok = await _adminService.DeleteProjectAsync(projectId);
-        if (!ok)
-            return NotFoundProblem("Projet non trouve");
-
-        return SuccessMessage("Projet supprime avec succes");
-    }
-
-    // ─── Settings ─────────────────────────────────────────────────────────────
-
-    /// <summary>Récupérer les paramètres de fonctionnalités de la communauté.</summary>
-    [HttpGet("settings/features")]
-    public async Task<IActionResult> GetFeatureSettings()
-    {
-        var settings = await _sender.Send(new GetCommunityFeatureSettingsQuery());
-        return Success(settings);
-    }
-
-    /// <summary>Mettre à jour les paramètres de fonctionnalités de la communauté.</summary>
-    [HttpPut("settings/features")]
-    public async Task<IActionResult> UpdateFeatureSettings([FromBody] UpdateCommunityFeatureSettingsRequest request)
-    {
-        var reviewerUserId = ParseReviewerUserId();
-        var settings = await _sender.Send(new UpdateCommunityFeatureSettingsCommand(request, reviewerUserId));
-        return Success(settings, "Paramètres de fonctionnalités mis à jour avec succès.");
-    }
-
-    private Guid? ParseReviewerUserId()
-    {
-        var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-        if (Guid.TryParse(claim, out var userId))
-        {
-            return userId;
-        }
-
-        return null;
+        var assigned = await adminService.AssignRoleToUserAsync(userId, request.RoleName);
+        if (!assigned) return BadRequest(new { Success = false, Message = "Failed to assign role" });
+        return Ok(new { Success = true, Message = "Role assigned" });
     }
 }
-

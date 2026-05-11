@@ -1,139 +1,60 @@
-using Asp.Versioning;
-using Microsoft.AspNetCore.Mvc;
-using DotnetNiger.Community.Api.Services;
-using DotnetNiger.Community.Application.DTOs.Requests;
-using DotnetNiger.Community.Application.Mappers;
-using DotnetNiger.Community.Application.Services.Interfaces;
+using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
-/// <summary>
-/// Controller pour gérer les ressources
-/// </summary>
 [ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/resources")]
-[Route("api/v{version:apiVersion}/ressources")]
-public class ResourcesController : ApiControllerBase
+[Route("api/v1/[controller]")]
+public class ResourcesController(IResourceService resourceService) : ControllerBase
 {
-    private readonly IResourceService _resourceService;
-    private readonly ICurrentUserService _currentUserService;
-    private readonly ICommunityRequestMapper _requestMapper;
-
-    public ResourcesController(
-        IResourceService resourceService,
-        ICurrentUserService currentUserService,
-        ICommunityRequestMapper requestMapper)
-    {
-        _resourceService = resourceService;
-        _currentUserService = currentUserService;
-        _requestMapper = requestMapper;
-    }
-
-    /// <summary>
-    /// Récupérer toutes les ressources
-    /// </summary>
-    /// <param name="page">Numéro de page (par défaut 1)</param>
-    /// <param name="pageSize">Nombre de ressources par page (par défaut 10)</param>
-    /// <returns>Liste paginée des ressources</returns>
     [HttpGet]
-    public async Task<IActionResult> GetResources([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAll([FromQuery] string? resourceType, [FromQuery] string? level, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        if (page < 1 || pageSize < 1 || pageSize > 100)
-            return BadRequestProblem("Parametres de pagination invalides");
-
-        var resources = await _resourceService.GetAllResourcesAsync(page, pageSize);
-        return Success(resources, meta: new { page, pageSize, total = resources.Count() });
+        var result = await resourceService.GetAllAsync(resourceType, level, query, page, pageSize);
+        return Ok(new { Success = true, Data = result });
     }
 
-    /// <summary>
-    /// Récupérer une ressource par ID
-    /// </summary>
-    /// <param name="id">ID de la ressource</param>
-    /// <returns>Détails de la ressource</returns>
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetResourceById(string id)
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id)
     {
-        var resourceId = ParseGuidOrThrow(id, nameof(id), "ID de la ressource invalide");
-
-        var resource = await _resourceService.GetResourceByIdAsync(resourceId);
-        if (resource == null)
-            return NotFoundProblem("Ressource non trouvee");
-
-        return Success(resource);
+        var resource = await resourceService.GetByIdAsync(id);
+        if (resource is null) return NotFound(new { Success = false, Message = "Resource not found" });
+        return Ok(new { Success = true, Data = resource });
     }
 
-    /// <summary>
-    /// Créer une nouvelle ressource
-    /// </summary>
-    /// <param name="request">Données de la ressource</param>
-    /// <returns>Ressource créée</returns>
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> CreateResource([FromBody] CreateResourceRequest request)
+    public async Task<IActionResult> Create([FromBody] CreateResourceRequest request)
     {
-        if (request == null || string.IsNullOrEmpty(request.Title))
-            return BadRequestProblem("Titre requis");
-
-        var currentUserId = _currentUserService.GetRequiredUserId();
-        var resource = _requestMapper.MapToResource(request, currentUserId);
-
-        var createdResource = await _resourceService.CreateResourceAsync(resource);
-        return CreatedSuccess(nameof(GetResourceById), new { id = createdResource.Id }, createdResource, "Ressource creee avec succes");
+        var resource = await resourceService.CreateAsync(request);
+        return CreatedAtAction(nameof(GetById), new { id = resource.Id }, new { Success = true, Data = resource });
     }
 
-    /// <summary>
-    /// Mettre à jour une ressource
-    /// </summary>
-    /// <param name="id">ID de la ressource</param>
-    /// <param name="request">Données à mettre à jour</param>
-    /// <returns>Ressource mise à jour</returns>
-    [HttpPut("{id}")]
+    [HttpPut("{id:guid}")]
     [Authorize]
-    public async Task<IActionResult> UpdateResource(string id, [FromBody] UpdateResourceRequest request)
+    public async Task<IActionResult> Update(Guid id, [FromBody] CreateResourceRequest request)
     {
-        var resourceId = ParseGuidOrThrow(id, nameof(id), "ID de la ressource invalide");
-
-        var resource = await _resourceService.GetResourceByIdAsync(resourceId);
-        if (resource == null)
-            return NotFoundProblem("Ressource non trouvee");
-
-        var currentUserId = _currentUserService.GetRequiredUserId();
-        var canModerate = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
-        if (resource.CreatedBy != currentUserId && !canModerate)
-            return Forbid();
-
-        _requestMapper.ApplyResourceUpdates(resource, request);
-        var updatedResource = await _resourceService.UpdateResourceAsync(resource);
-        return Success(updatedResource, "Ressource mise a jour avec succes");
+        var resource = await resourceService.UpdateAsync(id, request);
+        if (resource is null) return NotFound(new { Success = false, Message = "Resource not found" });
+        return Ok(new { Success = true, Data = resource });
     }
 
-    /// <summary>
-    /// Supprimer une ressource
-    /// </summary>
-    /// <param name="id">ID de la ressource</param>
-    /// <returns>Confirmation de suppression</returns>
-    [HttpDelete("{id}")]
+    [HttpDelete("{id:guid}")]
     [Authorize]
-    public async Task<IActionResult> DeleteResource(string id)
+    public async Task<IActionResult> Delete(Guid id)
     {
-        var resourceId = ParseGuidOrThrow(id, nameof(id), "ID de la ressource invalide");
+        var deleted = await resourceService.DeleteAsync(id);
+        if (!deleted) return NotFound(new { Success = false, Message = "Resource not found" });
+        return Ok(new { Success = true, Message = "Resource deleted" });
+    }
 
-        var resource = await _resourceService.GetResourceByIdAsync(resourceId);
-        if (resource == null)
-            return NotFoundProblem("Ressource non trouvee");
-
-        var currentUserId = _currentUserService.GetRequiredUserId();
-        var canModerate = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
-        if (resource.CreatedBy != currentUserId && !canModerate)
-            return Forbid();
-
-        var deleted = await _resourceService.DeleteResourceAsync(resourceId);
-        if (!deleted)
-            return NotFoundProblem("Ressource non trouvee");
-
-        return SuccessMessage("Ressource supprimee avec succes");
+    [HttpPost("{id:guid}/views")]
+    public async Task<IActionResult> IncrementViewCount(Guid id)
+    {
+        var resource = await resourceService.IncrementViewCountAsync(id);
+        if (resource is null) return NotFound(new { Success = false, Message = "Resource not found" });
+        return Ok(new { Success = true, Data = resource });
     }
 }
-
