@@ -1,7 +1,5 @@
-using DotnetNiger.Community.Data;
-using DotnetNiger.Community.Services;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
+using DotnetNiger.Community.Api;
+using DotnetNiger.Community.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,37 +15,10 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.Authority = builder.Configuration["Jwt:Authority"] ?? "http://localhost:5075";
-        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
-        {
-            ValidateIssuer = false,
-            ValidateAudience = false,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true
-        };
-        options.MetadataAddress = builder.Configuration["Jwt:MetadataAddress"] ?? "http://localhost:5075/.well-known/openid-configuration";
-        options.RequireHttpsMetadata = false;
-    });
-
-builder.Services.AddAuthorization();
-
-builder.Services.AddScoped<IPostService, PostService>();
-builder.Services.AddScoped<IEventService, EventService>();
-builder.Services.AddScoped<IResourceService, ResourceService>();
-builder.Services.AddScoped<ICommentService, CommentService>();
-builder.Services.AddScoped<IProfileService, ProfileService>();
-builder.Services.AddScoped<ISearchService, SearchService>();
-builder.Services.AddScoped<IAdminService, AdminService>();
-builder.Services.AddHttpClient<IIdentityApiClient, IdentityApiClient>(client =>
-{
-    client.BaseAddress = new Uri(builder.Configuration["Identity:BaseUrl"] ?? "http://localhost:5075");
-});
+builder.Services.AddCommunityInfrastructure(builder.Configuration);
+builder.Services.AddCommunityAuthentication(builder.Configuration);
+builder.Services.AddCommunityServices();
+builder.Services.AddCommunityHttpClients(builder.Configuration);
 
 builder.Services.AddCors(options =>
 {
