@@ -138,6 +138,9 @@ local.settings.json
 *.pfx
 !.gitkeep
 
+# Generated Ocelot merged config
+ocelot.json
+
 # Folder
 DotnetNiger/
 
