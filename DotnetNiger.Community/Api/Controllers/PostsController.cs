@@ -29,7 +29,9 @@ public class PostsController(IPostService postService) : ControllerBase
     [Authorize]
     public async Task<IActionResult> Create([FromBody] CreatePostRequest request)
     {
-        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+            return Unauthorized(new { Success = false, Message = "Invalid user identity" });
+
         var userName = User.FindFirstValue("full_name") ?? User.FindFirstValue(ClaimTypes.Name) ?? "Unknown";
         var post = await postService.CreateAsync(request, userId, userName);
         return CreatedAtAction(nameof(GetById), new { id = post.Id }, new { Success = true, Data = post });

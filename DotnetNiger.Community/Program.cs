@@ -1,9 +1,20 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using DotnetNiger.Community.Api;
+using DotnetNiger.Community.Api.Middleware;
 using DotnetNiger.Community.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+    });
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -14,6 +25,8 @@ builder.Services.AddSwaggerGen(options =>
         Description = "API publique de la communaut\u00e9 DotnetNiger - Posts, Events, Resources, Comments, Profile, Admin"
     });
 });
+
+builder.Services.AddProblemDetails();
 
 builder.Services.AddCommunityInfrastructure(builder.Configuration);
 builder.Services.AddCommunityAuthentication(builder.Configuration);
@@ -29,6 +42,8 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
+app.UseMiddleware<ErrorHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {
