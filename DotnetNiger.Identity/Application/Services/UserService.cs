@@ -49,13 +49,15 @@ public class UserService
     public async Task<List<UserResponse>> GetByTenantAsync(Guid tenantId)
     {
         var users = await _db.Users.Where(u => u.TenantId == tenantId).ToListAsync();
-        var result = new List<UserResponse>();
-        foreach (var user in users)
-        {
-            var roles = await _userManager.GetRolesAsync(user);
-            result.Add(MapToResponse(user, roles));
-        }
-        return result;
+        var userIds = users.Select(u => u.Id).ToList();
+
+        var rolesByUser = await _db.UserRoles
+            .Where(ur => userIds.Contains(ur.UserId))
+            .Join(_db.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { ur.UserId, RoleName = r.Name! })
+            .GroupBy(x => x.UserId)
+            .ToDictionaryAsync(g => g.Key, g => g.Select(x => x.RoleName).ToList());
+
+        return users.Select(u => MapToResponse(u, rolesByUser.GetValueOrDefault(u.Id, []))).ToList();
     }
 
     public async Task<UserResponse> UpdateAsync(Guid id, UpdateUserRequest request)
@@ -98,10 +100,13 @@ public class UserService
     public async Task ForgotPasswordAsync(string email)
     {
         var user = await _userManager.FindByEmailAsync(email);
-        if (user != null)
-        {
-            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-        }
+        if (user == null)
+            throw new KeyNotFoundException("Utilisateur non trouvé");
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+        throw new NotImplementedException("L'envoi d'email de réinitialisation n'est pas encore implémenté. " +
+            $"Token: {token}");
     }
 
     public async Task ResetPasswordAsync(string email, string token, string newPassword)

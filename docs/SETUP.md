@@ -55,6 +55,8 @@ Runs on `http://localhost:5000`. The Ocelot configuration is auto-generated at s
 - `ocelot.identity.routes.json` (Identity routes)
 - `ocelot.community.routes.json` (Community routes)
 
+The Gateway seeds an in-memory `ServiceRegistry` from `DownstreamServices` config. Identity and Community self-register dynamically at startup via `POST /api/service-registry/register`.
+
 Swagger (aggregated): `http://localhost:5000/swagger`
 
 ## Docker Deployment
@@ -136,13 +138,53 @@ cd DotnetNiger.Identity
 dotnet user-secrets set "Smtp:Password" "your-password"
 dotnet user-secrets set "Authentication:Google:ClientId" "your-id"
 dotnet user-secrets set "Authentication:Google:ClientSecret" "your-secret"
+
+# Gateway registration key (optional, for service self-registration auth)
+cd DotnetNiger.Gateway
+dotnet user-secrets set "Gateway:RegistrationKey" "your-secret-key"
 ```
+
+### Service Self-Registration
+
+Each service registers itself with the Gateway at startup via:
+
+```http
+POST /api/service-registry/register
+Content-Type: application/json
+
+{ "id": "identity", "url": "http://localhost:5075", ... }
+```
+
+Config per service (`appsettings.json`):
+
+```json
+{
+  "Gateway": {
+    "RegistrationUrl": "http://localhost:5000/api/service-registry/register",
+    "RegistrationKey": "__SET_VIA_ENV_OR_USER_SECRETS__"
+  }
+}
+```
+
+| Variable | Purpose |
+|----------|---------|
+| `Gateway:RegistrationUrl` | Gateway registration endpoint URL |
+| `Gateway:RegistrationKey` | Optional API key sent as `X-Registration-Key` header |
+
+If `RegistrationKey` is empty or starts with `__`, registration is anonymous.
 
 ### Adding a New Service
 
+**Option A — Static config + restart:**
 1. Add `ocelot.<service>.routes.json` in the Gateway project
 2. Add a `DownstreamServices:<Service>` section in `appsettings.json`
 3. Add the service container in `docker-compose.yml`
 4. Create the service project following Identity/Community patterns
 
-The Gateway dynamically discovers all services from configuration and merges their routes, health checks, and Swagger docs at startup.
+**Option B — Dynamic self-registration (no Gateway restart):**
+1. Add `ocelot.<service>.routes.json` in the Gateway project (required for Ocelot route definitions)
+2. Add seed config in Gateway `DownstreamServices` (optional, for Ocelot route merging)
+3. Call `POST /api/service-registry/register` from the service at startup
+4. Gateway immediately discovers the service for health checks
+
+The Gateway `ServiceRegistry` merges static config and dynamic registrations. Health checks, Swagger fetching, and service listing use the combined view.

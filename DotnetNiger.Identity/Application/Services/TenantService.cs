@@ -11,14 +11,17 @@ public class TenantService
     private readonly IdentityDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<ApplicationRole> _roleManager;
+    private readonly string _adminPassword;
 
     public TenantService(IdentityDbContext db,
         UserManager<ApplicationUser> userManager,
-        RoleManager<ApplicationRole> roleManager)
+        RoleManager<ApplicationRole> roleManager,
+        IConfiguration configuration)
     {
         _db = db;
         _userManager = userManager;
         _roleManager = roleManager;
+        _adminPassword = configuration["Admin:DefaultPassword"] ?? "Admin@123456";
     }
 
     public async Task<TenantResponse> CreateAsync(CreateTenantRequest request)
@@ -53,7 +56,7 @@ public class TenantService
             IsActive = true,
             EmailConfirmed = true
         };
-        var result = await _userManager.CreateAsync(adminUser, "Admin@123456");
+        var result = await _userManager.CreateAsync(adminUser, _adminPassword);
         if (result.Succeeded)
         {
             await _userManager.AddToRoleAsync(adminUser, "Admin");

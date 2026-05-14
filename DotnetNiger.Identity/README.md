@@ -99,6 +99,21 @@ Supports Google, Microsoft, and GitHub OAuth. Configure via:
 
 Providers activate automatically when their `ClientId` is non-empty.
 
+## Gateway Self-Registration
+
+On startup, Identity automatically registers with the Gateway via `POST /api/service-registry/register`:
+
+```json
+{
+  "Gateway": {
+    "RegistrationUrl": "http://localhost:5000/api/service-registry/register",
+    "RegistrationKey": "__SET_VIA_ENV_OR_USER_SECRETS__"
+  }
+}
+```
+
+If the Gateway is unavailable at startup, the service logs a warning and continues normally. Registration is non-fatal.
+
 ## Configuration
 
 Use `dotnet user-secrets` for sensitive values:
@@ -107,6 +122,7 @@ Use `dotnet user-secrets` for sensitive values:
 dotnet user-secrets set "Smtp:Password" "your-password"
 dotnet user-secrets set "Authentication:Google:ClientId" "your-id"
 dotnet user-secrets set "Authentication:Google:ClientSecret" "your-secret"
+dotnet user-secrets set "Gateway:RegistrationKey" "your-gateway-key"
 ```
 
 ## Integration

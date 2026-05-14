@@ -19,14 +19,15 @@ In production, **only the Gateway** port (`5000`) should be exposed. Downstream 
 
 ## Gateway Endpoints
 
-### Health & Metrics
+### Health, Metrics & Service Registry
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/health` | Gateway liveness |
 | GET | `/health/ready` | Readiness (all downstreams must respond) |
-| GET | `/health/downstream` | Detailed downstream health |
-| GET | `/health/services` | Registered services config |
+| GET | `/health/downstream` | Detailed downstream health (static + dynamic services) |
+| GET | `/health/services` | Registered services config (static + dynamic) |
+| POST | `/api/service-registry/register` | Dynamic service registration |
 | GET | `/metrics/latency` | Endpoint latency (P50/P95/P99) |
 
 ### Routing Map

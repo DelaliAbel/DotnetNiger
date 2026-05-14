@@ -1,5 +1,6 @@
 using DotnetNiger.Gateway.Configuration;
 using DotnetNiger.Gateway.Extensions;
+using DotnetNiger.Gateway.Services;
 using MMLib.SwaggerForOcelot.Middleware;
 using Ocelot.Middleware;
 using Serilog;
@@ -22,11 +23,14 @@ try
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
 
-    var services = LoadDownstreamServices(builder.Configuration);
+    var seedServices = LoadDownstreamServices(builder.Configuration);
     var mergedOcelotFile = OcelotConfigurationBuilder.BuildMergedConfig(
         builder.Environment.ContentRootPath,
         builder.Environment.IsProduction(),
-        services);
+        seedServices);
+
+    var serviceRegistry = new ServiceRegistry(seedServices);
+    builder.Services.AddSingleton<IServiceRegistry>(serviceRegistry);
 
     builder.Configuration
         .SetBasePath(builder.Environment.ContentRootPath)
@@ -43,11 +47,29 @@ try
     app.UseRequestTracingMiddleware();
     app.UseCustomSwaggerMergeMiddleware();
 
-    app.MapGatewayHealthEndpoints(services);
+    app.MapGatewayHealthEndpoints();
+    app.MapServiceRegistryEndpoint();
 
     if (app.Environment.IsDevelopment())
     {
         app.UseDeveloperExceptionPage();
+    }
+    else
+    {
+        app.UseExceptionHandler(appError =>
+        {
+            appError.Run(async context =>
+            {
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync(
+                    System.Text.Json.JsonSerializer.Serialize(new
+                    {
+                        error = "An internal server error occurred",
+                        statusCode = 500
+                    }));
+            });
+        });
     }
 
     app.UseSwaggerForOcelotUI(opt =>

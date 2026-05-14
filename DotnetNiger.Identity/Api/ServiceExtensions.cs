@@ -14,7 +14,7 @@ public static class ServiceExtensions
 {
     /// <summary>Configure l'infrastructure : DbContext, Identity, OpenIddict, Auth externes, CORS.</summary>
     public static IServiceCollection AddIdentityInfrastructure(
-        this IServiceCollection services, IConfiguration config)
+        this IServiceCollection services, IConfiguration config, IHostEnvironment env)
     {
         services.AddDbContext<IdentityDbContext>(options =>
         {
@@ -48,15 +48,38 @@ public static class ServiceExtensions
                 server.AllowPasswordFlow()
                       .AllowRefreshTokenFlow()
                       .SetRefreshTokenLifetime(TimeSpan.FromDays(14))
-                      .SetRefreshTokenReuseLeeway(TimeSpan.FromSeconds(30))
-                      .AcceptAnonymousClients();
+                      .SetRefreshTokenReuseLeeway(TimeSpan.FromSeconds(30));
 
-                server.AddEphemeralEncryptionKey()
-                      .AddEphemeralSigningKey();
+                if (env.IsDevelopment())
+                    server.AcceptAnonymousClients();
 
-                server.UseAspNetCore()
-                      .EnableTokenEndpointPassthrough()
-                      .DisableTransportSecurityRequirement();
+                if (env.IsDevelopment())
+                {
+                    server.AddEphemeralEncryptionKey()
+                          .AddEphemeralSigningKey();
+                }
+                else
+                {
+                    var certPath = config["OpenIddict:CertificatePath"] ?? "/etc/ssl/certs/opendict.pfx";
+                    var certPassword = config["OpenIddict:CertificatePassword"] ?? "";
+                    if (File.Exists(certPath))
+                    {
+                        using var cert = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12(File.ReadAllBytes(certPath), certPassword);
+                        server.AddEncryptionCertificate(cert)
+                              .AddSigningCertificate(cert);
+                    }
+                    else
+                    {
+                        server.AddEphemeralEncryptionKey()
+                              .AddEphemeralSigningKey();
+                    }
+                }
+
+                var aspNetCore = server.UseAspNetCore()
+                      .EnableTokenEndpointPassthrough();
+
+                if (env.IsDevelopment())
+                    aspNetCore.DisableTransportSecurityRequirement();
 
                 server.RegisterScopes(
                     OpenIddict.Abstractions.OpenIddictConstants.Scopes.OpenId,

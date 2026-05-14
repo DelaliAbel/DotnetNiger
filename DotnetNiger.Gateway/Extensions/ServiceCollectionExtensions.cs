@@ -26,8 +26,15 @@ public static class ServiceCollectionExtensions
         services.AddSwaggerForOcelot(configuration);
 
         services.AddCors(options =>
-            options.AddPolicy("AllowAll", policy =>
-                policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+        {
+            if (environment.IsDevelopment())
+                options.AddPolicy("AllowAll", policy =>
+                    policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+            else
+                options.AddPolicy("AllowAll", policy =>
+                    policy.WithOrigins(configuration["Cors:AllowedOrigins"]?.Split(',') ?? [])
+                          .AllowAnyMethod().AllowAnyHeader().AllowCredentials());
+        });
 
         services.AddGatewayJwtAuthentication(configuration);
 
@@ -39,11 +46,8 @@ public static class ServiceCollectionExtensions
     private static void AddGatewayJwtAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
         var jwtKey = configuration["Jwt:Key"];
-        if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.Length < 32 || jwtKey.StartsWith("__"))
-        {
-            Log.Warning("JWT Key non configurée ou invalide — authentification désactivée");
-            return;
-        }
+        var issuer = configuration["Jwt:Issuer"] ?? "DotnetNiger.Identity";
+        var audience = configuration["Jwt:Audience"] ?? "DotnetNiger.Identity.Client";
 
         services.AddAuthentication(options =>
         {
@@ -55,13 +59,15 @@ public static class ServiceCollectionExtensions
             options.MapInboundClaims = false;
             options.TokenValidationParameters = new TokenValidationParameters
             {
-                ValidateIssuer = true,
-                ValidateAudience = true,
+                ValidateIssuer = !string.IsNullOrWhiteSpace(jwtKey) && !jwtKey.StartsWith("__"),
+                ValidateAudience = !string.IsNullOrWhiteSpace(jwtKey) && !jwtKey.StartsWith("__"),
                 ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                ValidIssuer = configuration["Jwt:Issuer"] ?? "DotnetNiger.Identity",
-                ValidAudience = configuration["Jwt:Audience"] ?? "DotnetNiger.Identity.Client",
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+                ValidateIssuerSigningKey = !string.IsNullOrWhiteSpace(jwtKey) && !jwtKey.StartsWith("__"),
+                ValidIssuer = issuer,
+                ValidAudience = audience,
+                IssuerSigningKey = !string.IsNullOrWhiteSpace(jwtKey) && jwtKey.Length >= 32 && !jwtKey.StartsWith("__")
+                    ? new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+                    : null,
                 ClockSkew = TimeSpan.FromMinutes(1)
             };
 
@@ -89,7 +95,9 @@ public static class ServiceCollectionExtensions
             };
         });
 
-        Log.Information("JWT Authentication configurée (Issuer={Issuer})",
-            configuration["Jwt:Issuer"] ?? "DotnetNiger.Identity");
+        if (string.IsNullOrWhiteSpace(jwtKey) || jwtKey.Length < 32 || jwtKey.StartsWith("__"))
+            Log.Warning("JWT Key non configurée — routes avec AuthentificationProviderKey='Bearer' seront bypassées");
+        else
+            Log.Information("JWT Authentication configurée (Issuer={Issuer})", issuer);
     }
 }

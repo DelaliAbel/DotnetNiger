@@ -65,8 +65,9 @@ dotnet run
 |-----|-------------|
 | `http://localhost:5000/swagger` | Aggregated Swagger UI (all services) |
 | `http://localhost:5000/health` | Gateway health |
-| `http://localhost:5000/health/downstream` | All downstream services health |
+| `http://localhost:5000/health/downstream` | All downstream services health (static + dynamic) |
 | `http://localhost:5000/health/services` | Registered services configuration |
+| `http://localhost:5000/api/service-registry/register` | Dynamic service registration endpoint |
 | `http://localhost:5000/metrics/latency` | Endpoint latency metrics |
 | `http://localhost:5075/swagger` | Identity Swagger (direct) |
 | `http://localhost:5269/swagger` | Community Swagger (direct) |

@@ -38,42 +38,53 @@ DotnetNiger.Gateway/
 ├── Extensions/
 │   ├── ServiceCollectionExtensions.cs      # DI registration + JWT config
 │   └── ApplicationBuilderExtensions.cs     # Middleware pipeline + health endpoints
-└── Metrics/
-    └── EndpointLatencyMetrics.cs           # Per-endpoint latency tracking
+├── Metrics/
+│   └── EndpointLatencyMetrics.cs           # Per-endpoint latency tracking
+└── Services/
+    ├── ServiceRegistry.cs                  # IServiceRegistry + ServiceRegistry singleton
+    └── ServiceRegistrationEndpoint.cs      # POST /api/service-registry/register handler
 ```
 
-## Configuration-Driven Multi-Service
+## Service Discovery
 
-The Gateway dynamically discovers services from `appsettings.json`:
+The Gateway uses a **two-tier service discovery** system:
+
+### 1. Static Seed Config (`appsettings.json`)
+
+`DownstreamServices` provides initial entries and Ocelot route definitions:
 
 ```json
 {
   "DownstreamServices": {
-    "Identity": {
-      "Id": "identity",
-      "ContainerName": "identity",
-      "Port": 8081,
-      "DevUrl": "http://localhost:5075",
-      "HealthEndpoint": "/api/v1/diagnostics/health",
-      "SwaggerEndpoint": "/swagger/v1/swagger.json",
-      "SwaggerName": "Identity API",
-      "RoutesConfig": "ocelot.identity.routes.json"
-    },
-    "Community": {
-      "Id": "community",
-      "ContainerName": "community",
-      "Port": 8082,
-      "DevUrl": "http://localhost:5269",
-      "HealthEndpoint": "/api/v1/test/health",
-      "SwaggerEndpoint": "/swagger/v1/swagger.json",
-      "SwaggerName": "Community API",
-      "RoutesConfig": "ocelot.community.routes.json"
-    }
+    "Identity": { "Id": "identity", "DevUrl": "http://localhost:5075", ... },
+    "Community": { "Id": "community", "DevUrl": "http://localhost:5269", ... }
   }
 }
 ```
 
-To add a new service: add a `DownstreamServices` entry, create an `ocelot.<service>.routes.json`, and the Gateway handles the rest automatically.
+### 2. Dynamic ServiceRegistry (In-Memory)
+
+`ServiceRegistry` singleton (`Services/ServiceRegistry.cs`):
+- Thread-safe `ConcurrentDictionary` keyed by service `Id`
+- Seeded from `DownstreamServices` at startup
+- Accepts runtime registrations via `POST /api/service-registry/register`
+- `GetCombinedConfig()` returns merged view (static + dynamic)
+
+### Self-Registration
+
+Services can register dynamically at startup:
+
+```http
+POST /api/service-registry/register
+Content-Type: application/json
+X-Registration-Key: <optional-key>
+
+{ "id": "my-service", "url": "http://my-service:8080", "healthEndpoint": "/health" }
+```
+
+Registration auth is optional — configure `Gateway:RegistrationKey` in `appsettings.json` or User Secrets.
+
+Both Identity and Community automatically self-register on startup. Logs on success/failure are non-fatal.
 
 ## Key Endpoints
 
@@ -83,7 +94,8 @@ To add a new service: add a `DownstreamServices` entry, create an `ocelot.<servi
 | `GET /health` | Gateway liveness |
 | `GET /health/ready` | Readiness (all downstreams must respond) |
 | `GET /health/downstream` | Detailed health of each downstream service |
-| `GET /health/services` | Registered services configuration |
+| `GET /health/services` | Registered services configuration (static + dynamic) |
+| `POST /api/service-registry/register` | Dynamic service registration |
 | `GET /metrics/latency` | Endpoint latency statistics (P50/P95/P99) |
 
 ## Development
@@ -115,7 +127,8 @@ docker-compose up gateway
 2. **Latency Metrics** — Record request duration per endpoint
 3. **Client ID Resolution** — Rate limiting client identification
 4. **Request Tracing** — X-Request-ID header propagation + logging
-5. **Swagger Merge** — Custom aggregation of downstream Swagger docs
-6. **Health Endpoints** — Map health check routes
-7. **SwaggerForOcelot UI** — Aggregated Swagger interface
-8. **Ocelot** — Route matching, authentication, forwarding
+5. **Swagger Merge** — Custom aggregation of downstream Swagger docs (uses `IServiceRegistry.GetCombinedConfig()`)
+6. **Health Endpoints** — Map `/health/*` routes (uses `IServiceRegistry.GetCombinedConfig()`)
+7. **Service Registry** — Map `/api/service-registry/register` endpoint
+8. **SwaggerForOcelot UI** — Aggregated Swagger interface
+9. **Ocelot** — Route matching, authentication, forwarding

@@ -14,7 +14,7 @@ namespace DotnetNiger.Identity.Infrastructure;
 public class DbSeeder
 {
     public static async Task SeedAsync(IdentityDbContext db, UserManager<ApplicationUser> userManager,
-        RoleManager<ApplicationRole> roleManager, TenantContext tenantContext)
+        RoleManager<ApplicationRole> roleManager, TenantContext tenantContext, string adminPassword)
     {
         await db.Database.EnsureCreatedAsync();
 
@@ -71,7 +71,7 @@ public class DbSeeder
             IsActive = true,
             EmailConfirmed = true
         };
-        var result = await userManager.CreateAsync(adminUser, "Admin@123456");
+        var result = await userManager.CreateAsync(adminUser, adminPassword);
         if (result.Succeeded)
         {
             await userManager.AddToRoleAsync(adminUser, "Admin");

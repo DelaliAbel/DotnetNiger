@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using DotnetNiger.Gateway.Configuration;
 using DotnetNiger.Gateway.Metrics;
+using DotnetNiger.Gateway.Services;
 using Serilog;
 
 namespace DotnetNiger.Gateway.Extensions;
@@ -83,8 +84,8 @@ public static class ApplicationBuilderExtensions
                 }
 
                 var factory = context.RequestServices.GetRequiredService<IHttpClientFactory>();
-                var configuration = context.RequestServices.GetRequiredService<IConfiguration>();
-                var services = LoadServices(configuration);
+                var registry = context.RequestServices.GetRequiredService<IServiceRegistry>();
+                var services = registry.GetCombinedConfig();
 
                 var swaggerJsons = await Task.WhenAll(
                     services.Select(s => FetchSwaggerJsonAsync(factory, s, context.RequestAborted)));
@@ -114,101 +115,107 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
-    public static IApplicationBuilder MapGatewayHealthEndpoints(this IApplicationBuilder app, List<DownstreamServiceConfig> services)
+    public static IApplicationBuilder MapGatewayHealthEndpoints(this IApplicationBuilder app)
     {
-        var appInstance = app as WebApplication;
-        if (appInstance == null) return app;
-
-        appInstance.MapGet("/health", () => Results.Ok(new
+        app.Map("/health", healthApp =>
         {
-            status = "Healthy",
-            service = "DotnetNiger.Gateway",
-            timestamp = DateTime.UtcNow
-        }));
-
-        appInstance.MapGet("/metrics/latency", () => Results.Ok(EndpointLatencyMetrics.GetSnapshot()))
-            .AllowAnonymous();
-
-        appInstance.MapGet("/health/downstream", async (IHttpClientFactory factory, CancellationToken ct) =>
-        {
-            var results = await Task.WhenAll(
-                services.Select(s => CheckDownstreamAsync(factory, s, ct)));
-
-            var allHealthy = results.All(r => r.IsHealthy);
-
-            return Results.Json(new
+            healthApp.Run(async (HttpContext context) =>
             {
-                status = allHealthy ? "Healthy" : "Degraded",
-                service = "DotnetNiger.Gateway",
-                timestamp = DateTime.UtcNow,
-                downstream = results.ToDictionary(r => r.ServiceId, r => (object)new
+                var path = context.Request.Path.Value ?? "";
+                var response = context.Response;
+                response.ContentType = "application/json";
+
+                var registry = context.RequestServices.GetRequiredService<IServiceRegistry>();
+                var services = registry.GetCombinedConfig();
+
+                switch (path)
                 {
-                    url = r.Url,
-                    isHealthy = r.IsHealthy,
-                    statusCode = r.StatusCode,
-                    reason = r.Reason
-                })
-            }, statusCode: allHealthy ? StatusCodes.Status200OK : StatusCodes.Status503ServiceUnavailable);
+                    case "":
+                    case "/":
+                    {
+                        await response.WriteAsync(JsonSerializer.Serialize(new
+                        {
+                            status = "Healthy",
+                            service = "DotnetNiger.Gateway",
+                            timestamp = DateTime.UtcNow
+                        }));
+                        return;
+                    }
+                    case "/downstream":
+                    {
+                        var factory = context.RequestServices.GetRequiredService<IHttpClientFactory>();
+                        var ct = context.RequestAborted;
+                        var results = await Task.WhenAll(
+                            services.Select(s => CheckDownstreamAsync(factory, s, ct)));
+
+                        var allHealthy = results.All(r => r.IsHealthy);
+                        response.StatusCode = allHealthy ? 200 : 503;
+
+                        await response.WriteAsync(JsonSerializer.Serialize(new
+                        {
+                            status = allHealthy ? "Healthy" : "Degraded",
+                            service = "DotnetNiger.Gateway",
+                            timestamp = DateTime.UtcNow,
+                            downstream = results.ToDictionary(r => r.ServiceId, r => new
+                            {
+                                url = r.Url,
+                                isHealthy = r.IsHealthy,
+                                statusCode = r.StatusCode,
+                                reason = r.Reason
+                            })
+                        }));
+                        return;
+                    }
+                    case "/ready":
+                    {
+                        var factory = context.RequestServices.GetRequiredService<IHttpClientFactory>();
+                        var ct = context.RequestAborted;
+                        var results = await Task.WhenAll(
+                            services.Select(s => CheckDownstreamAsync(factory, s, ct)));
+
+                        response.StatusCode = results.All(r => r.IsHealthy) ? 200 : 503;
+                        return;
+                    }
+                    case "/services":
+                    {
+                        await response.WriteAsync(JsonSerializer.Serialize(new
+                        {
+                            gateway = "DotnetNiger.Gateway",
+                            timestamp = DateTime.UtcNow,
+                            services = services.Select(s => new
+                            {
+                                id = s.Id,
+                                name = s.SwaggerName,
+                                devUrl = s.DevUrl,
+                                containerName = s.ContainerName,
+                                port = s.Port,
+                                healthEndpoint = s.HealthEndpoint,
+                                swaggerEndpoint = s.SwaggerEndpoint,
+                                routesConfig = s.RoutesConfig
+                            })
+                        }));
+                        return;
+                    }
+                    default:
+                    {
+                        context.Response.StatusCode = 404;
+                        return;
+                    }
+                }
+            });
         });
 
-        appInstance.MapGet("/health/ready", async (IHttpClientFactory factory, CancellationToken ct) =>
+        app.Map("/metrics/latency", metricsApp =>
         {
-            var results = await Task.WhenAll(
-                services.Select(s => CheckDownstreamAsync(factory, s, ct)));
-
-            return results.All(r => r.IsHealthy)
-                ? Results.Ok()
-                : Results.StatusCode(StatusCodes.Status503ServiceUnavailable);
-        });
-
-        appInstance.MapGet("/health/services", () =>
-        {
-            return Results.Ok(new
+            metricsApp.Run(async context =>
             {
-                gateway = "DotnetNiger.Gateway",
-                timestamp = DateTime.UtcNow,
-                services = services.Select(s => new
-                {
-                    id = s.Id,
-                    name = s.SwaggerName,
-                    devUrl = s.DevUrl,
-                    containerName = s.ContainerName,
-                    port = s.Port,
-                    healthEndpoint = s.HealthEndpoint,
-                    swaggerEndpoint = s.SwaggerEndpoint,
-                    routesConfig = s.RoutesConfig
-                })
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(
+                    JsonSerializer.Serialize(EndpointLatencyMetrics.GetSnapshot()));
             });
         });
 
         return app;
-    }
-
-    private static List<DownstreamServiceConfig> LoadServices(IConfiguration configuration)
-    {
-        var services = new List<DownstreamServiceConfig>();
-        var section = configuration.GetSection("DownstreamServices").GetChildren();
-
-        foreach (var child in section)
-        {
-            var id = child["Id"] ?? child.Key.ToLowerInvariant();
-            var devUrl = child["DevUrl"] ?? $"http://localhost:8080";
-            var healthEndpoint = child["HealthEndpoint"] ?? "/health";
-
-            services.Add(new DownstreamServiceConfig
-            {
-                Id = id,
-                ContainerName = child["ContainerName"] ?? id,
-                Port = int.TryParse(child["Port"], out var p) ? p : 8080,
-                DevUrl = devUrl,
-                HealthEndpoint = healthEndpoint,
-                SwaggerEndpoint = child["SwaggerEndpoint"] ?? "/swagger/v1/swagger.json",
-                SwaggerName = child["SwaggerName"] ?? $"{id} API",
-                RoutesConfig = child["RoutesConfig"] ?? $"ocelot.{id}.routes.json"
-            });
-        }
-
-        return services;
     }
 
     private static async Task<(string? json, string serviceId)> FetchSwaggerJsonAsync(
