@@ -13,7 +13,7 @@ public interface IEventService
     Task<bool> DeleteAsync(Guid id);
     Task<EventResponse?> PublishAsync(Guid id);
     Task<EventResponse?> UnpublishAsync(Guid id);
-    Task<EventRegistrationResponse> RegisterAsync(Guid eventId, Guid userId, string userName);
+    Task<EventRegistrationResponse?> RegisterAsync(Guid eventId, Guid userId, string userName);
     Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId);
     Task<List<EventRegistrationResponse>> GetRegistrationsAsync(Guid eventId);
 }

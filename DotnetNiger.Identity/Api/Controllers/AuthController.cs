@@ -72,7 +72,7 @@ public class AuthController : ControllerBase
         loginPrincipal.SetClaim(OpenIddictConstants.Claims.Email, loginUser.Email);
         var scopes = Request.Form["scope"];
         loginPrincipal.SetScopes(scopes.Count > 0
-            ? scopes.SelectMany(s => s.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+            ? scopes.SelectMany(s => (s ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries))
             : ["openid", "profile", "email", "roles"]);
 
         var rememberMe = string.Equals(Request.Form["remember_me"].FirstOrDefault(), "true",
