@@ -147,6 +147,9 @@ DotnetNiger/
 # Health report (contient des infos sensibles sur l'architecture)
 docs/HEALTH_REPORT.md
 
+# Guide de déploiement (contient des infos sensibles : URLs, comptes)
+docs/DEPLOY_GUIDE.md
+
 DotnetNiger
 
 .fake
