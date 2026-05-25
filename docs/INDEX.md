@@ -4,18 +4,18 @@ Central documentation for the DotnetNiger monorepo.
 
 ## Quick Links
 
-| Document | Description |
-|----------|-------------|
-| [SETUP.md](SETUP.md) | Local setup, prerequisites, service startup |
+| Document                           | Description                                  |
+| ---------------------------------- | -------------------------------------------- |
+| [SETUP.md](SETUP.md)               | Local setup, prerequisites, service startup  |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Microservices architecture, dependency rules |
-| [API.md](API.md) | API endpoints, routing, conventions |
+| [API.md](API.md)                   | API endpoints, routing, conventions          |
 
 ## Service Documentation
 
-| Service | README | Integration Guide |
-|---------|--------|-------------------|
-| **Gateway** | [README](../DotnetNiger.Gateway/README.md) | — |
-| **Identity** | [README](../DotnetNiger.Identity/README.md) | [INTEGRATION_GUIDE](../DotnetNiger.Identity/INTEGRATION_GUIDE.md) |
+| Service       | README                                       | Integration Guide                                                  |
+| ------------- | -------------------------------------------- | ------------------------------------------------------------------ |
+| **Gateway**   | [README](../DotnetNiger.Gateway/README.md)   | —                                                                  |
+| **Identity**  | [README](../DotnetNiger.Identity/README.md)  | [INTEGRATION_GUIDE](../DotnetNiger.Identity/INTEGRATION_GUIDE.md)  |
 | **Community** | [README](../DotnetNiger.Community/README.md) | [INTEGRATION_GUIDE](../DotnetNiger.Community/INTEGRATION_GUIDE.md) |
 
 ## Scope

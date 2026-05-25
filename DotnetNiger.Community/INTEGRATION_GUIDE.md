@@ -63,6 +63,7 @@ curl -s http://localhost:5269/api/v1/admin/dashboard \
 ### Token Claims
 
 The JWT should contain:
+
 - `sub` — User ID (Guid)
 - `name` / `full_name` — Display name
 - `email` — Email address
@@ -427,6 +428,7 @@ GET /api/v1/Search?q=dotnet&type=posts&page=1&pageSize=10
 ```
 
 Parameters:
+
 - `q` — Search query (required)
 - `type` — Filter by type: `posts`, `events`, `resources`, or all (default)
 - `page`, `pageSize` — Pagination
@@ -612,13 +614,13 @@ The Gateway includes an `ErrorHandlingMiddleware` that catches unhandled excepti
 
 ### HTTP Status Codes
 
-| Code | Description |
-|------|-------------|
-| 200 | Success |
-| 201 | Created |
-| 400 | Bad Request (validation error) |
-| 401 | Unauthorized (missing/invalid token) |
-| 403 | Forbidden (insufficient permissions) |
-| 404 | Not Found |
-| 429 | Too Many Requests (rate limited) |
-| 500 | Internal Server Error |
+| Code | Description                          |
+| ---- | ------------------------------------ |
+| 200  | Success                              |
+| 201  | Created                              |
+| 400  | Bad Request (validation error)       |
+| 401  | Unauthorized (missing/invalid token) |
+| 403  | Forbidden (insufficient permissions) |
+| 404  | Not Found                            |
+| 429  | Too Many Requests (rate limited)     |
+| 500  | Internal Server Error                |

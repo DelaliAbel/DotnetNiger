@@ -5,6 +5,11 @@
       "ClientIdHeader": "ClientId",
       "QuotaExceededMessage": "Trop de requetes. Reessayez dans un moment.",
       "HttpStatusCode": 429
+    },
+    "ServiceDiscoveryProvider": {
+      "Type": "Consul",
+      "Host": "consul",
+      "Port": 8500
     }
   }
 }

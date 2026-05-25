@@ -9,6 +9,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/{tenantId:guid}/users")]
 [Authorize(Roles = "Admin")]
+/// <summary>Gestion des utilisateurs : CRUD, mot de passe, réinitialisation (Admin).</summary>
 public class UsersController : ControllerBase
 {
     private readonly UserService _userService;
@@ -30,7 +31,7 @@ public class UsersController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<UserResponse>> GetById(Guid tenantId, Guid id)
     {
-        var user = await _userService.GetByIdAsync(id);
+        var user = await _userService.GetByIdAsync(tenantId, id);
         if (user == null) return NotFound(new ErrorResponse("Utilisateur non trouvé"));
         return Ok(user);
     }
@@ -48,7 +49,7 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<UserResponse>> Update(Guid tenantId, Guid id,
         [FromBody] UpdateUserRequest request)
     {
-        var user = await _userService.UpdateAsync(id, request);
+        var user = await _userService.UpdateAsync(tenantId, id, request);
         return Ok(user);
     }
 
@@ -56,7 +57,7 @@ public class UsersController : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid tenantId, Guid id)
     {
-        await _userService.DeleteAsync(id);
+        await _userService.DeleteAsync(tenantId, id);
         return NoContent();
     }
 
@@ -65,7 +66,15 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<UserResponse>> ChangePassword(Guid tenantId, Guid id,
         [FromBody] ChangePasswordRequest request)
     {
-        var user = await _userService.ChangePasswordAsync(id, request);
+        var user = await _userService.ChangePasswordAsync(tenantId, id, request);
         return Ok(user);
+    }
+
+    /// <summary>Envoie un email de réinitialisation de mot de passe à un utilisateur.</summary>
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        await _userService.ForgotPasswordAsync(request.Email);
+        return Ok(new { message = "Un lien de réinitialisation a été envoyé par email." });
     }
 }

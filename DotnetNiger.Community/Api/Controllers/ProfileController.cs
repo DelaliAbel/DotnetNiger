@@ -55,3 +55,5 @@ public class ProfileController(IProfileService profileService) : ControllerBase
         return Ok(new { Success = true, Message = "Social link deleted" });
     }
 }
+
+

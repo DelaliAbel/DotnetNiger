@@ -1,11 +1,13 @@
 using System.Text;
 using DotnetNiger.Gateway.Configuration;
+using DotnetNiger.Gateway.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using MMLib.SwaggerForOcelot.DependencyInjection;
 using Ocelot.Cache.CacheManager;
 using Ocelot.DependencyInjection;
 using Ocelot.Provider.Polly;
+using Ocelot.Provider.Consul;
 using Serilog;
 
 namespace DotnetNiger.Gateway.Extensions;
@@ -19,9 +21,12 @@ public static class ServiceCollectionExtensions
     {
         services.AddOcelot(configuration)
             .AddCacheManager(x => x.WithDictionaryHandle())
-            .AddPolly();
+            .AddPolly()
+            .AddConsul();
 
         services.AddHttpClient();
+        services.AddMemoryCache();
+        services.AddHostedService<ExternalServiceHealthService>();
         services.AddEndpointsApiExplorer();
         services.AddSwaggerForOcelot(configuration);
 
@@ -31,9 +36,16 @@ public static class ServiceCollectionExtensions
                 options.AddPolicy("AllowAll", policy =>
                     policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
             else
-                options.AddPolicy("AllowAll", policy =>
-                    policy.WithOrigins(configuration["Cors:AllowedOrigins"]?.Split(',') ?? [])
-                          .AllowAnyMethod().AllowAnyHeader().AllowCredentials());
+            {
+                var origins = configuration["Cors:AllowedOrigins"];
+                if (!string.IsNullOrWhiteSpace(origins))
+                    options.AddPolicy("AllowAll", policy =>
+                        policy.WithOrigins(origins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                              .AllowAnyMethod().AllowAnyHeader().AllowCredentials());
+                else
+                    options.AddPolicy("AllowAll", policy =>
+                        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+            }
         });
 
         services.AddGatewayJwtAuthentication(configuration);

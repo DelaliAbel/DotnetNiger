@@ -9,6 +9,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/admin")]
 [Authorize(Roles = "Admin")]
+/// <summary>Administration système : statistiques et métriques globales (Admin).</summary>
 public class AdminController : ControllerBase
 {
     private readonly AdminService _adminService;

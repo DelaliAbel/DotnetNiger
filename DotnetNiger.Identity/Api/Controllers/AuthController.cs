@@ -1,39 +1,148 @@
 using System.Security.Claims;
+using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.RateLimiting;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Application.DTOs;
 using DotnetNiger.Identity.Application.Services;
+using static OpenIddict.Abstractions.OpenIddictConstants;
+
 
 namespace DotnetNiger.Identity.Api.Controllers;
 
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/auth")]
+[EnableRateLimiting("Auth")]
+/// <summary>Authentification OAuth2/OIDC : login, register, token exchange, external providers.</summary>
 public class AuthController : ControllerBase
 {
     private readonly AuthService _authService;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
 
+    private readonly TenantService _tenantService;
+
+    private readonly TenantClientService _tenantClientService;
+
     public AuthController(AuthService authService,
         UserManager<ApplicationUser> userManager,
-        SignInManager<ApplicationUser> signInManager)
+        SignInManager<ApplicationUser> signInManager,
+        TenantService tenantService,
+        TenantClientService tenantClientService)
     {
         _authService = authService;
         _userManager = userManager;
         _signInManager = signInManager;
+        _tenantService = tenantService;
+        _tenantClientService = tenantClientService;
     }
 
+    /// <summary>Point d'entrée OIDC Authorize. Gère le flux authorization_code.</summary>
+    [HttpGet("~/connect/authorize")]
+    [HttpPost("~/connect/authorize")]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> Authorize()
+    {
+        var request = HttpContext.GetOpenIddictServerRequest() ??
+            throw new InvalidOperationException("La requête OpenID Connect est introuvable.");
+
+        var result = await HttpContext.AuthenticateAsync(IdentityConstants.ApplicationScheme);
+        if (!result.Succeeded)
+        {
+            return Challenge(
+                authenticationSchemes: IdentityConstants.ApplicationScheme,
+                properties: new AuthenticationProperties
+                {
+                    RedirectUri = Request.PathBase + Request.Path + Request.QueryString
+                });
+        }
+
+        var user = await _userManager.GetUserAsync(result.Principal);
+        if (user == null || !user.IsActive)
+        {
+            return Challenge(
+                authenticationSchemes: IdentityConstants.ApplicationScheme,
+                properties: new AuthenticationProperties
+                {
+                    RedirectUri = Request.PathBase + Request.Path + Request.QueryString
+                });
+        }
+
+        var principal = await _signInManager.CreateUserPrincipalAsync(user);
+        principal.SetClaim(Claims.Subject, user.Id.ToString());
+
+        var scopes = (request.Scope ?? "openid profile email roles offline_access")
+            .Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        principal.SetScopes(scopes);
+
+        var roles = await _userManager.GetRolesAsync(user);
+        foreach (var role in roles)
+        {
+            principal.SetClaim(ClaimTypes.Role, role);
+            principal.SetClaim("role", role);
+        }
+        principal.SetClaim("tenant_id", user.TenantId.ToString());
+        principal.SetClaim(Claims.GivenName, user.FirstName);
+        principal.SetClaim(Claims.FamilyName, user.LastName);
+        principal.SetClaim(Claims.Name, $"{user.FirstName} {user.LastName}".Trim());
+        principal.SetClaim(Claims.Email, user.Email);
+
+        principal.SetDestinations(claim => claim.Type switch
+        {
+            Claims.Subject
+                => [Destinations.AccessToken, Destinations.IdentityToken],
+            Claims.Name or Claims.Email
+                or Claims.GivenName or Claims.FamilyName
+                => [Destinations.AccessToken, Destinations.IdentityToken],
+            ClaimTypes.Role or "role"
+                => [Destinations.AccessToken, Destinations.IdentityToken],
+            "tenant_id"
+                => [Destinations.AccessToken],
+            _ => [Destinations.AccessToken]
+        });
+
+        return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+    }
+
+    /// <summary>Endpoint OAuth2/OIDC token. Supporte password, client_credentials et refresh_token grants.</summary>
+    /// <remarks>
+    /// Format : `application/x-www-form-urlencoded`
+    ///
+    /// **Password flow :**
+    /// ```
+    /// grant_type=password&amp;username=admin@dotnetniger.com&amp;password=Admin%40123456&amp;scope=openid+profile+email+roles+offline_access
+    /// ```
+    ///
+    /// **Client credentials flow :**
+    /// ```
+    /// grant_type=client_credentials&amp;client_id={client_id}&amp;client_secret={secret}&amp;scope=api
+    /// ```
+    ///
+    /// **Refresh token flow :**
+    /// ```
+    /// grant_type=refresh_token&amp;refresh_token={token}
+    /// ```
+    /// </remarks>
     [HttpPost("~/connect/token"), IgnoreAntiforgeryToken, Produces("application/json")]
-    [ApiExplorerSettings(IgnoreApi = true)]
     public async Task<IActionResult> TokenExchange()
     {
         var grantType = Request.Form["grant_type"].FirstOrDefault();
+
+        if (grantType == "client_credentials")
+        {
+            var clientId = Request.Form["client_id"].FirstOrDefault();
+            if (string.IsNullOrEmpty(clientId))
+                throw new InvalidOperationException("client_id is required");
+
+            return await HandleClientCredentialsGrantAsync(clientId);
+        }
 
         if (grantType == "refresh_token")
         {
@@ -50,6 +159,14 @@ public class AuthController : ControllerBase
             }
 
             return SignIn(result.Principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        }
+
+        if (grantType == "authorization_code")
+        {
+            var principal = (await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme)).Principal;
+            if (principal == null)
+                throw new InvalidOperationException("The authorization code is invalid");
+            return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 
         if (grantType != "password")
@@ -88,7 +205,7 @@ public class AuthController : ControllerBase
                 or OpenIddictConstants.Claims.GivenName or OpenIddictConstants.Claims.FamilyName
                 => [OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken],
             ClaimTypes.Role or "role"
-                => [OpenIddictConstants.Destinations.AccessToken],
+                => [OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken],
             "tenant_id"
                 => [OpenIddictConstants.Destinations.AccessToken],
             _ => [OpenIddictConstants.Destinations.AccessToken]
@@ -97,6 +214,17 @@ public class AuthController : ControllerBase
         return SignIn(loginPrincipal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
+    /// <summary>Inscription multi-tenant : crée un tenant + admin + client OAuth2 + clé API atomiquement.</summary>
+    [HttpPost("register-tenant")]
+    [EnableRateLimiting("TenantRegistration")]
+    public async Task<ActionResult<RegisterTenantResponse>> RegisterTenant([FromBody] RegisterTenantRequest request)
+    {
+        var result = await _tenantService.RegisterTenantAsync(request);
+
+        return Ok(result);
+    }
+
+    ///<summary>Authentification par email/mot de passe. Retourne les infos utilisateur + rôles.</summary>
     [HttpPost("login")]
     public async Task<ActionResult<UserInfoResponse>> Login([FromBody] LoginRequest request)
     {
@@ -108,6 +236,7 @@ public class AuthController : ControllerBase
             user.TenantId, user.IsActive, roles, new List<string>(), request.RememberMe));
     }
 
+    /// <summary>Inscription d'un nouvel utilisateur. Un code de confirmation est envoyé par email.</summary>
     [HttpPost("register")]
     public async Task<ActionResult<object>> Register([FromBody] RegisterRequest request)
     {
@@ -125,6 +254,7 @@ public class AuthController : ControllerBase
         });
     }
 
+    /// <summary>Confirme l'adresse email avec le code reçu.</summary>
     [HttpPost("confirm-email")]
     public async Task<ActionResult<object>> ConfirmEmail([FromBody] ConfirmEmailRequest request)
     {
@@ -132,6 +262,7 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Email confirmé avec succès. Vous pouvez maintenant vous connecter." });
     }
 
+    /// <summary>Confirme l'email via lien (GET). Affiche une page de confirmation.</summary>
     [HttpGet("confirm-email")]
     public async Task<IActionResult> ConfirmEmailGet([FromQuery] string email, [FromQuery] string code)
     {
@@ -144,6 +275,7 @@ public class AuthController : ControllerBase
             + "</div></body></html>", "text/html");
     }
 
+    /// <summary>Réenvoie le code de confirmation email.</summary>
     [HttpPost("resend-code")]
     public async Task<ActionResult<object>> ResendCode([FromBody] ForgotPasswordRequest request)
     {
@@ -151,6 +283,51 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Un nouveau code de confirmation vous a été envoyé." });
     }
 
+    private async Task<IActionResult> HandleClientCredentialsGrantAsync(string clientId)
+    {
+        var clients = await _tenantClientService.GetClientsByClientIdAsync(clientId);
+        var tenantClient = clients.FirstOrDefault()
+            ?? throw new InvalidOperationException("Client non trouvé ou inactif");
+
+        if (!tenantClient.IsActive)
+            throw new InvalidOperationException("Ce client est désactivé");
+
+        var tenant = await _tenantService.GetByIdAsync(tenantClient.TenantId);
+        if (tenant == null || !tenant.IsActive)
+            throw new InvalidOperationException("Le tenant associé à ce client est inactif");
+
+        var identity = new ClaimsIdentity(
+            OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+            OpenIddictConstants.Claims.Name,
+            OpenIddictConstants.Claims.Role);
+
+        identity.AddClaim(OpenIddictConstants.Claims.Subject, clientId);
+        identity.AddClaim(OpenIddictConstants.Claims.Name, tenantClient.ClientName);
+        identity.AddClaim("tenant_id", tenantClient.TenantId.ToString());
+        identity.AddClaim("client_id", clientId);
+        identity.AddClaim(ClaimTypes.Role, "Client");
+        identity.AddClaim("role", "Client");
+
+        var principal = new ClaimsPrincipal(identity);
+        principal.SetScopes(Request.Form["scope"].SelectMany(
+            s => (s ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries)));
+        principal.SetDestinations(claim => claim.Type switch
+        {
+            OpenIddictConstants.Claims.Subject
+                => [OpenIddictConstants.Destinations.AccessToken],
+            OpenIddictConstants.Claims.Name
+                => [OpenIddictConstants.Destinations.AccessToken],
+            "tenant_id" or "client_id"
+                => [OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken],
+            ClaimTypes.Role or "role"
+                => [OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken],
+            _ => [OpenIddictConstants.Destinations.AccessToken],
+        });
+
+        return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+    }
+
+    /// <summary>Déconnexion de l'utilisateur connecté.</summary>
     [HttpPost("logout")]
     [Authorize]
     public async Task<IActionResult> Logout()
@@ -159,6 +336,7 @@ public class AuthController : ControllerBase
         return Ok(new { message = "Déconnecté" });
     }
 
+    /// <summary>Redirige vers le fournisseur externe (Google, GitHub, Microsoft).</summary>
     [HttpGet("external-login")]
     public IActionResult ExternalLogin([FromQuery] string provider, [FromQuery] string? returnUrl)
     {
@@ -167,6 +345,7 @@ public class AuthController : ControllerBase
         return Challenge(properties, provider);
     }
 
+    /// <summary>Callback des fournisseurs OAuth externes. Traite le retour et connecte l'utilisateur.</summary>
     [HttpGet("external-callback")]
     public async Task<ActionResult<UserInfoResponse>> ExternalCallback(
         [FromQuery] string? returnUrl = null, [FromQuery] bool rememberMe = false)
@@ -178,19 +357,81 @@ public class AuthController : ControllerBase
             result.roles, new List<string>(), rememberMe));
     }
 
+    /// <summary>Retourne les informations de l'utilisateur connecté (email, rôles, tenant).</summary>
     [HttpGet("userinfo")]
     [Authorize]
     public async Task<ActionResult<UserInfoResponse>> UserInfo()
     {
         var userId = User.FindFirst(OpenIddictConstants.Claims.Subject)?.Value;
-        if (userId == null) return Unauthorized();
+        var tenantClaim = User.FindFirst("tenant_id")?.Value;
+        if (userId == null || tenantClaim == null) return Unauthorized();
 
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null) return Unauthorized();
+
+        if (!Guid.TryParse(tenantClaim, out var tokenTenantId) || user.TenantId != tokenTenantId)
+            return Unauthorized();
 
         var roles = await _userManager.GetRolesAsync(user);
         return Ok(new UserInfoResponse(
             user.Id, user.Email!, user.FirstName, user.LastName, user.AvatarUrl,
             user.TenantId, user.IsActive, roles, new List<string>()));
+    }
+
+    /// <summary>Bootstrap du client OIDC "web-ui" (création ou mise à jour des permissions/URIs).</summary>
+    [AllowAnonymous]
+    [HttpPost("bootstrap-web-ui")]
+    public async Task<IActionResult> BootstrapWebUi(
+        [FromServices] IOpenIddictApplicationManager appManager)
+    {
+        var existing = await appManager.FindByClientIdAsync("web-ui");
+        if (existing != null)
+        {
+            var descriptor = new OpenIddictApplicationDescriptor();
+            await appManager.PopulateAsync(descriptor, existing);
+            descriptor.Permissions.Add("ep:token");
+            descriptor.Permissions.Add("ep:authorization");
+            descriptor.Permissions.Add("ep:logout");
+            descriptor.Permissions.Add("ep:userinfo");
+            descriptor.Permissions.Add("gt:authorization_code");
+            descriptor.Permissions.Add("gt:refresh_token");
+            descriptor.Permissions.Add("rst:code");
+            descriptor.Permissions.Add("scp:openid");
+            descriptor.Permissions.Add("scp:email");
+            descriptor.Permissions.Add("scp:profile");
+            descriptor.Permissions.Add("scp:roles");
+            descriptor.Permissions.Add("scp:offline_access");
+            descriptor.RedirectUris.Add(new Uri("http://localhost:5100/signin-oidc"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:5100/"));
+            await appManager.UpdateAsync(existing, descriptor);
+            return Ok(new { message = "web-ui client updated" });
+        }
+
+        var newDescriptor = new OpenIddictApplicationDescriptor
+        {
+            ClientId = "web-ui",
+            ClientSecret = null,
+            DisplayName = "Web UI — Portail développeur",
+            ConsentType = OpenIddictConstants.ConsentTypes.Implicit,
+            ClientType = OpenIddictConstants.ClientTypes.Public,
+            ApplicationType = OpenIddictConstants.ApplicationTypes.Web,
+        };
+
+        newDescriptor.RedirectUris.Add(new Uri("http://localhost:5100/signin-oidc"));
+        newDescriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:5100/"));
+        newDescriptor.Permissions.Add("ep:token");
+        newDescriptor.Permissions.Add("ep:authorization");
+        newDescriptor.Permissions.Add("ep:logout");
+        newDescriptor.Permissions.Add("ep:userinfo");
+        newDescriptor.Permissions.Add("gt:authorization_code");
+        newDescriptor.Permissions.Add("gt:refresh_token");
+        newDescriptor.Permissions.Add("rst:code");
+        newDescriptor.Permissions.Add("scp:openid");
+        newDescriptor.Permissions.Add("scp:email");
+        newDescriptor.Permissions.Add("scp:profile");
+        newDescriptor.Permissions.Add("scp:roles");
+        newDescriptor.Permissions.Add("scp:offline_access");
+        await appManager.CreateAsync(newDescriptor);
+        return Ok(new { message = "web-ui client created" });
     }
 }

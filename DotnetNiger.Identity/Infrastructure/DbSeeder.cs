@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using OpenIddict.Abstractions;
 using DotnetNiger.Identity.Domain.Entities;
 
 namespace DotnetNiger.Identity.Infrastructure;
@@ -14,10 +15,9 @@ namespace DotnetNiger.Identity.Infrastructure;
 public class DbSeeder
 {
     public static async Task SeedAsync(IdentityDbContext db, UserManager<ApplicationUser> userManager,
-        RoleManager<ApplicationRole> roleManager, TenantContext tenantContext, string adminPassword)
+        RoleManager<ApplicationRole> roleManager, TenantContext tenantContext, string adminPassword,
+        IOpenIddictApplicationManager appManager)
     {
-        await db.Database.EnsureCreatedAsync();
-
         if (await db.Tenants.AnyAsync()) return;
 
         var platformTenant = new Tenant
@@ -76,5 +76,74 @@ public class DbSeeder
         {
             await userManager.AddToRoleAsync(adminUser, "Admin");
         }
+
+        await CreateWebUiClientAsync(appManager);
+        await CreateTestIdentityClientAsync(appManager);
+    }
+
+    private static async Task CreateTestIdentityClientAsync(IOpenIddictApplicationManager appManager)
+    {
+        var existing = await appManager.FindByClientIdAsync("test-identity");
+        if (existing != null) return;
+
+        var descriptor = new OpenIddictApplicationDescriptor
+        {
+            ClientId = "test-identity",
+            ClientSecret = null,
+            DisplayName = "TestIdentity — Application de test OIDC",
+            ConsentType = OpenIddictConstants.ConsentTypes.Implicit,
+            ClientType = OpenIddictConstants.ClientTypes.Public,
+            ApplicationType = OpenIddictConstants.ApplicationTypes.Web,
+        };
+
+        descriptor.RedirectUris.Add(new Uri("http://localhost:5200/signin-oidc"));
+        descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:5200/"));
+        descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:5200/signout-callback-oidc"));
+        descriptor.Permissions.Add("ep:token");
+        descriptor.Permissions.Add("ep:authorization");
+        descriptor.Permissions.Add("ep:logout");
+        descriptor.Permissions.Add("ep:userinfo");
+        descriptor.Permissions.Add("gt:authorization_code");
+        descriptor.Permissions.Add("gt:refresh_token");
+        descriptor.Permissions.Add("rst:code");
+        descriptor.Permissions.Add("scp:openid");
+        descriptor.Permissions.Add("scp:email");
+        descriptor.Permissions.Add("scp:profile");
+        descriptor.Permissions.Add("scp:roles");
+        descriptor.Permissions.Add("scp:offline_access");
+        await appManager.CreateAsync(descriptor);
+    }
+
+    private static async Task CreateWebUiClientAsync(IOpenIddictApplicationManager appManager)
+    {
+        var existing = await appManager.FindByClientIdAsync("web-ui");
+        if (existing != null) return;
+
+        var descriptor = new OpenIddictApplicationDescriptor
+        {
+            ClientId = "web-ui",
+            ClientSecret = null,
+            DisplayName = "Web UI — Portail développeur",
+            ConsentType = OpenIddictConstants.ConsentTypes.Implicit,
+            ClientType = OpenIddictConstants.ClientTypes.Public,
+            ApplicationType = OpenIddictConstants.ApplicationTypes.Web,
+        };
+
+        descriptor.RedirectUris.Add(new Uri("http://localhost:5100/signin-oidc"));
+        descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:5100/"));
+        descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:5100/signout-callback-oidc"));
+        descriptor.Permissions.Add("ep:token");
+        descriptor.Permissions.Add("ep:authorization");
+        descriptor.Permissions.Add("ep:logout");
+        descriptor.Permissions.Add("ep:userinfo");
+        descriptor.Permissions.Add("gt:authorization_code");
+        descriptor.Permissions.Add("gt:refresh_token");
+        descriptor.Permissions.Add("rst:code");
+        descriptor.Permissions.Add("scp:openid");
+        descriptor.Permissions.Add("scp:email");
+        descriptor.Permissions.Add("scp:profile");
+        descriptor.Permissions.Add("scp:roles");
+        descriptor.Permissions.Add("scp:offline_access");
+        await appManager.CreateAsync(descriptor);
     }
 }

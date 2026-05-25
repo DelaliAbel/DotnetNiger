@@ -12,7 +12,17 @@ public static class ServiceExtensions
     public static IServiceCollection AddCommunityInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlite(configuration.GetConnectionString("DefaultConnection")));
+        {
+            var provider = configuration.GetValue<string>("DatabaseProvider", "Sqlite");
+            var connStr = configuration.GetConnectionString("DefaultConnection") ?? "Data Source=DotnetNigerCommunity.db";
+
+            if (provider == "SqlServer")
+                options.UseSqlServer(connStr, x => x.MigrationsAssembly("DotnetNiger.Community"));
+            else if (provider is "PostgreSql" or "PostgreSQL" or "Npgsql")
+                options.UseNpgsql(connStr, x => x.MigrationsAssembly("DotnetNiger.Community"));
+            else
+                options.UseSqlite(connStr, x => x.MigrationsAssembly("DotnetNiger.Community"));
+        });
 
         return services;
     }

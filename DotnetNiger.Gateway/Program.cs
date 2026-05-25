@@ -23,8 +23,14 @@ try
     var builder = WebApplication.CreateBuilder(args);
     builder.Host.UseSerilog();
 
-    var seedServices = LoadDownstreamServices(builder.Configuration);
-    var mergedOcelotFile = OcelotConfigurationBuilder.BuildMergedConfig(
+var seedServices = LoadDownstreamServices(builder.Configuration);
+var useConsul = string.Equals(
+    builder.Configuration["ServiceDiscovery:Provider"], "Consul", StringComparison.OrdinalIgnoreCase);
+
+var mergedOcelotFile = useConsul
+    ? OcelotConfigurationBuilder.BuildMergedConfigWithConsul(
+        builder.Environment.ContentRootPath, seedServices)
+    : OcelotConfigurationBuilder.BuildMergedConfig(
         builder.Environment.ContentRootPath,
         builder.Environment.IsProduction(),
         seedServices);
@@ -46,6 +52,7 @@ try
     app.UseClientIdResolutionMiddleware();
     app.UseRequestTracingMiddleware();
     app.UseCustomSwaggerMergeMiddleware();
+    app.UseExternalServiceProxy();
 
     app.MapGatewayHealthEndpoints();
     app.MapServiceRegistryEndpoint();

@@ -1,0 +1,84 @@
+@page
+@model DotnetNiger.Identity.Web.Pages.Developer.ProfileModel
+@{
+    ViewData["Title"] = "Profil";
+}
+
+<h1>Mon Profil</h1>
+<p class="lead">Modifiez vos informations personnelles.</p>
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert alert-@(Model.IsError ? "danger" : "success") alert-dismissible fade show" role="alert">
+        @Model.Message
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Input.FirstName" class="form-label">Prénom</label>
+                    <input asp-for="Input.FirstName" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.LastName" class="form-label">Nom de famille</label>
+                    <input asp-for="Input.LastName" class="form-control" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Email</label>
+                    <input class="form-control" value="@Model.Email" readonly disabled />
+                    <small class="text-muted">L'email ne peut pas être modifié.</small>
+                </div>
+                <div class="col-12">
+                    <label asp-for="Input.AvatarUrl" class="form-label">Avatar URL</label>
+                    <input asp-for="Input.AvatarUrl" class="form-control" placeholder="https://..." />
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Enregistrer</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Changer le mot de passe</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" asp-page-handler="ChangePassword">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="PasswordInput.CurrentPassword" class="form-label">Mot de passe actuel</label>
+                    <input asp-for="PasswordInput.CurrentPassword" type="password" class="form-control" />
+                    <span asp-validation-for="PasswordInput.CurrentPassword" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="PasswordInput.NewPassword" class="form-label">Nouveau mot de passe</label>
+                    <input asp-for="PasswordInput.NewPassword" type="password" class="form-control" />
+                    <span asp-validation-for="PasswordInput.NewPassword" class="text-danger"></span>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-warning">Changer le mot de passe</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5 class="mb-0">Informations du compte</h5>
+    </div>
+    <div class="card-body">
+        <table class="table table-borderless mb-0">
+            <tbody>
+                <tr><th class="ps-0" style="width:200px">Rôles</th><td>@string.Join(", ", Model.Roles)</td></tr>
+                <tr><th class="ps-0" style="width:200px">Tenant ID</th><td><code>@Model.TenantId</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>

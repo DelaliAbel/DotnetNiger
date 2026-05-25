@@ -9,7 +9,7 @@ public class ApplicationLayerDependencyGuardsTests
     public void CommunityApplication_MustNotReference_CommunityInfrastructureRepositoriesNamespace()
     {
         var applicationPath = Path.GetFullPath(
-            Path.Combine(AppContext.BaseDirectory, "../../../../DotnetNiger.Community/Application"));
+            Path.Combine(AppContext.BaseDirectory, "../../../../../DotnetNiger.Community/Application"));
 
         Assert.True(Directory.Exists(applicationPath), $"Application folder not found: {applicationPath}");
 
@@ -34,7 +34,7 @@ public class ApplicationLayerDependencyGuardsTests
     public void IdentityApplication_MustNotReference_IdentityInfrastructureRepositoriesNamespace()
     {
         var applicationPath = Path.GetFullPath(
-            Path.Combine(AppContext.BaseDirectory, "../../../../DotnetNiger.Identity/Application"));
+            Path.Combine(AppContext.BaseDirectory, "../../../../../DotnetNiger.Identity/Application"));
 
         Assert.True(Directory.Exists(applicationPath), $"Application folder not found: {applicationPath}");
 

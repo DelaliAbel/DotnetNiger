@@ -21,3 +21,13 @@ public record UserInfoResponse(
     IList<string> Roles,
     IList<string> Permissions,
     bool RememberMe = false);
+
+public record RegisterTenantResponse(
+    Guid TenantId,
+    string TenantName,
+    string TenantSlug,
+    string AdminEmail,
+    string ClientId,
+    string ClientSecret,
+    Guid ApiKeyId,
+    string ApiKeySecret);

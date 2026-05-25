@@ -11,6 +11,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/profile")]
 [Authorize]
+/// <summary>Profil utilisateur connecté : lecture, modification, suppression.</summary>
 public class ProfileController : ControllerBase
 {
     private readonly UserManager<ApplicationUser> _userManager;

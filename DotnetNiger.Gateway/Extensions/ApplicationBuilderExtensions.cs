@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using DotnetNiger.Gateway.Configuration;
 using DotnetNiger.Gateway.Metrics;
 using DotnetNiger.Gateway.Services;
+using DotnetNiger.Gateway.Middleware;
 using Serilog;
 
 namespace DotnetNiger.Gateway.Extensions;
@@ -65,6 +66,12 @@ public static class ApplicationBuilderExtensions
             Log.Information("← {StatusCode}", context.Response.StatusCode);
         });
 
+        return app;
+    }
+
+    public static IApplicationBuilder UseExternalServiceProxy(this IApplicationBuilder app)
+    {
+        app.UseMiddleware<ExternalServiceProxyMiddleware>();
         return app;
     }
 
