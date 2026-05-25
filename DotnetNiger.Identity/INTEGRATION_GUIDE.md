@@ -77,86 +77,86 @@ The Gateway uses a shared symmetric key for JWT validation (must match Identity'
 
 ### Token Endpoint (OpenIddict)
 
-| Method | Endpoint | Content-Type | Description |
-|--------|----------|-------------|-------------|
-| POST | `/connect/token` | `application/x-www-form-urlencoded` | Get JWT (password or refresh_token) |
+| Method | Endpoint         | Content-Type                        | Description                         |
+| ------ | ---------------- | ----------------------------------- | ----------------------------------- |
+| POST   | `/connect/token` | `application/x-www-form-urlencoded` | Get JWT (password or refresh_token) |
 
 ### Auth Endpoints
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/v1/auth/register` | — | Create account |
-| POST | `/api/v1/auth/confirm-email` | — | Confirm email (JSON) |
-| GET | `/api/v1/auth/confirm-email` | — | Confirm email (query) |
-| POST | `/api/v1/auth/resend-code` | — | Resend confirmation code |
-| POST | `/api/v1/auth/login` | — | JSON login |
-| POST | `/api/v1/auth/logout` | Bearer | Logout |
-| GET | `/api/v1/auth/userinfo` | Bearer | Connected user info |
-| GET | `/api/v1/auth/external-login` | — | OAuth provider redirect |
-| GET | `/api/v1/auth/external-callback` | — | OAuth callback |
+| Method | Endpoint                         | Auth   | Description              |
+| ------ | -------------------------------- | ------ | ------------------------ |
+| POST   | `/api/v1/auth/register`          | —      | Create account           |
+| POST   | `/api/v1/auth/confirm-email`     | —      | Confirm email (JSON)     |
+| GET    | `/api/v1/auth/confirm-email`     | —      | Confirm email (query)    |
+| POST   | `/api/v1/auth/resend-code`       | —      | Resend confirmation code |
+| POST   | `/api/v1/auth/login`             | —      | JSON login               |
+| POST   | `/api/v1/auth/logout`            | Bearer | Logout                   |
+| GET    | `/api/v1/auth/userinfo`          | Bearer | Connected user info      |
+| GET    | `/api/v1/auth/external-login`    | —      | OAuth provider redirect  |
+| GET    | `/api/v1/auth/external-callback` | —      | OAuth callback           |
 
 ### Profile Endpoints
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/v1/profile` | Bearer | Get own profile |
-| PUT | `/api/v1/profile` | Bearer | Update profile (firstName, lastName, avatarUrl) |
-| DELETE | `/api/v1/profile` | Bearer | Delete own account |
+| Method | Endpoint          | Auth   | Description                                     |
+| ------ | ----------------- | ------ | ----------------------------------------------- |
+| GET    | `/api/v1/profile` | Bearer | Get own profile                                 |
+| PUT    | `/api/v1/profile` | Bearer | Update profile (firstName, lastName, avatarUrl) |
+| DELETE | `/api/v1/profile` | Bearer | Delete own account                              |
 
 ### User Management (Admin)
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/v1/{tenantId}/users` | Admin | Create user in tenant |
-| GET | `/api/v1/{tenantId}/users` | Admin | List users in tenant |
-| GET | `/api/v1/{tenantId}/users/{id}` | Admin | Get user by ID |
-| PUT | `/api/v1/{tenantId}/users/{id}` | Admin | Update user |
-| DELETE | `/api/v1/{tenantId}/users/{id}` | Admin | Delete user |
-| POST | `/api/v1/{tenantId}/users/{id}/change-password` | Admin | Change user password |
+| Method | Endpoint                                        | Auth  | Description           |
+| ------ | ----------------------------------------------- | ----- | --------------------- |
+| POST   | `/api/v1/{tenantId}/users`                      | Admin | Create user in tenant |
+| GET    | `/api/v1/{tenantId}/users`                      | Admin | List users in tenant  |
+| GET    | `/api/v1/{tenantId}/users/{id}`                 | Admin | Get user by ID        |
+| PUT    | `/api/v1/{tenantId}/users/{id}`                 | Admin | Update user           |
+| DELETE | `/api/v1/{tenantId}/users/{id}`                 | Admin | Delete user           |
+| POST   | `/api/v1/{tenantId}/users/{id}/change-password` | Admin | Change user password  |
 
 ### Role Management (Admin)
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/v1/{tenantId}/roles` | Admin | Create role |
-| GET | `/api/v1/{tenantId}/roles` | Admin | List roles |
-| PUT | `/api/v1/{tenantId}/roles/{id}` | Admin | Update role |
-| DELETE | `/api/v1/{tenantId}/roles/{id}` | Admin | Delete role |
-| POST | `/api/v1/{tenantId}/roles/{roleId}/users/{userId}` | Admin | Assign user to role |
+| Method | Endpoint                                           | Auth  | Description           |
+| ------ | -------------------------------------------------- | ----- | --------------------- |
+| POST   | `/api/v1/{tenantId}/roles`                         | Admin | Create role           |
+| GET    | `/api/v1/{tenantId}/roles`                         | Admin | List roles            |
+| PUT    | `/api/v1/{tenantId}/roles/{id}`                    | Admin | Update role           |
+| DELETE | `/api/v1/{tenantId}/roles/{id}`                    | Admin | Delete role           |
+| POST   | `/api/v1/{tenantId}/roles/{roleId}/users/{userId}` | Admin | Assign user to role   |
 | DELETE | `/api/v1/{tenantId}/roles/{roleId}/users/{userId}` | Admin | Remove user from role |
-| GET | `/api/v1/{tenantId}/roles/user/{userId}` | Admin | Get user roles |
+| GET    | `/api/v1/{tenantId}/roles/user/{userId}`           | Admin | Get user roles        |
 
 ### Permission Management (Admin)
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/api/v1/{tenantId}/permissions` | Admin | Create permission |
-| GET | `/api/v1/{tenantId}/permissions` | Admin | List permissions |
-| GET | `/api/v1/{tenantId}/permissions/grouped` | Admin | Permissions grouped by category |
-| DELETE | `/api/v1/{tenantId}/permissions/{id}` | Admin | Delete permission |
-| POST | `/api/v1/{tenantId}/permissions/assign` | Admin | Assign permissions to role |
+| Method | Endpoint                                 | Auth  | Description                     |
+| ------ | ---------------------------------------- | ----- | ------------------------------- |
+| POST   | `/api/v1/{tenantId}/permissions`         | Admin | Create permission               |
+| GET    | `/api/v1/{tenantId}/permissions`         | Admin | List permissions                |
+| GET    | `/api/v1/{tenantId}/permissions/grouped` | Admin | Permissions grouped by category |
+| DELETE | `/api/v1/{tenantId}/permissions/{id}`    | Admin | Delete permission               |
+| POST   | `/api/v1/{tenantId}/permissions/assign`  | Admin | Assign permissions to role      |
 
 ### Admin Endpoints
 
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/api/v1/admin/stats` | Admin | Platform statistics |
-| CRUD | `/api/v1/admin/tenants` | Admin | Tenant management (CRUD) |
-| GET | `/api/v1/admin/tenants/by-slug/{slug}` | Admin | Get tenant by slug |
+| Method | Endpoint                               | Auth  | Description              |
+| ------ | -------------------------------------- | ----- | ------------------------ |
+| GET    | `/api/v1/admin/stats`                  | Admin | Platform statistics      |
+| CRUD   | `/api/v1/admin/tenants`                | Admin | Tenant management (CRUD) |
+| GET    | `/api/v1/admin/tenants/by-slug/{slug}` | Admin | Get tenant by slug       |
 
 ### OpenID Connect Discovery
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/.well-known/openid-configuration` | OIDC metadata |
-| GET | `/.well-known/jwks` | Public RSA keys |
+| Method | Endpoint                            | Description     |
+| ------ | ----------------------------------- | --------------- |
+| GET    | `/.well-known/openid-configuration` | OIDC metadata   |
+| GET    | `/.well-known/jwks`                 | Public RSA keys |
 
 ### Diagnostics
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/diagnostics/health` | Health check |
-| GET | `/api/v1/diagnostics/ping` | Ping |
+| Method | Endpoint                     | Description  |
+| ------ | ---------------------------- | ------------ |
+| GET    | `/api/v1/diagnostics/health` | Health check |
+| GET    | `/api/v1/diagnostics/ping`   | Ping         |
 
 ---
 
@@ -177,6 +177,7 @@ Content-Type: application/json
 ```
 
 Response:
+
 ```json
 {
   "message": "Compte créé. Un code de confirmation vous a été envoyé par email.",
@@ -191,11 +192,13 @@ Response:
 ### 4.2 Email Confirmation (Two Methods)
 
 **Method 1 — Clickable Link** (for web clients):
+
 ```
 GET /api/v1/auth/confirm-email?email=user@example.com&code=A3F9K2
 ```
 
 **Method 2 — JSON Body** (for API/mobile clients):
+
 ```http
 POST /api/v1/auth/confirm-email
 Content-Type: application/json
@@ -228,15 +231,16 @@ grant_type=password&username=user@example.com&password=MyPassword@123&scope=open
 
 Parameters:
 
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `grant_type` | Yes | `password` or `refresh_token` |
-| `username` | Yes | User email (for password grant) |
-| `password` | Yes | User password (for password grant) |
-| `scope` | No | Space-separated scopes: `openid`, `profile`, `email`, `roles`, `api`, `offline_access` |
-| `remember_me` | No | `true` = 7-day token, `false`/absent = 1-hour token |
+| Parameter     | Required | Description                                                                            |
+| ------------- | -------- | -------------------------------------------------------------------------------------- |
+| `grant_type`  | Yes      | `password` or `refresh_token`                                                          |
+| `username`    | Yes      | User email (for password grant)                                                        |
+| `password`    | Yes      | User password (for password grant)                                                     |
+| `scope`       | No       | Space-separated scopes: `openid`, `profile`, `email`, `roles`, `api`, `offline_access` |
+| `remember_me` | No       | `true` = 7-day token, `false`/absent = 1-hour token                                    |
 
 Response:
+
 ```json
 {
   "access_token": "eyJhbG...",
@@ -274,6 +278,7 @@ Content-Type: application/json
 ```
 
 Response:
+
 ```json
 {
   "id": "guid-...",
@@ -294,6 +299,7 @@ Response:
 ### 4.7 Social Login (Google, Microsoft, GitHub)
 
 **Step 1** — Redirect user to the provider:
+
 ```
 GET /api/v1/auth/external-login?provider=Google
 ```
@@ -301,6 +307,7 @@ GET /api/v1/auth/external-login?provider=Google
 **Step 2** — Provider redirects to `/api/v1/auth/external-callback` with authorization code.
 
 **Step 3** — Callback returns user info:
+
 ```json
 {
   "id": "guid",
@@ -372,14 +379,14 @@ The Identity service isolates data per tenant using two mechanisms:
 
 ### Tenant Endpoints (Admin)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| POST | `/api/v1/admin/tenants` | Create tenant |
-| GET | `/api/v1/admin/tenants` | List all tenants |
-| GET | `/api/v1/admin/tenants/{id}` | Get tenant by ID |
-| GET | `/api/v1/admin/tenants/by-slug/{slug}` | Get tenant by slug |
-| PUT | `/api/v1/admin/tenants/{id}` | Update tenant |
-| DELETE | `/api/v1/admin/tenants/{id}` | Delete tenant |
+| Method | Endpoint                               | Description        |
+| ------ | -------------------------------------- | ------------------ |
+| POST   | `/api/v1/admin/tenants`                | Create tenant      |
+| GET    | `/api/v1/admin/tenants`                | List all tenants   |
+| GET    | `/api/v1/admin/tenants/{id}`           | Get tenant by ID   |
+| GET    | `/api/v1/admin/tenants/by-slug/{slug}` | Get tenant by slug |
+| PUT    | `/api/v1/admin/tenants/{id}`           | Update tenant      |
+| DELETE | `/api/v1/admin/tenants/{id}`           | Delete tenant      |
 
 ---
 
@@ -502,10 +509,12 @@ For production email sending (confirmation codes, etc.):
 JWKS (JSON Web Key Set) is an OIDC standard that exposes public keys for JWT signature verification.
 
 **Endpoints:**
+
 - `/.well-known/openid-configuration` — OIDC metadata
 - `/.well-known/jwks` — Public RSA keys
 
 **Advantages:**
+
 - No need to share a secret key between services
 - Key rotation possible without downtime
 - Industry standard (OpenID Connect)
@@ -516,9 +525,9 @@ JWKS (JSON Web Key Set) is an OIDC standard that exposes public keys for JWT sig
 
 ## 11. Test Credentials
 
-| Role | Email | Password |
-|------|-------|----------|
-| Super Admin | `admin@dotnetniger.com` | `Admin@123456` |
-| Regular User | *(register via API)* | *(set during registration)* |
+| Role         | Email                   | Password                    |
+| ------------ | ----------------------- | --------------------------- |
+| Super Admin  | `admin@dotnetniger.com` | `Admin@123456`              |
+| Regular User | _(register via API)_    | _(set during registration)_ |
 
 The super admin is created automatically by the database seeder on first run.

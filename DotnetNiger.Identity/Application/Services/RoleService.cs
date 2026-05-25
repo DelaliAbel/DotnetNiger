@@ -35,14 +35,11 @@ public class RoleService
 
     public async Task<List<RoleResponse>> GetByTenantAsync(Guid tenantId)
     {
-        var roles = await _db.Roles.Where(r => r.TenantId == tenantId).ToListAsync();
-        var result = new List<RoleResponse>();
-        foreach (var role in roles)
-        {
-            var count = await _db.UserRoles.CountAsync(ur => ur.RoleId == role.Id);
-            result.Add(new RoleResponse(role.Id, role.Name!, role.Description, role.TenantId, count));
-        }
-        return result;
+        return await _db.Roles
+            .Where(r => r.TenantId == tenantId)
+            .GroupJoin(_db.UserRoles, r => r.Id, ur => ur.RoleId, (r, urs) => new { Role = r, UserCount = urs.Count() })
+            .Select(x => new RoleResponse(x.Role.Id, x.Role.Name!, x.Role.Description, x.Role.TenantId, x.UserCount))
+            .ToListAsync();
     }
 
     public async Task<RoleResponse> UpdateAsync(Guid id, UpdateRoleRequest request)

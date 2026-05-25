@@ -16,6 +16,9 @@ public class AdminService
         var totalUsers = await _db.Users.IgnoreQueryFilters().CountAsync();
         var totalRoles = await _db.Roles.IgnoreQueryFilters().CountAsync();
         var totalPermissions = await _db.Permissions.IgnoreQueryFilters().CountAsync();
+        var totalApiKeys = await _db.TenantApiKeys.IgnoreQueryFilters().CountAsync();
+        var totalServices = await _db.ExternalServices.IgnoreQueryFilters().CountAsync();
+        var totalClients = await _db.TenantClients.IgnoreQueryFilters().CountAsync();
 
         return new
         {
@@ -23,6 +26,9 @@ public class AdminService
             totalUsers,
             totalRoles,
             totalPermissions,
+            totalApiKeys,
+            totalServices,
+            totalClients,
             activeTenants = await _db.Tenants.CountAsync(t => t.IsActive)
         };
     }

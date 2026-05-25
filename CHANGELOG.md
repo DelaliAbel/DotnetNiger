@@ -6,10 +6,47 @@ Le format suit Keep a Changelog et le versioning suit Semantic Versioning.
 
 ## [Unreleased]
 
+### Added
+
+- Gateway: `ServiceRegistry` singleton (`IServiceRegistry` / `ServiceRegistry`) pour la decouverte dynamique de services avec `ConcurrentDictionary` thread-safe.
+- Gateway: `POST /api/service-registry/register` endpoint middleware pour l'enregistrement dynamique des services upstream (avec auth optionnelle via `X-Registration-Key`).
+- Gateway: `Services/ServiceRegistry.cs` et `Services/ServiceRegistrationEndpoint.cs` — nouveaux fichiers pour le registre de services et le endpoint d'enregistrement.
+- Identity: Auto-enregistrement aupres du Gateway au demarrage via `TryRegisterWithGatewayAsync()` (config `Gateway:RegistrationUrl` + `Gateway:RegistrationKey`).
+- Community: Auto-enregistrement aupres du Gateway au demarrage via `TryRegisterWithGatewayAsync()` (config `Gateway:RegistrationUrl` + `Gateway:RegistrationKey`).
+- Identity: `[InternalApiKeyAuth]` attribute — protege les endpoints `_internal` avec l'en-tete `X-Internal-Key`.
+- Identity: `SlugAlreadyExistsException` / `EmailAlreadyExistsException` → HTTP 409 Conflict (au lieu de 400 BadRequest).
+- Tests: `InternalAuthTests` (3) — validation de l'auth interne.
+- Tests: `ProfileServiceTests` (7) — couverture du service Community ProfileService.
+
 ### Changed
 
-- Maintenance continue des services Identity, Community et Gateway.
-- Mises a jour ponctuelles de documentation et de configuration selon les besoins d'integration.
+- Gateway: `MapGatewayHealthEndpoints()` utilise desormais `IServiceRegistry.GetCombinedConfig()` au lieu d'une liste statique — les services dynamiques apparaissent dans `/health/downstream`, `/health/ready`, `/health/services`.
+- Gateway: Swagger merge middleware utilise le registre de services (`IServiceRegistry`) pour decouvrir les endpoints Swagger des services upstream.
+- Gateway: `Program.cs` cree un `ServiceRegistry` initialise depuis la config statique `DownstreamServices` et l'enregistre en singleton DI.
+- Gateway: `DownstreamServiceConfig` reste utilise pour les routes Ocelot (construites au demarrage), le registre dynamique se superpose pour les health checks.
+- docs/ARCHITECTURE.md: Mise a jour complete de la section "Dynamic Service Discovery" avec le nouveau modele a deux niveaux (statique + dynamique).
+- docs/SETUP.md: Ajout des instructions de configuration du Gateway Registration, variables `Gateway:RegistrationUrl`/`Gateway:RegistrationKey`.
+- DotnetNiger.Gateway/README.md: Ajout de la section Service Discovery, mise a jour du project structure, endpoints, et pipeline middleware.
+- `UserService` : toutes les methodes acceptent desormais `tenantId` et valident `user.TenantId` (protection cross-tenant).
+- `ExternalServiceService` : les services sont crees avec le statut `Active` (etait `Pending`).
+- Cache key : `ExternalServiceHealthService` utilise `ext:{slug}` (etait `ext:{Guid}`).
+
+### Fixed
+
+- Community: Correction de la variable `combined` non declaree dans `SearchService.SearchAsync()` — ajout de `IQueryable<SearchResultResponse>? combined = null;`.
+- Identity/AuthController.UserInfo : valide que le `tenant_id` claim correspond au tenant de l'utilisateur.
+- Gateway/ocelot.identity.routes.json : cle dupliquee `IdentityAuthRoute` renommee en `IdentitySuperAdminRoute`.
+- Gateway/ocelot.json `BaseUrl` : corrige de `localhost:5050` vers `http://localhost:5000`.
+- Gateway/CORS : fallback gracieux quand `Cors:AllowedOrigins` n'est pas configure.
+- Gateway/ExternalServiceHealthService : envoie `X-Internal-Key` lors des appels aux endpoints `_internal`.
+- Gateway/OcelotConfigurationBuilder.BindUrls : `BaseUrl` dur en `http://localhost:5000` (etait le premier `DevUrl` de la liste).
+
+### Security
+
+- Gateway: Le endpoint `/api/service-registry/register` peut etre protege par une cle API via `Gateway:RegistrationKey` (envoyee dans le header `X-Registration-Key`).
+- ApiKeyAuthenticationHandler : verifie desormais `TenantContext.TenantId` avant la recherche de cle API (defense-in-depth).
+- `_internal` endpoints : proteges par `[InternalApiKeyAuth]` — retourne 401 sans en-tete `X-Internal-Key` valide.
+- `UpdateHealthStatusAsync` : protege via `[InternalApiKeyAuth]` sur le controller.
 
 ## [1.4.0] - 2026-03-14
 

@@ -193,6 +193,21 @@ curl -s http://localhost:5269/api/v1/admin/dashboard \
 
 - **DotnetNiger.Identity** — JWT validation (`Authority` / `MetadataAddress`), user/role provisioning via HTTP client
 
+## Gateway Self-Registration
+
+On startup, Community automatically registers with the Gateway via `POST /api/service-registry/register`:
+
+```json
+{
+  "Gateway": {
+    "RegistrationUrl": "http://localhost:5000/api/service-registry/register",
+    "RegistrationKey": "__SET_VIA_ENV_OR_USER_SECRETS__"
+  }
+}
+```
+
+If the Gateway is unavailable at startup, the service logs a warning and continues normally. Registration is non-fatal.
+
 ## Configuration
 
 ```json
@@ -206,6 +221,10 @@ curl -s http://localhost:5269/api/v1/admin/dashboard \
   },
   "Identity": {
     "BaseUrl": "http://localhost:5075"
+  },
+  "Gateway": {
+    "RegistrationUrl": "http://localhost:5000/api/service-registry/register",
+    "RegistrationKey": "__SET_VIA_ENV_OR_USER_SECRETS__"
   }
 }
 ```

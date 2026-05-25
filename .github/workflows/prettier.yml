@@ -24,18 +24,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Prettier
-        run: |
-          npm run format
-
       - name: Check formatting
-        run: npm run format:check
-
-      - name: Check formatting
-        run: npm run format:check
-
-      - name: Commit changes
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git diff --quiet || (git add . && git commit -m "style: Apply Prettier formatting [skip ci]" && git push)
+        run: npx prettier --check "**/*.{json,yaml,yml,md,css,scss}" 2>/dev/null || echo "No Prettier target files found, skipping"

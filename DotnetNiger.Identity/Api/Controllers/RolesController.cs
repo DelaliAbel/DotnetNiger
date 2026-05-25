@@ -9,6 +9,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/{tenantId:guid}/roles")]
 [Authorize(Roles = "Admin")]
+/// <summary>Gestion des rôles : CRUD, assignation aux utilisateurs (Admin).</summary>
 public class RolesController : ControllerBase
 {
     private readonly RoleService _roleService;

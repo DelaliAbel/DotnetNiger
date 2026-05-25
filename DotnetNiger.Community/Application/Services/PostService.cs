@@ -1,5 +1,6 @@
 using DotnetNiger.Community.Infrastructure;
 using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Domain;
 using DotnetNiger.Community.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -161,19 +162,5 @@ public class PostService(AppDbContext db) : IPostService
         }
     }
 
-    private static string GenerateSlug(string text)
-    {
-        return text.ToLowerInvariant()
-            .Replace(" ", "-")
-            .Replace("'", "")
-            .Replace(".", "")
-            .Replace(",", "")
-            .Replace("é", "e").Replace("è", "e").Replace("ê", "e")
-            .Replace("à", "a").Replace("â", "a")
-            .Replace("ù", "u").Replace("û", "u")
-            .Replace("ô", "o").Replace("ö", "o")
-            .Replace("î", "i").Replace("ï", "i")
-            .Replace("ç", "c")
-            .Replace("\"", "").Replace("'", "");
-    }
+    private static string GenerateSlug(string text) => SlugGenerator.Generate(text);
 }

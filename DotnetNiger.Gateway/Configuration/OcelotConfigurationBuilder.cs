@@ -64,7 +64,7 @@ public static class OcelotConfigurationBuilder
             RewriteToContainerHosts(mergedRoutes, services);
         }
 
-        var baseUrl = services.FirstOrDefault()?.DevUrl ?? "http://localhost:5000";
+        var baseUrl = "http://localhost:5000";
         if (merged["GlobalConfiguration"] is JsonObject gc)
         {
             gc["BaseUrl"] = useContainerHosts ? "http://gateway:5000" : baseUrl;
@@ -126,5 +126,56 @@ public static class OcelotConfigurationBuilder
                 }
             }
         }
+    }
+
+    public static string BuildMergedConfigWithConsul(
+        string contentRootPath,
+        IReadOnlyCollection<DownstreamServiceConfig> services)
+    {
+        var globalPath = Path.Combine(contentRootPath, "ocelot.global.json");
+        if (!File.Exists(globalPath))
+            throw new FileNotFoundException("Missing ocelot.global.json");
+
+        var globalNode = JsonNode.Parse(File.ReadAllText(globalPath))?.AsObject()
+            ?? throw new InvalidOperationException("Invalid JSON in ocelot.global.json");
+
+        var mergedRoutes = new JsonArray();
+
+        foreach (var service in services)
+        {
+            var routesPath = Path.Combine(contentRootPath, service.RoutesConfig);
+            if (!File.Exists(routesPath))
+                continue;
+
+            var serviceNode = JsonNode.Parse(File.ReadAllText(routesPath))?.AsObject();
+            if (serviceNode?["Routes"] is not JsonArray routes)
+                continue;
+
+            foreach (var routeNode in routes.OfType<JsonObject>().Select(r => r.DeepClone().AsObject()))
+            {
+                routeNode.Remove("DownstreamHostAndPorts");
+                routeNode["ServiceName"] = service.ContainerName;
+                routeNode["UseServiceDiscovery"] = true;
+
+                mergedRoutes.Add(routeNode);
+            }
+        }
+
+        var merged = new JsonObject
+        {
+            ["Routes"] = mergedRoutes,
+            ["GlobalConfiguration"] = globalNode["GlobalConfiguration"]?.DeepClone(),
+            ["SwaggerEndPoints"] = BuildSwaggerEndPoints(services, useContainerHosts: true)
+        };
+
+        if (merged["GlobalConfiguration"] is JsonObject gc)
+        {
+            gc["BaseUrl"] = "http://gateway:5000";
+        }
+
+        var mergedPath = Path.Combine(contentRootPath, "ocelot.json");
+        File.WriteAllText(mergedPath, merged.ToJsonString(JsonOptions));
+
+        return "ocelot.json";
     }
 }

@@ -1,5 +1,6 @@
 using DotnetNiger.Community.Infrastructure;
 using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Domain;
 using DotnetNiger.Community.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -135,14 +136,18 @@ public class EventService(AppDbContext db) : IEventService
         return MapEvent(ev);
     }
 
-    public async Task<EventRegistrationResponse> RegisterAsync(Guid eventId, Guid userId, string userName)
+    public async Task<EventRegistrationResponse?> RegisterAsync(Guid eventId, Guid userId, string userName)
     {
-        var ev = await db.Events.FindAsync(eventId) ?? throw new InvalidOperationException("Event not found");
-
         var existing = await db.EventRegistrations.AnyAsync(r => r.EventId == eventId && r.UserId == userId);
-        if (existing) throw new InvalidOperationException("Already registered");
+        if (existing) return null;
 
-        if (ev.RegisteredCount >= ev.Capacity) throw new InvalidOperationException("Event is full");
+        var rows = await db.Database.ExecuteSqlRawAsync(
+            "UPDATE Events SET RegisteredCount = RegisteredCount + 1 WHERE Id = ? AND RegisteredCount < Capacity",
+            eventId);
+
+        if (rows == 0) return null;
+
+        var ev = await db.Events.FindAsync(eventId);
 
         var registration = new EventRegistration
         {
@@ -154,11 +159,10 @@ public class EventService(AppDbContext db) : IEventService
             RegistrationStatus = "Confirmed"
         };
 
-        ev.RegisteredCount++;
         db.EventRegistrations.Add(registration);
         await db.SaveChangesAsync();
 
-        return MapRegistration(registration, ev.Title);
+        return MapRegistration(registration, ev!.Title);
     }
 
     public async Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId)
@@ -222,17 +226,5 @@ public class EventService(AppDbContext db) : IEventService
         RegistrationStatus = r.RegistrationStatus
     };
 
-    private static string GenerateSlug(string text)
-    {
-        return text.ToLowerInvariant()
-            .Replace(" ", "-")
-            .Replace("'", "").Replace(".", "").Replace(",", "")
-            .Replace("é", "e").Replace("è", "e").Replace("ê", "e")
-            .Replace("à", "a").Replace("â", "a")
-            .Replace("ù", "u").Replace("û", "u")
-            .Replace("ô", "o").Replace("ö", "o")
-            .Replace("î", "i").Replace("ï", "i")
-            .Replace("ç", "c")
-            .Replace("\"", "").Replace("'", "");
-    }
+    private static string GenerateSlug(string text) => SlugGenerator.Generate(text);
 }
