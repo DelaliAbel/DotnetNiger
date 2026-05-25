@@ -7,9 +7,9 @@ namespace DotnetNiger.Identity.Api.Controllers;
 
 [ApiController]
 [ApiVersion("1.0")]
+
 [Route("api/v{version:apiVersion}/{tenantId:guid}/users")]
 [Authorize(Roles = "Admin")]
-/// <summary>Gestion des utilisateurs : CRUD, mot de passe, réinitialisation (Admin).</summary>
 public class UsersController : ControllerBase
 {
     private readonly UserService _userService;

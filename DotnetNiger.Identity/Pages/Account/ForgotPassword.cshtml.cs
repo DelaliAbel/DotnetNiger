@@ -43,7 +43,7 @@ public class ForgotPasswordModel : PageModel
 
         var code = await _userManager.GeneratePasswordResetTokenAsync(user);
         var resetLink = Url.Page("/Account/ResetPassword", null,
-            new { code, email = user.Email }, Request.Scheme);
+            new { code, email = user.Email }, Request.Scheme) ?? "";
 
         await _emailSender.SendPasswordResetLinkAsync(user, user.Email!, resetLink);
 

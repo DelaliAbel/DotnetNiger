@@ -13,6 +13,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/external-services")]
+
 /// <summary>Enregistrement et gestion des services externes, résolution de slug pour le Gateway.</summary>
 public class ExternalServicesController : ControllerBase
 {

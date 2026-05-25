@@ -2,10 +2,10 @@
 
 ## Base URLs
 
-| Environment | Gateway | Identity | Community | Identity.Web |
-|-------------|---------|----------|-----------|--------------|
-| Development | `http://localhost:5000` | `http://localhost:5075` | `http://localhost:5050` | `http://localhost:5100` |
-| Docker | `http://localhost:5000` | `http://localhost:8081` | `http://localhost:8082` | — |
+| Environment | Gateway | Identity | Community | Identity.Web | TestIdentity |
+|-------------|---------|----------|-----------|--------------|--------------|
+| Development | `http://localhost:5000` | `http://localhost:5075` | `http://localhost:5050` | `http://localhost:5100` | `http://localhost:5200` |
+| Docker | `http://localhost:5000` | `http://localhost:8081` | `http://localhost:8082` | — | — |
 
 In production, **only the Gateway** port (`5000`) should be exposed. Downstream services are internal.
 
@@ -143,54 +143,55 @@ External services register via the Identity API and are cached by the Gateway us
 
 ---
 
-## Identity.Web — UI Flow
+## Identity.Web — Developer Portal (`http://localhost:5100`)
+
+### OIDC Login Flow
+
+1. User → **GET** `/` on Identity.Web (port 5100)
+2. Identity.Web → **302** → Identity Server `/connect/authorize?client_id=web-ui&...` (port 5075)
+3. Identity Server → **302** → `/Account/Login?ReturnUrl=...` (if not authenticated)
+4. User submits email/password or chooses external provider
+5. Identity Server validates, redirects to `/signin-oidc` with authorization code
+6. Identity.Web exchanges code for tokens at `/connect/token`
+7. User is now authenticated on the developer portal
 
 ### Developer Portal Pages
 
 | URL | Description | Auth |
 |-----|-------------|------|
-| `/` | Home page | Public |
+| `/` | Home / landing page | Public |
+| `/Status` | Health status page | Public |
 | `/Developer/Index` | Developer portal hub | Authenticated |
-| `/Developer/Dashboard` | Dashboard with stats | Authenticated |
+| `/Developer/Dashboard` | Dashboard with stats & quick actions | Authenticated |
 | `/Developer/ApiKeys` | API key management (CRUD) | Authenticated |
 | `/Developer/Services` | External services management (CRUD + health) | Authenticated |
 | `/Developer/Docs` | Integration documentation | Authenticated |
-| `/Developer/Profile` | Edit user profile | Authenticated |
-| `/Developer/Admin/Index` | Admin dashboard (stats) | Admin |
+| `/Developer/Profile` | Edit user profile + change password | Authenticated |
+| `/Developer/Securite` | Account security overview | Authenticated |
+| `/Developer/Admin/Index` | Admin dashboard | Admin |
 | `/Developer/Admin/Tenants` | Tenant list + CRUD | Admin |
-| `/Developer/Admin/Tenants/{tenantId}/Users` | User management per tenant (CRUD) | Admin |
-| `/Developer/Admin/Tenants/{tenantId}/Roles` | Role & permission management | Admin |
-| `/Developer/Admin/Tenants/{tenantId}/Clients` | OAuth2 client list | Admin |
+| `/Developer/Admin/Tenants/{id}/Users` | User management per tenant | Admin |
+| `/Developer/Admin/Tenants/{id}/Roles` | Role & permission management | Admin |
+| `/Developer/Admin/Tenants/{id}/Clients` | OAuth2 client list | Admin |
+| `/Developer/Admin/Tenants/{id}/ApiKeys` | API key management per tenant | Admin |
 
-### Login OIDC Flow
-
-1. User → **GET** `/` on Identity.Web
-2. Identity.Web → **302** → `http://localhost:5075/connect/authorize?client_id=web-ui&response_type=code&...`
-3. Identity → **302** → `/Account/Login?ReturnUrl=/connect/authorize?...` (if not authenticated)
-4. User → submits email/password or chooses external provider
-5. Identity → validates credentials, redirects back to `/connect/authorize?...`
-6. Identity → generates authorization code → **302** → `http://localhost:5100/signin-oidc?code=...`
-7. Identity.Web → exchanges code for tokens at `/connect/token`
-8. User is now authenticated on Identity.Web
-
-### UI Pages (on Identity — `http://localhost:5075`)
+### Account Pages
 
 | URL | Description |
 |-----|-------------|
-| `/Account/Login` | Login form (email/password + external providers) |
-| `/Account/Register` | Registration form |
-| `/Account/ForgotPassword` | Password reset request |
-| `/Account/ResetPassword` | Reset password with token |
+| `/Account/Login` | Login form (email/password) |
+| `/Account/Logout` | Logout confirmation |
+| `/Account/AccessDenied` | Access denied page |
 
-### External Providers
+### Other Pages
 
-Configured in `appsettings.json` under `Authentication`:
-
-| Provider | Config Section | Callback URL |
-|----------|----------------|------------|
-| Google | `Authentication:Google` | `/signin-google` |
-| GitHub | `Authentication:GitHub` | `/signin-github` |
-| Microsoft | `Authentication:Microsoft` | `/signin-microsoft` |
+| URL | Description |
+|-----|-------------|
+| `/Securite` | Security policy page |
+| `/Confidentialite` | Privacy policy page |
+| `/ConditionsUtilisation` | Terms of service |
+| `/Support` | Support / contact page |
+| `/Error` | Global error page |
 
 ---
 
@@ -219,7 +220,7 @@ GET /api/v1/external-services
 X-API-Key: dn_your_key_here
 ```
 
-## Error Response (Identity)
+## Error Response
 
 ```json
 {

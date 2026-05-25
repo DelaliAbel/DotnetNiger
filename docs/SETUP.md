@@ -3,7 +3,6 @@
 ## Prerequisites
 
 - .NET SDK 9.0+
-- Node.js + npm (for frontend tools / scripts)
 - Git
 - Docker + docker-compose (optional, for containerized deployment)
 
@@ -15,9 +14,9 @@ cd DotnetNiger
 dotnet restore DotnetNiger.slnx
 ```
 
-## Local Development (3 Terminals)
+## Local Development (4 Terminals)
 
-Start services in this order: **Identity → Community → Gateway**.
+Start services in this order: **Identity → Community → Gateway → Identity.Web**.
 
 ### Terminal 1 — Identity Service
 
@@ -27,6 +26,7 @@ dotnet run
 ```
 
 Runs on `http://localhost:5075`. The database is auto-created (SQLite). A super admin is seeded on first run:
+
 - Email: `admin@dotnetniger.com`
 - Password: `Admin@123456`
 
@@ -51,6 +51,7 @@ dotnet run
 ```
 
 Runs on `http://localhost:5000`. The Ocelot configuration is auto-generated at startup by merging:
+
 - `ocelot.global.json` (global settings)
 - `ocelot.identity.routes.json` (Identity routes)
 - `ocelot.community.routes.json` (Community routes)
@@ -59,13 +60,36 @@ The Gateway seeds an in-memory `ServiceRegistry` from `DownstreamServices` confi
 
 Swagger (aggregated): `http://localhost:5000/swagger`
 
+### Terminal 4 — Identity.Web (Developer Portal)
+
+```bash
+cd DotnetNiger.Identity.Web
+dotnet run
+```
+
+Runs on `http://localhost:5100`. Requires Identity Server (port 5075) to be running.
+
+This is the developer portal UI with authentication, dashboard, admin panels, profile, and security pages. It uses the OIDC code flow to authenticate with Identity Server.
+
+Test credentials: `admin@dotnetniger.com` / `Admin@123456`
+
+### Terminal 5 (optional) — TestIdentity
+
+```bash
+cd DotnetNiger.TestIdentity
+dotnet run
+```
+
+Runs on `http://localhost:5200`. A minimal OIDC test app to validate the OpenIddict flow works end-to-end.
+
 ## Docker Deployment
 
 ```bash
 docker-compose up --build
 ```
 
-This starts all three services with their container ports:
+This starts all three core services with their container ports:
+
 - Gateway: `localhost:5000`
 - Identity: `localhost:8081`
 - Community: `localhost:8082`
@@ -87,7 +111,7 @@ dotnet test DotnetNiger.slnx --configuration Release --no-build
 
 ## Configuration Variables
 
-### JWT (required — must match across all services)
+### JWT (required — must match between Identity and Gateway)
 
 ```json
 {
@@ -131,17 +155,32 @@ If `Host` is empty, emails are logged to console and confirmation codes are retu
 
 Providers are only activated when their `ClientId` is non-empty.
 
-### User Secrets (for sensitive data)
+### User Secrets
+
+Sensitive values must be stored via `dotnet user-secrets` — never in `appsettings.json`.
+
+**Identity:**
 
 ```bash
 cd DotnetNiger.Identity
 dotnet user-secrets set "Smtp:Password" "your-password"
 dotnet user-secrets set "Authentication:Google:ClientId" "your-id"
 dotnet user-secrets set "Authentication:Google:ClientSecret" "your-secret"
+dotnet user-secrets set "Gateway:RegistrationKey" "your-gateway-key"
+```
 
-# Gateway registration key (optional, for service self-registration auth)
+**Gateway:**
+
+```bash
 cd DotnetNiger.Gateway
 dotnet user-secrets set "Gateway:RegistrationKey" "your-secret-key"
+```
+
+**Identity.Web:**
+
+```bash
+cd DotnetNiger.Identity.Web
+dotnet user-secrets set "Identity:ClientSecret" "web-ui-client-secret"
 ```
 
 ### Service Self-Registration
@@ -176,12 +215,14 @@ If `RegistrationKey` is empty or starts with `__`, registration is anonymous.
 ### Adding a New Service
 
 **Option A — Static config + restart:**
+
 1. Add `ocelot.<service>.routes.json` in the Gateway project
 2. Add a `DownstreamServices:<Service>` section in `appsettings.json`
 3. Add the service container in `docker-compose.yml`
 4. Create the service project following Identity/Community patterns
 
 **Option B — Dynamic self-registration (no Gateway restart):**
+
 1. Add `ocelot.<service>.routes.json` in the Gateway project (required for Ocelot route definitions)
 2. Add seed config in Gateway `DownstreamServices` (optional, for Ocelot route merging)
 3. Call `POST /api/service-registry/register` from the service at startup

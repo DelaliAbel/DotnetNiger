@@ -45,7 +45,7 @@ public class LoginModel : PageModel
     {
         ReturnUrl ??= "/";
         if (Request.Query.TryGetValue("error", out var errorVal) && !string.IsNullOrEmpty(errorVal))
-            ErrorMessage = Uri.UnescapeDataString(errorVal);
+            ErrorMessage = Uri.UnescapeDataString(errorVal!);
         ExternalProviders = (await _signInManager.GetExternalAuthenticationSchemesAsync())
             .Where(s => !string.IsNullOrEmpty(s.DisplayName))
             .ToList();

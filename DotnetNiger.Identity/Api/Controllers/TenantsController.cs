@@ -7,9 +7,9 @@ namespace DotnetNiger.Identity.Api.Controllers;
 
 [ApiController]
 [ApiVersion("1.0")]
+
 [Route("api/v{version:apiVersion}/admin/tenants")]
 [Authorize(Roles = "Admin")]
-/// <summary>Gestion des tenants multi-tenant : CRUD et recherche par slug (Admin).</summary>
 public class TenantsController : ControllerBase
 {
     private readonly TenantService _tenantService;
