@@ -5,11 +5,11 @@ using DotnetNiger.Identity.Application.Services;
 
 namespace DotnetNiger.Identity.Api.Controllers;
 
+/// <summary>Gestion des clients OAuth2 : CRUD par tenant (Admin).</summary>
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/admin/tenants/{tenantId:guid}/clients")]
 [Authorize(Roles = "Admin")]
-/// <summary>Gestion des clients OAuth2 : CRUD par tenant (Admin).</summary>
 public class ClientsController : ControllerBase
 {
     private readonly TenantClientService _clientService;

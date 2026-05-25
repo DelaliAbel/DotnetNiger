@@ -48,7 +48,14 @@ public class ExternalServiceHealthService : BackgroundService
                 Log.Error(ex, "Error in external service health check cycle");
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(_intervalSeconds), stoppingToken);
+            try
+            {
+                await Task.Delay(TimeSpan.FromSeconds(_intervalSeconds), stoppingToken);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
         }
     }
 

@@ -5,11 +5,11 @@ using DotnetNiger.Identity.Application.Services;
 
 namespace DotnetNiger.Identity.Api.Controllers;
 
+/// <summary>Gestion des clés API : CRUD, rotation par tenant (Admin).</summary>
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/admin/tenants/{tenantId:guid}/api-keys")]
 [Authorize(Roles = "Admin")]
-/// <summary>Gestion des clés API : CRUD, rotation par tenant (Admin).</summary>
 public class ApiKeysController : ControllerBase
 {
     private readonly TenantApiKeyService _apiKeyService;

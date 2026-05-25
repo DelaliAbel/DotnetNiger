@@ -5,11 +5,11 @@ using DotnetNiger.Identity.Application.Services;
 
 namespace DotnetNiger.Identity.Api.Controllers;
 
+/// <summary>Gestion des permissions : CRUD, groupage, assignation aux rôles (Admin).</summary>
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/{tenantId:guid}/permissions")]
 [Authorize(Roles = "Admin")]
-/// <summary>Gestion des permissions : CRUD, groupage, assignation aux rôles (Admin).</summary>
 public class PermissionsController : ControllerBase
 {
     private readonly PermissionService _permissionService;

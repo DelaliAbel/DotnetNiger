@@ -16,11 +16,11 @@ using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace DotnetNiger.Identity.Api.Controllers;
 
+/// <summary>Authentification OAuth2/OIDC : login, register, token exchange, external providers.</summary>
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/auth")]
 [EnableRateLimiting("Auth")]
-/// <summary>Authentification OAuth2/OIDC : login, register, token exchange, external providers.</summary>
 public class AuthController : ControllerBase
 {
     private readonly AuthService _authService;

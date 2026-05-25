@@ -41,7 +41,18 @@ public class ExternalServicesTests : IClassFixture<IdentityWebApplicationFactory
         [Fact]
         public async Task PatchExternalService_UpdatesServiceSuccessfully()
         {
-            // Arrange: Register a service first
+            // Arrange: Create an API key first (required by ExternalServicesController)
+            var userInfo = await _client.GetAsync("/api/v1/auth/userinfo");
+            userInfo.StatusCode.Should().Be(HttpStatusCode.OK);
+            var userData = await userInfo.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>();
+            var tenantId = userData.GetProperty("tenantId").GetString()!;
+
+            var createApiKeyResponse = await _client.PostAsJsonAsync(
+                $"/api/v1/admin/tenants/{tenantId}/api-keys",
+                new { name = "Test Key" });
+            createApiKeyResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+
+            // Register a service
             var registerRequest = new RegisterExternalServiceRequest(
                 Name: "Test Service",
                 Slug: "test-service",

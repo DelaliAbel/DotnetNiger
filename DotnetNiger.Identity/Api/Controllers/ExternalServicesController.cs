@@ -10,11 +10,10 @@ using OpenIddict.Validation.AspNetCore;
 
 namespace DotnetNiger.Identity.Api.Controllers;
 
+/// <summary>Enregistrement et gestion des services externes, résolution de slug pour le Gateway.</summary>
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/external-services")]
-
-/// <summary>Enregistrement et gestion des services externes, résolution de slug pour le Gateway.</summary>
 public class ExternalServicesController : ControllerBase
 {
     private readonly ExternalServiceService _service;

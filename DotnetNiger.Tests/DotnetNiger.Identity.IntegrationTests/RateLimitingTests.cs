@@ -17,17 +17,21 @@ public class RateLimitingTests : IClassFixture<IdentityWebApplicationFactory>
     [Fact]
     public async Task AuthEndpoints_RateLimitIsApplied()
     {
-        // Arrange: Clear any existing rate limit state by making a few requests to other endpoints
-        // Act: Make multiple rapid requests to an auth endpoint (forgot password)
-        var tasks = new Task<HttpResponseMessage>[15]; // Try 15 requests (limit is 10 per minute)
+        // Act: Make multiple rapid requests to an AuthController endpoint with [EnableRateLimiting("Auth")]
+        var tasks = new Task<HttpResponseMessage>[25]; // Default auth limit is 20/min
         
         for (int i = 0; i < tasks.Length; i++)
         {
-            tasks[i] = _client.PostAsync("/Account/ForgotPassword", 
-                new FormUrlEncodedContent(new[]
-                {
-                    new KeyValuePair<string, string>("Email", "test" + i + "@example.com")
-                }));
+            tasks[i] = _client.PostAsync("/api/v1/auth/register", 
+                new StringContent(
+                    System.Text.Json.JsonSerializer.Serialize(new { 
+                        email = $"ratelimit-test-{i}@example.com",
+                        password = "Test@123456",
+                        firstName = "Rate",
+                        lastName = "Limit"
+                    }),
+                    System.Text.Encoding.UTF8,
+                    "application/json"));
         }
         
         var responses = await Task.WhenAll(tasks);

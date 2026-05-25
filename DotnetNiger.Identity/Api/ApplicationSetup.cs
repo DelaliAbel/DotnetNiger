@@ -16,7 +16,8 @@ public static class ApplicationSetup
 
         builder.Host.UseSerilog();
 
-        builder.Services.AddControllers();
+        builder.Services.AddControllers()
+            .AddApplicationPart(typeof(ApplicationSetup).Assembly);
         builder.Services.AddRazorPages();
         builder.Services.AddHttpClient();
         builder.Services.AddProblemDetails();
@@ -38,6 +39,7 @@ public static class ApplicationSetup
         app.UseSerilogRequestLogging();
         app.UseCors("AllowAll");
         app.UseMiddleware<ErrorHandlingMiddleware>();
+        app.UseRouting();
         app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();
