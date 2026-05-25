@@ -92,7 +92,6 @@ public static class ServiceExtensions
                         }
                         catch
                         {
-                            // Fallback to ephemeral keys if certificate loading fails
                             server.AddEphemeralEncryptionKey()
                                   .AddEphemeralSigningKey();
                         }

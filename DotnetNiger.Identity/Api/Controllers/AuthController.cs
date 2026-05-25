@@ -1,10 +1,10 @@
 using System.Security.Claims;
+using Asp.Versioning;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.RateLimiting;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
@@ -434,4 +434,84 @@ public class AuthController : ControllerBase
         await appManager.CreateAsync(newDescriptor);
         return Ok(new { message = "web-ui client created" });
     }
+
+    /// <summary>Demande de réinitialisation de mot de passe.</summary>
+    [AllowAnonymous]
+    [HttpPost("forgot-password")]
+    public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        var user = await _userManager.FindByEmailAsync(request.Email);
+        if (user == null)
+            return Ok(new { message = "Si le compte existe, un email de réinitialisation a été envoyé." });
+
+        var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+        // TODO: envoyer l'email avec le token
+        return Ok(new { message = "Si le compte existe, un email de réinitialisation a été envoyé." });
+    }
+
+    [AllowAnonymous]
+    [HttpPost("reset-password")]
+    public async Task<ActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    {
+        var user = await _userManager.FindByEmailAsync(request.Email);
+        if (user == null)
+            return BadRequest(new { message = "Email invalide", code = "INVALID_EMAIL" });
+
+        var result = await _userManager.ResetPasswordAsync(user, request.Token, request.Password);
+        if (!result.Succeeded)
+            return BadRequest(new { message = string.Join(", ", result.Errors.Select(e => e.Description)), code = "RESET_FAILED" });
+
+        return Ok(new { message = "Mot de passe réinitialisé avec succès." });
+    }
+
+    [AllowAnonymous]
+    [HttpPost("request-email-verification")]
+    public async Task<ActionResult> RequestEmailVerification([FromBody] EmailRequest request)
+    {
+        var user = await _userManager.FindByEmailAsync(request.Email);
+        if (user == null)
+            return Ok(new { message = "Si le compte existe, un code de vérification a été envoyé." });
+
+        var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        // TODO: envoyer l'email avec le code
+        return Ok(new { message = "Si le compte existe, un code de vérification a été envoyé." });
+    }
+
+    [AllowAnonymous]
+    [HttpPost("verify-email")]
+    public async Task<ActionResult> VerifyEmail([FromBody] VerifyEmailRequest request)
+    {
+        var user = await _userManager.FindByEmailAsync(request.Email);
+        if (user == null)
+            return BadRequest(new { message = "Email invalide", code = "INVALID_EMAIL" });
+
+        var result = await _userManager.ConfirmEmailAsync(user, request.Token);
+        if (!result.Succeeded)
+            return BadRequest(new { message = "Code de vérification invalide", code = "VERIFY_FAILED" });
+
+        return Ok(new { message = "Email vérifié avec succès." });
+    }
+
+    /// <summary>Refresh token — convertit un appel JSON en requête OpenIddict form.</summary>
+    [AllowAnonymous]
+    [HttpPost("refresh")]
+    public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
+    {
+        var httpContext = HttpContext;
+        httpContext.Request.ContentType = "application/x-www-form-urlencoded";
+        httpContext.Request.Form = new FormCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+        {
+            ["grant_type"] = "refresh_token",
+            ["refresh_token"] = request.RefreshToken ?? string.Empty,
+            ["client_id"] = "web-ui",
+            ["scope"] = "openid profile email roles offline_access"
+        });
+        return await TokenExchange();
+    }
 }
+
+public record ForgotPasswordRequest(string Email);
+public record ResetPasswordRequest(string Email, string Token, string Password);
+public record EmailRequest(string Email);
+public record VerifyEmailRequest(string Email, string Token);
+public record RefreshTokenRequest(string? RefreshToken);
