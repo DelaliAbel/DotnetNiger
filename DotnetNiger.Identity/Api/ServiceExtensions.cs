@@ -176,17 +176,6 @@ public static class ServiceExtensions
             });
         }
 
-        var msId = config["Authentication:Microsoft:ClientId"];
-        if (!string.IsNullOrEmpty(msId))
-        {
-            authBuilder.AddMicrosoftAccount(microsoft =>
-            {
-                microsoft.ClientId = msId;
-                microsoft.ClientSecret = config["Authentication:Microsoft:ClientSecret"] ?? "";
-                microsoft.SignInScheme = IdentityConstants.ExternalScheme;
-            });
-        }
-
         var ghId = config["Authentication:GitHub:ClientId"];
         if (!string.IsNullOrEmpty(ghId))
         {

@@ -44,7 +44,7 @@ public class DashboardModel : PageModel
                 }
             }
         }
-        catch { }
+        catch { Stats = new DashboardStats(); }
 
         try
         {
@@ -58,7 +58,7 @@ public class DashboardModel : PageModel
                 Stats.ActiveApiKeys = keys?.Count ?? 0;
             }
         }
-        catch { }
+        catch { Stats = new DashboardStats(); }
 
         try
         {
@@ -71,7 +71,7 @@ public class DashboardModel : PageModel
                 Stats.ActiveServices = svcs?.Count ?? 0;
             }
         }
-        catch { }
+        catch { Stats = new DashboardStats(); }
     }
 }
 

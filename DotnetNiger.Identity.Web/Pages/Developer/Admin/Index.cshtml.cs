@@ -48,7 +48,7 @@ public class IndexModel : PageModel
                 }
             }
         }
-        catch { }
+        catch { Stats = new AdminStats(); }
     }
 }
 

@@ -45,15 +45,12 @@ public static class ApplicationSetup
         app.UseAuthorization();
         app.UseMiddleware<TenantResolutionMiddleware>();
 
-        if (app.Environment.IsDevelopment())
+        app.UseSwagger();
+        app.UseSwaggerUI(options =>
         {
-            app.UseSwagger();
-            app.UseSwaggerUI(options =>
-            {
-                options.SwaggerEndpoint("/swagger/v1/swagger.json", "DotnetNiger Identity v1");
-                options.RoutePrefix = "swagger";
-            });
-        }
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "DotnetNiger Identity v1");
+            options.RoutePrefix = "swagger";
+        });
 
         app.MapGet("/health", () => Results.Ok(new
         {

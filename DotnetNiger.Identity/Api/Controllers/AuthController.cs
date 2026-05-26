@@ -6,9 +6,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using DotnetNiger.Identity.Domain.Entities;
+using DotnetNiger.Identity.Infrastructure;
 using DotnetNiger.Identity.Application.DTOs;
 using DotnetNiger.Identity.Application.Services;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -31,17 +33,24 @@ public class AuthController : ControllerBase
 
     private readonly TenantClientService _tenantClientService;
 
+    private readonly IEmailSender<ApplicationUser> _emailSender;
+    private readonly SmtpOptions _smtp;
+
     public AuthController(AuthService authService,
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
         TenantService tenantService,
-        TenantClientService tenantClientService)
+        TenantClientService tenantClientService,
+        IEmailSender<ApplicationUser> emailSender,
+        IOptions<SmtpOptions> smtp)
     {
         _authService = authService;
         _userManager = userManager;
         _signInManager = signInManager;
         _tenantService = tenantService;
         _tenantClientService = tenantClientService;
+        _emailSender = emailSender;
+        _smtp = smtp.Value;
     }
 
     /// <summary>Point d'entrée OIDC Authorize. Gère le flux authorization_code.</summary>
@@ -445,7 +454,8 @@ public class AuthController : ControllerBase
             return Ok(new { message = "Si le compte existe, un email de réinitialisation a été envoyé." });
 
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-        // TODO: envoyer l'email avec le token
+        var resetLink = $"{_smtp.AppBaseUrl.TrimEnd('/')}/Account/ResetPassword?email={Uri.EscapeDataString(request.Email)}&code={Uri.EscapeDataString(token)}";
+        await _emailSender.SendPasswordResetLinkAsync(user, request.Email, resetLink);
         return Ok(new { message = "Si le compte existe, un email de réinitialisation a été envoyé." });
     }
 
@@ -473,7 +483,8 @@ public class AuthController : ControllerBase
             return Ok(new { message = "Si le compte existe, un code de vérification a été envoyé." });
 
         var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-        // TODO: envoyer l'email avec le code
+        var confirmationLink = $"{_smtp.AppBaseUrl.TrimEnd('/')}/api/v1/auth/verify-email?email={Uri.EscapeDataString(request.Email)}&code={Uri.EscapeDataString(code)}";
+        await _emailSender.SendConfirmationLinkAsync(user, request.Email, confirmationLink);
         return Ok(new { message = "Si le compte existe, un code de vérification a été envoyé." });
     }
 

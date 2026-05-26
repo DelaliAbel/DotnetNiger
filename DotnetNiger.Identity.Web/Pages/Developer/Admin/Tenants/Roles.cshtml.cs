@@ -232,7 +232,7 @@ public class RolesModel : PageModel
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
             }
         }
-        catch { }
+        catch { Roles = []; }
 
         try
         {
@@ -244,7 +244,7 @@ public class RolesModel : PageModel
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
             }
         }
-        catch { }
+        catch { PermissionGroups = []; }
 
         try
         {
@@ -256,7 +256,7 @@ public class RolesModel : PageModel
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
             }
         }
-        catch { }
+        catch { AllUsers = []; }
     }
 
     private async Task<HttpClient> CreateClientAsync(string? identityUrl)
