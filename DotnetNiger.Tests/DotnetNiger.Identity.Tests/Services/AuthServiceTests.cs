@@ -11,6 +11,8 @@ using DotnetNiger.Identity.Infrastructure;
 using FluentAssertions;
 using Xunit;
 
+#pragma warning disable CS8604, CS8602
+
 namespace DotnetNiger.Identity.Tests.Services;
 
 public class AuthServiceTests

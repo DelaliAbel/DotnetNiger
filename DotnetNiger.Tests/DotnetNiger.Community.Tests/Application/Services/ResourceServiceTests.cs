@@ -28,7 +28,7 @@ public class ResourceServiceTests
         await db.SaveChangesAsync();
 
         var svc = new ResourceService(db);
-        var result = await svc.GetAllAsync(null, null, null, null, 1, 10);
+        var result = await svc.GetAllAsync(null, null, null, null, null, 1, 10);
 
         result.Items.Should().HaveCount(2);
         result.TotalCount.Should().Be(2);
@@ -44,7 +44,7 @@ public class ResourceServiceTests
         await db.SaveChangesAsync();
 
         var svc = new ResourceService(db);
-        var result = await svc.GetAllAsync("article", null, null, null, 1, 10);
+        var result = await svc.GetAllAsync("article", null, null, null, null, 1, 10);
 
         result.Items.Should().HaveCount(1);
         result.Items[0].ResourceType.Should().Be("article");

@@ -390,7 +390,7 @@ public class AuthController : ControllerBase
         if (IsTwoFactorRateLimited(Guid.TryParse(userIdClaim, out var uid) ? uid : Guid.Empty))
             return BadRequest(new { error = "Trop de tentatives. Réessayez dans une minute." });
 
-        if (!_cache.TryGetValue($"2fa_challenge_{request.ChallengeToken}", out TwoFactorChallenge challenge))
+        if (!_cache.TryGetValue($"2fa_challenge_{request.ChallengeToken}", out TwoFactorChallenge? challenge) || challenge == null)
             return BadRequest(new ErrorResponse("Jeton de vérification invalide ou expiré"));
 
         if (challenge.ExpiresAt < DateTime.UtcNow)
@@ -459,7 +459,7 @@ public class AuthController : ControllerBase
         if (IsTwoFactorRateLimited(Guid.TryParse(userIdClaim, out var uid) ? uid : Guid.Empty))
             return BadRequest(new { error = "Trop de tentatives. Réessayez dans une minute." });
 
-        if (!_cache.TryGetValue($"2fa_challenge_{request.ChallengeToken}", out TwoFactorChallenge challenge))
+        if (!_cache.TryGetValue($"2fa_challenge_{request.ChallengeToken}", out TwoFactorChallenge? challenge) || challenge == null)
             return BadRequest(new ErrorResponse("Jeton de vérification invalide ou expiré"));
 
         if (challenge.ExpiresAt < DateTime.UtcNow)

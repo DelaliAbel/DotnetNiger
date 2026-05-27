@@ -41,7 +41,7 @@ public class DownstreamHealthCheck : IHealthCheck
         var data = results.ToDictionary(kv => kv.Key, kv => kv.Value);
 
         return allHealthy
-            ? HealthCheckResult.Healthy("Tous les services aval sont joignables", data)
-            : HealthCheckResult.Degraded("Certains services aval sont indisponibles", data);
+            ? HealthCheckResult.Healthy("Tous les services aval sont joignables", data: data)
+            : HealthCheckResult.Degraded("Certains services aval sont indisponibles", data: data);
     }
 }

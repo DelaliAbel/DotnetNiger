@@ -16,11 +16,11 @@ public class EventsControllerTests
     public async Task GetAll_ReturnsOk()
     {
         var svc = new Mock<IEventService>();
-        svc.Setup(x => x.GetAllAsync(null, null, null, null, null, 1, 10))
+        svc.Setup(x => x.GetAllAsync(null, null, null, null, null, null, null, 1, 10))
             .ReturnsAsync(new PaginatedResponse<EventResponse> { Items = [], TotalCount = 0, Page = 1, PageSize = 10 });
 
         var ctrl = new EventsController(svc.Object);
-        var result = await ctrl.GetAll(null, null, null, null, null, 1, 10);
+        var result = await ctrl.GetAll(null, null, null, null, null, null, null, 1, 10);
 
         result.Should().BeOfType<OkObjectResult>();
     }

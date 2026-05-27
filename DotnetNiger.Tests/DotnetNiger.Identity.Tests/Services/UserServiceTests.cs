@@ -9,6 +9,8 @@ using DotnetNiger.Identity.Infrastructure;
 using FluentAssertions;
 using Xunit;
 
+#pragma warning disable CS8604
+
 namespace DotnetNiger.Identity.Tests.Services;
 
 public class UserServiceTests
