@@ -20,7 +20,7 @@ Client (Browser / Mobile / API)
      ▼       ▼
 ┌────────┐ ┌──────────┐
 │Identity│ │ Community │
-│ :5075  │ │ :5269     │
+│ :5075  │ │ :5050     │
 │(:8081) │ │(:8082)    │
 └────────┘ └──────────┘
 
@@ -37,7 +37,7 @@ All external traffic goes through the **Gateway** (port `5000`). Downstream serv
 | --------------- | -------- | -------------- | -------------------------------------------------------------------------------------------- |
 | **Gateway**     | `5000`   | `5000`         | Ocelot API Gateway — routing, JWT auth, rate limiting, health checks, Swagger merge          |
 | **Identity**    | `5075`   | `8081`         | Authentication, multi-tenant users, roles, permissions, OAuth2/OIDC (OpenIddict)             |
-| **Community**   | `5269`   | `8082`         | Community content — posts, events, resources, comments, newsletters, member profiles, search |
+| **Community**   | `5050`   | `8082`         | Community content — posts, events, resources, comments, newsletters, member profiles, search |
 | **Identity.Web** | `5100` | —              | Developer portal UI — login, dashboard, admin, profile, security                             |
 | **TestIdentity** | `5200` | —              | OIDC connection test app — validates the Identity Server OAuth flow                          |
 
@@ -74,7 +74,7 @@ cd DotnetNiger.Identity.Web && dotnet run
 | `http://localhost:5000/health/downstream`                 | All downstream services health (static + dynamic) |
 | `http://localhost:5000/health/services`                   | Registered services configuration                 |
 | `http://localhost:5075/swagger`                           | Identity Swagger (direct)                         |
-| `http://localhost:5269/swagger`                           | Community Swagger (direct)                        |
+| `http://localhost:5050/swagger`                           | Community Swagger (direct)                        |
 | `http://localhost:5100`                                   | Identity.Web developer portal                     |
 | `http://localhost:5200`                                   | TestIdentity OIDC test app                        |
 
@@ -87,7 +87,7 @@ cd DotnetNiger.Identity.Web && dotnet run
 | Identity     | ASP.NET Core Identity, OpenIddict 5.x, EF Core + SQLite  |
 | Community    | ASP.NET Core, EF Core + SQLite, JWT Bearer               |
 | Identity.Web | ASP.NET Core Razor Pages, OIDC auth                      |
-| Auth         | JWT (symmetric key) + OpenIddict OIDC                    |
+| Auth         | JWT (asymmetric RSA) + OpenIddict OIDC — JWS tokens     |
 | Logging      | Serilog (Console + File)                                 |
 | Email        | MailKit (SMTP)                                           |
 | Social Login | Google, Microsoft, GitHub OAuth                          |

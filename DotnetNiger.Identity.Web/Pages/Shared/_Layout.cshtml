@@ -49,6 +49,7 @@
                                 <li><a class="dropdown-item" href="/Developer/Docs"><i class="bi bi-file-earmark-text me-2"></i>Documentation</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item" href="/Developer/Securite"><i class="bi bi-shield-lock me-2"></i>Sécurité</a></li>
+                                <li><a class="dropdown-item" href="/Developer/Gdpr"><i class="bi bi-shield-check me-2"></i>RGPD</a></li>
                                 <li><a class="dropdown-item" href="/Developer/Profile"><i class="bi bi-person me-2"></i>Profil</a></li>
                             </ul>
                         </li>
@@ -153,9 +154,29 @@
         </div>
     </footer>
 
+    <!-- Delete confirmation modal -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirmation</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-0">Voulez-vous vraiment supprimer cet élément ?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-danger">Supprimer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

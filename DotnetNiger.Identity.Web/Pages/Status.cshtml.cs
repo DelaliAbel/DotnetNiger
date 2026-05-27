@@ -46,8 +46,10 @@ public class StatusModel : PageModel
                 return new ServiceStatus { Name = name, Status = healthyText, Detail = $"Latence ~{resp.Headers.Date?.ToString() ?? "N/A"}", IsHealthy = true };
             return new ServiceStatus { Name = name, Status = unhealthyText, Detail = $"HTTP {(int)resp.StatusCode}", IsHealthy = false };
         }
-        catch
+        catch (Exception ex)
         {
+            var logger = HttpContext.RequestServices.GetRequiredService<ILogger<StatusModel>>();
+            logger.LogWarning(ex, "Failed to check service health: {Url}", url);
             return new ServiceStatus { Name = name, Status = unhealthyText, Detail = "Connexion impossible", IsHealthy = false };
         }
     }

@@ -36,7 +36,7 @@ cd DotnetNiger.Community
 dotnet run
 ```
 
-Service available at `http://localhost:5269`. Swagger: `http://localhost:5269/swagger`.
+Service available at `http://localhost:5050`. Swagger: `http://localhost:5050/swagger`.
 
 Requires [DotnetNiger.Identity](https://github.com/akaletekoffilevis/DotnetNiger) for JWT authentication (must be running on `http://localhost:5075`).
 

@@ -8,7 +8,37 @@ Le format suit Keep a Changelog et le versioning suit Semantic Versioning.
 
 ### Added
 
-- Gateway: `ServiceRegistry` singleton (`IServiceRegistry` / `ServiceRegistry`) pour la decouverte dynamique de services avec `ConcurrentDictionary` thread-safe.
+- TestIdentity: `Pages/Account/Login.cshtml.cs` — explicit OIDC challenge with PKCE, COCONUT + S256
+- TestIdentity: `Pages/Shared/_Layout.cshtml` — Bootstrap 5 UI with nav, footer, icons
+- TestIdentity: `Pages/_ViewStart.cshtml` — layout assignment
+- Identity/DbSeeder: `test-client` confidential client (password + client_credentials grants), `OAuthTestUser`, `TenantClient` registration, `scp:api` permission
+- Identity/AuthController: `HandleClientCredentialsGrantAsync` — custom grant handler resolving clients via `TenantClients`
+- Community: new entity types seeded via `DbSeeder` (Projects, Partners, Newsletter, Members, EventTags, ResourceTags)
+- Community: `AddJwtBearer` with `ValidateAudience = false`, local JWKS validation (no callback to Identity per request)
+- Identity.Web/Program.cs: `ConfigKeyPath` fallback handling
+
+### Changed
+
+- Identity: OpenIddict tokens now emit **JWS** (signed JSON Web Tokens) instead of JWE (encrypted) — `DisableAccessTokenEncryption()` enabled
+- Identity/ApplicationSetup: `MigrateAsync()` → `EnsureCreatedAsync()` (no migration files in project)
+- Identity/ServiceExtensions: suppressed `PendingModelChangesWarning` in DbContext config
+- Community/AppDbContext: `IsRequired(false)` on navigation properties to suppress EF Core warnings
+- Gateway: config key corrected in `ServiceCollectionExtensions` and `ApplicationBuilderExtensions`
+- Gateway/ocelot.identity.routes.json: duplicated `IdentityAuthRoute` → `IdentitySuperAdminRoute`
+
+### Fixed
+
+- Community CRUD operations returning 401: resolved by switching Identity to JWS tokens (Community's `AddJwtBearer` expects standard JWT format)
+- NuGet cache for Identity restored: 19 OpenIddict 5.8.0 packages, FluentValidation 11.11.0, MailKit 4.16.0, Polly 8.3.0 copied to local cache enabling Identity rebuild from source
+- TestIdentity/Logout: corrected to use OpenID Connect end-session endpoint
+- Gateway: `app.Map("/api/v1/diagnostics/health", ...)` → `app.Use(...)` for correct middleware registration
+- Gateway/ocelot.json: `BaseUrl` corrected to `http://localhost:5000`
+
+### Security
+
+- Identity: JWT tokens are now standard JWS (3-part: header.payload.signature) signed with RS256 — compatible with any standard JWT library
+- Identity: encryption key retained in configuration (OpenIddict 5.x requirement) but token encryption disabled
+- `test-client` confidential client credentials flow available for machine-to-machine integration (`IServiceRegistry` / `ServiceRegistry`) pour la decouverte dynamique de services avec `ConcurrentDictionary` thread-safe.
 - Gateway: `POST /api/service-registry/register` endpoint middleware pour l'enregistrement dynamique des services upstream (avec auth optionnelle via `X-Registration-Key`).
 - Gateway: `Services/ServiceRegistry.cs` et `Services/ServiceRegistrationEndpoint.cs` — nouveaux fichiers pour le registre de services et le endpoint d'enregistrement.
 - Identity: Auto-enregistrement aupres du Gateway au demarrage via `TryRegisterWithGatewayAsync()` (config `Gateway:RegistrationUrl` + `Gateway:RegistrationKey`).
