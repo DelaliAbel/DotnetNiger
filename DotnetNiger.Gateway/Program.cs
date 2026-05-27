@@ -47,6 +47,7 @@ var mergedOcelotFile = useConsul
     var app = builder.Build();
 
     app.UseCors("AllowAll");
+    app.UseSecurityHeadersMiddleware();
 
     app.UseLatencyMetricsMiddleware();
     app.UseClientIdResolutionMiddleware();
@@ -56,6 +57,7 @@ var mergedOcelotFile = useConsul
 
     app.MapGatewayHealthEndpoints();
     app.MapServiceRegistryEndpoint();
+    app.MapCacheBusterEndpoint();
 
     if (app.Environment.IsDevelopment())
     {
@@ -90,6 +92,9 @@ var mergedOcelotFile = useConsul
         uiOpt.EnablePersistAuthorization();
         uiOpt.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
     });
+
+    app.UseAuthentication();
+    app.UseAuthorization();
 
     await app.UseOcelot();
     app.Run();
