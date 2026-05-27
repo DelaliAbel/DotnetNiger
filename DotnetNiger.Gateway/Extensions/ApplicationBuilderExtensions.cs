@@ -5,6 +5,7 @@ using DotnetNiger.Gateway.Metrics;
 using DotnetNiger.Gateway.Services;
 using DotnetNiger.Gateway.Middleware;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Caching.Memory;
 using Serilog;
 
 namespace DotnetNiger.Gateway.Extensions;
@@ -116,7 +117,7 @@ public static class ApplicationBuilderExtensions
                 if (cache.TryGetValue(cacheKey, out string? cached) && cached != null)
                 {
                     context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsync(cached);
+                    await context.Response.WriteAsync(cached!);
                     return;
                 }
 

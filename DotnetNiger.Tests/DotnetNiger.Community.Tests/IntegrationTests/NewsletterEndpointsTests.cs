@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using DotnetNiger.Community.Application.DTOs;
 using FluentAssertions;
+using Xunit;
 
 namespace DotnetNiger.Community.Tests.IntegrationTests;
 

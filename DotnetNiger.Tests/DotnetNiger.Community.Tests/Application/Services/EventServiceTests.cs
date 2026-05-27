@@ -1,9 +1,11 @@
 using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.Notifications;
 using DotnetNiger.Community.Application.Services;
 using DotnetNiger.Community.Domain.Entities;
 using DotnetNiger.Community.Infrastructure;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using Xunit;
 
 namespace DotnetNiger.Community.Tests.Application.Services;
@@ -18,6 +20,11 @@ public class EventServiceTests
         return new AppDbContext(opts);
     }
 
+    private static Mock<INotificationService> CreateNotificationMock()
+    {
+        return new Mock<INotificationService>();
+    }
+
     [Fact]
     public async Task GetAllAsync_ReturnsPagedEvents()
     {
@@ -27,8 +34,8 @@ public class EventServiceTests
             new Event { Id = Guid.NewGuid(), Title = "E2", Slug = "e2" });
         await db.SaveChangesAsync();
 
-        var svc = new EventService(db);
-        var result = await svc.GetAllAsync(null, null, null, null, null, 1, 10);
+        var svc = new EventService(db, CreateNotificationMock().Object);
+        var result = await svc.GetAllAsync(null, null, null, null, null, null, null, 1, 10);
 
         result.Items.Should().HaveCount(2);
         result.TotalCount.Should().Be(2);
@@ -38,7 +45,7 @@ public class EventServiceTests
     public async Task GetByIdAsync_ReturnsNull_WhenNotFound()
     {
         var db = CreateDb();
-        var svc = new EventService(db);
+        var svc = new EventService(db, CreateNotificationMock().Object);
         var result = await svc.GetByIdAsync(Guid.NewGuid());
 
         result.Should().BeNull();
@@ -50,7 +57,7 @@ public class EventServiceTests
         var db = CreateDb();
         var request = new CreateEventRequest { Title = "New Event", Description = "Desc", StartDate = DateTime.UtcNow.AddDays(1), EndDate = DateTime.UtcNow.AddDays(2) };
 
-        var svc = new EventService(db);
+        var svc = new EventService(db, CreateNotificationMock().Object);
         var result = await svc.CreateAsync(request, Guid.NewGuid());
 
         result.Title.Should().Be("New Event");

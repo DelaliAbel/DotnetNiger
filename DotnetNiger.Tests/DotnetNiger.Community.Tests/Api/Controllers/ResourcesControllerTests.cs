@@ -14,11 +14,11 @@ public class ResourcesControllerTests
     public async Task GetAll_ReturnsOk()
     {
         var svc = new Mock<IResourceService>();
-        svc.Setup(x => x.GetAllAsync(null, null, null, null, 1, 10))
+        svc.Setup(x => x.GetAllAsync(null, null, null, null, null, 1, 10))
             .ReturnsAsync(new PaginatedResponse<ResourceResponse> { Items = [], TotalCount = 0, Page = 1, PageSize = 10 });
 
         var ctrl = new ResourcesController(svc.Object);
-        var result = await ctrl.GetAll(null, null, null, null, 1, 10);
+        var result = await ctrl.GetAll(null, null, null, null, null, 1, 10);
 
         result.Should().BeOfType<OkObjectResult>();
     }
