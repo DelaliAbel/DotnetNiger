@@ -124,7 +124,7 @@ public class ClientsModel : PageModel
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
             }
         }
-        catch { }
+        catch { Clients = []; }
     }
 
     public async Task<IActionResult> OnPostEditAsync(Guid clientId)

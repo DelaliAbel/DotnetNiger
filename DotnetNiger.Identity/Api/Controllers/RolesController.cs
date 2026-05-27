@@ -29,9 +29,10 @@ public class RolesController : ControllerBase
 
     /// <summary>Liste tous les rôles du tenant.</summary>
     [HttpGet]
-    public async Task<ActionResult<List<RoleResponse>>> GetAll(Guid tenantId)
+    public async Task<ActionResult<PaginatedResponse<RoleResponse>>> GetAll(Guid tenantId,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var roles = await _roleService.GetByTenantAsync(tenantId);
+        var roles = await _roleService.GetByTenantAsync(tenantId, new PaginationQuery(page, pageSize));
         return Ok(roles);
     }
 

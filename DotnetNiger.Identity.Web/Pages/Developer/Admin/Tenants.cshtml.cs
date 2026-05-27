@@ -166,7 +166,7 @@ public class TenantsModel : PageModel
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
             }
         }
-        catch { }
+        catch { Tenants = []; Message = "Erreur lors du chargement des tenants."; IsError = true; }
     }
 
     private async Task<HttpClient> CreateClientAsync(string? identityUrl)

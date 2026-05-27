@@ -32,7 +32,8 @@ public class IdentityWebApplicationFactory : IAsyncLifetime
                 ["Jwt:Key"] = "test-secret-key-1234567890-extra-padding-for-32!",
                 ["Smtp:Host"] = "",
                 ["InternalApiKey"] = "test-internal-key",
-                ["DatabaseProvider"] = "Sqlite"
+                ["DatabaseProvider"] = "Sqlite",
+                ["Admin:DefaultPassword"] = "Admin@123456"
             })
             .Build();
     }
@@ -57,7 +58,7 @@ public class IdentityWebApplicationFactory : IAsyncLifetime
 
         using var seedScope = app.Services.CreateScope();
         var db = seedScope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-        db.Database.EnsureCreated();
+        db.Database.Migrate();
 
         var tenantContext = seedScope.ServiceProvider.GetRequiredService<TenantContext>();
         var userManager = seedScope.ServiceProvider.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<Domain.Entities.ApplicationUser>>();

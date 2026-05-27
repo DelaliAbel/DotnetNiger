@@ -32,7 +32,7 @@ public class TenantService
         _roleManager = roleManager;
         _applicationManager = applicationManager;
         _apiKeyService = apiKeyService;
-        _adminPassword = configuration["Admin:DefaultPassword"] ?? "Admin@123456";
+        _adminPassword = configuration["Admin:DefaultPassword"] ?? throw new InvalidOperationException("Admin:DefaultPassword must be set via user-secrets or environment variable");
     }
 
     public async Task<TenantResponse> CreateAsync(CreateTenantRequest request)
@@ -79,11 +79,17 @@ public class TenantService
         return MapToResponse(tenant);
     }
 
-    public async Task<List<TenantResponse>> GetAllAsync()
+    public async Task<PaginatedResponse<TenantResponse>> GetAllAsync(PaginationQuery pagination)
     {
-        var tenants = await _db.Tenants.OrderBy(t => t.Name).ToListAsync();
-        return tenants.Select(t => new TenantResponse(
-            t.Id, t.Name, t.Slug, t.Description, t.IsActive, t.CreatedAt)).ToList();
+        var query = _db.Tenants.OrderBy(t => t.Name);
+        var total = await query.CountAsync();
+        var tenants = await query
+            .Skip((pagination.EnsurePage - 1) * pagination.EnsurePageSize)
+            .Take(pagination.EnsurePageSize)
+            .ToListAsync();
+        return new PaginatedResponse<TenantResponse>(
+            tenants.Select(t => new TenantResponse(t.Id, t.Name, t.Slug, t.Description, t.IsActive, t.CreatedAt)).ToList(),
+            total, pagination.EnsurePage, pagination.EnsurePageSize);
     }
 
     public async Task<TenantResponse?> GetByIdAsync(Guid id)

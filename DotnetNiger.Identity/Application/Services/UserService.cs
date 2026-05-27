@@ -52,18 +52,31 @@ public class UserService
         return MapToResponse(user, roles);
     }
 
-    public async Task<List<UserResponse>> GetByTenantAsync(Guid tenantId)
+    public async Task<PaginatedResponse<UserResponse>> GetByTenantAsync(Guid tenantId, PaginationQuery pagination)
     {
-        var users = await _db.Users.Where(u => u.TenantId == tenantId).ToListAsync();
+        var query = _db.Users.Where(u => u.TenantId == tenantId);
+        var total = await query.CountAsync();
+        var users = await query
+            .OrderBy(u => u.Email)
+            .Skip((pagination.EnsurePage - 1) * pagination.EnsurePageSize)
+            .Take(pagination.EnsurePageSize)
+            .ToListAsync();
+
         var userIds = users.Select(u => u.Id).ToList();
+        var roleMappings = userIds.Count == 0
+            ? []
+            : await _db.UserRoles
+                .Where(ur => userIds.Contains(ur.UserId))
+                .Join(_db.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { ur.UserId, RoleName = r.Name! })
+                .ToListAsync();
 
-        var rolesByUser = await _db.UserRoles
-            .Where(ur => userIds.Contains(ur.UserId))
-            .Join(_db.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { ur.UserId, RoleName = r.Name! })
+        var rolesByUser = roleMappings
             .GroupBy(x => x.UserId)
-            .ToDictionaryAsync(g => g.Key, g => g.Select(x => x.RoleName).ToList());
+            .ToDictionary(g => g.Key, g => g.Select(x => x.RoleName).ToList());
 
-        return users.Select(u => MapToResponse(u, rolesByUser.GetValueOrDefault(u.Id, []))).ToList();
+        return new PaginatedResponse<UserResponse>(
+            users.Select(u => MapToResponse(u, rolesByUser.GetValueOrDefault(u.Id, []))).ToList(),
+            total, pagination.EnsurePage, pagination.EnsurePageSize);
     }
 
     public async Task<UserResponse> UpdateAsync(Guid tenantId, Guid id, UpdateUserRequest request)

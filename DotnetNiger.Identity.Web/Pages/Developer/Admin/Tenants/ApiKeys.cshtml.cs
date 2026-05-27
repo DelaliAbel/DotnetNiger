@@ -140,7 +140,7 @@ public class TenantApiKeysModel : PageModel
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
             }
         }
-        catch { }
+        catch { ApiKeys = []; }
     }
 
     private async Task<HttpClient> CreateClientAsync(string? identityUrl)

@@ -83,9 +83,9 @@ public class AdminCrudTests : IClassFixture<IdentityWebApplicationFactory>
         // Assert
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         
-         var tenants = await response.Content.ReadFromJsonAsync<List<DotnetNiger.Identity.Application.DTOs.TenantResponse>>();
-         tenants.Should().NotBeNull();
-         tenants.Should().HaveCountGreaterThanOrEqualTo(1); // At least the default tenant
+         var result = await response.Content.ReadFromJsonAsync<DotnetNiger.Identity.Application.DTOs.PaginatedResponse<DotnetNiger.Identity.Application.DTOs.TenantResponse>>();
+         result.Should().NotBeNull();
+         result.Items.Should().HaveCountGreaterThanOrEqualTo(1); // At least the default tenant
     }
 
     [Fact]

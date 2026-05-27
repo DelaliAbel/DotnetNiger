@@ -44,14 +44,20 @@ public class TenantApiKeyService
             secret);
     }
 
-    public async Task<List<TenantApiKeyResponse>> GetApiKeysAsync(Guid tenantId)
+    public async Task<PaginatedResponse<TenantApiKeyResponse>> GetApiKeysAsync(Guid tenantId, PaginationQuery pagination)
     {
-        var keys = await _db.TenantApiKeys
-            .Where(k => k.TenantId == tenantId)
+        var query = _db.TenantApiKeys.Where(k => k.TenantId == tenantId);
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
             .OrderByDescending(k => k.CreatedAt)
+            .Skip((pagination.EnsurePage - 1) * pagination.EnsurePageSize)
+            .Take(pagination.EnsurePageSize)
             .ToListAsync();
 
-        return keys.Select(MapToResponse).ToList();
+        return new PaginatedResponse<TenantApiKeyResponse>(
+            items.Select(MapToResponse).ToList(), totalCount, pagination.EnsurePage, pagination.EnsurePageSize);
     }
 
     public async Task<TenantApiKeyResponse> GetApiKeyByIdAsync(Guid tenantId, Guid keyId)

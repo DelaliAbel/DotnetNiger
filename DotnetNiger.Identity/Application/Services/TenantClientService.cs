@@ -105,14 +105,20 @@ public class TenantClientService
             clientSecret);
     }
 
-    public async Task<List<TenantClientResponse>> GetClientsAsync(Guid tenantId)
+    public async Task<PaginatedResponse<TenantClientResponse>> GetClientsAsync(Guid tenantId, PaginationQuery pagination)
     {
-        var clients = await _db.TenantClients
-            .Where(c => c.TenantId == tenantId)
+        var query = _db.TenantClients.Where(c => c.TenantId == tenantId);
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
             .OrderByDescending(c => c.CreatedAt)
+            .Skip((pagination.EnsurePage - 1) * pagination.EnsurePageSize)
+            .Take(pagination.EnsurePageSize)
             .ToListAsync();
 
-        return clients.Select(MapToResponse).ToList();
+        return new PaginatedResponse<TenantClientResponse>(
+            items.Select(MapToResponse).ToList(), totalCount, pagination.EnsurePage, pagination.EnsurePageSize);
     }
 
     public async Task<List<TenantClientResponse>> GetClientsByClientIdAsync(string clientId)

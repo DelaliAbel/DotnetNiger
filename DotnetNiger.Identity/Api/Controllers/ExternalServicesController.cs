@@ -69,10 +69,11 @@ public class ExternalServicesController : ControllerBase
     /// <summary>Liste tous les services externes du développeur connecté.</summary>
     [HttpGet]
     [Authorize(AuthenticationSchemes = BothSchemes)]
-    public async Task<ActionResult<List<ExternalServiceResponse>>> GetMyServices()
+    public async Task<ActionResult<PaginatedResponse<ExternalServiceResponse>>> GetMyServices(
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         var (tenantId, _) = await GetAuthInfoAsync();
-        var services = await _service.GetByTenantAsync(tenantId);
+        var services = await _service.GetByTenantAsync(tenantId, new PaginationQuery(page, pageSize));
         return Ok(services);
     }
 

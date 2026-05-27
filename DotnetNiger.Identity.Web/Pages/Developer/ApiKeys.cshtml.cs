@@ -161,7 +161,7 @@ public class ApiKeysModel : PageModel
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
             }
         }
-        catch { }
+        catch { ApiKeys = []; }
     }
 }
 

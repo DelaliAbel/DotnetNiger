@@ -28,7 +28,7 @@ public class EventServiceTests
         await db.SaveChangesAsync();
 
         var svc = new EventService(db);
-        var result = await svc.GetAllAsync(null, null, null, null, 1, 10);
+        var result = await svc.GetAllAsync(null, null, null, null, null, 1, 10);
 
         result.Items.Should().HaveCount(2);
         result.TotalCount.Should().Be(2);

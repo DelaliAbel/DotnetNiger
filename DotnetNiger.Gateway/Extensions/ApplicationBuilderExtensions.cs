@@ -4,6 +4,7 @@ using DotnetNiger.Gateway.Configuration;
 using DotnetNiger.Gateway.Metrics;
 using DotnetNiger.Gateway.Services;
 using DotnetNiger.Gateway.Middleware;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
 
 namespace DotnetNiger.Gateway.Extensions;
@@ -69,6 +70,25 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
+    public static IApplicationBuilder UseSecurityHeadersMiddleware(this IApplicationBuilder app)
+    {
+        app.Use(async (context, next) =>
+        {
+            context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+            context.Response.Headers["X-Frame-Options"] = "DENY";
+            context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
+            context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+            context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'";
+
+            if (!context.Response.Headers.ContainsKey("Strict-Transport-Security"))
+                context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+
+            await next();
+        });
+
+        return app;
+    }
+
     public static IApplicationBuilder UseExternalServiceProxy(this IApplicationBuilder app)
     {
         app.UseMiddleware<ExternalServiceProxyMiddleware>();
@@ -87,6 +107,16 @@ public static class ApplicationBuilderExtensions
                 if (!isMergedSwaggerPath)
                 {
                     await next(context);
+                    return;
+                }
+
+                var cache = context.RequestServices.GetRequiredService<IMemoryCache>();
+                var cacheKey = "swagger_merged";
+
+                if (cache.TryGetValue(cacheKey, out string? cached) && cached != null)
+                {
+                    context.Response.ContentType = "application/json";
+                    await context.Response.WriteAsync(cached);
                     return;
                 }
 
@@ -109,6 +139,7 @@ public static class ApplicationBuilderExtensions
                 }
 
                 var merged = MergeSwaggerDocuments(validResults, context.Request.Scheme, context.Request.Host);
+                cache.Set(cacheKey, merged, TimeSpan.FromHours(1));
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsync(merged);
             }
@@ -140,11 +171,21 @@ public static class ApplicationBuilderExtensions
                     case "":
                     case "/":
                     {
+                        var healthCheckService = context.RequestServices.GetRequiredService<HealthCheckService>();
+                        var report = await healthCheckService.CheckHealthAsync();
+                        var overallStatus = report.Status.ToString();
+
                         await response.WriteAsync(JsonSerializer.Serialize(new
                         {
-                            status = "Healthy",
+                            status = overallStatus,
                             service = "DotnetNiger.Gateway",
-                            timestamp = DateTime.UtcNow
+                            timestamp = DateTime.UtcNow,
+                            checks = report.Entries.ToDictionary(e => e.Key, e => new
+                            {
+                                status = e.Value.Status.ToString(),
+                                description = e.Value.Description,
+                                data = e.Value.Data?.Count > 0 ? e.Value.Data : null
+                            })
                         }));
                         return;
                     }
@@ -220,6 +261,34 @@ public static class ApplicationBuilderExtensions
                 await context.Response.WriteAsync(
                     JsonSerializer.Serialize(EndpointLatencyMetrics.GetSnapshot()));
             });
+        });
+
+        return app;
+    }
+
+    public static IApplicationBuilder MapCacheBusterEndpoint(this IApplicationBuilder app)
+    {
+        app.Use(async (context, next) =>
+        {
+            if (context.Request.Path.Equals("/admin/clear-swagger-cache", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!string.Equals(context.Request.Method, "POST", StringComparison.OrdinalIgnoreCase))
+                {
+                    context.Response.StatusCode = 405;
+                    return;
+                }
+
+                var cache = context.RequestServices.GetRequiredService<IMemoryCache>();
+                cache.Remove("swagger_merged");
+                Log.Information("Swagger cache cleared by admin request");
+
+                context.Response.ContentType = "application/json";
+                await context.Response.WriteAsync(
+                    JsonSerializer.Serialize(new { success = true, message = "Cache Swagger vidé" }));
+                return;
+            }
+
+            await next();
         });
 
         return app;

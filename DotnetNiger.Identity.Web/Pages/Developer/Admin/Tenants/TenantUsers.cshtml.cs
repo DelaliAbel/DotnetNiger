@@ -127,7 +127,7 @@ public class TenantUsersModel : PageModel
 
         var body = JsonSerializer.Serialize(new
         {
-            currentPassword = "Admin@123456",
+            currentPassword = PasswordInput.CurrentPassword,
             newPassword = PasswordInput.NewPassword
         });
 
@@ -249,7 +249,7 @@ public class TenantUsersModel : PageModel
                     new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
             }
         }
-        catch { }
+        catch (Exception ex) { Message = $"Erreur lors du chargement : {ex.Message}"; IsError = true; }
     }
 
     private async Task<HttpClient> CreateClientAsync(string? identityUrl)
@@ -290,5 +290,6 @@ public class EditUserInput
 
 public class ChangePasswordInput
 {
+    public string CurrentPassword { get; set; } = "";
     public string NewPassword { get; set; } = "";
 }

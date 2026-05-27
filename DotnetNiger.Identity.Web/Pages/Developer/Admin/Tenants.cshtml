@@ -65,10 +65,12 @@
                                             @(t.IsActive ? "&#128465;" : "&#10003;")
                                         </button>
                                     </form>
-                                    <form method="post" asp-page-handler="Delete" asp-route-tenantId="@t.Id" style="display:inline"
-                                          onsubmit="return confirm('Supprimer définitivement ce tenant et toutes ses données ?')">
-                                        <button type="submit" class="btn btn-outline-danger btn-sm" title="Supprimer">&#128465;</button>
-                                    </form>
+                                    <form method="post" asp-page-handler="Delete" asp-route-tenantId="@t.Id" id="delete-form-@t.Id" style="display:none"></form>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" title="Supprimer"
+                                            data-modal-delete="delete-form-@t.Id"
+                                            data-modal-label="Supprimer définitivement le tenant @t.Name et toutes ses données ?">
+                                        &#128465;
+                                    </button>
                                     <a href="/Developer/Admin/Tenants/@t.Id/Users" class="btn btn-outline-info btn-sm">Utilisateurs</a>
                                     <a href="/Developer/Admin/Tenants/@t.Id/Roles" class="btn btn-outline-info btn-sm">Rôles</a>
                                     <a href="/Developer/Admin/Tenants/@t.Id/Clients" class="btn btn-outline-info btn-sm">Clients</a>

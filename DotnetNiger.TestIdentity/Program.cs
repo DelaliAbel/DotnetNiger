@@ -35,7 +35,7 @@ builder.Services.AddAuthentication(options =>
     options.MapInboundClaims = false;
     options.TokenValidationParameters.NameClaimType = "name";
     options.TokenValidationParameters.RoleClaimType = "role";
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
 
     options.NonceCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     options.NonceCookie.SameSite = SameSiteMode.Unspecified;

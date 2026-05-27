@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var identityUrl = (builder.Configuration["Identity:BaseUrl"] ?? "https://localhost:7075").TrimEnd('/');
+var identityUrl = (builder.Configuration["DeveloperPortal:IdentityBaseUrl"] ?? builder.Configuration["Identity:BaseUrl"] ?? "https://localhost:7075").TrimEnd('/');
 var clientId = builder.Configuration["Identity:ClientId"] ?? "web-ui";
 var clientSecret = builder.Configuration["Identity:ClientSecret"] ?? "";
 
@@ -39,7 +39,7 @@ builder.Services.AddAuthentication(options =>
     options.MapInboundClaims = false;
     options.TokenValidationParameters.NameClaimType = "name";
     options.TokenValidationParameters.RoleClaimType = "role";
-    options.RequireHttpsMetadata = false;
+    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
 
     options.NonceCookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
     options.NonceCookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Unspecified;

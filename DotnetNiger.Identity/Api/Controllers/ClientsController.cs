@@ -18,9 +18,10 @@ public class ClientsController : ControllerBase
 
     /// <summary>Liste tous les clients OAuth2 d'un tenant.</summary>
     [HttpGet]
-    public async Task<ActionResult<List<TenantClientResponse>>> GetAll(Guid tenantId)
+    public async Task<ActionResult<PaginatedResponse<TenantClientResponse>>> GetAll(Guid tenantId,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var clients = await _clientService.GetClientsAsync(tenantId);
+        var clients = await _clientService.GetClientsAsync(tenantId, new PaginationQuery(page, pageSize));
         return Ok(clients);
     }
 

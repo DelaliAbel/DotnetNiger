@@ -161,8 +161,10 @@ public class ServicesModel : PageModel
                 Services = JsonSerializer.Deserialize<List<ServiceItem>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
             }
         }
-        catch
+        catch (Exception ex)
         {
+            var logger = HttpContext.RequestServices.GetRequiredService<ILogger<ServicesModel>>();
+            logger.LogWarning(ex, "Failed to load external services from Identity API");
             Services = [];
         }
     }

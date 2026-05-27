@@ -26,6 +26,8 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<IdentityDb
         else
             options.UseSqlite(connStr, x => x.MigrationsAssembly("DotnetNiger.Identity"));
 
+        options.UseOpenIddict();
+
         return new IdentityDbContext(options.Options, new TenantContext());
     }
 }
