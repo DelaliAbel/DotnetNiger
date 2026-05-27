@@ -37,14 +37,20 @@ public class ExternalServiceService
         return MapToResponse(service);
     }
 
-    public async Task<List<ExternalServiceResponse>> GetByTenantAsync(Guid tenantId)
+    public async Task<PaginatedResponse<ExternalServiceResponse>> GetByTenantAsync(Guid tenantId, PaginationQuery pagination)
     {
-        var services = await _db.ExternalServices
-            .Where(s => s.TenantId == tenantId)
+        var query = _db.ExternalServices.Where(s => s.TenantId == tenantId);
+
+        var totalCount = await query.CountAsync();
+
+        var items = await query
             .OrderByDescending(s => s.CreatedAt)
+            .Skip((pagination.EnsurePage - 1) * pagination.EnsurePageSize)
+            .Take(pagination.EnsurePageSize)
             .ToListAsync();
 
-        return services.Select(MapToResponse).ToList();
+        return new PaginatedResponse<ExternalServiceResponse>(
+            items.Select(MapToResponse).ToList(), totalCount, pagination.EnsurePage, pagination.EnsurePageSize);
     }
 
     public async Task<ExternalServiceResponse> GetByIdAsync(Guid tenantId, Guid serviceId)

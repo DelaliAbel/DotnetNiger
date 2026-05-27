@@ -30,9 +30,10 @@ public class PermissionsController : ControllerBase
 
     /// <summary>Liste toutes les permissions du tenant.</summary>
     [HttpGet]
-    public async Task<ActionResult<List<PermissionResponse>>> GetAll(Guid tenantId)
+    public async Task<ActionResult<PaginatedResponse<PermissionResponse>>> GetAll(Guid tenantId,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var permissions = await _permissionService.GetByTenantAsync(tenantId);
+        var permissions = await _permissionService.GetByTenantAsync(tenantId, new PaginationQuery(page, pageSize));
         return Ok(permissions);
     }
 

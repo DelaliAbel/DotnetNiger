@@ -18,9 +18,10 @@ public class ApiKeysController : ControllerBase
 
     /// <summary>Liste toutes les clés API d'un tenant.</summary>
     [HttpGet]
-    public async Task<ActionResult<List<TenantApiKeyResponse>>> GetAll(Guid tenantId)
+    public async Task<ActionResult<PaginatedResponse<TenantApiKeyResponse>>> GetAll(Guid tenantId,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var keys = await _apiKeyService.GetApiKeysAsync(tenantId);
+        var keys = await _apiKeyService.GetApiKeysAsync(tenantId, new PaginationQuery(page, pageSize));
         return Ok(keys);
     }
 

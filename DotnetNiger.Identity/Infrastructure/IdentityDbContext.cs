@@ -34,6 +34,8 @@ public class IdentityDbContext : IdentityDbContext<
     public DbSet<TenantApiKey> TenantApiKeys => Set<TenantApiKey>();
     public DbSet<ExternalService> ExternalServices => Set<ExternalService>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<UserConsent> UserConsents => Set<UserConsent>();
+    public DbSet<LoginHistory> LoginHistories => Set<LoginHistory>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -97,6 +99,25 @@ builder.Entity<TenantApiKey>(b =>
             b.HasIndex(a => a.UserId);
             b.HasIndex(a => new { a.EntityType, a.EntityId });
             b.HasQueryFilter(a => _tenant.TenantId == null || a.TenantId == _tenant.TenantId);
+        });
+
+        builder.Entity<UserConsent>(b =>
+        {
+            b.HasIndex(c => c.UserId);
+            b.HasIndex(c => c.CreatedAt);
+            b.Property(c => c.ConsentType).HasMaxLength(50);
+            b.Property(c => c.ConsentVersion).HasMaxLength(20);
+        });
+
+        builder.Entity<LoginHistory>(b =>
+        {
+            b.HasKey(e => e.Id);
+            b.HasIndex(e => e.UserId);
+            b.HasIndex(e => e.CreatedAt);
+            b.Property(e => e.IpAddress).HasMaxLength(50);
+            b.Property(e => e.UserAgent).HasMaxLength(500);
+            b.Property(e => e.Provider).HasMaxLength(50);
+            b.Property(e => e.FailureReason).HasMaxLength(200);
         });
 
         builder.Entity<ApplicationRole>(b =>

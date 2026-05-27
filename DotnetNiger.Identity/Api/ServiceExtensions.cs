@@ -19,6 +19,9 @@ public static class ServiceExtensions
     public static IServiceCollection AddIdentityInfrastructure(
         this IServiceCollection services, IConfiguration config, IHostEnvironment env)
     {
+        services.AddMemoryCache();
+        services.AddHostedService<GdprCleanupService>();
+
         services.AddDbContext<IdentityDbContext>(options =>
         {
             var provider = config.GetValue<string>("DatabaseProvider", "Sqlite");
@@ -32,6 +35,7 @@ public static class ServiceExtensions
                 options.UseSqlite(connStr, x => x.MigrationsAssembly("DotnetNiger.Identity"));
 
             options.UseOpenIddict();
+            options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         });
 
         services.Configure<SmtpOptions>(config.GetSection("Smtp"));
@@ -73,7 +77,9 @@ public static class ServiceExtensions
                           .RequireProofKeyForCodeExchange()
                       .AllowClientCredentialsFlow()
                       .SetRefreshTokenLifetime(TimeSpan.FromDays(14))
-                      .SetRefreshTokenReuseLeeway(TimeSpan.FromSeconds(30));
+                      .SetRefreshTokenReuseLeeway(TimeSpan.FromSeconds(0));
+
+                server.DisableAccessTokenEncryption();
 
                 if (env.IsDevelopment())
                 {
@@ -242,8 +248,29 @@ public static class ServiceExtensions
             });
         }
 
-        services.AddCors(options => options.AddPolicy("AllowAll", builder =>
-            builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+        return services;
+    }
+
+    /// <summary>Configure CORS en fonction de l'environnement.</summary>
+    public static IServiceCollection AddCorsPolicy(this IServiceCollection services, IHostEnvironment environment, IConfiguration configuration)
+    {
+        services.AddCors(options =>
+        {
+            if (environment.IsDevelopment())
+                options.AddPolicy("AllowAll", builder =>
+                    builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+            else
+            {
+                var origins = configuration["Cors:AllowedOrigins"];
+                if (!string.IsNullOrWhiteSpace(origins))
+                    options.AddPolicy("AllowAll", builder =>
+                        builder.WithOrigins(origins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                              .AllowAnyMethod().AllowAnyHeader().AllowCredentials());
+                else
+                    options.AddPolicy("AllowAll", builder =>
+                        builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+            }
+        });
 
         return services;
     }
@@ -306,6 +333,7 @@ public static class ServiceExtensions
         services.AddScoped<IEmailSender<ApplicationUser>, EmailSender>();
         services.AddScoped<ExternalServiceService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
+        services.AddScoped<GdprService>();
 
         return services;
     }

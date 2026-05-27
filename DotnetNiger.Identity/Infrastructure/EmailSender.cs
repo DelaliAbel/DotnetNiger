@@ -127,6 +127,19 @@ public class EmailSender : IEmailSender<ApplicationUser>
 <p style=""font-size:13px;color:#666"">Ce code expire dans 15 minutes.</p>"));
     }
 
+    public Task SendInviteEmailAsync(string email, string inviteUrl, string role)
+    {
+        return SendEmailAsync(email, $"Vous avez été invité sur {_smtp.AppName}",
+            BuildTemplate(
+                "Invitation à rejoindre",
+                $@"<p>Bonjour,</p>
+<p>Vous avez été invité à rejoindre {_smtp.AppName} en tant que <strong>{role}</strong>.</p>
+<p style=""text-align:center;margin:24px 0"">
+  <a href=""{inviteUrl}"" style=""display:inline-block;padding:12px 28px;background:#512BD4;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600"">Accepter l'invitation</a>
+</p>
+<p style=""font-size:13px;color:#666"">Cette invitation expire dans 48 heures.</p>"));
+    }
+
     public Task SendConfirmationCodeAsync(ApplicationUser user, string email, string code, string? confirmationLink = null)
     {
         return SendEmailAsync(email, $"Votre code de confirmation — {_smtp.AppName}",

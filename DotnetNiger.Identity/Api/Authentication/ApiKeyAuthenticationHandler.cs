@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -47,13 +48,17 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
         storedKey.LastUsedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
 
-        var claims = new[]
+        var claims = new List<Claim>
         {
-            new Claim(ClaimTypes.NameIdentifier, storedKey.TenantId.ToString()),
-            new Claim("tenant_id", storedKey.TenantId.ToString()),
-            new Claim("api_key_id", storedKey.Id.ToString()),
-            new Claim("api_key_prefix", storedKey.KeyPrefix),
+            new(ClaimTypes.NameIdentifier, storedKey.TenantId.ToString()),
+            new("tenant_id", storedKey.TenantId.ToString()),
+            new("api_key_id", storedKey.Id.ToString()),
+            new("api_key_prefix", storedKey.KeyPrefix),
         };
+
+        var scopeList = JsonSerializer.Deserialize<string[]>(storedKey.Scopes) ?? [];
+        foreach (var scope in scopeList)
+            claims.Add(new Claim("scope", scope));
 
         var identity = new ClaimsIdentity(claims, ApiKeyAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);

@@ -36,12 +36,13 @@ public class UsersController : ControllerBase
         return Ok(user);
     }
 
-    /// <summary>Liste tous les utilisateurs du tenant.</summary>
+    /// <summary>Liste tous les utilisateurs du tenant (paginated).</summary>
     [HttpGet]
-    public async Task<ActionResult<List<UserResponse>>> GetAll(Guid tenantId)
+    public async Task<ActionResult<PaginatedResponse<UserResponse>>> GetAll(Guid tenantId,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
-        var users = await _userService.GetByTenantAsync(tenantId);
-        return Ok(users);
+        var result = await _userService.GetByTenantAsync(tenantId, new PaginationQuery(page, pageSize));
+        return Ok(result);
     }
 
     /// <summary>Met à jour un utilisateur (prénom, nom, avatar, statut).</summary>
