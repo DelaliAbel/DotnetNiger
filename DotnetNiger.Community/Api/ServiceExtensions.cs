@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using DotnetNiger.Community.Application.Notifications;
 using DotnetNiger.Community.Application.Services;
 using DotnetNiger.Community.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -36,11 +37,16 @@ public static class ServiceExtensions
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<ISearchService, SearchService>();
         services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<INewsletterService, NewsletterService>();
+        services.AddScoped<IProjectService, ProjectService>();
+        services.AddScoped<IMemberDirectoryService, MemberDirectoryService>();
+        services.AddScoped<IPartnerService, PartnerService>();
+        services.AddScoped<INotificationService, NotificationService>();
 
         return services;
     }
 
-    public static IServiceCollection AddCommunityAuthentication(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddCommunityAuthentication(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -49,14 +55,13 @@ public static class ServiceExtensions
                 options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                 {
                     ValidateIssuer = true,
-                    ValidateAudience = true,
+                    ValidateAudience = false,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = configuration["Jwt:Issuer"] ?? "DotnetNiger.Identity",
-                    ValidAudience = configuration["Jwt:Audience"] ?? "DotnetNiger.Identity.Client"
+                    ValidIssuer = configuration["Jwt:Issuer"] ?? "http://localhost:5075/",
                 };
                 options.MetadataAddress = configuration["Jwt:MetadataAddress"] ?? "http://localhost:5075/.well-known/openid-configuration";
-                options.RequireHttpsMetadata = false;
+                options.RequireHttpsMetadata = !environment.IsDevelopment();
             });
 
         services.AddAuthorization();

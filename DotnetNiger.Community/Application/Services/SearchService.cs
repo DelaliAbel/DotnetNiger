@@ -8,6 +8,9 @@ public class SearchService(AppDbContext db) : ISearchService
 {
     public async Task<PaginatedResponse<SearchResultResponse>> SearchAsync(SearchQueryRequest request)
     {
+        request.Page = Math.Max(1, request.Page);
+        request.PageSize = Math.Clamp(request.PageSize, 1, ValidationConstants.MaxPageSize);
+
         var query = request.Query?.Trim();
         var type = request.Type?.Trim();
         IQueryable<SearchResultResponse>? combined = null;

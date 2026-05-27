@@ -71,13 +71,15 @@ public class PostService(AppDbContext db) : IPostService
         return (await GetByIdAsync(post.Id))!;
     }
 
-    public async Task<PostResponse?> UpdateAsync(Guid id, UpdatePostRequest request)
+    public async Task<PostResponse?> UpdateAsync(Guid id, UpdatePostRequest request, Guid userId, bool isAdmin)
     {
         var post = await db.Posts
             .Include(p => p.PostCategories)
             .Include(p => p.PostTags)
             .FirstOrDefaultAsync(p => p.Id == id);
         if (post is null) return null;
+        if (post.AuthorId != userId && !isAdmin)
+            throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à modifier cette publication.");
 
         post.Title = request.Title;
         post.Slug = GenerateSlug(request.Title);
@@ -98,10 +100,12 @@ public class PostService(AppDbContext db) : IPostService
         return (await GetByIdAsync(post.Id))!;
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin)
     {
         var post = await db.Posts.FindAsync(id);
         if (post is null) return false;
+        if (post.AuthorId != userId && !isAdmin)
+            throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à supprimer cette publication.");
         db.Posts.Remove(post);
         await db.SaveChangesAsync();
         return true;
@@ -136,7 +140,7 @@ public class PostService(AppDbContext db) : IPostService
             Id = pt.Tag.Id,
             Name = pt.Tag.Name,
             Slug = pt.Tag.Slug,
-            PostCount = pt.Tag.PostCount
+            UsageCount = pt.Tag.UsageCount
         }).ToList()
     };
 
