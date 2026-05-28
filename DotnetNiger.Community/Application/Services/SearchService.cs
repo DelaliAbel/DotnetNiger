@@ -13,7 +13,8 @@ public class SearchService(AppDbContext db) : ISearchService
 
         var query = request.Query?.Trim();
         var type = request.Type?.Trim();
-        IQueryable<SearchResultResponse>? combined = null;
+
+        var results = new List<SearchResultResponse>();
 
         if (string.IsNullOrWhiteSpace(type) || type == "Post")
         {
@@ -26,7 +27,7 @@ public class SearchService(AppDbContext db) : ISearchService
                 });
             if (!string.IsNullOrWhiteSpace(query))
                 posts = posts.Where(p => p.Title!.Contains(query) || p.Content!.Contains(query));
-            combined = posts;
+            results.AddRange(await posts.ToListAsync());
         }
 
         if (string.IsNullOrWhiteSpace(type) || type == "Event")
@@ -40,7 +41,7 @@ public class SearchService(AppDbContext db) : ISearchService
                 });
             if (!string.IsNullOrWhiteSpace(query))
                 events = events.Where(e => e.Title!.Contains(query) || e.Description!.Contains(query));
-            combined = combined == null ? events : combined.Concat(events);
+            results.AddRange(await events.ToListAsync());
         }
 
         if (string.IsNullOrWhiteSpace(type) || type == "Resource")
@@ -53,21 +54,15 @@ public class SearchService(AppDbContext db) : ISearchService
                 });
             if (!string.IsNullOrWhiteSpace(query))
                 resources = resources.Where(r => r.Title!.Contains(query) || r.Description!.Contains(query));
-            combined = combined == null ? resources : combined.Concat(resources);
+            results.AddRange(await resources.ToListAsync());
         }
 
-        if (combined is null)
-            return new PaginatedResponse<SearchResultResponse>
-            {
-                Items = [], TotalCount = 0, Page = request.Page, PageSize = request.PageSize
-            };
-
-        var total = await combined.CountAsync();
-        var items = await combined
+        var total = results.Count;
+        var items = results
             .OrderByDescending(r => r.CreatedAt)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
-            .ToListAsync();
+            .ToList();
 
         return new PaginatedResponse<SearchResultResponse>
         {
