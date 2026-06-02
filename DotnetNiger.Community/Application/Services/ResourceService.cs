@@ -8,7 +8,7 @@ namespace DotnetNiger.Community.Application.Services;
 
 public class ResourceService(AppDbContext db) : IResourceService
 {
-    public async Task<PaginatedResponse<ResourceResponse>> GetAllAsync(string? resourceType, string? level, string? query, string? tag, Guid? categoryId, int page = 1, int pageSize = 10)
+    public async Task<PaginatedResponse<ResourceResponse>> GetAllAsync(string? resourceType, string? level, string? query, string? tag, Guid? categoryId, int page = 1, int pageSize = 10, Guid? after = null)
     {
         var q = db.Resources
             .AsNoTracking()
@@ -26,13 +26,69 @@ public class ResourceService(AppDbContext db) : IResourceService
         if (categoryId.HasValue)
             q = q.Where(r => r.ResourceCategories.Any(rc => rc.CategoryId == categoryId.Value));
 
-        var total = await q.CountAsync();
-        var items = await q
-            .OrderByDescending(r => r.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(r => MapResource(r))
-            .ToListAsync();
+        List<ResourceResponse> items;
+        int total;
+
+        if (after.HasValue)
+        {
+            items = await q
+                .Where(r => r.Id > after.Value)
+                .OrderBy(r => r.Id)
+                .Take(pageSize)
+                .Select(r => new ResourceResponse
+                {
+                    Id = r.Id,
+                    Title = r.Title,
+                    Slug = r.Slug,
+                    Description = r.Description,
+                    Url = r.Url,
+                    ResourceType = r.ResourceType,
+                    Level = r.Level,
+                    CreatedBy = r.CreatedBy,
+                    ViewCount = r.ViewCount,
+                    CreatedAt = r.CreatedAt,
+                    CategoryIds = r.ResourceCategories.Select(rc => rc.CategoryId).ToList(),
+                    Tags = r.ResourceTags.Select(rt => new TagResponse
+                    {
+                        Id = rt.Tag.Id,
+                        Name = rt.Tag.Name,
+                        Slug = rt.Tag.Slug,
+                        UsageCount = rt.Tag.UsageCount
+                    }).ToList()
+                })
+                .ToListAsync();
+            total = items.Count;
+        }
+        else
+        {
+            total = await q.CountAsync();
+            items = await q
+                .OrderByDescending(r => r.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(r => new ResourceResponse
+                {
+                    Id = r.Id,
+                    Title = r.Title,
+                    Slug = r.Slug,
+                    Description = r.Description,
+                    Url = r.Url,
+                    ResourceType = r.ResourceType,
+                    Level = r.Level,
+                    CreatedBy = r.CreatedBy,
+                    ViewCount = r.ViewCount,
+                    CreatedAt = r.CreatedAt,
+                    CategoryIds = r.ResourceCategories.Select(rc => rc.CategoryId).ToList(),
+                    Tags = r.ResourceTags.Select(rt => new TagResponse
+                    {
+                        Id = rt.Tag.Id,
+                        Name = rt.Tag.Name,
+                        Slug = rt.Tag.Slug,
+                        UsageCount = rt.Tag.UsageCount
+                    }).ToList()
+                })
+                .ToListAsync();
+        }
 
         return new PaginatedResponse<ResourceResponse> { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }

@@ -8,7 +8,7 @@ namespace DotnetNiger.Community.Application.Services;
 
 public class PostService(AppDbContext db) : IPostService
 {
-    public async Task<PaginatedResponse<PostResponse>> GetAllAsync(string? published, string? category, string? tag, string? query, int page = 1, int pageSize = 10)
+    public async Task<PaginatedResponse<PostResponse>> GetAllAsync(string? published, string? category, string? tag, string? query, int page = 1, int pageSize = 10, Guid? after = null)
     {
         var q = db.Posts
             .AsNoTracking()
@@ -26,13 +26,91 @@ public class PostService(AppDbContext db) : IPostService
         if (!string.IsNullOrWhiteSpace(query))
             q = q.Where(p => p.Title.Contains(query) || p.Content.Contains(query));
 
-        var total = await q.CountAsync();
-        var items = await q
-            .OrderByDescending(p => p.PublishedAt ?? p.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(p => MapPost(p))
-            .ToListAsync();
+        List<PostResponse> items;
+        int total;
+
+        if (after.HasValue)
+        {
+            items = await q
+                .Where(p => p.Id > after.Value)
+                .OrderBy(p => p.Id)
+                .Take(pageSize)
+                .Select(p => new PostResponse
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    Slug = p.Slug,
+                    Content = p.Content,
+                    Excerpt = p.Excerpt,
+                    CoverImageUrl = p.CoverImageUrl,
+                    AuthorId = p.AuthorId,
+                    AuthorName = p.AuthorName,
+                    AuthorAvatar = p.AuthorAvatar,
+                    PostType = p.PostType,
+                    IsPublished = p.IsPublished,
+                    PublishedAt = p.PublishedAt ?? DateTime.MinValue,
+                    ViewCount = p.ViewCount,
+                    CreatedAt = p.CreatedAt,
+                    Categories = p.PostCategories.Select(pc => new CategoryResponse
+                    {
+                        Id = pc.Category.Id,
+                        Name = pc.Category.Name,
+                        Slug = pc.Category.Slug,
+                        Description = pc.Category.Description,
+                        PostCount = pc.Category.PostCount
+                    }).ToList(),
+                    Tags = p.PostTags.Select(pt => new TagResponse
+                    {
+                        Id = pt.Tag.Id,
+                        Name = pt.Tag.Name,
+                        Slug = pt.Tag.Slug,
+                        UsageCount = pt.Tag.UsageCount
+                    }).ToList()
+                })
+                .ToListAsync();
+            total = items.Count;
+        }
+        else
+        {
+            total = await q.CountAsync();
+            items = await q
+                .OrderByDescending(p => p.PublishedAt ?? p.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(p => new PostResponse
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    Slug = p.Slug,
+                    Content = p.Content,
+                    Excerpt = p.Excerpt,
+                    CoverImageUrl = p.CoverImageUrl,
+                    AuthorId = p.AuthorId,
+                    AuthorName = p.AuthorName,
+                    AuthorAvatar = p.AuthorAvatar,
+                    PostType = p.PostType,
+                    IsPublished = p.IsPublished,
+                    PublishedAt = p.PublishedAt ?? DateTime.MinValue,
+                    ViewCount = p.ViewCount,
+                    CreatedAt = p.CreatedAt,
+                    Categories = p.PostCategories.Select(pc => new CategoryResponse
+                    {
+                        Id = pc.Category.Id,
+                        Name = pc.Category.Name,
+                        Slug = pc.Category.Slug,
+                        Description = pc.Category.Description,
+                        PostCount = pc.Category.PostCount
+                    }).ToList(),
+                    Tags = p.PostTags.Select(pt => new TagResponse
+                    {
+                        Id = pt.Tag.Id,
+                        Name = pt.Tag.Name,
+                        Slug = pt.Tag.Slug,
+                        UsageCount = pt.Tag.UsageCount
+                    }).ToList()
+                })
+                .ToListAsync();
+        }
 
         return new PaginatedResponse<PostResponse> { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }
@@ -80,7 +158,7 @@ public class PostService(AppDbContext db) : IPostService
         await AssignTags(post, request.TagNames);
         db.Posts.Add(post);
         await db.SaveChangesAsync();
-        return (await GetByIdAsync(post.Id))!;
+        return MapPost(post);
     }
 
     public async Task<PostResponse?> UpdateAsync(Guid id, UpdatePostRequest request, Guid userId, bool isAdmin)
@@ -109,7 +187,7 @@ public class PostService(AppDbContext db) : IPostService
         await AssignCategories(post, request.CategoryIds);
         await AssignTags(post, request.TagNames);
         await db.SaveChangesAsync();
-        return (await GetByIdAsync(post.Id))!;
+        return MapPost(post);
     }
 
     public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin)

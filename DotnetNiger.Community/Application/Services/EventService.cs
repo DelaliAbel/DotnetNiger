@@ -9,7 +9,7 @@ namespace DotnetNiger.Community.Application.Services;
 
 public class EventService(AppDbContext db, INotificationService notificationService) : IEventService
 {
-    public async Task<PaginatedResponse<EventResponse>> GetAllAsync(string? published, string? past, string? eventType, string? query, string? tag, DateTime? startDateFrom, DateTime? startDateTo, Guid? submitterId = null, int page = 1, int pageSize = 10)
+    public async Task<PaginatedResponse<EventResponse>> GetAllAsync(string? published, string? past, string? eventType, string? query, string? tag, DateTime? startDateFrom, DateTime? startDateTo, Guid? submitterId = null, int page = 1, int pageSize = 10, Guid? after = null)
     {
         var q = db.Events
             .AsNoTracking()
@@ -34,13 +34,103 @@ public class EventService(AppDbContext db, INotificationService notificationServ
         if (submitterId.HasValue)
             q = q.Where(e => e.CreatedBy == submitterId.Value);
 
-        var total = await q.CountAsync();
-        var items = await q
-            .OrderByDescending(e => e.StartDate)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(e => MapEvent(e))
-            .ToListAsync();
+        List<EventResponse> items;
+        int total;
+
+        if (after.HasValue)
+        {
+            items = await q
+                .Where(e => e.Id > after.Value)
+                .OrderBy(e => e.Id)
+                .Take(pageSize)
+                .Select(e => new EventResponse
+                {
+                    Id = e.Id,
+                    Title = e.Title,
+                    Slug = e.Slug,
+                    Description = e.Description,
+                    Location = e.Location,
+                    EventType = e.EventType,
+                    StartDate = e.StartDate,
+                    EndDate = e.EndDate,
+                    CoverImageUrl = e.CoverImageUrl,
+                    CreatedBy = e.CreatedBy,
+                    SubmittedBy = e.CreatedBy,
+                    OrganizerName = e.OrganizerName,
+                    Capacity = e.Capacity,
+                    RegisteredCount = e.RegisteredCount,
+                    IsPublished = e.IsPublished,
+                    IsArchived = e.IsArchived,
+                    MeetupLink = e.MeetupLink,
+                    RejectionReason = e.RejectionReason,
+                    SubmittedAt = e.SubmittedAt,
+                    PublishedAt = e.PublishedAt,
+                    CreatedAt = e.CreatedAt,
+                    Medias = e.Medias.Select(m => new EventMediaResponse
+                    {
+                        Id = m.Id,
+                        Type = m.Type,
+                        Url = m.Url,
+                        Title = m.Title
+                    }).ToList(),
+                    Tags = e.EventTags.Select(et => new TagResponse
+                    {
+                        Id = et.Tag.Id,
+                        Name = et.Tag.Name,
+                        Slug = et.Tag.Slug,
+                        UsageCount = et.Tag.UsageCount
+                    }).ToList()
+                })
+                .ToListAsync();
+            total = items.Count;
+        }
+        else
+        {
+            total = await q.CountAsync();
+            items = await q
+                .OrderByDescending(e => e.StartDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(e => new EventResponse
+                {
+                    Id = e.Id,
+                    Title = e.Title,
+                    Slug = e.Slug,
+                    Description = e.Description,
+                    Location = e.Location,
+                    EventType = e.EventType,
+                    StartDate = e.StartDate,
+                    EndDate = e.EndDate,
+                    CoverImageUrl = e.CoverImageUrl,
+                    CreatedBy = e.CreatedBy,
+                    SubmittedBy = e.CreatedBy,
+                    OrganizerName = e.OrganizerName,
+                    Capacity = e.Capacity,
+                    RegisteredCount = e.RegisteredCount,
+                    IsPublished = e.IsPublished,
+                    IsArchived = e.IsArchived,
+                    MeetupLink = e.MeetupLink,
+                    RejectionReason = e.RejectionReason,
+                    SubmittedAt = e.SubmittedAt,
+                    PublishedAt = e.PublishedAt,
+                    CreatedAt = e.CreatedAt,
+                    Medias = e.Medias.Select(m => new EventMediaResponse
+                    {
+                        Id = m.Id,
+                        Type = m.Type,
+                        Url = m.Url,
+                        Title = m.Title
+                    }).ToList(),
+                    Tags = e.EventTags.Select(rt => new TagResponse
+                    {
+                        Id = rt.Tag.Id,
+                        Name = rt.Tag.Name,
+                        Slug = rt.Tag.Slug,
+                        UsageCount = rt.Tag.UsageCount
+                    }).ToList()
+                })
+                .ToListAsync();
+        }
 
         return new PaginatedResponse<EventResponse> { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }
@@ -56,7 +146,44 @@ public class EventService(AppDbContext db, INotificationService notificationServ
             .OrderBy(e => e.StartDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(e => MapEvent(e))
+            .Select(e => new EventResponse
+            {
+                Id = e.Id,
+                Title = e.Title,
+                Slug = e.Slug,
+                Description = e.Description,
+                Location = e.Location,
+                EventType = e.EventType,
+                StartDate = e.StartDate,
+                EndDate = e.EndDate,
+                CoverImageUrl = e.CoverImageUrl,
+                CreatedBy = e.CreatedBy,
+                SubmittedBy = e.CreatedBy,
+                OrganizerName = e.OrganizerName,
+                Capacity = e.Capacity,
+                RegisteredCount = e.RegisteredCount,
+                IsPublished = e.IsPublished,
+                IsArchived = e.IsArchived,
+                MeetupLink = e.MeetupLink,
+                RejectionReason = e.RejectionReason,
+                SubmittedAt = e.SubmittedAt,
+                PublishedAt = e.PublishedAt,
+                CreatedAt = e.CreatedAt,
+                Medias = e.Medias.Select(m => new EventMediaResponse
+                {
+                    Id = m.Id,
+                    Type = m.Type,
+                    Url = m.Url,
+                    Title = m.Title
+                }).ToList(),
+                Tags = e.EventTags.Select(et => new TagResponse
+                {
+                    Id = et.Tag.Id,
+                    Name = et.Tag.Name,
+                    Slug = et.Tag.Slug,
+                    UsageCount = et.Tag.UsageCount
+                }).ToList()
+            })
             .ToListAsync();
     }
 
@@ -187,7 +314,44 @@ public class EventService(AppDbContext db, INotificationService notificationServ
             .OrderByDescending(e => e.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(e => MapEvent(e))
+            .Select(e => new EventResponse
+            {
+                Id = e.Id,
+                Title = e.Title,
+                Slug = e.Slug,
+                Description = e.Description,
+                Location = e.Location,
+                EventType = e.EventType,
+                StartDate = e.StartDate,
+                EndDate = e.EndDate,
+                CoverImageUrl = e.CoverImageUrl,
+                CreatedBy = e.CreatedBy,
+                SubmittedBy = e.CreatedBy,
+                OrganizerName = e.OrganizerName,
+                Capacity = e.Capacity,
+                RegisteredCount = e.RegisteredCount,
+                IsPublished = e.IsPublished,
+                IsArchived = e.IsArchived,
+                MeetupLink = e.MeetupLink,
+                RejectionReason = e.RejectionReason,
+                SubmittedAt = e.SubmittedAt,
+                PublishedAt = e.PublishedAt,
+                CreatedAt = e.CreatedAt,
+                Medias = e.Medias.Select(m => new EventMediaResponse
+                {
+                    Id = m.Id,
+                    Type = m.Type,
+                    Url = m.Url,
+                    Title = m.Title
+                }).ToList(),
+                Tags = e.EventTags.Select(et => new TagResponse
+                {
+                    Id = et.Tag.Id,
+                    Name = et.Tag.Name,
+                    Slug = et.Tag.Slug,
+                    UsageCount = et.Tag.UsageCount
+                }).ToList()
+            })
             .ToListAsync();
     }
 

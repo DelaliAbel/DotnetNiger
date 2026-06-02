@@ -13,7 +13,7 @@
     {
       "UpstreamPathTemplate": "/api/newsletters/subscribe",
       "UpstreamHttpMethod": ["POST"],
-      "DownstreamPathTemplate": "/api/v1/newsletters/subscribe",
+      "DownstreamPathTemplate": "/api/v1/newsletter/subscribe",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5050 }],
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 7000 },
@@ -24,7 +24,7 @@
     {
       "UpstreamPathTemplate": "/api/newsletters/quick-subscribe",
       "UpstreamHttpMethod": ["POST"],
-      "DownstreamPathTemplate": "/api/v1/newsletters/quick-subscribe",
+      "DownstreamPathTemplate": "/api/v1/newsletter/quick-subscribe",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5050 }],
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 7000 },
@@ -35,7 +35,7 @@
     {
       "UpstreamPathTemplate": "/api/newsletters/verify",
       "UpstreamHttpMethod": ["POST"],
-      "DownstreamPathTemplate": "/api/v1/newsletters/verify",
+      "DownstreamPathTemplate": "/api/v1/newsletter/verify",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5050 }],
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 7000 },
@@ -46,7 +46,7 @@
     {
       "UpstreamPathTemplate": "/api/newsletters/unsubscribe",
       "UpstreamHttpMethod": ["POST"],
-      "DownstreamPathTemplate": "/api/v1/newsletters/unsubscribe",
+      "DownstreamPathTemplate": "/api/v1/newsletter/unsubscribe",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5050 }],
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 7000 },
@@ -79,7 +79,7 @@
     {
       "UpstreamPathTemplate": "/api/newsletters/register",
       "UpstreamHttpMethod": ["POST"],
-      "DownstreamPathTemplate": "/api/v1/newsletters/register",
+      "DownstreamPathTemplate": "/api/v1/newsletter/register",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5050 }],
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 7000 },
@@ -90,7 +90,7 @@
     {
       "UpstreamPathTemplate": "/api/newsletters/subscriptions/{everything}",
       "UpstreamHttpMethod": ["GET", "PATCH", "DELETE"],
-      "DownstreamPathTemplate": "/api/v1/newsletters/subscriptions/{everything}",
+      "DownstreamPathTemplate": "/api/v1/newsletter/subscriptions/{everything}",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5050 }],
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 7000 },
@@ -101,7 +101,7 @@
     {
       "UpstreamPathTemplate": "/api/newsletters/subscriptions",
       "UpstreamHttpMethod": ["GET"],
-      "DownstreamPathTemplate": "/api/v1/newsletters/subscriptions",
+      "DownstreamPathTemplate": "/api/v1/newsletter/subscriptions",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5050 }],
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 7000 },

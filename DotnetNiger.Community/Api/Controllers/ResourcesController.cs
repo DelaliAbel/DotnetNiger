@@ -17,11 +17,12 @@ public class ResourcesController(IResourceService resourceService) : ControllerB
     public async Task<IActionResult> GetAll(
         [FromQuery] string? resourceType, [FromQuery] string? level, [FromQuery] string? query,
         [FromQuery] string? tag, [FromQuery] Guid? categoryId,
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 10,
+        [FromQuery] Guid? after = null)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
-        var result = await resourceService.GetAllAsync(resourceType, level, query, tag, categoryId, page, pageSize);
+        var result = await resourceService.GetAllAsync(resourceType, level, query, tag, categoryId, page, pageSize, after);
         return Ok(new { Success = true, Data = result });
     }
 

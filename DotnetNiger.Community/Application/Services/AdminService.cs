@@ -11,23 +11,37 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
         var now = DateTime.UtcNow;
         var postsTask = db.Posts.CountAsync();
         var publishedPostsTask = db.Posts.CountAsync(p => p.IsPublished);
+        var draftPostsTask = db.Posts.CountAsync(p => !p.IsPublished);
         var eventsTask = db.Events.CountAsync();
         var upcomingEventsTask = db.Events.CountAsync(e => e.IsPublished && e.EndDate >= now);
+        var pastEventsTask = db.Events.CountAsync(e => e.EndDate < now);
+        var pendingEventsTask = db.Events.CountAsync(e => !e.IsPublished && !e.IsDeleted);
         var resourcesTask = db.Resources.CountAsync();
+        var totalViewsTask = db.Resources.SumAsync(r => r.ViewCount);
         var membersTask = db.Members.CountAsync();
+        var newsletterTask = db.NewsletterSubscriptions.CountAsync(s => s.IsActive);
         var commentsTask = db.Comments.CountAsync();
+        var projectsTask = db.Projects.CountAsync();
+        var partnersTask = db.Partners.CountAsync();
 
-        await Task.WhenAll(postsTask, publishedPostsTask, eventsTask, upcomingEventsTask, resourcesTask, membersTask, commentsTask);
+        await Task.WhenAll(postsTask, publishedPostsTask, draftPostsTask, eventsTask, upcomingEventsTask, pastEventsTask, pendingEventsTask, resourcesTask, totalViewsTask, membersTask, newsletterTask, commentsTask, projectsTask, partnersTask);
 
         return new DashboardResponse
         {
             PostsCount = postsTask.Result,
             PublishedPostsCount = publishedPostsTask.Result,
+            DraftPostsCount = draftPostsTask.Result,
             EventsCount = eventsTask.Result,
             UpcomingEventsCount = upcomingEventsTask.Result,
+            PastEventsCount = pastEventsTask.Result,
+            PendingEventsCount = pendingEventsTask.Result,
             ResourcesCount = resourcesTask.Result,
+            TotalResourceViews = totalViewsTask.Result,
             MembersCount = membersTask.Result,
-            CommentsCount = commentsTask.Result
+            ActiveNewsletterCount = newsletterTask.Result,
+            CommentsCount = commentsTask.Result,
+            ProjectsCount = projectsTask.Result,
+            PartnersCount = partnersTask.Result
         };
     }
 

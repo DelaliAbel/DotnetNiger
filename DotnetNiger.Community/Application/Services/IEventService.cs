@@ -4,7 +4,7 @@ namespace DotnetNiger.Community.Application.Services;
 
 public interface IEventService
 {
-    Task<PaginatedResponse<EventResponse>> GetAllAsync(string? published, string? past, string? eventType, string? query, string? tag, DateTime? startDateFrom, DateTime? startDateTo, Guid? submitterId = null, int page = 1, int pageSize = 10);
+    Task<PaginatedResponse<EventResponse>> GetAllAsync(string? published, string? past, string? eventType, string? query, string? tag, DateTime? startDateFrom, DateTime? startDateTo, Guid? submitterId = null, int page = 1, int pageSize = 10, Guid? after = null);
     Task<List<EventResponse>> GetUpcomingAsync(int page = 1, int pageSize = 10);
     Task<EventResponse?> GetByIdAsync(Guid id);
     Task<EventResponse?> GetBySlugAsync(string slug);

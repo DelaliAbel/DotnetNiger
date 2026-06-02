@@ -19,11 +19,12 @@ public class EventsController(IEventService eventService) : ControllerBase
         [FromQuery] string? query, [FromQuery] string? tag,
         [FromQuery] DateTime? startDateFrom, [FromQuery] DateTime? startDateTo,
         [FromQuery] Guid? submitterId,
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 10,
+        [FromQuery] Guid? after = null)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
-        var result = await eventService.GetAllAsync(published, past, eventType, query, tag, startDateFrom, startDateTo, submitterId, page, pageSize);
+        var result = await eventService.GetAllAsync(published, past, eventType, query, tag, startDateFrom, startDateTo, submitterId, page, pageSize, after);
         return Ok(new { Success = true, Data = result });
     }
 
