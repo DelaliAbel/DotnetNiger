@@ -9,7 +9,7 @@ namespace DotnetNiger.Community.Application.Services;
 
 public class EventService(AppDbContext db, INotificationService notificationService) : IEventService
 {
-    public async Task<PaginatedResponse<EventResponse>> GetAllAsync(string? published, string? past, string? eventType, string? query, string? tag, DateTime? startDateFrom, DateTime? startDateTo, int page = 1, int pageSize = 10)
+    public async Task<PaginatedResponse<EventResponse>> GetAllAsync(string? published, string? past, string? eventType, string? query, string? tag, DateTime? startDateFrom, DateTime? startDateTo, Guid? submitterId = null, int page = 1, int pageSize = 10)
     {
         var q = db.Events
             .Include(e => e.Medias)
@@ -30,6 +30,8 @@ public class EventService(AppDbContext db, INotificationService notificationServ
             q = q.Where(e => e.StartDate >= startDateFrom.Value);
         if (startDateTo.HasValue)
             q = q.Where(e => e.StartDate <= startDateTo.Value);
+        if (submitterId.HasValue)
+            q = q.Where(e => e.CreatedBy == submitterId.Value);
 
         var total = await q.CountAsync();
         var items = await q
@@ -91,6 +93,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
             MeetupLink = request.MeetupLink,
             IsPublished = request.IsPublished,
             IsArchived = request.IsArchived,
+            SubmittedAt = DateTime.UtcNow,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -149,6 +152,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
         var ev = await db.Events.Include(e => e.Medias).FirstOrDefaultAsync(e => e.Id == id);
         if (ev is null) return null;
         ev.IsPublished = true;
+        ev.PublishedAt = DateTime.UtcNow;
         ev.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
         return MapEvent(ev);
@@ -159,6 +163,36 @@ public class EventService(AppDbContext db, INotificationService notificationServ
         var ev = await db.Events.Include(e => e.Medias).FirstOrDefaultAsync(e => e.Id == id);
         if (ev is null) return null;
         ev.IsPublished = false;
+        ev.PublishedAt = null;
+        ev.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+        return MapEvent(ev);
+    }
+
+    public async Task<List<EventResponse>> GetPendingEventsAsync(int page = 1, int pageSize = 10)
+    {
+        return await db.Events
+            .Include(e => e.Medias)
+            .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .Where(e => !e.IsPublished && !e.IsDeleted)
+            .OrderByDescending(e => e.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(e => MapEvent(e))
+            .ToListAsync();
+    }
+
+    public async Task<EventResponse?> ApproveAsync(Guid id)
+    {
+        return await PublishAsync(id);
+    }
+
+    public async Task<EventResponse?> RejectAsync(Guid id, string reason)
+    {
+        var ev = await db.Events.Include(e => e.Medias).FirstOrDefaultAsync(e => e.Id == id);
+        if (ev is null) return null;
+        ev.IsPublished = false;
+        ev.RejectionReason = reason;
         ev.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
         return MapEvent(ev);
@@ -241,12 +275,16 @@ public class EventService(AppDbContext db, INotificationService notificationServ
         EndDate = e.EndDate,
         CoverImageUrl = e.CoverImageUrl,
         CreatedBy = e.CreatedBy,
+        SubmittedBy = e.CreatedBy,
         OrganizerName = e.OrganizerName,
         Capacity = e.Capacity,
         RegisteredCount = e.RegisteredCount,
         IsPublished = e.IsPublished,
         IsArchived = e.IsArchived,
         MeetupLink = e.MeetupLink,
+        RejectionReason = e.RejectionReason,
+        SubmittedAt = e.SubmittedAt,
+        PublishedAt = e.PublishedAt,
         CreatedAt = e.CreatedAt,
         Medias = e.Medias.Select(m => new EventMediaResponse
         {

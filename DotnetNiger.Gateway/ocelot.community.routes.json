@@ -55,6 +55,28 @@
       "SwaggerKey": "community"
     },
     {
+      "UpstreamPathTemplate": "/api/v1/newsletter/subscribe",
+      "UpstreamHttpMethod": ["POST"],
+      "DownstreamPathTemplate": "/api/v1/newsletter/subscribe",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5050 }],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 7000 },
+      "RateLimitOptions": { "ClientWhitelist": [], "EnableRateLimiting": true, "Period": "1m", "PeriodTimespan": 60, "Limit": 10 },
+      "Key": "CommunityNewsletterSubscribeV1Route",
+      "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/newsletter/unsubscribe",
+      "UpstreamHttpMethod": ["POST"],
+      "DownstreamPathTemplate": "/api/v1/newsletter/unsubscribe",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5050 }],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 7000 },
+      "RateLimitOptions": { "ClientWhitelist": [], "EnableRateLimiting": true, "Period": "1m", "PeriodTimespan": 60, "Limit": 10 },
+      "Key": "CommunityNewsletterUnsubscribeV1Route",
+      "SwaggerKey": "community"
+    },
+    {
       "UpstreamPathTemplate": "/api/newsletters/register",
       "UpstreamHttpMethod": ["POST"],
       "DownstreamPathTemplate": "/api/v1/newsletters/register",
@@ -178,6 +200,17 @@
       "SwaggerKey": "community"
     },
     {
+      "UpstreamPathTemplate": "/api/v1/projects/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+      "DownstreamPathTemplate": "/api/v1/projects/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5050 }],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 10000 },
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "Key": "CommunityProjectsV1Route",
+      "SwaggerKey": "community"
+    },
+    {
       "UpstreamPathTemplate": "/api/resources/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
       "DownstreamPathTemplate": "/api/v1/resources/{everything}",
@@ -225,6 +258,17 @@
       "SwaggerKey": "community"
     },
     {
+      "UpstreamPathTemplate": "/api/v1/partners/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+      "DownstreamPathTemplate": "/api/v1/partners/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5050 }],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 10000 },
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "Key": "CommunityPartnersV1Route",
+      "SwaggerKey": "community"
+    },
+    {
       "UpstreamPathTemplate": "/api/members/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
       "DownstreamPathTemplate": "/api/v1/members/{everything}",
@@ -233,6 +277,17 @@
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 10000 },
       "RateLimitOptions": { "EnableRateLimiting": false },
       "Key": "CommunityMembersRoute",
+      "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/v1/members/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+      "DownstreamPathTemplate": "/api/v1/members/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5050 }],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 10000 },
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "Key": "CommunityMembersV1Route",
       "SwaggerKey": "community"
     },
     {
