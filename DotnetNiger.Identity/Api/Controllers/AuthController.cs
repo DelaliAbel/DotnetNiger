@@ -292,9 +292,7 @@ public class AuthController : ControllerBase
             message = "Compte créé. Un code de confirmation vous a été envoyé par email.",
             userId = user.Id,
             email = user.Email,
-            code = string.IsNullOrEmpty(HttpContext.RequestServices
-                .GetRequiredService<Microsoft.Extensions.Options.IOptions<Infrastructure.SmtpOptions>>().Value.Host)
-                ? code : null
+            code
         });
     }
 
