@@ -51,6 +51,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
             .AsNoTracking()
             .Include(e => e.Medias)
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .AsSplitQuery()
             .Where(e => e.IsPublished && e.EndDate >= DateTime.UtcNow)
             .OrderBy(e => e.StartDate)
             .Skip((page - 1) * pageSize)

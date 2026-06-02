@@ -26,7 +26,7 @@ public class TagsController(ITagService tagService) : ControllerBase
         return Ok(new { Success = true, Data = t });
     }
 
-    [HttpGet("slug/{slug}")]
+    [HttpGet("{slug}")]
     public async Task<IActionResult> GetBySlug(string slug)
     {
         var t = await tagService.GetBySlugAsync(slug);

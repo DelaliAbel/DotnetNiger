@@ -30,7 +30,7 @@ public class PostsController(IPostService postService) : ControllerBase
         return Ok(new { Success = true, Data = post });
     }
 
-    [HttpGet("slug/{slug}")]
+    [HttpGet("{slug}")]
     public async Task<IActionResult> GetBySlug(string slug)
     {
         var post = await postService.GetBySlugAsync(slug);

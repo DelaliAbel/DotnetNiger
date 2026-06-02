@@ -44,7 +44,7 @@ public class EventsController(IEventService eventService) : ControllerBase
         return Ok(new { Success = true, Data = ev });
     }
 
-    [HttpGet("slug/{slug}")]
+    [HttpGet("{slug}")]
     public async Task<IActionResult> GetBySlug(string slug)
     {
         var ev = await eventService.GetBySlugAsync(slug);

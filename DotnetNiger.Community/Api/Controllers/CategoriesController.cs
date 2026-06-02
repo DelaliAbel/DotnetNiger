@@ -26,7 +26,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
         return Ok(new { Success = true, Data = c });
     }
 
-    [HttpGet("slug/{slug}")]
+    [HttpGet("{slug}")]
     public async Task<IActionResult> GetBySlug(string slug)
     {
         var c = await categoryService.GetBySlugAsync(slug);

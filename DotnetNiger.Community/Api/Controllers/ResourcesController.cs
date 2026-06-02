@@ -33,7 +33,7 @@ public class ResourcesController(IResourceService resourceService) : ControllerB
         return Ok(new { Success = true, Data = resource });
     }
 
-    [HttpGet("slug/{slug}")]
+    [HttpGet("{slug}")]
     public async Task<IActionResult> GetBySlug(string slug)
     {
         var resource = await resourceService.GetBySlugAsync(slug);
