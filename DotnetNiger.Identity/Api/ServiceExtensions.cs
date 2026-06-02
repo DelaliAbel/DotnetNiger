@@ -76,6 +76,7 @@ public static class ServiceExtensions
                       .AllowAuthorizationCodeFlow()
                           .RequireProofKeyForCodeExchange()
                       .AllowClientCredentialsFlow()
+                      .AllowCustomFlow("external_login")
                       .SetRefreshTokenLifetime(TimeSpan.FromDays(14))
                       .SetRefreshTokenReuseLeeway(TimeSpan.FromSeconds(0));
 
@@ -211,11 +212,19 @@ public static class ServiceExtensions
                 {
                     if (ctx.Identity == null || ctx.AccessToken == null) return;
 
-                    var userElement = ctx.User;
-                    var userId = userElement.TryGetProperty("id", out var idEl) ? idEl.GetString() : null;
-                    var login = userElement.TryGetProperty("login", out var lEl) ? lEl.GetString() : null;
-                    var name = userElement.TryGetProperty("name", out var nEl) ? nEl.GetString() : null;
-                    var email = userElement.TryGetProperty("email", out var eEl) ? eEl.GetString() : null;
+                    var req = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user");
+                    req.Headers.Authorization = new("Bearer", ctx.AccessToken);
+                    req.Headers.UserAgent.Add(new("DotnetNiger", "1.0"));
+                    req.Headers.Accept.Add(new("application/vnd.github.v3+json"));
+                    using var resp = await ctx.Backchannel.SendAsync(req);
+                    resp.EnsureSuccessStatusCode();
+                    var userElement = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(
+                        await resp.Content.ReadAsStringAsync());
+
+                    var userId = userElement.TryGetProperty("id", out var idEl) ? idEl.ToString() : null;
+                    var login = userElement.TryGetProperty("login", out var lEl) ? lEl.ToString() : null;
+                    var name = userElement.TryGetProperty("name", out var nEl) ? nEl.ToString() : null;
+                    var email = userElement.TryGetProperty("email", out var eEl) ? eEl.ToString() : null;
 
                     if (userId != null)
                     {
@@ -229,12 +238,12 @@ public static class ServiceExtensions
                         System.Security.Claims.ClaimTypes.Email, email));
                     else
                     {
-                        var req = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user/emails");
-                        req.Headers.Authorization = new("Bearer", ctx.AccessToken);
-                        req.Headers.UserAgent.Add(new("DotnetNiger", "1.0"));
-                        using var resp = await ctx.Backchannel.SendAsync(req);
+                        var req2 = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user/emails");
+                        req2.Headers.Authorization = new("Bearer", ctx.AccessToken);
+                        req2.Headers.UserAgent.Add(new("DotnetNiger", "1.0"));
+                        using var resp2 = await ctx.Backchannel.SendAsync(req2);
                         var emails = System.Text.Json.JsonSerializer.Deserialize<List<System.Text.Json.JsonElement>>(
-                            await resp.Content.ReadAsStringAsync());
+                            await resp2.Content.ReadAsStringAsync());
                         foreach (var item in emails ?? [])
                             if (item.TryGetProperty("primary", out var p) && p.GetBoolean()
                                 && item.TryGetProperty("email", out var ev))
