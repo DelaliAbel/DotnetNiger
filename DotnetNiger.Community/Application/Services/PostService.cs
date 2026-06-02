@@ -11,6 +11,7 @@ public class PostService(AppDbContext db) : IPostService
     public async Task<PaginatedResponse<PostResponse>> GetAllAsync(string? published, string? category, string? tag, string? query, int page = 1, int pageSize = 10)
     {
         var q = db.Posts
+            .AsNoTracking()
             .Include(p => p.PostCategories).ThenInclude(pc => pc.Category)
             .Include(p => p.PostTags).ThenInclude(pt => pt.Tag)
             .AsSplitQuery()
@@ -39,6 +40,7 @@ public class PostService(AppDbContext db) : IPostService
     public async Task<PostResponse?> GetByIdAsync(Guid id)
     {
         var post = await db.Posts
+            .AsNoTracking()
             .Include(p => p.PostCategories).ThenInclude(pc => pc.Category)
             .Include(p => p.PostTags).ThenInclude(pt => pt.Tag)
             .FirstOrDefaultAsync(p => p.Id == id);
@@ -48,6 +50,7 @@ public class PostService(AppDbContext db) : IPostService
     public async Task<PostResponse?> GetBySlugAsync(string slug)
     {
         var post = await db.Posts
+            .AsNoTracking()
             .Include(p => p.PostCategories).ThenInclude(pc => pc.Category)
             .Include(p => p.PostTags).ThenInclude(pt => pt.Tag)
             .FirstOrDefaultAsync(p => p.Slug == slug);
@@ -162,14 +165,21 @@ public class PostService(AppDbContext db) : IPostService
 
     private async Task AssignTags(Post post, List<string> tagNames)
     {
-        foreach (var name in tagNames.Where(n => !string.IsNullOrWhiteSpace(n)))
+        var names = tagNames.Where(n => !string.IsNullOrWhiteSpace(n)).ToList();
+        if (names.Count == 0) return;
+
+        var slugs = names.Select(GenerateSlug).ToHashSet();
+        var existingTags = await db.Tags.Where(t => slugs.Contains(t.Slug)).ToListAsync();
+        var existingBySlug = existingTags.ToDictionary(t => t.Slug);
+
+        foreach (var name in names)
         {
             var slug = GenerateSlug(name);
-            var tag = await db.Tags.FirstOrDefaultAsync(t => t.Slug == slug);
-            if (tag is null)
+            if (!existingBySlug.TryGetValue(slug, out var tag))
             {
                 tag = new Tag { Id = Guid.NewGuid(), Name = name, Slug = slug };
                 db.Tags.Add(tag);
+                existingBySlug[slug] = tag;
             }
             post.PostTags.Add(new PostTag { PostId = post.Id, TagId = tag.Id });
         }

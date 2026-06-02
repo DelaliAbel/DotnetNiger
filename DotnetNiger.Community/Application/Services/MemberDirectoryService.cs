@@ -8,7 +8,7 @@ public class MemberDirectoryService(AppDbContext db) : IMemberDirectoryService
 {
     public async Task<PaginatedResponse<MemberDirectoryResponse>> GetAllAsync(string? query, string? country, int page = 1, int pageSize = 10)
     {
-        var q = db.Members
+        var q = db.Members.AsNoTracking()
             .Include(m => m.SocialLinks)
             .Where(m => !string.IsNullOrWhiteSpace(m.FullName))
             .AsQueryable();
@@ -31,7 +31,7 @@ public class MemberDirectoryService(AppDbContext db) : IMemberDirectoryService
 
     public async Task<MemberDirectoryResponse?> GetByIdAsync(Guid id)
     {
-        var m = await db.Members.Include(m => m.SocialLinks).FirstOrDefaultAsync(m => m.Id == id);
+        var m = await db.Members.AsNoTracking().Include(m => m.SocialLinks).FirstOrDefaultAsync(m => m.Id == id);
         return m is null ? null : MapMember(m);
     }
 

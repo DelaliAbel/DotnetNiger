@@ -10,7 +10,7 @@ public class CategoryService(AppDbContext db) : ICategoryService
 {
     public async Task<List<CategoryResponse>> GetAllAsync()
     {
-        return await db.Categories
+        return await db.Categories.AsNoTracking()
             .OrderBy(c => c.Name)
             .Select(c => MapCategory(c))
             .ToListAsync();
@@ -24,7 +24,7 @@ public class CategoryService(AppDbContext db) : ICategoryService
 
     public async Task<CategoryResponse?> GetBySlugAsync(string slug)
     {
-        var c = await db.Categories.FirstOrDefaultAsync(c => c.Slug == slug);
+        var c = await db.Categories.AsNoTracking().FirstOrDefaultAsync(c => c.Slug == slug);
         return c is null ? null : MapCategory(c);
     }
 

@@ -10,7 +10,7 @@ public class TagService(AppDbContext db) : ITagService
 {
     public async Task<List<TagResponse>> GetAllAsync()
     {
-        return await db.Tags
+        return await db.Tags.AsNoTracking()
             .OrderBy(t => t.Name)
             .Select(t => MapTag(t))
             .ToListAsync();
@@ -24,7 +24,7 @@ public class TagService(AppDbContext db) : ITagService
 
     public async Task<TagResponse?> GetBySlugAsync(string slug)
     {
-        var t = await db.Tags.FirstOrDefaultAsync(t => t.Slug == slug);
+        var t = await db.Tags.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == slug);
         return t is null ? null : MapTag(t);
     }
 

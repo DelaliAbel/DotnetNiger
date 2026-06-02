@@ -12,6 +12,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
     public async Task<PaginatedResponse<EventResponse>> GetAllAsync(string? published, string? past, string? eventType, string? query, string? tag, DateTime? startDateFrom, DateTime? startDateTo, Guid? submitterId = null, int page = 1, int pageSize = 10)
     {
         var q = db.Events
+            .AsNoTracking()
             .Include(e => e.Medias)
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
             .AsSplitQuery()
@@ -47,6 +48,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
     public async Task<List<EventResponse>> GetUpcomingAsync(int page = 1, int pageSize = 10)
     {
         return await db.Events
+            .AsNoTracking()
             .Include(e => e.Medias)
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
             .Where(e => e.IsPublished && e.EndDate >= DateTime.UtcNow)
@@ -60,8 +62,10 @@ public class EventService(AppDbContext db, INotificationService notificationServ
     public async Task<EventResponse?> GetByIdAsync(Guid id)
     {
         var ev = await db.Events
+            .AsNoTracking()
             .Include(e => e.Medias)
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(e => e.Id == id);
         return ev is null ? null : MapEvent(ev);
     }
@@ -69,8 +73,10 @@ public class EventService(AppDbContext db, INotificationService notificationServ
     public async Task<EventResponse?> GetBySlugAsync(string slug)
     {
         var ev = await db.Events
+            .AsNoTracking()
             .Include(e => e.Medias)
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(e => e.Slug == slug);
         return ev is null ? null : MapEvent(ev);
     }
@@ -172,8 +178,10 @@ public class EventService(AppDbContext db, INotificationService notificationServ
     public async Task<List<EventResponse>> GetPendingEventsAsync(int page = 1, int pageSize = 10)
     {
         return await db.Events
+            .AsNoTracking()
             .Include(e => e.Medias)
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .AsSplitQuery()
             .Where(e => !e.IsPublished && !e.IsDeleted)
             .OrderByDescending(e => e.CreatedAt)
             .Skip((page - 1) * pageSize)
@@ -242,7 +250,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
 
     public async Task<List<EventRegistrationResponse>> GetRegistrationsAsync(Guid eventId)
     {
-        return await db.EventRegistrations
+        return await db.EventRegistrations.AsNoTracking()
             .Where(r => r.EventId == eventId)
             .Select(r => MapRegistration(r, ""))
             .ToListAsync();
@@ -250,14 +258,21 @@ public class EventService(AppDbContext db, INotificationService notificationServ
 
     private async Task AssignTags(Event ev, List<string> tagNames)
     {
-        foreach (var name in tagNames.Where(n => !string.IsNullOrWhiteSpace(n)))
+        var names = tagNames.Where(n => !string.IsNullOrWhiteSpace(n)).ToList();
+        if (names.Count == 0) return;
+
+        var slugs = names.Select(GenerateSlug).ToHashSet();
+        var existingTags = await db.Tags.Where(t => slugs.Contains(t.Slug)).ToListAsync();
+        var existingBySlug = existingTags.ToDictionary(t => t.Slug);
+
+        foreach (var name in names)
         {
             var slug = GenerateSlug(name);
-            var tag = await db.Tags.FirstOrDefaultAsync(t => t.Slug == slug);
-            if (tag is null)
+            if (!existingBySlug.TryGetValue(slug, out var tag))
             {
                 tag = new Tag { Id = Guid.NewGuid(), Name = name, Slug = slug };
                 db.Tags.Add(tag);
+                existingBySlug[slug] = tag;
             }
             ev.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
         }

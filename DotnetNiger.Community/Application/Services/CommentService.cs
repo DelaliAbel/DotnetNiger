@@ -9,7 +9,7 @@ public class CommentService(AppDbContext db) : ICommentService
 {
     public async Task<List<CommentResponse>> GetByPostIdAsync(Guid postId)
     {
-        var comments = await db.Comments
+        var comments = await db.Comments.AsNoTracking()
             .Where(c => c.PostId == postId)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
@@ -18,7 +18,7 @@ public class CommentService(AppDbContext db) : ICommentService
 
     public async Task<List<CommentResponse>> GetByEventIdAsync(Guid eventId)
     {
-        var comments = await db.Comments
+        var comments = await db.Comments.AsNoTracking()
             .Where(c => c.EventId == eventId)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();

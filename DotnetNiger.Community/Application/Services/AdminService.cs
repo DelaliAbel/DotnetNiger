@@ -8,23 +8,26 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
 {
     public async Task<DashboardResponse> GetDashboardAsync()
     {
-        var postsCount = await db.Posts.CountAsync();
-        var publishedPosts = await db.Posts.CountAsync(p => p.IsPublished);
-        var eventsCount = await db.Events.CountAsync();
-        var upcomingEvents = await db.Events.CountAsync(e => e.IsPublished && e.EndDate >= DateTime.UtcNow);
-        var resourcesCount = await db.Resources.CountAsync();
-        var membersCount = await db.Members.CountAsync();
-        var commentsCount = await db.Comments.CountAsync();
+        var now = DateTime.UtcNow;
+        var postsTask = db.Posts.CountAsync();
+        var publishedPostsTask = db.Posts.CountAsync(p => p.IsPublished);
+        var eventsTask = db.Events.CountAsync();
+        var upcomingEventsTask = db.Events.CountAsync(e => e.IsPublished && e.EndDate >= now);
+        var resourcesTask = db.Resources.CountAsync();
+        var membersTask = db.Members.CountAsync();
+        var commentsTask = db.Comments.CountAsync();
+
+        await Task.WhenAll(postsTask, publishedPostsTask, eventsTask, upcomingEventsTask, resourcesTask, membersTask, commentsTask);
 
         return new DashboardResponse
         {
-            PostsCount = postsCount,
-            PublishedPostsCount = publishedPosts,
-            EventsCount = eventsCount,
-            UpcomingEventsCount = upcomingEvents,
-            ResourcesCount = resourcesCount,
-            MembersCount = membersCount,
-            CommentsCount = commentsCount
+            PostsCount = postsTask.Result,
+            PublishedPostsCount = publishedPostsTask.Result,
+            EventsCount = eventsTask.Result,
+            UpcomingEventsCount = upcomingEventsTask.Result,
+            ResourcesCount = resourcesTask.Result,
+            MembersCount = membersTask.Result,
+            CommentsCount = commentsTask.Result
         };
     }
 

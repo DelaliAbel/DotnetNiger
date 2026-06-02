@@ -18,7 +18,7 @@ public class SearchService(AppDbContext db) : ISearchService
 
         if (string.IsNullOrWhiteSpace(type) || type == "Post")
         {
-            var posts = db.Posts.Where(p => p.IsPublished)
+            var posts = db.Posts.AsNoTracking().Where(p => p.IsPublished)
                 .Select(p => new SearchResultResponse
                 {
                     Type = "Post", Id = p.Id, Title = p.Title, Slug = p.Slug,
@@ -32,7 +32,7 @@ public class SearchService(AppDbContext db) : ISearchService
 
         if (string.IsNullOrWhiteSpace(type) || type == "Event")
         {
-            var events = db.Events.Where(e => e.IsPublished)
+            var events = db.Events.AsNoTracking().Where(e => e.IsPublished)
                 .Select(e => new SearchResultResponse
                 {
                     Type = "Event", Id = e.Id, Title = e.Title, Slug = e.Slug,
@@ -46,7 +46,7 @@ public class SearchService(AppDbContext db) : ISearchService
 
         if (string.IsNullOrWhiteSpace(type) || type == "Resource")
         {
-            var resources = db.Resources
+            var resources = db.Resources.AsNoTracking()
                 .Select(r => new SearchResultResponse
                 {
                     Type = "Resource", Id = r.Id, Title = r.Title, Slug = r.Slug,

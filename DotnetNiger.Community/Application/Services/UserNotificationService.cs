@@ -9,7 +9,7 @@ public class UserNotificationService(AppDbContext db) : IUserNotificationService
 {
     public async Task<List<NotificationResponse>> GetNotificationsAsync(Guid userId)
     {
-        return await db.Notifications
+        return await db.Notifications.AsNoTracking()
             .Where(n => n.UserId == userId)
             .OrderByDescending(n => n.CreatedAt)
             .Select(n => MapNotification(n))
@@ -18,7 +18,7 @@ public class UserNotificationService(AppDbContext db) : IUserNotificationService
 
     public async Task<int> GetUnreadCountAsync(Guid userId)
     {
-        return await db.Notifications.CountAsync(n => n.UserId == userId && !n.IsRead);
+        return await db.Notifications.AsNoTracking().CountAsync(n => n.UserId == userId && !n.IsRead);
     }
 
     public async Task SendNotificationAsync(Guid userId, string message)
