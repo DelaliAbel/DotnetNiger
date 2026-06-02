@@ -33,6 +33,28 @@ public class ResourcesController(IResourceService resourceService) : ControllerB
         return Ok(new { Success = true, Data = resource });
     }
 
+    [HttpGet("slug/{slug}")]
+    public async Task<IActionResult> GetBySlug(string slug)
+    {
+        var resource = await resourceService.GetBySlugAsync(slug);
+        if (resource is null) return NotFound(new { Success = false, Message = "Resource not found" });
+        return Ok(new { Success = true, Data = resource });
+    }
+
+    [HttpGet("types")]
+    public async Task<IActionResult> GetTypes()
+    {
+        var types = await resourceService.GetResourceTypesAsync();
+        return Ok(new { Success = true, Data = types });
+    }
+
+    [HttpGet("levels")]
+    public async Task<IActionResult> GetLevels()
+    {
+        var levels = await resourceService.GetLevelsAsync();
+        return Ok(new { Success = true, Data = levels });
+    }
+
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> Create([FromBody] CreateResourceRequest request)

@@ -44,6 +44,14 @@ public class EventsController(IEventService eventService) : ControllerBase
         return Ok(new { Success = true, Data = ev });
     }
 
+    [HttpGet("slug/{slug}")]
+    public async Task<IActionResult> GetBySlug(string slug)
+    {
+        var ev = await eventService.GetBySlugAsync(slug);
+        if (ev is null) return NotFound(new { Success = false, Message = "Event not found" });
+        return Ok(new { Success = true, Data = ev });
+    }
+
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> Create([FromBody] CreateEventRequest request)

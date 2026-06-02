@@ -30,6 +30,14 @@ public class PostsController(IPostService postService) : ControllerBase
         return Ok(new { Success = true, Data = post });
     }
 
+    [HttpGet("slug/{slug}")]
+    public async Task<IActionResult> GetBySlug(string slug)
+    {
+        var post = await postService.GetBySlugAsync(slug);
+        if (post is null) return NotFound(new { Success = false, Message = "Post not found" });
+        return Ok(new { Success = true, Data = post });
+    }
+
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> Create([FromBody] CreatePostRequest request)

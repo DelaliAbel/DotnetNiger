@@ -42,6 +42,9 @@ public static class ServiceExtensions
         services.AddScoped<IMemberDirectoryService, MemberDirectoryService>();
         services.AddScoped<IPartnerService, PartnerService>();
         services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IUserNotificationService, UserNotificationService>();
+        services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<ITagService, TagService>();
 
         return services;
     }

@@ -45,6 +45,15 @@ public class PostService(AppDbContext db) : IPostService
         return post is null ? null : MapPost(post);
     }
 
+    public async Task<PostResponse?> GetBySlugAsync(string slug)
+    {
+        var post = await db.Posts
+            .Include(p => p.PostCategories).ThenInclude(pc => pc.Category)
+            .Include(p => p.PostTags).ThenInclude(pt => pt.Tag)
+            .FirstOrDefaultAsync(p => p.Slug == slug);
+        return post is null ? null : MapPost(post);
+    }
+
     public async Task<PostResponse> CreateAsync(CreatePostRequest request, Guid authorId, string authorName)
     {
         var post = new Post

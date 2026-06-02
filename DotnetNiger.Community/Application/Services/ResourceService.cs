@@ -45,6 +45,15 @@ public class ResourceService(AppDbContext db) : IResourceService
         return r is null ? null : MapResource(r);
     }
 
+    public async Task<ResourceResponse?> GetBySlugAsync(string slug)
+    {
+        var r = await db.Resources
+            .Include(r => r.ResourceCategories)
+            .Include(r => r.ResourceTags).ThenInclude(rt => rt.Tag)
+            .FirstOrDefaultAsync(r => r.Slug == slug);
+        return r is null ? null : MapResource(r);
+    }
+
     public async Task<ResourceResponse> CreateAsync(CreateResourceRequest request, Guid userId)
     {
         var resource = new Resource
@@ -120,6 +129,23 @@ public class ResourceService(AppDbContext db) : IResourceService
         r.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<List<string>> GetResourceTypesAsync()
+    {
+        return await db.Resources
+            .Select(r => r.ResourceType)
+            .Distinct()
+            .OrderBy(t => t)
+            .ToListAsync();
+    }
+
+    public async Task<List<string>> GetLevelsAsync()
+    {
+        return await db.Resources
+            .Select(r => r.Level)
+            .Distinct()
+            .ToListAsync();
     }
 
     public async Task<ResourceResponse?> IncrementViewCountAsync(Guid id)
