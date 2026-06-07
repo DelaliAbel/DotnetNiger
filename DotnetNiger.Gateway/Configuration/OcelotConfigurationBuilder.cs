@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Microsoft.Extensions.Configuration;
 
 namespace DotnetNiger.Gateway.Configuration;
 
@@ -22,7 +23,8 @@ public static class OcelotConfigurationBuilder
     public static string BuildMergedConfig(
         string contentRootPath,
         bool useContainerHosts,
-        IReadOnlyCollection<DownstreamServiceConfig> services)
+        IReadOnlyCollection<DownstreamServiceConfig> services,
+        IConfiguration configuration)
     {
         var globalPath = Path.Combine(contentRootPath, "ocelot.global.json");
         if (!File.Exists(globalPath))
@@ -64,7 +66,7 @@ public static class OcelotConfigurationBuilder
             RewriteToContainerHosts(mergedRoutes, services);
         }
 
-        var baseUrl = "http://localhost:5000";
+        var baseUrl = configuration["Gateway:BaseUrl"] ?? "http://localhost:5000";
         if (merged["GlobalConfiguration"] is JsonObject gc)
         {
             gc["BaseUrl"] = useContainerHosts ? "http://gateway:5000" : baseUrl;
@@ -117,7 +119,13 @@ public static class OcelotConfigurationBuilder
                 if (host == null || port == null) continue;
 
                 var match = services.FirstOrDefault(s =>
-                    s.DevUrl.Contains($":{port}") || s.DevUrl.EndsWith($":{port}"));
+                {
+                    try
+                    {
+                        return s.DevUrl != null && new Uri(s.DevUrl).Port == port;
+                    }
+                    catch { return false; }
+                });
 
                 if (match != null)
                 {

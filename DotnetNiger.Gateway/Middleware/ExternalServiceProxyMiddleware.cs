@@ -101,6 +101,7 @@ public partial class ExternalServiceProxyMiddleware
 
             requestMessage.Headers.Host = new Uri(baseUrl).Host;
 
+            context.Request.EnableBuffering();
             if (context.Request.Body is { CanSeek: true, Length: >0 } or { CanSeek: false })
             {
                 requestMessage.Content = new StreamContent(context.Request.Body);

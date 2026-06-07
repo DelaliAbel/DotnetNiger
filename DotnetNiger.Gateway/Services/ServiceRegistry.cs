@@ -73,7 +73,19 @@ public sealed class ServiceRegistry : IServiceRegistry
     public ServiceRegistration? Get(string serviceId) =>
         _dynamic.TryGetValue(serviceId, out var reg) ? reg : null;
 
-    public IReadOnlyList<ServiceRegistration> GetAll() => _dynamic.Values.ToList();
+    public IReadOnlyList<ServiceRegistration> GetAll() =>
+        _dynamic.Values.Select(s => new ServiceRegistration
+        {
+            Id = s.Id,
+            Url = s.Url,
+            Name = s.Name,
+            HealthEndpoint = s.HealthEndpoint,
+            SwaggerEndpoint = s.SwaggerEndpoint,
+            ContainerName = s.ContainerName,
+            Port = s.Port,
+            RegisteredAt = s.RegisteredAt,
+            LastHeartbeat = s.LastHeartbeat
+        }).ToList();
 
     public IReadOnlyList<DownstreamServiceConfig> GetCombinedConfig()
     {

@@ -66,7 +66,8 @@ public class ExternalServiceHealthService : BackgroundService
         {
             using var client = _httpClientFactory.CreateClient();
             client.Timeout = TimeSpan.FromSeconds(10);
-            client.DefaultRequestHeaders.Add("X-Internal-Key", _internalApiKey);
+            if (!string.IsNullOrEmpty(_internalApiKey))
+                client.DefaultRequestHeaders.Add("X-Internal-Key", _internalApiKey);
             var response = await client.GetAsync(
                 $"{_identityBaseUrl}/api/v1/external-services/_internal/active", ct);
 
@@ -148,7 +149,8 @@ public class ExternalServiceHealthService : BackgroundService
             if (!isHealthy)
             {
                 var cacheKey = $"ext:{service.Slug}";
-                _cache.Remove(cacheKey);
+                // Only clear cache if the service was previously healthy
+                // _cache.Remove(cacheKey);
             }
         }
         catch (Exception ex)

@@ -7,8 +7,6 @@ public static class ServiceRegistrationEndpoint
 {
     public static IApplicationBuilder MapServiceRegistryEndpoint(this IApplicationBuilder app)
     {
-        var apiKey = string.Empty;
-
         app.Map("/api/service-registry", registryApp =>
         {
             registryApp.Run(async context =>
