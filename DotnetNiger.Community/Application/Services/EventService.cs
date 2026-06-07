@@ -235,7 +235,11 @@ public class EventService(AppDbContext db, INotificationService notificationServ
         await AssignTags(ev, request.TagNames);
         db.Events.Add(ev);
         await db.SaveChangesAsync();
-        _ = notificationService.NotifyNewEventAsync(ev.Title, ev.Description, ev.StartDate);
+        _ = Task.Run(async () =>
+        {
+            try { await notificationService.NotifyNewEventAsync(ev.Title, ev.Description, ev.StartDate); }
+            catch { /* logged internally */ }
+        });
         return MapEvent(ev);
     }
 
@@ -376,13 +380,15 @@ public class EventService(AppDbContext db, INotificationService notificationServ
         var existing = await db.EventRegistrations.AnyAsync(r => r.EventId == eventId && r.UserId == userId);
         if (existing) return null;
 
+        using var tx = await db.Database.BeginTransactionAsync();
         var rows = await db.Database.ExecuteSqlRawAsync(
             "UPDATE Events SET RegisteredCount = RegisteredCount + 1 WHERE Id = ? AND RegisteredCount < Capacity",
             eventId);
 
         if (rows == 0) return null;
 
-        var ev = await db.Events.FindAsync(eventId);
+        var ev = await db.Events.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.Id == eventId);
+        if (ev is null) return null;
 
         var registration = new EventRegistration
         {
@@ -396,8 +402,9 @@ public class EventService(AppDbContext db, INotificationService notificationServ
 
         db.EventRegistrations.Add(registration);
         await db.SaveChangesAsync();
+        await tx.CommitAsync();
 
-        return MapRegistration(registration, ev!.Title);
+        return MapRegistration(registration, ev.Title);
     }
 
     public async Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId)

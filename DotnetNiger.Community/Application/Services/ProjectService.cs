@@ -66,7 +66,11 @@ public class ProjectService(AppDbContext db, INotificationService notificationSe
 
         db.Add(project);
         await db.SaveChangesAsync();
-        _ = notificationService.NotifyNewProjectAsync(project.Title, project.Description, project.AuthorName);
+        _ = Task.Run(async () =>
+        {
+            try { await notificationService.NotifyNewProjectAsync(project.Title, project.Description, project.AuthorName); }
+            catch { /* logged internally */ }
+        });
         return MapProject(project);
     }
 

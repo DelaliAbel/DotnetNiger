@@ -26,7 +26,7 @@ public class SearchService(AppDbContext db) : ISearchService
                     CreatedAt = p.CreatedAt
                 });
             if (!string.IsNullOrWhiteSpace(query))
-                posts = posts.Where(p => p.Title!.Contains(query) || p.Content!.Contains(query));
+                posts = posts.Where(p => p.Title != null && p.Title.Contains(query) || p.Content != null && p.Content.Contains(query));
             results.AddRange(await posts.ToListAsync());
         }
 
@@ -40,7 +40,7 @@ public class SearchService(AppDbContext db) : ISearchService
                     StartDateTime = e.StartDate, CreatedAt = e.CreatedAt
                 });
             if (!string.IsNullOrWhiteSpace(query))
-                events = events.Where(e => e.Title!.Contains(query) || e.Description!.Contains(query));
+                events = events.Where(e => e.Title != null && e.Title.Contains(query) || e.Description != null && e.Description.Contains(query));
             results.AddRange(await events.ToListAsync());
         }
 
@@ -53,7 +53,7 @@ public class SearchService(AppDbContext db) : ISearchService
                     Description = r.Description, CreatedAt = r.CreatedAt
                 });
             if (!string.IsNullOrWhiteSpace(query))
-                resources = resources.Where(r => r.Title!.Contains(query) || r.Description!.Contains(query));
+                resources = resources.Where(r => r.Title != null && r.Title.Contains(query) || r.Description != null && r.Description.Contains(query));
             results.AddRange(await resources.ToListAsync());
         }
 

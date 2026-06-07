@@ -9,39 +9,37 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
     public async Task<DashboardResponse> GetDashboardAsync()
     {
         var now = DateTime.UtcNow;
-        var postsTask = db.Posts.CountAsync();
-        var publishedPostsTask = db.Posts.CountAsync(p => p.IsPublished);
-        var draftPostsTask = db.Posts.CountAsync(p => !p.IsPublished);
-        var eventsTask = db.Events.CountAsync();
-        var upcomingEventsTask = db.Events.CountAsync(e => e.IsPublished && e.EndDate >= now);
-        var pastEventsTask = db.Events.CountAsync(e => e.EndDate < now);
-        var pendingEventsTask = db.Events.CountAsync(e => !e.IsPublished && !e.IsDeleted);
-        var resourcesTask = db.Resources.CountAsync();
-        var totalViewsTask = db.Resources.SumAsync(r => r.ViewCount);
-        var membersTask = db.Members.CountAsync();
-        var newsletterTask = db.NewsletterSubscriptions.CountAsync(s => s.IsActive);
-        var commentsTask = db.Comments.CountAsync();
-        var projectsTask = db.Projects.CountAsync();
-        var partnersTask = db.Partners.CountAsync();
-
-        await Task.WhenAll(postsTask, publishedPostsTask, draftPostsTask, eventsTask, upcomingEventsTask, pastEventsTask, pendingEventsTask, resourcesTask, totalViewsTask, membersTask, newsletterTask, commentsTask, projectsTask, partnersTask);
+        var postsCount = await db.Posts.CountAsync();
+        var publishedPostsCount = await db.Posts.CountAsync(p => p.IsPublished);
+        var draftPostsCount = await db.Posts.CountAsync(p => !p.IsPublished);
+        var eventsCount = await db.Events.CountAsync();
+        var upcomingEventsCount = await db.Events.CountAsync(e => e.IsPublished && e.EndDate >= now);
+        var pastEventsCount = await db.Events.CountAsync(e => e.EndDate < now);
+        var pendingEventsCount = await db.Events.CountAsync(e => !e.IsPublished && !e.IsDeleted);
+        var resourcesCount = await db.Resources.CountAsync();
+        var totalResourceViews = await db.Resources.SumAsync(r => r.ViewCount);
+        var membersCount = await db.Members.CountAsync();
+        var activeNewsletterCount = await db.NewsletterSubscriptions.CountAsync(s => s.IsActive);
+        var commentsCount = await db.Comments.CountAsync();
+        var projectsCount = await db.Projects.CountAsync();
+        var partnersCount = await db.Partners.CountAsync();
 
         return new DashboardResponse
         {
-            PostsCount = postsTask.Result,
-            PublishedPostsCount = publishedPostsTask.Result,
-            DraftPostsCount = draftPostsTask.Result,
-            EventsCount = eventsTask.Result,
-            UpcomingEventsCount = upcomingEventsTask.Result,
-            PastEventsCount = pastEventsTask.Result,
-            PendingEventsCount = pendingEventsTask.Result,
-            ResourcesCount = resourcesTask.Result,
-            TotalResourceViews = totalViewsTask.Result,
-            MembersCount = membersTask.Result,
-            ActiveNewsletterCount = newsletterTask.Result,
-            CommentsCount = commentsTask.Result,
-            ProjectsCount = projectsTask.Result,
-            PartnersCount = partnersTask.Result
+            PostsCount = postsCount,
+            PublishedPostsCount = publishedPostsCount,
+            DraftPostsCount = draftPostsCount,
+            EventsCount = eventsCount,
+            UpcomingEventsCount = upcomingEventsCount,
+            PastEventsCount = pastEventsCount,
+            PendingEventsCount = pendingEventsCount,
+            ResourcesCount = resourcesCount,
+            TotalResourceViews = totalResourceViews,
+            MembersCount = membersCount,
+            ActiveNewsletterCount = activeNewsletterCount,
+            CommentsCount = commentsCount,
+            ProjectsCount = projectsCount,
+            PartnersCount = partnersCount
         };
     }
 

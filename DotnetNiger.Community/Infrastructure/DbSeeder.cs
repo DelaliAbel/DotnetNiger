@@ -16,7 +16,7 @@ public static class DbSeeder
             {
                 Id = Guid.NewGuid(),
                 Name = "Développement Web",
-                Slug = "développement-web",
+                Slug = "developpement-web",
                 Description = "Tout sur le développement web, du frontend au backend.",
                 PostCount = 0
             },

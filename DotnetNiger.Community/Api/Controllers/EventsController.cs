@@ -45,7 +45,7 @@ public class EventsController(IEventService eventService) : ControllerBase
         return Ok(new { Success = true, Data = ev });
     }
 
-    [HttpGet("{slug}")]
+    [HttpGet("{slug:regex(^[[a-z0-9]]+(?:-[[a-z0-9]]+)*$)}")]
     public async Task<IActionResult> GetBySlug(string slug)
     {
         var ev = await eventService.GetBySlugAsync(slug);
