@@ -19,7 +19,13 @@ public class CommunityWebApplicationFactory : WebApplicationFactory<Program>, IA
         _connection = new SqliteConnection("DataSource=:memory:");
         await _connection.OpenAsync();
 
+        // CreateClient triggers host building. The DB is seeded via ConfigureWebHost.
         HttpClient = CreateClient();
+
+        // Ensure database is created after host is built
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        await db.Database.EnsureCreatedAsync();
     }
 
     public new async Task DisposeAsync()
@@ -45,11 +51,6 @@ public class CommunityWebApplicationFactory : WebApplicationFactory<Program>, IA
             {
                 options.UseSqlite(_connection!);
             });
-
-            var sp = services.BuildServiceProvider();
-            using var scope = sp.CreateScope();
-            var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-            db.Database.EnsureCreated();
         });
     }
 }
