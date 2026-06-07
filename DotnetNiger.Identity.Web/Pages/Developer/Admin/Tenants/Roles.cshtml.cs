@@ -23,6 +23,13 @@ public class RolesModel : PageModel
     [BindProperty(SupportsGet = true)]
     public Guid TenantId { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public int CurrentPage { get; set; } = 1;
+
+    public int PageSize { get; set; } = 10;
+    public int TotalCount { get; set; }
+    public int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
+
     public List<RoleItem> Roles { get; set; } = [];
     public List<PermissionGroup> PermissionGroups { get; set; } = [];
     public HashSet<Guid> RolePermissionIds { get; set; } = [];
@@ -224,12 +231,14 @@ public class RolesModel : PageModel
 
         try
         {
-            var rolesResp = await client.GetAsync($"{identityUrl}/api/v1/{TenantId}/roles");
+            var rolesResp = await client.GetAsync($"{identityUrl}/api/v1/{TenantId}/roles?page={CurrentPage}&pageSize={PageSize}");
             if (rolesResp.IsSuccessStatusCode)
             {
                 var json = await rolesResp.Content.ReadAsStringAsync();
-                Roles = JsonSerializer.Deserialize<List<RoleItem>>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+                var paginated = JsonSerializer.Deserialize<PaginatedResponse<RoleItem>>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                Roles = paginated?.Items ?? [];
+                TotalCount = paginated?.TotalCount ?? 0;
             }
         }
         catch { Roles = []; }
@@ -248,12 +257,13 @@ public class RolesModel : PageModel
 
         try
         {
-            var usersResp = await client.GetAsync($"{identityUrl}/api/v1/{TenantId}/users");
+            var usersResp = await client.GetAsync($"{identityUrl}/api/v1/{TenantId}/users?pageSize=100");
             if (usersResp.IsSuccessStatusCode)
             {
                 var json = await usersResp.Content.ReadAsStringAsync();
-                AllUsers = JsonSerializer.Deserialize<List<UserItem>>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+                var paginated = JsonSerializer.Deserialize<PaginatedResponse<UserItem>>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                AllUsers = paginated?.Items ?? [];
             }
         }
         catch { AllUsers = []; }

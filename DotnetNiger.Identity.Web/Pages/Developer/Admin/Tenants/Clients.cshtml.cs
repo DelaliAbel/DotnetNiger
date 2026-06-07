@@ -23,6 +23,13 @@ public class ClientsModel : PageModel
     [BindProperty(SupportsGet = true)]
     public Guid TenantId { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public int CurrentPage { get; set; } = 1;
+
+    public int PageSize { get; set; } = 10;
+    public int TotalCount { get; set; }
+    public int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
+
     public List<ClientItem> Clients { get; set; } = [];
     public string Message { get; set; } = "";
     public bool IsError { get; set; }
@@ -116,12 +123,14 @@ public class ClientsModel : PageModel
 
         try
         {
-            var resp = await client.GetAsync($"{identityUrl}/api/v1/admin/tenants/{TenantId}/clients");
+            var resp = await client.GetAsync($"{identityUrl}/api/v1/admin/tenants/{TenantId}/clients?page={CurrentPage}&pageSize={PageSize}");
             if (resp.IsSuccessStatusCode)
             {
                 var json = await resp.Content.ReadAsStringAsync();
-                Clients = JsonSerializer.Deserialize<List<ClientItem>>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+                var paginated = JsonSerializer.Deserialize<PaginatedResponse<ClientItem>>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                Clients = paginated?.Items ?? [];
+                TotalCount = paginated?.TotalCount ?? 0;
             }
         }
         catch { Clients = []; }

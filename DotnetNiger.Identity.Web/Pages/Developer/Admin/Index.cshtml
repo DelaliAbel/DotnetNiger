@@ -5,6 +5,7 @@
     // Layout géré par _ViewStart.cshtml
 }
 
+@await Html.PartialAsync("_Breadcrumbs", new List<Tuple<string, string>> { Tuple.Create("Tableau de bord", "") })
 <h1>Administration</h1>
 <p class="lead">Gestion de la plateforme DotnetNiger.</p>
 

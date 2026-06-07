@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,6 +24,13 @@ public class TenantsModel : PageModel
     public List<TenantItem> Tenants { get; set; } = [];
     public string Message { get; set; } = "";
     public bool IsError { get; set; }
+
+    [BindProperty(SupportsGet = true)]
+    public int CurrentPage { get; set; } = 1;
+
+    public int PageSize { get; set; } = 20;
+    public int TotalCount { get; set; }
+    public int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
 
     [BindProperty]
     public CreateTenantInput CreateInput { get; set; } = new();
@@ -59,7 +67,8 @@ public class TenantsModel : PageModel
 
         if (response.IsSuccessStatusCode)
         {
-            Message = "Tenant créé avec succès !";
+            var defaultEmail = $"admin@{CreateInput.Slug}.dotnetniger.com";
+            Message = $"Tenant créé avec succès ! Compte admin par défaut : {defaultEmail} (mot de passe configuré dans Identity)";
             IsError = false;
             CreateInput = new CreateTenantInput();
         }
@@ -158,15 +167,27 @@ public class TenantsModel : PageModel
 
         try
         {
-            var resp = await client.GetAsync($"{identityUrl}/api/v1/admin/tenants");
+            var resp = await client.GetAsync($"{identityUrl}/api/v1/admin/tenants?page={CurrentPage}&pageSize={PageSize}");
             if (resp.IsSuccessStatusCode)
             {
                 var json = await resp.Content.ReadAsStringAsync();
-                Tenants = JsonSerializer.Deserialize<List<TenantItem>>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+                var paginated = JsonSerializer.Deserialize<PaginatedResponse<TenantItem>>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                Tenants = paginated?.Items ?? [];
+                TotalCount = paginated?.TotalCount ?? 0;
+            }
+            else
+            {
+                Message = $"Erreur API : {resp.StatusCode}";
+                IsError = true;
             }
         }
-        catch { Tenants = []; Message = "Erreur lors du chargement des tenants."; IsError = true; }
+        catch (Exception ex)
+        {
+            Tenants = [];
+            Message = $"Erreur lors du chargement des tenants : {ex.Message}";
+            IsError = true;
+        }
     }
 
     private async Task<HttpClient> CreateClientAsync(string? identityUrl)
@@ -180,14 +201,35 @@ public class TenantsModel : PageModel
     }
 }
 
+public class PaginatedResponse<T>
+{
+    [JsonPropertyName("items")]
+    public List<T> Items { get; set; } = [];
+
+    [JsonPropertyName("totalCount")]
+    public int TotalCount { get; set; }
+}
+
 public class TenantItem
 {
+    [JsonPropertyName("id")]
     public Guid Id { get; set; }
+
+    [JsonPropertyName("name")]
     public string Name { get; set; } = "";
+
+    [JsonPropertyName("slug")]
     public string Slug { get; set; } = "";
+
+    [JsonPropertyName("description")]
     public string? Description { get; set; }
+
+    [JsonPropertyName("isActive")]
     public bool IsActive { get; set; }
+
+    [JsonPropertyName("createdAt")]
     public DateTime CreatedAt { get; set; }
+
     public string AdminEmail => $"admin@{Slug}.dotnetniger.com";
 }
 

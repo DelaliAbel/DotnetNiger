@@ -28,9 +28,33 @@
                     <input asp-for="Input.LastName" class="form-control" />
                 </div>
                 <div class="col-12">
-                    <label class="form-label">Email</label>
+                    <label class="form-label">Email actuel</label>
                     <input class="form-control" value="@Model.Email" readonly disabled />
-                    <small class="text-muted">L'email ne peut pas être modifié.</small>
+                </div>
+                <div class="col-12">
+                    <details class="mt-2">
+                        <summary class="text-primary small">Changer d'adresse email</summary>
+                        <div class="mt-2 p-3 bg-light rounded border">
+                            <form method="post" asp-page-handler="ChangeEmail" class="row g-2 align-items-end">
+                                <div class="col-md-8">
+                                    <label asp-for="ChangeEmailInput.NewEmail" class="form-label">Nouvel email</label>
+                                    <input asp-for="ChangeEmailInput.NewEmail" class="form-control" type="email" required placeholder="nouveau@email.com" />
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="submit" class="btn btn-primary w-100">Envoyer le code</button>
+                                </div>
+                            </form>
+                            <form method="post" asp-page-handler="ConfirmChangeEmail" class="row g-2 align-items-end mt-2">
+                                <div class="col-md-8">
+                                    <label asp-for="ConfirmChangeEmailInput.Code" class="form-label">Code de confirmation</label>
+                                    <input asp-for="ConfirmChangeEmailInput.Code" class="form-control" placeholder="Code reçu par email" />
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="submit" class="btn btn-success w-100">Confirmer</button>
+                                </div>
+                            </form>
+                        </div>
+                    </details>
                 </div>
                 <div class="col-12">
                     <label asp-for="Input.AvatarUrl" class="form-label">Avatar URL</label>
@@ -171,7 +195,7 @@
 </div>
 
 <div class="card mt-4">
-    <div class="card-header">
+    <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="mb-0">Informations du compte</h5>
     </div>
     <div class="card-body">
@@ -181,5 +205,96 @@
                 <tr><th class="ps-0" style="width:200px">Tenant ID</th><td><code>@Model.TenantId</code></td></tr>
             </tbody>
         </table>
+    </div>
+</div>
+
+<div class="card mt-4 border-danger">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0"><i class="bi bi-trash me-2"></i>Supprimer mon compte</h5>
+    </div>
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <strong>⚠️ Action irréversible</strong> — La suppression de votre compte entraîne la suppression définitive de toutes vos données personnelles (profil, clés API, services, historique). Cette action ne peut pas être annulée.
+        </div>
+        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+            <i class="bi bi-person-x me-1"></i>Supprimer définitivement mon compte
+        </button>
+    </div>
+</div>
+
+<!-- Delete Account Confirmation Modal -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title"><i class="bi bi-exclamation-triangle me-2"></i>Confirmation de suppression</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Êtes-vous absolument sûr de vouloir supprimer votre compte ?</p>
+                <p class="mb-0"><strong>Cette action est irréversible.</strong></p>
+                <hr />
+                <form method="post" asp-page-handler="DeleteAccount" id="deleteAccountForm">
+                    <div class="mb-3">
+                        <label for="confirmDeleteEmail" class="form-label">Tapez votre email pour confirmer :</label>
+                        <input type="email" class="form-control" id="confirmDeleteEmail" name="confirmEmail" required placeholder="@Model.Email" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmDeleteText" class="form-label">Tapez <strong>SUPPRIMER</strong> pour confirmer :</label>
+                        <input type="text" class="form-control" id="confirmDeleteText" name="confirmText" required pattern="SUPPRIMER" placeholder="SUPPRIMER" />
+                    </div>
+                    <button type="submit" class="btn btn-danger w-100" id="deleteAccountBtn">
+                        <i class="bi bi-trash me-1"></i>Supprimer définitivement
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Historique des connexions</h5>
+        <form method="post" asp-page-handler="LoadLoginHistory">
+            <button type="submit" class="btn btn-outline-secondary btn-sm">Afficher</button>
+        </form>
+    </div>
+    <div class="card-body">
+        @if (Model.LoginHistory.Count == 0)
+        {
+            <p class="text-muted mb-0">Cliquez sur "Afficher" pour voir l'historique.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>IP</th>
+                            <th>Navigateur</th>
+                            <th>Statut</th>
+                            <th>Fournisseur</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var entry in Model.LoginHistory)
+                        {
+                            <tr>
+                                <td><small>@entry.Timestamp.ToString("g")</small></td>
+                                <td><small>@entry.IpAddress</small></td>
+                                <td><small class="text-muted">@(entry.UserAgent?.Length > 40 ? entry.UserAgent[..40] + "..." : entry.UserAgent)</small></td>
+                                <td>
+                                    <span class="badge bg-@(entry.Success ? "success" : "danger")">
+                                        @(entry.Success ? "Succès" : "Échec")
+                                    </span>
+                                </td>
+                                <td><small>@(entry.Provider ?? "—")</small></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 </div>

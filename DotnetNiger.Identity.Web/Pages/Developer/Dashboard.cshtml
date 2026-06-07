@@ -7,7 +7,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h1 class="fw-bold mb-1">Tableau de bord</h1>
-        <p class="text-muted mb-0">Vue d'ensemble de votre activité sur la plateforme.</p>
+        <p class="text-muted mb-0">@Model.Stats.TenantName</p>
     </div>
 </div>
 
@@ -17,8 +17,8 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
-                        <p class="text-muted small mb-1">ID du tenant</p>
-                        <h3 class="fw-bold mb-0 text-primary">@Model.Stats.TenantId</h3>
+                        <p class="text-muted small mb-1">Tenant</p>
+                        <h5 class="fw-bold mb-0 text-primary"><code>@Model.Stats.TenantId</code></h5>
                     </div>
                     <div class="bg-primary bg-opacity-10 p-3 rounded">
                         <i class="bi bi-building fs-4 text-primary"></i>
@@ -47,7 +47,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
-                        <p class="text-muted small mb-1">Services enregistrés</p>
+                        <p class="text-muted small mb-1">Services</p>
                         <h3 class="fw-bold mb-0 text-info">@Model.Stats.ActiveServices</h3>
                     </div>
                     <div class="bg-info bg-opacity-10 p-3 rounded">
@@ -62,28 +62,48 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
-                        <p class="text-muted small mb-1">Gateway</p>
-                        @if (Model.Stats.GatewayConnected)
-                        {
-                            <h3 class="fw-bold mb-0 text-success">Connecté</h3>
-                        }
-                        else
-                        {
-                            <h3 class="fw-bold mb-0 text-warning">Hors ligne</h3>
-                        }
+                        <p class="text-muted small mb-1">Utilisateurs / Rôles</p>
+                        <h3 class="fw-bold mb-0">@Model.Stats.TotalUsers <small class="text-muted fs-6">/ @Model.Stats.TotalRoles</small></h3>
                     </div>
-                    @if (Model.Stats.GatewayConnected)
-                    {
-                        <div class="bg-success bg-opacity-10 p-3 rounded">
-                            <i class="bi bi-router fs-4 text-success"></i>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="bg-warning bg-opacity-10 p-3 rounded">
-                            <i class="bi bi-router fs-4 text-warning"></i>
-                        </div>
-                    }
+                    <div class="bg-warning bg-opacity-10 p-3 rounded">
+                        <i class="bi bi-people fs-4 text-warning"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom-0 pt-4">
+                <h5 class="fw-bold mb-0"><i class="bi bi-activity me-2 text-primary"></i>Activité des connexions (7 jours)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="loginChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-bottom-0 pt-4">
+                <h5 class="fw-bold mb-0"><i class="bi bi-pie-chart me-2 text-success"></i>Connexions</h5>
+            </div>
+            <div class="card-body d-flex flex-column justify-content-center">
+                <div class="text-center mb-3">
+                    <h2 class="fw-bold mb-0">@Model.Stats.TotalLogins</h2>
+                    <p class="text-muted small mb-0">Total (50 dern.)</p>
+                </div>
+                <div class="d-flex justify-content-around text-center">
+                    <div>
+                        <span class="badge bg-success fs-6">@Model.Stats.SuccessfulLogins</span>
+                        <p class="text-muted small mb-0 mt-1">Succès</p>
+                    </div>
+                    <div>
+                        <span class="badge bg-danger fs-6">@Model.Stats.FailedLogins</span>
+                        <p class="text-muted small mb-0 mt-1">Échecs</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -91,6 +111,91 @@
 </div>
 
 <div class="row g-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom-0 pt-4 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-info"></i>Dernières connexions</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.RecentLogins.Count == 0)
+                {
+                    <p class="text-muted mb-0">Aucune connexion récente.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>IP</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var entry in Model.RecentLogins)
+                                {
+                                    <tr>
+                                        <td><small>@entry.Timestamp.ToString("g")</small></td>
+                                        <td><small>@entry.IpAddress</small></td>
+                                        <td>
+                                            <span class="badge bg-@(entry.Success ? "success" : "danger")">
+                                                @(entry.Success ? "OK" : "Échec")
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom-0 pt-4 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-0"><i class="bi bi-boxes me-2 text-info"></i>Derniers services</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.RecentServices.Count == 0)
+                {
+                    <p class="text-muted mb-0">Aucun service enregistré.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Nom</th>
+                                    <th>Statut</th>
+                                    <th>Créé</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var svc in Model.RecentServices)
+                                {
+                                    <tr>
+                                        <td><small>@svc.Name</small></td>
+                                        <td>
+                                            <span class="badge bg-@(svc.Status == "Active" ? "success" : svc.Status == "Pending" ? "warning" : "secondary")">
+                                                @svc.Status
+                                            </span>
+                                        </td>
+                                        <td><small>@svc.CreatedAt.ToString("dd/MM/yyyy")</small></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-4">
     <div class="col-md-6">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-bottom-0 pt-4">
@@ -117,7 +222,7 @@
     <div class="col-md-6">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-bottom-0 pt-4">
-                <h5 class="fw-bold mb-0"><i class="bi bi-info-circle me-2 text-primary"></i>Statut du Gateway</h5>
+                <h5 class="fw-bold mb-0"><i class="bi bi-info-circle me-2 text-primary"></i>Gateway</h5>
             </div>
             <div class="card-body pt-2">
                 @if (Model.Stats.GatewayConnected)
@@ -140,7 +245,50 @@
                         </div>
                     </div>
                 }
+                <pre class="bg-light p-3 rounded mt-3 mb-0"><small>GET https://gateway.dotnetniger.com/ext/{slug}/**</small></pre>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <script>
+        (function() {
+            var ctx = document.getElementById('loginChart');
+            if (!ctx) return;
+
+            var labels = @Html.Raw(Model.LoginChartLabels);
+            var data = @Html.Raw(Model.LoginChartData);
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Connexions',
+                        data: data,
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { stepSize: 1 }
+                        }
+                    }
+                }
+            });
+        })();
+    </script>
+}

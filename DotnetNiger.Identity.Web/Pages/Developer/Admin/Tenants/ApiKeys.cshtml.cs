@@ -23,6 +23,13 @@ public class TenantApiKeysModel : PageModel
     [BindProperty(SupportsGet = true)]
     public Guid TenantId { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public int CurrentPage { get; set; } = 1;
+
+    public int PageSize { get; set; } = 10;
+    public int TotalCount { get; set; }
+    public int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
+
     public List<ApiKeyItem> ApiKeys { get; set; } = [];
     public string Message { get; set; } = "";
     public bool IsError { get; set; }
@@ -132,12 +139,14 @@ public class TenantApiKeysModel : PageModel
 
         try
         {
-            var response = await client.GetAsync($"{identityUrl}/api/v1/admin/tenants/{TenantId}/api-keys");
+            var response = await client.GetAsync($"{identityUrl}/api/v1/admin/tenants/{TenantId}/api-keys?page={CurrentPage}&pageSize={PageSize}");
             if (response.IsSuccessStatusCode)
             {
                 var json = await response.Content.ReadAsStringAsync();
-                ApiKeys = JsonSerializer.Deserialize<List<ApiKeyItem>>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+                var paginated = JsonSerializer.Deserialize<PaginatedResponse<ApiKeyItem>>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                ApiKeys = paginated?.Items ?? [];
+                TotalCount = paginated?.TotalCount ?? 0;
             }
         }
         catch { ApiKeys = []; }

@@ -23,6 +23,16 @@ public class TenantUsersModel : PageModel
     [BindProperty(SupportsGet = true)]
     public Guid TenantId { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public int CurrentPage { get; set; } = 1;
+
+    [BindProperty(SupportsGet = true)]
+    public string? Search { get; set; }
+
+    public int PageSize { get; set; } = 10;
+    public int TotalCount { get; set; }
+    public int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
+
     public List<UserItem> Users { get; set; } = [];
     public string Message { get; set; } = "";
     public bool IsError { get; set; }
@@ -241,12 +251,14 @@ public class TenantUsersModel : PageModel
 
         try
         {
-            var resp = await client.GetAsync($"{identityUrl}/api/v1/{TenantId}/users");
+            var resp = await client.GetAsync($"{identityUrl}/api/v1/{TenantId}/users?page={CurrentPage}&pageSize={PageSize}");
             if (resp.IsSuccessStatusCode)
             {
                 var json = await resp.Content.ReadAsStringAsync();
-                Users = JsonSerializer.Deserialize<List<UserItem>>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+                var paginated = JsonSerializer.Deserialize<PaginatedResponse<UserItem>>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                Users = paginated?.Items ?? [];
+                TotalCount = paginated?.TotalCount ?? 0;
             }
         }
         catch (Exception ex) { Message = $"Erreur lors du chargement : {ex.Message}"; IsError = true; }

@@ -48,7 +48,7 @@ builder.Services.AddAuthentication(options =>
 
     options.Events.OnRedirectToIdentityProvider = context =>
     {
-        context.ProtocolMessage.Prompt = "consent";
+        context.ProtocolMessage.Prompt = "select_account";
         return Task.CompletedTask;
     };
 });
@@ -58,7 +58,12 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
 });
 
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages(options =>
+{
+    options.Conventions.AddFolderApplicationModelConvention(
+        "/Developer/Admin/Tenants",
+        model => model.Filters.Add(new DotnetNiger.Identity.Web.Infrastructure.TenantPageFilter()));
+});
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddRateLimiter(options =>

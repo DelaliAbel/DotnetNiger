@@ -5,43 +5,201 @@
 }
 
 <h1>Sécurité du compte</h1>
-<p class="lead">Informations et paramètres de sécurité de votre compte.</p>
+<p class="lead">Surveillez l'activité de votre compte et gérez vos paramètres de sécurité.</p>
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert alert-@(Model.IsError ? "danger" : "success") alert-dismissible fade show" role="alert">
+        @Model.Message
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="bg-info bg-opacity-10 p-3 rounded d-inline-block mb-3">
+                    <i class="bi bi-clock-history fs-2 text-info"></i>
+                </div>
+                <h6 class="text-muted mb-1">Dernière connexion</h6>
+                <p class="fw-bold mb-0 fs-5">
+                    @if (Model.LastLogin.HasValue)
+                    {
+                        @Model.LastLogin.Value.ToString("dd/MM/yyyy HH:mm")
+                    }
+                    else
+                    {
+                        <span class="text-muted">—</span>
+                    }
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="bg-warning bg-opacity-10 p-3 rounded d-inline-block mb-3">
+                    <i class="bi bi-laptop fs-2 text-warning"></i>
+                </div>
+                <h6 class="text-muted mb-1">Appareils actifs</h6>
+                <p class="fw-bold mb-0 fs-5">@Model.ActiveSessions.Count</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="bg-success bg-opacity-10 p-3 rounded d-inline-block mb-3">
+                    <i class="bi bi-shield-check fs-2 text-success"></i>
+                </div>
+                <h6 class="text-muted mb-1">2FA</h6>
+                <p class="fw-bold mb-0 fs-5">
+                    @if (Model.TwoFactorEnabled)
+                    {
+                        <span class="text-success">Activé</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">Désactivé</span>
+                    }
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="bg-primary bg-opacity-10 p-3 rounded d-inline-block mb-3">
+                    <i class="bi bi-arrow-repeat fs-2 text-primary"></i>
+                </div>
+                <h6 class="text-muted mb-1">Codes récupération</h6>
+                <p class="fw-bold mb-0 fs-5">@Model.RecoveryCodesLeft restant(s)</p>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div class="row g-4">
     <div class="col-md-6">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-laptop me-1"></i>Sessions actives</h5>
+            </div>
             <div class="card-body">
-                <div class="d-flex align-items-center mb-3">
-                    <div class="bg-info bg-opacity-10 p-3 rounded me-3">
-                        <i class="bi bi-clock-history fs-4 text-info"></i>
+                @if (Model.ActiveSessions.Count == 0)
+                {
+                    <p class="text-muted mb-0">Aucune session active détectée.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Appareil</th>
+                                    <th>Navigateur</th>
+                                    <th>IP</th>
+                                    <th>Dernière activité</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var session in Model.ActiveSessions)
+                                {
+                                    <tr>
+                                        <td><small>@session.DeviceName</small></td>
+                                        <td><small>@session.BrowserName</small></td>
+                                        <td><small class="text-muted">@session.IpAddress</small></td>
+                                        <td><small>@session.LastActivity.ToString("g")</small></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
                     </div>
-                    <div>
-                        <h5 class="fw-bold mb-0">Dernière connexion</h5>
-                    </div>
-                </div>
-                <p class="text-muted mb-2">Consultez l'historique de vos connexions pour surveiller l'activité de votre compte.</p>
-                <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i>Les informations détaillées de connexion sont disponibles dans les logs du système.</p>
+                }
             </div>
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-shield-lock me-1"></i>Authentification</h5>
+            </div>
             <div class="card-body">
                 <div class="d-flex align-items-center mb-3">
-                    <div class="bg-warning bg-opacity-10 p-3 rounded me-3">
-                        <i class="bi bi-laptop fs-4 text-warning"></i>
-                    </div>
-                    <div>
-                        <h5 class="fw-bold mb-0">Sessions actives</h5>
+                    <div class="me-3">
+                        @if (Model.TwoFactorEnabled)
+                        {
+                            <span class="badge bg-success fs-6"><i class="bi bi-check-circle me-1"></i>2FA activée</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary fs-6"><i class="bi bi-x-circle me-1"></i>2FA désactivée</span>
+                        }
                     </div>
                 </div>
-                <p class="text-muted mb-2">Gérez vos sessions actives et déconnectez-vous des appareils que vous ne reconnaissez pas.</p>
-                <p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i>La gestion des sessions sera bientôt disponible.</p>
+                <p class="text-muted small mb-3">
+                    La double authentification ajoute une couche de sécurité supplémentaire à votre compte.
+                    @if (Model.TwoFactorEnabled)
+                    {
+                        <span>Vous avez <strong>@Model.RecoveryCodesLeft</strong> codes de récupération restants.</span>
+                    }
+                </p>
+                <a href="/Developer/Profile#twofactor" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-gear me-1"></i>Gérer dans mon profil
+                </a>
             </div>
         </div>
     </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-clock-history me-1"></i>Activité récente</h5>
+    </div>
+    <div class="card-body">
+        @if (Model.RecentLogins.Count == 0)
+        {
+            <p class="text-muted mb-0">Aucune connexion récente enregistrée.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm table-striped mb-0">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>IP</th>
+                            <th>Navigateur</th>
+                            <th>Statut</th>
+                            <th>Fournisseur</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var entry in Model.RecentLogins)
+                        {
+                            <tr>
+                                <td><small>@entry.Timestamp.ToString("g")</small></td>
+                                <td><small>@entry.IpAddress</small></td>
+                                <td><small class="text-muted">@(entry.UserAgent?.Length > 40 ? entry.UserAgent[..40] + "..." : entry.UserAgent)</small></td>
+                                <td>
+                                    <span class="badge bg-@(entry.Success ? "success" : "danger")">
+                                        @(entry.Success ? "Succès" : "Échec")
+                                    </span>
+                                </td>
+                                <td><small>@(entry.Provider ?? "—")</small></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
     <div class="col-md-6">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="card h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-3">
                     <div class="bg-primary bg-opacity-10 p-3 rounded me-3">
@@ -59,17 +217,20 @@
         </div>
     </div>
     <div class="col-md-6">
-        <div class="card border-0 shadow-sm h-100">
+        <div class="card h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-3">
-                    <div class="bg-success bg-opacity-10 p-3 rounded me-3">
-                        <i class="bi bi-shield-check fs-4 text-success"></i>
+                    <div class="bg-info bg-opacity-10 p-3 rounded me-3">
+                        <i class="bi bi-envelope fs-4 text-info"></i>
                     </div>
                     <div>
-                        <h5 class="fw-bold mb-0">Authentification</h5>
+                        <h5 class="fw-bold mb-0">Email</h5>
                     </div>
                 </div>
-                <p class="text-muted mb-2">Votre compte utilise l'authentification par mot de passe. La double authentification (2FA) sera bientôt disponible.</p>
+                <p class="text-muted mb-3">Modifiez l'adresse email associée à votre compte.</p>
+                <a href="/Developer/Profile" class="btn btn-outline-info">
+                    <i class="bi bi-envelope me-1"></i>Changer l'email
+                </a>
             </div>
         </div>
     </div>
