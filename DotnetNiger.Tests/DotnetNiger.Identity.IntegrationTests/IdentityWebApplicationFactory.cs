@@ -98,8 +98,19 @@ public class IdentityWebApplicationFactory : IAsyncLifetime
 
     public async Task DisposeAsync()
     {
-        await _app.StopAsync();
-        await _app.DisposeAsync();
-        _connection.Dispose();
+        if (_app != null)
+        {
+            await _app.StopAsync();
+            await _app.DisposeAsync();
+        }
+        try
+        {
+            _connection.Close();
+            _connection.Dispose();
+        }
+        catch
+        {
+            // Ignore dispose errors during test cleanup
+        }
     }
 }
