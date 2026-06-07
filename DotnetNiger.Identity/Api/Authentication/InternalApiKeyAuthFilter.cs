@@ -8,19 +8,15 @@ namespace DotnetNiger.Identity.Api.Authentication;
 public class InternalApiKeyAuthAttribute : Attribute, IAuthorizationFilter
 {
     private const string InternalKeyHeader = "X-Internal-Key";
-    private static string? _configuredKey;
 
     public InternalApiKeyAuthAttribute() { }
 
     public void OnAuthorization(AuthorizationFilterContext context)
     {
-        if (_configuredKey == null)
-        {
-            var configuration = context.HttpContext.RequestServices.GetService<IConfiguration>();
-            _configuredKey = configuration?["InternalApiKey"] ?? "";
-        }
+        var configuration = context.HttpContext.RequestServices.GetRequiredService<IConfiguration>();
+        var configuredKey = configuration["InternalApiKey"] ?? "";
 
-        if (string.IsNullOrEmpty(_configuredKey))
+        if (string.IsNullOrEmpty(configuredKey))
         {
             context.Result = new StatusCodeResult(500);
             return;
@@ -32,7 +28,7 @@ public class InternalApiKeyAuthAttribute : Attribute, IAuthorizationFilter
             return;
         }
 
-        if (values.FirstOrDefault() != _configuredKey)
+        if (values.FirstOrDefault() != configuredKey)
             context.Result = new UnauthorizedResult();
     }
 }

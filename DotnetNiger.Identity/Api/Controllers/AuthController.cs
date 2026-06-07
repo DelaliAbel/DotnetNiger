@@ -336,15 +336,14 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<object>> Register([FromBody] RegisterRequest request)
     {
-        var (user, code) = await _authService.RegisterAsync(
+        var user = await _authService.RegisterAsync(
             request.Email, request.Password, request.FirstName, request.LastName, request.TenantId);
 
         return Ok(new
         {
             message = "Compte créé. Un code de confirmation vous a été envoyé par email.",
             userId = user.Id,
-            email = user.Email,
-            code
+            email = user.Email
         });
     }
 
@@ -665,7 +664,7 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>Bootstrap du client OIDC "web-ui" (création ou mise à jour des permissions/URIs).</summary>
-    [AllowAnonymous]
+    [Authorize(Roles = "Admin")]
     [HttpPost("bootstrap-web-ui")]
     public async Task<IActionResult> BootstrapWebUi(
         [FromServices] IOpenIddictApplicationManager appManager)

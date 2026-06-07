@@ -54,6 +54,12 @@ public class PermissionService
             .ToList();
     }
 
+    public async Task<PermissionResponse?> GetByIdAsync(Guid id)
+    {
+        var permission = await _db.Permissions.FindAsync(id);
+        return permission == null ? null : MapToResponse(permission);
+    }
+
     public async Task DeleteAsync(Guid id)
     {
         var permission = await _db.Permissions.FindAsync(id);

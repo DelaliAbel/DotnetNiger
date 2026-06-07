@@ -3,8 +3,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
-using DotnetNiger.Identity.Domain.Entities; 
-using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
+using DotnetNiger.Identity.Domain.Entities;
+using DotnetNiger.Identity.Infrastructure;
 
 namespace DotnetNiger.Identity.Pages.Account;
 
@@ -13,15 +14,18 @@ public class LoginModel : PageModel
 {
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly IdentityDbContext _db;
     private readonly ILogger<LoginModel> _logger;
 
     public LoginModel(
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
+        IdentityDbContext db,
         ILogger<LoginModel> logger)
     {
         _signInManager = signInManager;
         _userManager = userManager;
+        _db = db;
         _logger = logger;
     }
 
@@ -66,7 +70,7 @@ public class LoginModel : PageModel
         if (result.Succeeded)
         {
             var decoded = System.Net.WebUtility.HtmlDecode(ReturnUrl ?? "/");
-            return LocalRedirect(decoded);
+            return SafeRedirect(decoded);
         }
 
         if (result.IsLockedOut)
@@ -122,10 +126,14 @@ public class LoginModel : PageModel
             return Page();
         }
 
+        var email = info.Principal.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
+        var firstName = info.Principal.FindFirst(System.Security.Claims.ClaimTypes.GivenName)?.Value;
+        var lastName = info.Principal.FindFirst(System.Security.Claims.ClaimTypes.Surname)?.Value;
+
         var result = await _signInManager.ExternalLoginSignInAsync(
             info.LoginProvider, info.ProviderKey, isPersistent: false);
         if (result.Succeeded)
-            return LocalRedirect(returnUrl);
+            return SafeRedirect(returnUrl);
 
         if (result.IsLockedOut)
         {
@@ -133,7 +141,6 @@ public class LoginModel : PageModel
             return Page();
         }
 
-        var email = info.Principal.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value;
         if (string.IsNullOrEmpty(email))
         {
             ErrorMessage = "Impossible de récupérer votre email depuis le fournisseur externe.";
@@ -142,17 +149,55 @@ public class LoginModel : PageModel
             return Page();
         }
 
-        var user = await _userManager.FindByEmailAsync(email);
-        if (user != null)
+        var existingUser = await _userManager.FindByEmailAsync(email);
+        if (existingUser != null)
         {
-            await _userManager.AddLoginAsync(user, info);
-            await _signInManager.SignInAsync(user, isPersistent: false);
-            return LocalRedirect(returnUrl);
+            await _userManager.AddLoginAsync(existingUser, info);
+            existingUser.EmailConfirmed = true;
+            await _userManager.UpdateAsync(existingUser);
+            await _signInManager.SignInAsync(existingUser, isPersistent: false);
+            return SafeRedirect(returnUrl);
         }
 
-        ErrorMessage = "Aucun compte associé à cet email. Veuillez d'abord créer un compte.";
-        ExternalProviders = (await _signInManager.GetExternalAuthenticationSchemesAsync())
-            .Where(s => !string.IsNullOrEmpty(s.DisplayName)).ToList();
-        return Page();
+        var tenant = await _db.Tenants.FirstOrDefaultAsync();
+        if (tenant == null)
+        {
+            ErrorMessage = "Aucun tenant configuré. Veuillez contacter l'administrateur.";
+            ExternalProviders = (await _signInManager.GetExternalAuthenticationSchemesAsync())
+                .Where(s => !string.IsNullOrEmpty(s.DisplayName)).ToList();
+            return Page();
+        }
+
+        var newUser = new ApplicationUser
+        {
+            UserName = email,
+            Email = email,
+            EmailConfirmed = true,
+            FirstName = firstName,
+            LastName = lastName,
+            TenantId = tenant.Id,
+            IsActive = true
+        };
+
+        var createResult = await _userManager.CreateAsync(newUser);
+        if (!createResult.Succeeded)
+        {
+            ErrorMessage = string.Join(" ", createResult.Errors.Select(e => e.Description));
+            ExternalProviders = (await _signInManager.GetExternalAuthenticationSchemesAsync())
+                .Where(s => !string.IsNullOrEmpty(s.DisplayName)).ToList();
+            return Page();
+        }
+
+        await _userManager.AddLoginAsync(newUser, info);
+        await _userManager.AddToRoleAsync(newUser, "User");
+        await _signInManager.SignInAsync(newUser, isPersistent: false);
+
+        _logger.LogInformation("New user created via external login: {Email}", email);
+        return SafeRedirect(returnUrl);
+    }
+
+    private IActionResult SafeRedirect(string url)
+    {
+        return Url.IsLocalUrl(url) ? LocalRedirect(url) : RedirectToPage("/Index");
     }
 }

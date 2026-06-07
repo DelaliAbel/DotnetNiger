@@ -58,7 +58,7 @@ public class AuthService
         return (user, roles);
     }
 
-    public async Task<(ApplicationUser user, string code)> RegisterAsync(string email, string password,
+    public async Task<ApplicationUser> RegisterAsync(string email, string password,
         string firstName, string lastName, Guid? tenantId = null)
     {
         if (await _userManager.FindByEmailAsync(email) != null)
@@ -96,7 +96,7 @@ public class AuthService
         await SendConfirmationEmailAsync(user, code);
 
         _tenantContext.TenantId = user.TenantId;
-        return (user, code);
+        return user;
     }
 
     public async Task ConfirmEmailAsync(string email, string code)
@@ -383,13 +383,22 @@ public class AuthService
 
     private async Task SendConfirmationEmailAsync(ApplicationUser user, string code)
     {
+        var tenant = await _db.Tenants.FindAsync(user.TenantId);
+        var tenantName = tenant?.Name;
+
         if (!string.IsNullOrEmpty(_smtp.Host))
         {
             var confirmUrl = $"{_smtp.AppBaseUrl}/api/v1/auth/confirm-email?email={Uri.EscapeDataString(user.Email!)}&code={Uri.EscapeDataString(code)}";
-            await _emailSender.SendConfirmationLinkAsync(user, user.Email!, confirmUrl);
 
             if (_emailSender is EmailSender typed)
-                await typed.SendConfirmationCodeAsync(user, user.Email!, code, confirmUrl);
+            {
+                await typed.SendConfirmationLinkAsync(user, user.Email!, confirmUrl, tenantName);
+                await typed.SendConfirmationCodeAsync(user, user.Email!, code, confirmUrl, tenantName);
+            }
+            else
+            {
+                await _emailSender.SendConfirmationLinkAsync(user, user.Email!, confirmUrl);
+            }
         }
     }
 }

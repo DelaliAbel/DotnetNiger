@@ -92,7 +92,7 @@ public static class ServiceExtensions
                     {
                         try
                         {
-                            using var cert = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12(
+                            var cert = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12(
                                 File.ReadAllBytes(certPath), certPassword);
                             server.AddEncryptionCertificate(cert)
                                   .AddSigningCertificate(cert);
@@ -120,7 +120,7 @@ public static class ServiceExtensions
                     var certPassword = config["OpenIddict:CertificatePassword"] ?? "";
                     if (File.Exists(certPath))
                     {
-                        using var cert = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12(File.ReadAllBytes(certPath), certPassword);
+                        var cert = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12(File.ReadAllBytes(certPath), certPassword);
                         server.AddEncryptionCertificate(cert)
                               .AddSigningCertificate(cert);
                     }
@@ -340,6 +340,7 @@ public static class ServiceExtensions
         services.AddScoped<TenantApiKeyService>();
         services.AddScoped<AdminService>();
         services.AddScoped<IEmailSender<ApplicationUser>, EmailSender>();
+        services.AddScoped<EmailSender>();
         services.AddScoped<ExternalServiceService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
         services.AddScoped<GdprService>();

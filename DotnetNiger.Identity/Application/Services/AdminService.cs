@@ -86,6 +86,41 @@ public class AdminService
         return new string(data.Select(b => chars[b % chars.Length]).ToArray()) + "Aa1!";
     }
 
+    public async Task<object> GetTenantLoginHistoryAsync(Guid tenantId, int page, int pageSize)
+    {
+        var userIds = await _db.Users
+            .Where(u => u.TenantId == tenantId)
+            .Select(u => u.Id)
+            .ToListAsync();
+
+        var query = _db.LoginHistories
+            .Where(h => userIds.Contains(h.UserId));
+
+        var total = await query.CountAsync();
+        var items = await query
+            .OrderByDescending(h => h.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Join(_db.Users,
+                h => h.UserId,
+                u => u.Id,
+                (h, u) => new
+                {
+                    h.Id,
+                    h.UserId,
+                    Email = u.Email,
+                    h.IpAddress,
+                    h.UserAgent,
+                    h.Provider,
+                    h.Success,
+                    h.FailureReason,
+                    h.CreatedAt
+                })
+            .ToListAsync();
+
+        return new { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
+    }
+
     public async Task<List<UserResponse>> GetAllUsersAcrossTenantsAsync()
     {
         var users = await _db.Users.IgnoreQueryFilters().ToListAsync();

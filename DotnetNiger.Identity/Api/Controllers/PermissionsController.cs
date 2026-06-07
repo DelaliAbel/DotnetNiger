@@ -49,6 +49,8 @@ public class PermissionsController : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid tenantId, Guid id)
     {
+        var permission = await _permissionService.GetByIdAsync(id);
+        if (permission == null || permission.TenantId != tenantId) return NotFound();
         await _permissionService.DeleteAsync(id);
         return NoContent();
     }

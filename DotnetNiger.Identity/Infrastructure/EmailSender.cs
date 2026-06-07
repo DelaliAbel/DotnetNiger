@@ -19,6 +19,7 @@ public class SmtpOptions
     public string AppName { get; set; } = "DotnetNiger";
     public string AppSubtitle { get; set; } = "";
     public string AppBaseUrl { get; set; } = "http://localhost:5075";
+    public string SupportEmail { get; set; } = "";
 }
 
 public class EmailSender : IEmailSender<ApplicationUser>
@@ -89,13 +90,17 @@ public class EmailSender : IEmailSender<ApplicationUser>
         _logger.LogInformation("Email sent to {To}", toEmail);
     }
 
-    public Task SendConfirmationLinkAsync(ApplicationUser user, string email, string confirmationLink)
+    Task IEmailSender<ApplicationUser>.SendConfirmationLinkAsync(ApplicationUser user, string email, string confirmationLink)
+        => SendConfirmationLinkAsync(user, email, confirmationLink);
+
+    public Task SendConfirmationLinkAsync(ApplicationUser user, string email, string confirmationLink, string? tenantName = null)
     {
+        var displayName = !string.IsNullOrEmpty(tenantName) ? $"{_smtp.AppName} — {tenantName}" : _smtp.AppName;
         return SendEmailAsync(email, $"Confirmez votre adresse email — {_smtp.AppName}",
             BuildTemplate(
-                $"Bienvenue sur {_smtp.AppName}",
+                $"Bienvenue sur {displayName}",
                 $@"<p>Bonjour {user.FirstName ?? ""},</p>
-<p>Merci de vous être inscrit. Veuillez confirmer votre adresse email pour activer votre compte.</p>
+<p>Merci de vous être inscrit sur <strong>{displayName}</strong>. Veuillez confirmer votre adresse email pour activer votre compte.</p>
 <p style=""text-align:center;margin:24px 0"">
   <a href=""{confirmationLink}"" style=""display:inline-block;padding:12px 28px;background:#512BD4;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600"">Confirmer mon email</a>
 </p>
@@ -140,13 +145,14 @@ public class EmailSender : IEmailSender<ApplicationUser>
 <p style=""font-size:13px;color:#666"">Cette invitation expire dans 48 heures.</p>"));
     }
 
-    public Task SendConfirmationCodeAsync(ApplicationUser user, string email, string code, string? confirmationLink = null)
+    public Task SendConfirmationCodeAsync(ApplicationUser user, string email, string code, string? confirmationLink = null, string? tenantName = null)
     {
+        var displayName = !string.IsNullOrEmpty(tenantName) ? $"{_smtp.AppName} — {tenantName}" : _smtp.AppName;
         return SendEmailAsync(email, $"Votre code de confirmation — {_smtp.AppName}",
             BuildTemplate(
                 "Confirmez votre inscription",
                 $@"<p>Bonjour {user.FirstName ?? ""},</p>
-<p>Utilisez le code ci-dessous pour activer votre compte {_smtp.AppName}&nbsp;:</p>
+<p>Utilisez le code ci-dessous pour activer votre compte sur <strong>{displayName}</strong>&nbsp;:</p>
 <p style=""text-align:center;margin:24px 0;padding:16px;background:#f5f2ff;border-radius:8px"">
   <span style=""font-size:36px;font-weight:700;letter-spacing:10px;color:#512BD4;font-family:'Courier New',monospace"">{code}</span>
 </p>
