@@ -9,7 +9,7 @@ public class ProfileService(AppDbContext db) : IProfileService
 {
     public async Task<ProfileResponse?> GetAsync(Guid userId)
     {
-        var member = await db.Members
+        var member = await db.Members.AsNoTracking()
             .Include(m => m.SocialLinks)
             .FirstOrDefaultAsync(m => m.Id == userId);
         return member is null ? null : MapProfile(member);

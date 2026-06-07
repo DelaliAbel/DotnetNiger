@@ -153,6 +153,12 @@ public class ProfileModel : PageModel
     }
 
     [BindProperty]
+    public ChangeEmailInput ChangeEmailInput { get; set; } = new();
+
+    [BindProperty]
+    public ConfirmChangeEmailInput ConfirmChangeEmailInput { get; set; } = new();
+
+    [BindProperty]
     public ChangePasswordInput PasswordInput { get; set; } = new();
 
     public async Task<IActionResult> OnPostChangePasswordAsync()
@@ -174,7 +180,7 @@ public class ProfileModel : PageModel
         });
 
         var response = await client.PostAsync(
-            $"{identityUrl}/api/account/change-password",
+            $"{identityUrl}/api/v1/profile/change-password",
             new StringContent(body, Encoding.UTF8, "application/json"));
 
         if (response.IsSuccessStatusCode)
@@ -189,6 +195,143 @@ public class ProfileModel : PageModel
             IsError = true;
         }
 
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostChangeEmailAsync()
+    {
+        if (!ModelState.IsValid) return Page();
+
+        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
+        var client = _http.CreateClient();
+        var token = await HttpContext.GetTokenAsync("access_token");
+
+        if (!string.IsNullOrEmpty(token))
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var body = JsonSerializer.Serialize(new { newEmail = ChangeEmailInput.NewEmail });
+        var response = await client.PostAsync(
+            $"{identityUrl}/api/v1/profile/change-email",
+            new StringContent(body, Encoding.UTF8, "application/json"));
+
+        if (response.IsSuccessStatusCode)
+        {
+            Message = "Un code de confirmation a été envoyé à votre nouvelle adresse email.";
+            IsError = false;
+        }
+        else
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            Message = $"Erreur : {error}";
+            IsError = true;
+        }
+
+        await LoadProfileAsync();
+        await LoadTwoFactorStatusAsync();
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostConfirmChangeEmailAsync()
+    {
+        if (!ModelState.IsValid) return Page();
+
+        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
+        var client = _http.CreateClient();
+        var token = await HttpContext.GetTokenAsync("access_token");
+
+        if (!string.IsNullOrEmpty(token))
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var body = JsonSerializer.Serialize(new { code = ConfirmChangeEmailInput.Code });
+        var response = await client.PostAsync(
+            $"{identityUrl}/api/v1/profile/confirm-change-email",
+            new StringContent(body, Encoding.UTF8, "application/json"));
+
+        if (response.IsSuccessStatusCode)
+        {
+            Message = "Adresse email modifiée avec succès.";
+            IsError = false;
+            ConfirmChangeEmailInput = new ConfirmChangeEmailInput();
+        }
+        else
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            Message = $"Erreur : {error}";
+            IsError = true;
+        }
+
+        await LoadProfileAsync();
+        await LoadTwoFactorStatusAsync();
+        return Page();
+    }
+
+    public List<LoginHistoryEntry> LoginHistory { get; set; } = [];
+
+    public async Task<IActionResult> OnPostDeleteAccountAsync(string confirmEmail, string confirmText)
+    {
+        if (confirmEmail != Email)
+        {
+            Message = "L'email de confirmation ne correspond pas.";
+            IsError = true;
+            return Page();
+        }
+
+        if (confirmText != "SUPPRIMER")
+        {
+            Message = "Veuillez taper SUPPRIMER pour confirmer.";
+            IsError = true;
+            return Page();
+        }
+
+        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
+        var client = _http.CreateClient();
+        var token = await HttpContext.GetTokenAsync("access_token");
+
+        if (!string.IsNullOrEmpty(token))
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        var response = await client.DeleteAsync($"{identityUrl}/api/v1/profile");
+
+        if (response.IsSuccessStatusCode)
+        {
+            await HttpContext.SignOutAsync();
+            return Redirect("/Account/Login?message=compte_supprime");
+        }
+        else
+        {
+            var error = await response.Content.ReadAsStringAsync();
+            Message = $"Erreur lors de la suppression : {error}";
+            IsError = true;
+        }
+
+        await LoadProfileAsync();
+        await LoadTwoFactorStatusAsync();
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostLoadLoginHistoryAsync()
+    {
+        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
+        var client = _http.CreateClient();
+        var token = await HttpContext.GetTokenAsync("access_token");
+        if (!string.IsNullOrEmpty(token))
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        try
+        {
+            var response = await client.GetAsync($"{identityUrl}/api/v1/profile/login-history?pageSize=20");
+            if (response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                var paginated = JsonSerializer.Deserialize<LoginHistoryPaginated>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                LoginHistory = paginated?.Items ?? [];
+            }
+        }
+        catch { LoginHistory = []; }
+
+        await LoadProfileAsync();
+        await LoadTwoFactorStatusAsync();
         return Page();
     }
 
@@ -353,6 +496,31 @@ public class ProfileModel : PageModel
         public string CurrentPassword { get; set; } = "";
         public string NewPassword { get; set; } = "";
     }
+}
+
+public class LoginHistoryEntry
+{
+    public DateTime Timestamp { get; set; }
+    public string? IpAddress { get; set; }
+    public string? UserAgent { get; set; }
+    public bool Success { get; set; }
+    public string? Provider { get; set; }
+}
+
+public class LoginHistoryPaginated
+{
+    public List<LoginHistoryEntry> Items { get; set; } = [];
+    public int TotalCount { get; set; }
+}
+
+public class ChangeEmailInput
+{
+    public string NewEmail { get; set; } = "";
+}
+
+public class ConfirmChangeEmailInput
+{
+    public string Code { get; set; } = "";
 }
 
 public class ProfileInput

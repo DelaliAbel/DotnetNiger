@@ -11,7 +11,7 @@ public class ProjectService(AppDbContext db, INotificationService notificationSe
 {
     public async Task<PaginatedResponse<ProjectResponse>> GetAllAsync(string? status, string? query, int page = 1, int pageSize = 10)
     {
-        var q = db.Set<Project>().AsQueryable();
+        var q = db.Set<Project>().AsNoTracking().AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(status))
             q = q.Where(p => p.Status == status);
@@ -32,7 +32,7 @@ public class ProjectService(AppDbContext db, INotificationService notificationSe
 
     public async Task<List<ProjectResponse>> GetFeaturedAsync()
     {
-        return await db.Set<Project>()
+        return await db.Set<Project>().AsNoTracking()
             .Where(p => p.IsFeatured && p.IsPublished)
             .OrderByDescending(p => p.CreatedAt)
             .Select(p => MapProject(p))
@@ -66,7 +66,11 @@ public class ProjectService(AppDbContext db, INotificationService notificationSe
 
         db.Add(project);
         await db.SaveChangesAsync();
-        _ = notificationService.NotifyNewProjectAsync(project.Title, project.Description, project.AuthorName);
+        _ = Task.Run(async () =>
+        {
+            try { await notificationService.NotifyNewProjectAsync(project.Title, project.Description, project.AuthorName); }
+            catch { /* logged internally */ }
+        });
         return MapProject(project);
     }
 

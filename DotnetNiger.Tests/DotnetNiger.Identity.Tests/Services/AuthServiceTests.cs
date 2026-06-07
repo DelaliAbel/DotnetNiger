@@ -215,12 +215,10 @@ public class AuthServiceTests
         _userManagerMock.Setup(x => x.UpdateAsync(It.IsAny<ApplicationUser>()))
             .ReturnsAsync(IdentityResult.Success);
 
-        var (user, code) = await sut.RegisterAsync("new@test.com", "Password1!", "New", "User", tenantId);
+        var user = await sut.RegisterAsync("new@test.com", "Password1!", "New", "User", tenantId);
 
         user.Should().NotBeNull();
         user.Email.Should().Be("new@test.com");
-        code.Should().NotBeNullOrEmpty();
-        code.Length.Should().Be(6);
         _tenantContext.TenantId.Should().Be(tenantId);
         _emailSenderMock.Verify(
             x => x.SendConfirmationLinkAsync(

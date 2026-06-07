@@ -9,7 +9,7 @@ public class CommentService(AppDbContext db) : ICommentService
 {
     public async Task<List<CommentResponse>> GetByPostIdAsync(Guid postId)
     {
-        var comments = await db.Comments
+        var comments = await db.Comments.AsNoTracking()
             .Where(c => c.PostId == postId)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
@@ -18,7 +18,7 @@ public class CommentService(AppDbContext db) : ICommentService
 
     public async Task<List<CommentResponse>> GetByEventIdAsync(Guid eventId)
     {
-        var comments = await db.Comments
+        var comments = await db.Comments.AsNoTracking()
             .Where(c => c.EventId == eventId)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
@@ -51,10 +51,10 @@ public class CommentService(AppDbContext db) : ICommentService
         return MapComment(comment);
     }
 
-    public async Task<CommentResponse?> UpdateAsync(Guid id, UpdateCommentRequest request, Guid userId)
+    public async Task<CommentResponse?> UpdateAsync(Guid id, UpdateCommentRequest request, Guid userId, bool isAdmin = false)
     {
-        var comment = await db.Comments.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
-        if (comment is null) return null;
+        var comment = await db.Comments.FirstOrDefaultAsync(c => c.Id == id);
+        if (comment is null || (comment.UserId != userId && !isAdmin)) return null;
 
         comment.Content = request.Content;
         comment.UpdatedAt = DateTime.UtcNow;
@@ -62,10 +62,10 @@ public class CommentService(AppDbContext db) : ICommentService
         return MapComment(comment);
     }
 
-    public async Task<bool> DeleteAsync(Guid id, Guid userId, bool deleteAllReplies = false)
+    public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin = false, bool deleteAllReplies = false)
     {
-        var comment = await db.Comments.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
-        if (comment is null) return false;
+        var comment = await db.Comments.FirstOrDefaultAsync(c => c.Id == id);
+        if (comment is null || (comment.UserId != userId && !isAdmin)) return false;
 
         if (deleteAllReplies)
         {
@@ -91,7 +91,7 @@ public class CommentService(AppDbContext db) : ICommentService
 
     private static List<CommentResponse> BuildTree(List<Comment> comments)
     {
-        var map = comments.Select(MapComment).ToDictionary(c => c.Id);
+        var map = comments.DistinctBy(c => c.Id).Select(MapComment).ToDictionary(c => c.Id);
         var roots = new List<CommentResponse>();
 
         foreach (var c in map.Values)

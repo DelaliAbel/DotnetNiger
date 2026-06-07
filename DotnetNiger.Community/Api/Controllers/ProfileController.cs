@@ -19,6 +19,11 @@ public class ProfileController(IProfileService profileService) : ControllerBase
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var profile = await profileService.GetAsync(userId);
         if (profile is null) return NotFound(new { Success = false, Message = "Profile not found" });
+
+        profile.Email = User.FindFirstValue(ClaimTypes.Email) ?? "";
+        profile.Username = User.FindFirstValue(ClaimTypes.Name) ?? profile.Email;
+        profile.Roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).Distinct().ToList();
+
         return Ok(new { Success = true, Data = profile });
     }
 
@@ -27,6 +32,12 @@ public class ProfileController(IProfileService profileService) : ControllerBase
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var profile = await profileService.UpdateAsync(userId, request);
+        if (profile is null) return NotFound(new { Success = false, Message = "Profile not found" });
+
+        profile.Email = User.FindFirstValue(ClaimTypes.Email) ?? "";
+        profile.Username = User.FindFirstValue(ClaimTypes.Name) ?? profile.Email;
+        profile.Roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).Distinct().ToList();
+
         return Ok(new { Success = true, Data = profile });
     }
 

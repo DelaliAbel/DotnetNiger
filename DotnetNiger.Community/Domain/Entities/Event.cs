@@ -19,6 +19,9 @@ public class Event
     public bool IsArchived { get; set; }
     public bool IsDeleted { get; set; }
     public string MeetupLink { get; set; } = string.Empty;
+    public string? RejectionReason { get; set; }
+    public DateTime? SubmittedAt { get; set; }
+    public DateTime? PublishedAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

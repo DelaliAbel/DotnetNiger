@@ -10,7 +10,7 @@ public class PartnerService(AppDbContext db) : IPartnerService
 {
     public async Task<List<PartnerResponse>> GetAllActiveAsync(string? partnerType)
     {
-        var q = db.Set<Partner>().Where(p => p.IsActive).AsQueryable();
+        var q = db.Set<Partner>().AsNoTracking().Where(p => p.IsActive).AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(partnerType))
             q = q.Where(p => p.PartnerType == partnerType);

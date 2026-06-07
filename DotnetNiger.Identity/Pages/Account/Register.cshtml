@@ -18,46 +18,68 @@
         <div class="error" style="background:#f0fdf4;color:#16a34a">@Model.SuccessMessage</div>
     }
 
-    <div class="form-group">
-        <label for="firstName">Prénom</label>
-        <input type="text" id="firstName" name="firstName" value="@Model.FirstName" required autofocus
-               placeholder="Votre prénom" />
-    </div>
+    @if (Model.ShowCodeForm)
+    {
+        <input type="hidden" name="pendingEmail" value="@Model.PendingEmail" />
+        <input type="hidden" name="email" value="@Model.PendingEmail" />
 
-    <div class="form-group">
-        <label for="lastName">Nom</label>
-        <input type="text" id="lastName" name="lastName" value="@Model.LastName" required
-               placeholder="Votre nom" />
-    </div>
+        <div class="form-group">
+            <label for="confirmationCode">Code de confirmation</label>
+            <input type="text" id="confirmationCode" name="confirmationCode" value="@Model.ConfirmationCode" required autofocus
+                   placeholder="Entrez le code à 6 caractères" maxlength="6" style="text-transform:uppercase;letter-spacing:4px;font-size:18px;text-align:center;font-family:'Courier New',monospace" />
+        </div>
 
-    <div class="form-group">
-        <label for="email">Adresse email</label>
-        <input type="email" id="email" name="email" value="@Model.Email" required
-               placeholder="vous@exemple.com" />
-    </div>
+        <button type="submit">Confirmer mon email</button>
 
-    <div class="form-group">
-        <label for="password">Mot de passe</label>
-        <input type="password" id="password" name="password" required
-               placeholder="Minimum 8 caractères" minlength="8" />
-    </div>
+        <div style="text-align:center;margin-top:10px">
+            <button type="submit" asp-page-handler="ResendCode" style="background:none;border:none;color:#512BD4;text-decoration:underline;cursor:pointer;font-size:13px">
+                Renvoyer le code
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="form-group">
+            <label for="firstName">Prénom</label>
+            <input type="text" id="firstName" name="firstName" value="@Model.FirstName" required autofocus
+                   placeholder="Votre prénom" />
+        </div>
 
-    <div class="form-group">
-        <label for="confirmPassword">Confirmer le mot de passe</label>
-        <input type="password" id="confirmPassword" name="confirmPassword" required
-               placeholder="Répétez le mot de passe" minlength="8" />
-    </div>
+        <div class="form-group">
+            <label for="lastName">Nom</label>
+            <input type="text" id="lastName" name="lastName" value="@Model.LastName" required
+                   placeholder="Votre nom" />
+        </div>
 
-    <button type="submit" style="margin-bottom:12px">Créer mon compte</button>
+        <div class="form-group">
+            <label for="email">Adresse email</label>
+            <input type="email" id="email" name="email" value="@Model.Email" required
+                   placeholder="vous@exemple.com" />
+        </div>
 
-    <div style="text-align:center;font-size:14px">
-        Déjà un compte ?
-        <a href="/Account/Login@(string.IsNullOrEmpty(Model.ReturnUrl) ? "" : "?returnUrl=" + Uri.EscapeDataString(Model.ReturnUrl))"
-           style="color:#512BD4;text-decoration:none;font-weight:600">Connectez-vous</a>
-    </div>
+        <div class="form-group">
+            <label for="password">Mot de passe</label>
+            <input type="password" id="password" name="password" required
+                   placeholder="Minimum 8 caractères" minlength="8" />
+        </div>
+
+        <div class="form-group">
+            <label for="confirmPassword">Confirmer le mot de passe</label>
+            <input type="password" id="confirmPassword" name="confirmPassword" required
+                   placeholder="Répétez le mot de passe" minlength="8" />
+        </div>
+
+        <button type="submit" style="margin-bottom:12px">Créer mon compte</button>
+
+        <div style="text-align:center;font-size:14px">
+            Déjà un compte ?
+            <a href="/Account/Login@(string.IsNullOrEmpty(Model.ReturnUrl) ? "" : "?returnUrl=" + Uri.EscapeDataString(Model.ReturnUrl))"
+               style="color:#512BD4;text-decoration:none;font-weight:600">Connectez-vous</a>
+        </div>
+    }
 </form>
 
-@if (Model.ExternalProviders.Count > 0)
+@if (!Model.ShowCodeForm && Model.ExternalProviders.Count > 0)
 {
     <div class="divider">
         <span>Ou</span>

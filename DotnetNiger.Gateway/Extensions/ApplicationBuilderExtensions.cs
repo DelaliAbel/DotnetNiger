@@ -117,7 +117,7 @@ public static class ApplicationBuilderExtensions
                 if (cache.TryGetValue(cacheKey, out string? cached) && cached != null)
                 {
                     context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsync(cached!);
+                    await context.Response.WriteAsync(cached);
                     return;
                 }
 
@@ -147,7 +147,8 @@ public static class ApplicationBuilderExtensions
             catch (Exception ex)
             {
                 Log.Error(ex, "Swagger merge middleware error");
-                await next(context);
+                context.Response.StatusCode = 500;
+                await context.Response.WriteAsync("{\"error\":\"Swagger merge failed\"}");
             }
         });
 

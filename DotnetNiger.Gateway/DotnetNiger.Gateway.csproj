@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <NoWarn>ASP0016</NoWarn>
+    <UserSecretsId>7e7cc776-319a-4c45-8ce6-0f4f6e6a6e98</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

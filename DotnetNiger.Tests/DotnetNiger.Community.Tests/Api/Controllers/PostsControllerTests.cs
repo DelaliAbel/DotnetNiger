@@ -15,12 +15,12 @@ public class PostsControllerTests
     public async Task GetAll_ReturnsOk()
     {
         var svc = new Mock<IPostService>();
-        svc.Setup(x => x.GetAllAsync(null, null, null, null, 1, 10))
+        svc.Setup(x => x.GetAllAsync(null, null, null, null, 1, 10, null))
             .ReturnsAsync(new PaginatedResponse<PostResponse>
                 { Items = [new PostResponse { Id = Guid.NewGuid(), Title = "P1" }], TotalCount = 1, Page = 1, PageSize = 10 });
 
         var ctrl = new PostsController(svc.Object);
-        var result = await ctrl.GetAll(null, null, null, null, 1, 10);
+        var result = await ctrl.GetAll(null, null, null, null, 1, 10, null);
 
         var ok = result as OkObjectResult;
         ok.Should().NotBeNull();

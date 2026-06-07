@@ -19,7 +19,7 @@ public class DownstreamHealthCheck : IHealthCheck
         HealthCheckContext context, CancellationToken cancellationToken = default)
     {
         var services = _registry.GetCombinedConfig();
-        var results = new Dictionary<string, object>();
+        var results = new Dictionary<string, HealthInfo>();
 
         foreach (var service in services)
         {
@@ -29,19 +29,21 @@ public class DownstreamHealthCheck : IHealthCheck
                 using var client = _factory.CreateClient();
                 client.Timeout = TimeSpan.FromSeconds(3);
                 using var response = await client.GetAsync(url, cancellationToken);
-                results[service.Id] = new { url, statusCode = (int)response.StatusCode, healthy = response.IsSuccessStatusCode };
+                results[service.Id] = new HealthInfo(response.IsSuccessStatusCode, (int)response.StatusCode, url);
             }
             catch (Exception ex)
             {
-                results[service.Id] = new { url = $"{service.DevUrl}{service.HealthEndpoint}", error = ex.Message, healthy = false };
+                results[service.Id] = new HealthInfo(false, 0, $"{service.DevUrl}{service.HealthEndpoint}", ex.Message);
             }
         }
 
-        var allHealthy = results.Values.All(r => ((dynamic)r).healthy == true);
-        var data = results.ToDictionary(kv => kv.Key, kv => kv.Value);
+        var allHealthy = results.Values.All(r => r.Healthy);
+        var data = results.ToDictionary(kv => kv.Key, kv => (object)kv.Value);
 
         return allHealthy
             ? HealthCheckResult.Healthy("Tous les services aval sont joignables", data: data)
             : HealthCheckResult.Degraded("Certains services aval sont indisponibles", data: data);
     }
+
+    private sealed record HealthInfo(bool Healthy, int StatusCode, string Url, string? Error = null);
 }

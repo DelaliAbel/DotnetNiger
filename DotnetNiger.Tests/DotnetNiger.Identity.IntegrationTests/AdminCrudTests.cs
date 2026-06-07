@@ -24,6 +24,7 @@ public class AdminCrudTests : IClassFixture<IdentityWebApplicationFactory>
         {
             ["grant_type"] = "password",
             ["client_id"] = "test-client",
+            ["client_secret"] = "test-secret",
             ["username"] = "admin@dotnetniger.com",
             ["password"] = "Admin@123456",
             ["scope"] = "openid profile email roles offline_access"

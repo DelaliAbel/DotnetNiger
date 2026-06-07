@@ -182,6 +182,58 @@ public class AuthController : ControllerBase
             return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 
+        if (grantType == "external_login")
+        {
+            var ticket = Request.Form["ticket"].FirstOrDefault();
+            if (string.IsNullOrEmpty(ticket))
+                throw new InvalidOperationException("ticket is required");
+
+            if (!_cache.TryGetValue($"external_login_{ticket}", out ExternalLoginTicket? extTicket) || extTicket == null)
+                throw new InvalidOperationException("Ticket invalide ou expiré");
+
+            _cache.Remove($"external_login_{ticket}");
+
+            var extUser = await _userManager.FindByIdAsync(extTicket.UserId.ToString());
+            if (extUser == null || !extUser.IsActive)
+                throw new InvalidOperationException("Utilisateur introuvable ou inactif");
+
+            var extPrincipal = await _signInManager.CreateUserPrincipalAsync(extUser);
+            extPrincipal.SetClaim(OpenIddictConstants.Claims.Subject, extUser.Id.ToString());
+
+            var extRoles = await _userManager.GetRolesAsync(extUser);
+            foreach (var role in extRoles)
+            {
+                extPrincipal.SetClaim(ClaimTypes.Role, role);
+                extPrincipal.SetClaim("role", role);
+            }
+            extPrincipal.SetClaim("tenant_id", extUser.TenantId.ToString());
+            extPrincipal.SetClaim(OpenIddictConstants.Claims.GivenName, extUser.FirstName);
+            extPrincipal.SetClaim(OpenIddictConstants.Claims.FamilyName, extUser.LastName);
+            extPrincipal.SetClaim(OpenIddictConstants.Claims.Name, $"{extUser.FirstName} {extUser.LastName}".Trim());
+            extPrincipal.SetClaim(OpenIddictConstants.Claims.Email, extUser.Email);
+
+            var extScopes = Request.Form["scope"];
+            extPrincipal.SetScopes(extScopes.Count > 0
+                ? extScopes.SelectMany(s => (s ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                : ["openid", "profile", "email", "roles"]);
+
+            extPrincipal.SetDestinations(claim => claim.Type switch
+            {
+                OpenIddictConstants.Claims.Subject
+                    => [OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken],
+                OpenIddictConstants.Claims.Name or OpenIddictConstants.Claims.Email
+                    or OpenIddictConstants.Claims.GivenName or OpenIddictConstants.Claims.FamilyName
+                    => [OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken],
+                ClaimTypes.Role or "role"
+                    => [OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken],
+                "tenant_id"
+                    => [OpenIddictConstants.Destinations.AccessToken],
+                _ => [OpenIddictConstants.Destinations.AccessToken]
+            });
+
+            return SignIn(extPrincipal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+        }
+
         if (grantType != "password")
             throw new InvalidOperationException("Unsupported grant type");
 
@@ -284,17 +336,14 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<object>> Register([FromBody] RegisterRequest request)
     {
-        var (user, code) = await _authService.RegisterAsync(
+        var user = await _authService.RegisterAsync(
             request.Email, request.Password, request.FirstName, request.LastName, request.TenantId);
 
         return Ok(new
         {
             message = "Compte créé. Un code de confirmation vous a été envoyé par email.",
             userId = user.Id,
-            email = user.Email,
-            code = string.IsNullOrEmpty(HttpContext.RequestServices
-                .GetRequiredService<Microsoft.Extensions.Options.IOptions<Infrastructure.SmtpOptions>>().Value.Host)
-                ? code : null
+            email = user.Email
         });
     }
 
@@ -525,9 +574,10 @@ public class AuthController : ControllerBase
 
     /// <summary>Redirige vers le fournisseur externe (Google, GitHub, Microsoft).</summary>
     [HttpGet("external-login")]
-    public IActionResult ExternalLogin([FromQuery] string provider, [FromQuery] string? returnUrl)
+    public IActionResult ExternalLogin([FromQuery] string provider, [FromQuery] string? returnUrl, [FromQuery] string? target = null)
     {
-        var redirectUrl = Url.Action(nameof(ExternalCallback), new { returnUrl });
+        var callbackAction = target == "frontend" ? nameof(ExternalCallbackFrontend) : nameof(ExternalCallback);
+        var redirectUrl = Url.Action(callbackAction, new { returnUrl });
         var properties = _signInManager.ConfigureExternalAuthenticationProperties(provider, redirectUrl);
         return Challenge(properties, provider);
     }
@@ -542,6 +592,54 @@ public class AuthController : ControllerBase
             result.user.Id, result.user.Email!, result.user.FirstName, result.user.LastName,
             result.user.AvatarUrl, result.user.TenantId, result.user.IsActive,
             result.roles, new List<string>(), rememberMe));
+    }
+
+    /// <summary>
+    /// Callback des fournisseurs OAuth externes pour le frontend Community (Blazor).
+    /// Après un login externe réussi, génère un ticket à usage unique,
+    /// redirige vers le frontend avec le ticket, qui l'échange contre des tokens OIDC
+    /// via grant_type=external_login sur /connect/token.
+    /// </summary>
+    [HttpGet("external-callback-frontend")]
+    public async Task<IActionResult> ExternalCallbackFrontend(
+        [FromQuery] string? returnUrl = null)
+    {
+        returnUrl ??= "http://localhost:5100/auth/external-callback";
+        try
+        {
+            var authResult = await HttpContext.AuthenticateAsync(IdentityConstants.ExternalScheme);
+            if (!authResult.Succeeded || authResult.Principal == null)
+            {
+                var authProps = authResult.Properties?.Items != null 
+                    ? string.Join(",", authResult.Properties.Items.Select(kv => $"{kv.Key}={kv.Value}"))
+                    : "";
+                var reason = authResult.Failure?.Message ?? $"auth_principal_null props=[{authProps}]";
+                return Redirect($"{returnUrl}?error={Uri.EscapeDataString($"ext_auth_fail:{reason}")}");
+            }
+
+            var (user, roles) = await _authService.HandleExternalLoginAsync("external");
+
+            var ticket = Guid.NewGuid().ToString("N");
+            var cacheEntry = new ExternalLoginTicket
+            {
+                UserId = user.Id,
+                Email = user.Email!,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                AvatarUrl = user.AvatarUrl,
+                TenantId = user.TenantId,
+                Roles = roles.ToList(),
+                IsActive = user.IsActive
+            };
+            _cache.Set($"external_login_{ticket}", cacheEntry, TimeSpan.FromMinutes(5));
+
+            var separator = returnUrl.Contains('?') ? '&' : '?';
+            return Redirect($"{returnUrl}{separator}ticket={ticket}");
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Redirect($"{returnUrl}?error={Uri.EscapeDataString(ex.Message)}");
+        }
     }
 
     /// <summary>Retourne les informations de l'utilisateur connecté (email, rôles, tenant).</summary>
@@ -566,7 +664,7 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>Bootstrap du client OIDC "web-ui" (création ou mise à jour des permissions/URIs).</summary>
-    [AllowAnonymous]
+    [Authorize(Roles = "Admin")]
     [HttpPost("bootstrap-web-ui")]
     public async Task<IActionResult> BootstrapWebUi(
         [FromServices] IOpenIddictApplicationManager appManager)
@@ -673,3 +771,16 @@ public class AuthController : ControllerBase
 public record ForgotPasswordRequest(string Email);
 public record ResetPasswordRequest(string Email, string Token, string Password);
 public record RefreshTokenRequest(string? RefreshToken);
+
+/// <summary>Ticket à usage unique pour le login externe frontend (stocké en cache).</summary>
+public class ExternalLoginTicket
+{
+    public Guid UserId { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public string? AvatarUrl { get; set; }
+    public Guid? TenantId { get; set; }
+    public List<string> Roles { get; set; } = new();
+    public bool IsActive { get; set; }
+}

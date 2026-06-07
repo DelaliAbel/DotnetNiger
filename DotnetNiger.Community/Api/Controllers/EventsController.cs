@@ -18,11 +18,13 @@ public class EventsController(IEventService eventService) : ControllerBase
         [FromQuery] string? published, [FromQuery] string? past, [FromQuery] string? eventType,
         [FromQuery] string? query, [FromQuery] string? tag,
         [FromQuery] DateTime? startDateFrom, [FromQuery] DateTime? startDateTo,
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        [FromQuery] Guid? submitterId,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 10,
+        [FromQuery] Guid? after = null)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
-        var result = await eventService.GetAllAsync(published, past, eventType, query, tag, startDateFrom, startDateTo, page, pageSize);
+        var result = await eventService.GetAllAsync(published, past, eventType, query, tag, startDateFrom, startDateTo, submitterId, page, pageSize, after);
         return Ok(new { Success = true, Data = result });
     }
 
@@ -39,6 +41,14 @@ public class EventsController(IEventService eventService) : ControllerBase
     public async Task<IActionResult> GetById(Guid id)
     {
         var ev = await eventService.GetByIdAsync(id);
+        if (ev is null) return NotFound(new { Success = false, Message = "Event not found" });
+        return Ok(new { Success = true, Data = ev });
+    }
+
+    [HttpGet("{slug:regex(^[[a-z0-9]]+(?:-[[a-z0-9]]+)*$)}")]
+    public async Task<IActionResult> GetBySlug(string slug)
+    {
+        var ev = await eventService.GetBySlugAsync(slug);
         if (ev is null) return NotFound(new { Success = false, Message = "Event not found" });
         return Ok(new { Success = true, Data = ev });
     }

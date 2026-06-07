@@ -8,9 +8,10 @@ namespace DotnetNiger.Community.Application.Services;
 
 public class ResourceService(AppDbContext db) : IResourceService
 {
-    public async Task<PaginatedResponse<ResourceResponse>> GetAllAsync(string? resourceType, string? level, string? query, string? tag, Guid? categoryId, int page = 1, int pageSize = 10)
+    public async Task<PaginatedResponse<ResourceResponse>> GetAllAsync(string? resourceType, string? level, string? query, string? tag, Guid? categoryId, int page = 1, int pageSize = 10, Guid? after = null)
     {
         var q = db.Resources
+            .AsNoTracking()
             .Include(r => r.ResourceCategories)
             .Include(r => r.ResourceTags).ThenInclude(rt => rt.Tag)
             .AsSplitQuery()
@@ -25,13 +26,69 @@ public class ResourceService(AppDbContext db) : IResourceService
         if (categoryId.HasValue)
             q = q.Where(r => r.ResourceCategories.Any(rc => rc.CategoryId == categoryId.Value));
 
-        var total = await q.CountAsync();
-        var items = await q
-            .OrderByDescending(r => r.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(r => MapResource(r))
-            .ToListAsync();
+        List<ResourceResponse> items;
+        int total;
+
+        if (after.HasValue)
+        {
+            items = await q
+                .Where(r => r.Id > after.Value)
+                .OrderBy(r => r.Id)
+                .Take(pageSize)
+                .Select(r => new ResourceResponse
+                {
+                    Id = r.Id,
+                    Title = r.Title,
+                    Slug = r.Slug,
+                    Description = r.Description,
+                    Url = r.Url,
+                    ResourceType = r.ResourceType,
+                    Level = r.Level,
+                    CreatedBy = r.CreatedBy,
+                    ViewCount = r.ViewCount,
+                    CreatedAt = r.CreatedAt,
+                    CategoryIds = r.ResourceCategories.Select(rc => rc.CategoryId).ToList(),
+                    Tags = r.ResourceTags.Select(rt => new TagResponse
+                    {
+                        Id = rt.Tag.Id,
+                        Name = rt.Tag.Name,
+                        Slug = rt.Tag.Slug,
+                        UsageCount = rt.Tag.UsageCount
+                    }).ToList()
+                })
+                .ToListAsync();
+            total = items.Count;
+        }
+        else
+        {
+            total = await q.CountAsync();
+            items = await q
+                .OrderByDescending(r => r.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(r => new ResourceResponse
+                {
+                    Id = r.Id,
+                    Title = r.Title,
+                    Slug = r.Slug,
+                    Description = r.Description,
+                    Url = r.Url,
+                    ResourceType = r.ResourceType,
+                    Level = r.Level,
+                    CreatedBy = r.CreatedBy,
+                    ViewCount = r.ViewCount,
+                    CreatedAt = r.CreatedAt,
+                    CategoryIds = r.ResourceCategories.Select(rc => rc.CategoryId).ToList(),
+                    Tags = r.ResourceTags.Select(rt => new TagResponse
+                    {
+                        Id = rt.Tag.Id,
+                        Name = rt.Tag.Name,
+                        Slug = rt.Tag.Slug,
+                        UsageCount = rt.Tag.UsageCount
+                    }).ToList()
+                })
+                .ToListAsync();
+        }
 
         return new PaginatedResponse<ResourceResponse> { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }
@@ -39,9 +96,20 @@ public class ResourceService(AppDbContext db) : IResourceService
     public async Task<ResourceResponse?> GetByIdAsync(Guid id)
     {
         var r = await db.Resources
+            .AsNoTracking()
             .Include(r => r.ResourceCategories)
             .Include(r => r.ResourceTags).ThenInclude(rt => rt.Tag)
             .FirstOrDefaultAsync(r => r.Id == id);
+        return r is null ? null : MapResource(r);
+    }
+
+    public async Task<ResourceResponse?> GetBySlugAsync(string slug)
+    {
+        var r = await db.Resources
+            .AsNoTracking()
+            .Include(r => r.ResourceCategories)
+            .Include(r => r.ResourceTags).ThenInclude(rt => rt.Tag)
+            .FirstOrDefaultAsync(r => r.Slug == slug);
         return r is null ? null : MapResource(r);
     }
 
@@ -122,6 +190,25 @@ public class ResourceService(AppDbContext db) : IResourceService
         return true;
     }
 
+    public async Task<List<string>> GetResourceTypesAsync()
+    {
+        return await db.Resources
+            .AsNoTracking()
+            .Select(r => r.ResourceType)
+            .Distinct()
+            .OrderBy(t => t)
+            .ToListAsync();
+    }
+
+    public async Task<List<string>> GetLevelsAsync()
+    {
+        return await db.Resources
+            .AsNoTracking()
+            .Select(r => r.Level)
+            .Distinct()
+            .ToListAsync();
+    }
+
     public async Task<ResourceResponse?> IncrementViewCountAsync(Guid id)
     {
         var r = await db.Resources.FindAsync(id);
@@ -133,14 +220,21 @@ public class ResourceService(AppDbContext db) : IResourceService
 
     private async Task AssignTags(Resource resource, List<string> tagNames)
     {
-        foreach (var name in tagNames.Where(n => !string.IsNullOrWhiteSpace(n)))
+        var names = tagNames.Where(n => !string.IsNullOrWhiteSpace(n)).ToList();
+        if (names.Count == 0) return;
+
+        var slugs = names.Select(GenerateSlug).ToHashSet();
+        var existingTags = await db.Tags.Where(t => slugs.Contains(t.Slug)).ToListAsync();
+        var existingBySlug = existingTags.ToDictionary(t => t.Slug);
+
+        foreach (var name in names)
         {
             var slug = GenerateSlug(name);
-            var tag = await db.Tags.FirstOrDefaultAsync(t => t.Slug == slug);
-            if (tag is null)
+            if (!existingBySlug.TryGetValue(slug, out var tag))
             {
                 tag = new Tag { Id = Guid.NewGuid(), Name = name, Slug = slug };
                 db.Tags.Add(tag);
+                existingBySlug[slug] = tag;
             }
             resource.ResourceTags.Add(new ResourceTag { ResourceId = resource.Id, TagId = tag.Id });
         }

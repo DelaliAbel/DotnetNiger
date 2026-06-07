@@ -14,11 +14,11 @@ namespace DotnetNiger.Community.Api.Controllers;
 public class PostsController(IPostService postService) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? published, [FromQuery] string? category, [FromQuery] string? tag, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAll([FromQuery] string? published, [FromQuery] string? category, [FromQuery] string? tag, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] Guid? after = null)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
-        var result = await postService.GetAllAsync(published, category, tag, query, page, pageSize);
+        var result = await postService.GetAllAsync(published, category, tag, query, page, pageSize, after);
         return Ok(new { Success = true, Data = result });
     }
 
@@ -26,6 +26,14 @@ public class PostsController(IPostService postService) : ControllerBase
     public async Task<IActionResult> GetById(Guid id)
     {
         var post = await postService.GetByIdAsync(id);
+        if (post is null) return NotFound(new { Success = false, Message = "Post not found" });
+        return Ok(new { Success = true, Data = post });
+    }
+
+    [HttpGet("{slug:regex(^[[a-z0-9]]+(?:-[[a-z0-9]]+)*$)}")]
+    public async Task<IActionResult> GetBySlug(string slug)
+    {
+        var post = await postService.GetBySlugAsync(slug);
         if (post is null) return NotFound(new { Success = false, Message = "Post not found" });
         return Ok(new { Success = true, Data = post });
     }

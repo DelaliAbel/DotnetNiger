@@ -154,11 +154,12 @@ public class ServicesModel : PageModel
 
         try
         {
-            var response = await client.GetAsync($"{identityUrl}/api/v1/external-services");
+            var response = await client.GetAsync($"{identityUrl}/api/v1/external-services?pageSize=100");
             if (response.IsSuccessStatusCode)
             {
                 var json = await response.Content.ReadAsStringAsync();
-                Services = JsonSerializer.Deserialize<List<ServiceItem>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+                var paginated = JsonSerializer.Deserialize<PaginatedResponse<ServiceItem>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                Services = paginated?.Items ?? [];
             }
         }
         catch (Exception ex)
@@ -184,6 +185,12 @@ public class ServiceEditInput
     public string? BaseUrl { get; set; }
     public string? Description { get; set; }
     public string? HealthEndpoint { get; set; }
+}
+
+public class PaginatedResponse<T>
+{
+    public List<T> Items { get; set; } = [];
+    public int TotalCount { get; set; }
 }
 
 public class ServiceItem

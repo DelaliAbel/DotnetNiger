@@ -39,6 +39,15 @@ public class AdminController : ControllerBase
         return Ok(stats);
     }
 
+    [HttpGet("tenants/{tenantId:guid}/login-history")]
+    public async Task<ActionResult> GetTenantLoginHistory(Guid tenantId,
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        var result = await _adminService.GetTenantLoginHistoryAsync(tenantId,
+            Math.Max(1, page), Math.Clamp(pageSize, 1, 100));
+        return Ok(result);
+    }
+
     [HttpGet("audit-logs")]
     public async Task<ActionResult<PaginatedResponse<AuditLog>>> GetAuditLogs(
         [FromQuery] int page = 1, [FromQuery] int pageSize = 20,

@@ -19,6 +19,19 @@ public class AdminController(IAdminService adminService, IEventService eventServ
         return Ok(new { Success = true, Data = stats });
     }
 
+    [HttpGet("events")]
+    public async Task<IActionResult> GetEvents([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        if (status == "pending")
+        {
+            var events = await eventService.GetPendingEventsAsync(page, pageSize);
+            return Ok(new { Success = true, Data = events });
+        }
+
+        var paginated = await eventService.GetAllAsync(null, null, null, null, null, null, null, null, page, pageSize);
+        return Ok(new { Success = true, Data = paginated });
+    }
+
     [HttpPatch("events/{id:guid}/publish")]
     public async Task<IActionResult> PublishEvent(Guid id)
     {
@@ -33,6 +46,22 @@ public class AdminController(IAdminService adminService, IEventService eventServ
         var ev = await eventService.UnpublishAsync(id);
         if (ev is null) return NotFound(new { Success = false, Message = "Event not found" });
         return Ok(new { Success = true, Data = ev });
+    }
+
+    [HttpPatch("events/{id:guid}/approve")]
+    public async Task<IActionResult> ApproveEvent(Guid id)
+    {
+        var ev = await eventService.ApproveAsync(id);
+        if (ev is null) return NotFound(new { Success = false, Message = "Event not found" });
+        return Ok(new { Success = true, Data = ev });
+    }
+
+    [HttpPatch("events/{id:guid}/reject")]
+    public async Task<IActionResult> RejectEvent(Guid id, [FromQuery] string reason)
+    {
+        var ev = await eventService.RejectAsync(id, reason);
+        if (ev is null) return NotFound(new { Success = false, Message = "Event not found" });
+        return Ok(new { Success = true, Message = "Event rejected", Data = ev });
     }
 
     [HttpGet("users")]

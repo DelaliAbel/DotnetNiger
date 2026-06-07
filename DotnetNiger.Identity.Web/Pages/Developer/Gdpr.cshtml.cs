@@ -64,9 +64,8 @@ public class GdprModel : PageModel
 
         if (response.IsSuccessStatusCode)
         {
-            Message = "Votre compte a été anonymisé conformément au RGPD. Vous allez être déconnecté.";
-            IsError = false;
-            return Page();
+            await HttpContext.SignOutAsync();
+            return Redirect("/Account/Login?message=compte_anonymise");
         }
 
         var error = await response.Content.ReadAsStringAsync();

@@ -33,7 +33,8 @@ var mergedOcelotFile = useConsul
     : OcelotConfigurationBuilder.BuildMergedConfig(
         builder.Environment.ContentRootPath,
         builder.Environment.IsProduction(),
-        seedServices);
+        seedServices,
+        builder.Configuration);
 
     var serviceRegistry = new ServiceRegistry(seedServices);
     builder.Services.AddSingleton<IServiceRegistry>(serviceRegistry);
@@ -105,7 +106,7 @@ catch (Exception ex)
 }
 finally
 {
-    Log.CloseAndFlush();
+    await Log.CloseAndFlushAsync();
 }
 
 static List<DownstreamServiceConfig> LoadDownstreamServices(IConfiguration configuration)

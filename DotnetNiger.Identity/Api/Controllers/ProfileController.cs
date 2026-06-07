@@ -161,4 +161,20 @@ public class ProfileController : ControllerBase
         await _authService.ConfirmChangeEmailAsync(Guid.Parse(userId), request.Code);
         return Ok(new { message = "Adresse email modifiée avec succès." });
     }
+
+    [HttpPost("change-password")]
+    public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+    {
+        var userId = User.FindFirst(Claims.Subject)?.Value;
+        if (userId == null) return Unauthorized();
+
+        var user = await _userManager.FindByIdAsync(userId);
+        if (user == null) return Unauthorized();
+
+        var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+        if (!result.Succeeded)
+            return BadRequest(new ErrorResponse(string.Join("; ", result.Errors.Select(e => e.Description))));
+
+        return Ok(new { message = "Mot de passe changé avec succès." });
+    }
 }

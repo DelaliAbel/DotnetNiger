@@ -75,9 +75,11 @@ try
         {
             await db.Database.MigrateAsync();
         }
-        catch (InvalidOperationException) when (db.Database.GetPendingMigrations().Any())
+        catch (Exception ex)
         {
-            db.Database.EnsureCreated();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+            logger.LogWarning(ex, "Migration failed, attempting EnsureCreated");
+            await db.Database.EnsureCreatedAsync();
         }
         await DbSeeder.SeedAsync(db);
     }

@@ -9,9 +9,10 @@ namespace DotnetNiger.Community.Application.Services;
 
 public class EventService(AppDbContext db, INotificationService notificationService) : IEventService
 {
-    public async Task<PaginatedResponse<EventResponse>> GetAllAsync(string? published, string? past, string? eventType, string? query, string? tag, DateTime? startDateFrom, DateTime? startDateTo, int page = 1, int pageSize = 10)
+    public async Task<PaginatedResponse<EventResponse>> GetAllAsync(string? published, string? past, string? eventType, string? query, string? tag, DateTime? startDateFrom, DateTime? startDateTo, Guid? submitterId = null, int page = 1, int pageSize = 10, Guid? after = null)
     {
         var q = db.Events
+            .AsNoTracking()
             .Include(e => e.Medias)
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
             .AsSplitQuery()
@@ -30,14 +31,106 @@ public class EventService(AppDbContext db, INotificationService notificationServ
             q = q.Where(e => e.StartDate >= startDateFrom.Value);
         if (startDateTo.HasValue)
             q = q.Where(e => e.StartDate <= startDateTo.Value);
+        if (submitterId.HasValue)
+            q = q.Where(e => e.CreatedBy == submitterId.Value);
 
-        var total = await q.CountAsync();
-        var items = await q
-            .OrderByDescending(e => e.StartDate)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Select(e => MapEvent(e))
-            .ToListAsync();
+        List<EventResponse> items;
+        int total;
+
+        if (after.HasValue)
+        {
+            items = await q
+                .Where(e => e.Id > after.Value)
+                .OrderBy(e => e.Id)
+                .Take(pageSize)
+                .Select(e => new EventResponse
+                {
+                    Id = e.Id,
+                    Title = e.Title,
+                    Slug = e.Slug,
+                    Description = e.Description,
+                    Location = e.Location,
+                    EventType = e.EventType,
+                    StartDate = e.StartDate,
+                    EndDate = e.EndDate,
+                    CoverImageUrl = e.CoverImageUrl,
+                    CreatedBy = e.CreatedBy,
+                    SubmittedBy = e.CreatedBy,
+                    OrganizerName = e.OrganizerName,
+                    Capacity = e.Capacity,
+                    RegisteredCount = e.RegisteredCount,
+                    IsPublished = e.IsPublished,
+                    IsArchived = e.IsArchived,
+                    MeetupLink = e.MeetupLink,
+                    RejectionReason = e.RejectionReason,
+                    SubmittedAt = e.SubmittedAt,
+                    PublishedAt = e.PublishedAt,
+                    CreatedAt = e.CreatedAt,
+                    Medias = e.Medias.Select(m => new EventMediaResponse
+                    {
+                        Id = m.Id,
+                        Type = m.Type,
+                        Url = m.Url,
+                        Title = m.Title
+                    }).ToList(),
+                    Tags = e.EventTags.Select(et => new TagResponse
+                    {
+                        Id = et.Tag.Id,
+                        Name = et.Tag.Name,
+                        Slug = et.Tag.Slug,
+                        UsageCount = et.Tag.UsageCount
+                    }).ToList()
+                })
+                .ToListAsync();
+            total = items.Count;
+        }
+        else
+        {
+            total = await q.CountAsync();
+            items = await q
+                .OrderByDescending(e => e.StartDate)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(e => new EventResponse
+                {
+                    Id = e.Id,
+                    Title = e.Title,
+                    Slug = e.Slug,
+                    Description = e.Description,
+                    Location = e.Location,
+                    EventType = e.EventType,
+                    StartDate = e.StartDate,
+                    EndDate = e.EndDate,
+                    CoverImageUrl = e.CoverImageUrl,
+                    CreatedBy = e.CreatedBy,
+                    SubmittedBy = e.CreatedBy,
+                    OrganizerName = e.OrganizerName,
+                    Capacity = e.Capacity,
+                    RegisteredCount = e.RegisteredCount,
+                    IsPublished = e.IsPublished,
+                    IsArchived = e.IsArchived,
+                    MeetupLink = e.MeetupLink,
+                    RejectionReason = e.RejectionReason,
+                    SubmittedAt = e.SubmittedAt,
+                    PublishedAt = e.PublishedAt,
+                    CreatedAt = e.CreatedAt,
+                    Medias = e.Medias.Select(m => new EventMediaResponse
+                    {
+                        Id = m.Id,
+                        Type = m.Type,
+                        Url = m.Url,
+                        Title = m.Title
+                    }).ToList(),
+                    Tags = e.EventTags.Select(rt => new TagResponse
+                    {
+                        Id = rt.Tag.Id,
+                        Name = rt.Tag.Name,
+                        Slug = rt.Tag.Slug,
+                        UsageCount = rt.Tag.UsageCount
+                    }).ToList()
+                })
+                .ToListAsync();
+        }
 
         return new PaginatedResponse<EventResponse> { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }
@@ -45,21 +138,62 @@ public class EventService(AppDbContext db, INotificationService notificationServ
     public async Task<List<EventResponse>> GetUpcomingAsync(int page = 1, int pageSize = 10)
     {
         return await db.Events
+            .AsNoTracking()
             .Include(e => e.Medias)
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .AsSplitQuery()
             .Where(e => e.IsPublished && e.EndDate >= DateTime.UtcNow)
             .OrderBy(e => e.StartDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(e => MapEvent(e))
+            .Select(e => new EventResponse
+            {
+                Id = e.Id,
+                Title = e.Title,
+                Slug = e.Slug,
+                Description = e.Description,
+                Location = e.Location,
+                EventType = e.EventType,
+                StartDate = e.StartDate,
+                EndDate = e.EndDate,
+                CoverImageUrl = e.CoverImageUrl,
+                CreatedBy = e.CreatedBy,
+                SubmittedBy = e.CreatedBy,
+                OrganizerName = e.OrganizerName,
+                Capacity = e.Capacity,
+                RegisteredCount = e.RegisteredCount,
+                IsPublished = e.IsPublished,
+                IsArchived = e.IsArchived,
+                MeetupLink = e.MeetupLink,
+                RejectionReason = e.RejectionReason,
+                SubmittedAt = e.SubmittedAt,
+                PublishedAt = e.PublishedAt,
+                CreatedAt = e.CreatedAt,
+                Medias = e.Medias.Select(m => new EventMediaResponse
+                {
+                    Id = m.Id,
+                    Type = m.Type,
+                    Url = m.Url,
+                    Title = m.Title
+                }).ToList(),
+                Tags = e.EventTags.Select(et => new TagResponse
+                {
+                    Id = et.Tag.Id,
+                    Name = et.Tag.Name,
+                    Slug = et.Tag.Slug,
+                    UsageCount = et.Tag.UsageCount
+                }).ToList()
+            })
             .ToListAsync();
     }
 
     public async Task<EventResponse?> GetByIdAsync(Guid id)
     {
         var ev = await db.Events
+            .AsNoTracking()
             .Include(e => e.Medias)
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(e => e.Id == id);
         return ev is null ? null : MapEvent(ev);
     }
@@ -67,8 +201,10 @@ public class EventService(AppDbContext db, INotificationService notificationServ
     public async Task<EventResponse?> GetBySlugAsync(string slug)
     {
         var ev = await db.Events
+            .AsNoTracking()
             .Include(e => e.Medias)
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .AsSplitQuery()
             .FirstOrDefaultAsync(e => e.Slug == slug);
         return ev is null ? null : MapEvent(ev);
     }
@@ -91,6 +227,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
             MeetupLink = request.MeetupLink,
             IsPublished = request.IsPublished,
             IsArchived = request.IsArchived,
+            SubmittedAt = DateTime.UtcNow,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
@@ -98,7 +235,11 @@ public class EventService(AppDbContext db, INotificationService notificationServ
         await AssignTags(ev, request.TagNames);
         db.Events.Add(ev);
         await db.SaveChangesAsync();
-        _ = notificationService.NotifyNewEventAsync(ev.Title, ev.Description, ev.StartDate);
+        _ = Task.Run(async () =>
+        {
+            try { await notificationService.NotifyNewEventAsync(ev.Title, ev.Description, ev.StartDate); }
+            catch { /* logged internally */ }
+        });
         return MapEvent(ev);
     }
 
@@ -149,6 +290,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
         var ev = await db.Events.Include(e => e.Medias).FirstOrDefaultAsync(e => e.Id == id);
         if (ev is null) return null;
         ev.IsPublished = true;
+        ev.PublishedAt = DateTime.UtcNow;
         ev.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
         return MapEvent(ev);
@@ -159,6 +301,75 @@ public class EventService(AppDbContext db, INotificationService notificationServ
         var ev = await db.Events.Include(e => e.Medias).FirstOrDefaultAsync(e => e.Id == id);
         if (ev is null) return null;
         ev.IsPublished = false;
+        ev.PublishedAt = null;
+        ev.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+        return MapEvent(ev);
+    }
+
+    public async Task<List<EventResponse>> GetPendingEventsAsync(int page = 1, int pageSize = 10)
+    {
+        return await db.Events
+            .AsNoTracking()
+            .Include(e => e.Medias)
+            .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .AsSplitQuery()
+            .Where(e => !e.IsPublished && !e.IsDeleted)
+            .OrderByDescending(e => e.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(e => new EventResponse
+            {
+                Id = e.Id,
+                Title = e.Title,
+                Slug = e.Slug,
+                Description = e.Description,
+                Location = e.Location,
+                EventType = e.EventType,
+                StartDate = e.StartDate,
+                EndDate = e.EndDate,
+                CoverImageUrl = e.CoverImageUrl,
+                CreatedBy = e.CreatedBy,
+                SubmittedBy = e.CreatedBy,
+                OrganizerName = e.OrganizerName,
+                Capacity = e.Capacity,
+                RegisteredCount = e.RegisteredCount,
+                IsPublished = e.IsPublished,
+                IsArchived = e.IsArchived,
+                MeetupLink = e.MeetupLink,
+                RejectionReason = e.RejectionReason,
+                SubmittedAt = e.SubmittedAt,
+                PublishedAt = e.PublishedAt,
+                CreatedAt = e.CreatedAt,
+                Medias = e.Medias.Select(m => new EventMediaResponse
+                {
+                    Id = m.Id,
+                    Type = m.Type,
+                    Url = m.Url,
+                    Title = m.Title
+                }).ToList(),
+                Tags = e.EventTags.Select(et => new TagResponse
+                {
+                    Id = et.Tag.Id,
+                    Name = et.Tag.Name,
+                    Slug = et.Tag.Slug,
+                    UsageCount = et.Tag.UsageCount
+                }).ToList()
+            })
+            .ToListAsync();
+    }
+
+    public async Task<EventResponse?> ApproveAsync(Guid id)
+    {
+        return await PublishAsync(id);
+    }
+
+    public async Task<EventResponse?> RejectAsync(Guid id, string reason)
+    {
+        var ev = await db.Events.Include(e => e.Medias).FirstOrDefaultAsync(e => e.Id == id);
+        if (ev is null) return null;
+        ev.IsPublished = false;
+        ev.RejectionReason = reason;
         ev.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
         return MapEvent(ev);
@@ -169,13 +380,15 @@ public class EventService(AppDbContext db, INotificationService notificationServ
         var existing = await db.EventRegistrations.AnyAsync(r => r.EventId == eventId && r.UserId == userId);
         if (existing) return null;
 
+        using var tx = await db.Database.BeginTransactionAsync();
         var rows = await db.Database.ExecuteSqlRawAsync(
             "UPDATE Events SET RegisteredCount = RegisteredCount + 1 WHERE Id = ? AND RegisteredCount < Capacity",
             eventId);
 
         if (rows == 0) return null;
 
-        var ev = await db.Events.FindAsync(eventId);
+        var ev = await db.Events.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.Id == eventId);
+        if (ev is null) return null;
 
         var registration = new EventRegistration
         {
@@ -189,8 +402,9 @@ public class EventService(AppDbContext db, INotificationService notificationServ
 
         db.EventRegistrations.Add(registration);
         await db.SaveChangesAsync();
+        await tx.CommitAsync();
 
-        return MapRegistration(registration, ev!.Title);
+        return MapRegistration(registration, ev.Title);
     }
 
     public async Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId)
@@ -208,7 +422,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
 
     public async Task<List<EventRegistrationResponse>> GetRegistrationsAsync(Guid eventId)
     {
-        return await db.EventRegistrations
+        return await db.EventRegistrations.AsNoTracking()
             .Where(r => r.EventId == eventId)
             .Select(r => MapRegistration(r, ""))
             .ToListAsync();
@@ -216,14 +430,21 @@ public class EventService(AppDbContext db, INotificationService notificationServ
 
     private async Task AssignTags(Event ev, List<string> tagNames)
     {
-        foreach (var name in tagNames.Where(n => !string.IsNullOrWhiteSpace(n)))
+        var names = tagNames.Where(n => !string.IsNullOrWhiteSpace(n)).ToList();
+        if (names.Count == 0) return;
+
+        var slugs = names.Select(GenerateSlug).ToHashSet();
+        var existingTags = await db.Tags.Where(t => slugs.Contains(t.Slug)).ToListAsync();
+        var existingBySlug = existingTags.ToDictionary(t => t.Slug);
+
+        foreach (var name in names)
         {
             var slug = GenerateSlug(name);
-            var tag = await db.Tags.FirstOrDefaultAsync(t => t.Slug == slug);
-            if (tag is null)
+            if (!existingBySlug.TryGetValue(slug, out var tag))
             {
                 tag = new Tag { Id = Guid.NewGuid(), Name = name, Slug = slug };
                 db.Tags.Add(tag);
+                existingBySlug[slug] = tag;
             }
             ev.EventTags.Add(new EventTag { EventId = ev.Id, TagId = tag.Id });
         }
@@ -241,12 +462,16 @@ public class EventService(AppDbContext db, INotificationService notificationServ
         EndDate = e.EndDate,
         CoverImageUrl = e.CoverImageUrl,
         CreatedBy = e.CreatedBy,
+        SubmittedBy = e.CreatedBy,
         OrganizerName = e.OrganizerName,
         Capacity = e.Capacity,
         RegisteredCount = e.RegisteredCount,
         IsPublished = e.IsPublished,
         IsArchived = e.IsArchived,
         MeetupLink = e.MeetupLink,
+        RejectionReason = e.RejectionReason,
+        SubmittedAt = e.SubmittedAt,
+        PublishedAt = e.PublishedAt,
         CreatedAt = e.CreatedAt,
         Medias = e.Medias.Select(m => new EventMediaResponse
         {

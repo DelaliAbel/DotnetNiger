@@ -35,18 +35,28 @@ public class RoleService
 
     public async Task<PaginatedResponse<RoleResponse>> GetByTenantAsync(Guid tenantId, PaginationQuery pagination)
     {
-        var query = _db.Roles
-            .Where(r => r.TenantId == tenantId)
-            .GroupJoin(_db.UserRoles, r => r.Id, ur => ur.RoleId, (r, urs) => new { Role = r, UserCount = urs.Count() })
-            .Select(x => new RoleResponse(x.Role.Id, x.Role.Name!, x.Role.Description, x.Role.TenantId, x.UserCount));
+        var query = _db.Roles.Where(r => r.TenantId == tenantId);
 
         var totalCount = await query.CountAsync();
 
-        var items = await query
+        var roles = await query
             .OrderBy(r => r.Id)
             .Skip((pagination.EnsurePage - 1) * pagination.EnsurePageSize)
             .Take(pagination.EnsurePageSize)
             .ToListAsync();
+
+        var roleIds = roles.Select(r => r.Id).ToList();
+        var userCounts = await _db.UserRoles
+            .Where(ur => roleIds.Contains(ur.RoleId))
+            .GroupBy(ur => ur.RoleId)
+            .Select(g => new { RoleId = g.Key, Count = g.Count() })
+            .ToListAsync();
+
+        var countsMap = userCounts.ToDictionary(x => x.RoleId, x => x.Count);
+
+        var items = roles.Select(r => new RoleResponse(
+            r.Id, r.Name!, r.Description, r.TenantId,
+            countsMap.GetValueOrDefault(r.Id, 0))).ToList();
 
         return new PaginatedResponse<RoleResponse>(items, totalCount, pagination.EnsurePage, pagination.EnsurePageSize);
     }
@@ -69,6 +79,14 @@ public class RoleService
     {
         var role = await _roleManager.FindByIdAsync(id.ToString());
         if (role != null) await _roleManager.DeleteAsync(role);
+    }
+
+    public async Task<RoleResponse?> GetByIdAsync(Guid id)
+    {
+        var role = await _roleManager.FindByIdAsync(id.ToString());
+        if (role == null) return null;
+        var count = await _db.UserRoles.CountAsync(ur => ur.RoleId == role.Id);
+        return new RoleResponse(role.Id, role.Name!, role.Description, role.TenantId, count);
     }
 
     public async Task AssignToUserAsync(Guid userId, Guid roleId)

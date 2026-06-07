@@ -56,7 +56,7 @@ public class NewsletterService(AppDbContext db) : INewsletterService
 
     public async Task<PaginatedResponse<NewsletterSubscriptionResponse>> GetAllAsync(int page = 1, int pageSize = 10)
     {
-        var query = db.Set<NewsletterSubscription>().OrderByDescending(s => s.SubscribedAt);
+        var query = db.Set<NewsletterSubscription>().AsNoTracking().OrderByDescending(s => s.SubscribedAt);
 
         var total = await query.CountAsync();
         var items = await query
@@ -71,7 +71,7 @@ public class NewsletterService(AppDbContext db) : INewsletterService
 
     public async Task<int> GetActiveCountAsync()
     {
-        return await db.Set<NewsletterSubscription>().CountAsync(s => s.IsActive);
+        return await db.Set<NewsletterSubscription>().AsNoTracking().CountAsync(s => s.IsActive);
     }
 
     private static NewsletterSubscriptionResponse MapSubscription(NewsletterSubscription s) => new(

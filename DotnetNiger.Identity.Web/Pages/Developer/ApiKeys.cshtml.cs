@@ -153,12 +153,13 @@ public class ApiKeysModel : PageModel
 
         try
         {
-            var response = await client.GetAsync($"{GetApiKeysBaseUrl(identityUrl)}");
+            var response = await client.GetAsync($"{GetApiKeysBaseUrl(identityUrl)}?pageSize=100");
             if (response.IsSuccessStatusCode)
             {
                 var json = await response.Content.ReadAsStringAsync();
-                ApiKeys = JsonSerializer.Deserialize<List<ApiKeyItem>>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
+                var paginated = JsonSerializer.Deserialize<PaginatedResponse<ApiKeyItem>>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                ApiKeys = paginated?.Items ?? [];
             }
         }
         catch { ApiKeys = []; }

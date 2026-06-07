@@ -8,4 +8,5 @@
   <Project Path="DotnetNiger.Tests/DotnetNiger.Community.Tests/DotnetNiger.Community.Tests.csproj" />
   <Project Path="DotnetNiger.Tests/DotnetNiger.Identity.Tests/DotnetNiger.Identity.Tests.csproj" />
   <Project Path="DotnetNiger.Identity.Web/DotnetNiger.Identity.Web.csproj" />
+  <Project Path="DotnetNiger.Tests/DotnetNiger.Gateway.Tests/DotnetNiger.Gateway.Tests.csproj" />
 </Solution>

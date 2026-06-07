@@ -100,6 +100,14 @@
         });
     });
 
+    // Auto-dismiss alerts after 5 seconds
+    document.querySelectorAll('.alert-dismissible').forEach(function(alert) {
+        setTimeout(function() {
+            var bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+            bsAlert.close();
+        }, 5000);
+    });
+
     // Pagination: page size selector auto-submit
     document.querySelectorAll('[data-pagesize]').forEach(function(select) {
         select.addEventListener('change', function() {

@@ -8,23 +8,38 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
 {
     public async Task<DashboardResponse> GetDashboardAsync()
     {
+        var now = DateTime.UtcNow;
         var postsCount = await db.Posts.CountAsync();
-        var publishedPosts = await db.Posts.CountAsync(p => p.IsPublished);
+        var publishedPostsCount = await db.Posts.CountAsync(p => p.IsPublished);
+        var draftPostsCount = await db.Posts.CountAsync(p => !p.IsPublished);
         var eventsCount = await db.Events.CountAsync();
-        var upcomingEvents = await db.Events.CountAsync(e => e.IsPublished && e.EndDate >= DateTime.UtcNow);
+        var upcomingEventsCount = await db.Events.CountAsync(e => e.IsPublished && e.EndDate >= now);
+        var pastEventsCount = await db.Events.CountAsync(e => e.EndDate < now);
+        var pendingEventsCount = await db.Events.CountAsync(e => !e.IsPublished && !e.IsDeleted);
         var resourcesCount = await db.Resources.CountAsync();
+        var totalResourceViews = await db.Resources.SumAsync(r => r.ViewCount);
         var membersCount = await db.Members.CountAsync();
+        var activeNewsletterCount = await db.NewsletterSubscriptions.CountAsync(s => s.IsActive);
         var commentsCount = await db.Comments.CountAsync();
+        var projectsCount = await db.Projects.CountAsync();
+        var partnersCount = await db.Partners.CountAsync();
 
         return new DashboardResponse
         {
             PostsCount = postsCount,
-            PublishedPostsCount = publishedPosts,
+            PublishedPostsCount = publishedPostsCount,
+            DraftPostsCount = draftPostsCount,
             EventsCount = eventsCount,
-            UpcomingEventsCount = upcomingEvents,
+            UpcomingEventsCount = upcomingEventsCount,
+            PastEventsCount = pastEventsCount,
+            PendingEventsCount = pendingEventsCount,
             ResourcesCount = resourcesCount,
+            TotalResourceViews = totalResourceViews,
             MembersCount = membersCount,
-            CommentsCount = commentsCount
+            ActiveNewsletterCount = activeNewsletterCount,
+            CommentsCount = commentsCount,
+            ProjectsCount = projectsCount,
+            PartnersCount = partnersCount
         };
     }
 
