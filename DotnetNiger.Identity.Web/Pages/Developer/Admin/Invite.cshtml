@@ -1,0 +1,43 @@
+@page
+@model DotnetNiger.Identity.Web.Pages.Developer.Admin.InviteModel
+@{
+    ViewData["Title"] = "Inviter un administrateur";
+}
+
+@await Html.PartialAsync("_Breadcrumbs", new List<Tuple<string, string>> { Tuple.Create("Inviter", "") })
+<h1>Inviter un administrateur</h1>
+<p class="lead">Envoyez une invitation à un nouvel administrateur de la plateforme.</p>
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    <div class="alert alert-@(Model.IsError ? "danger" : "success") alert-dismissible fade show" role="alert">
+        @Model.Message
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0">Nouvelle invitation</h5>
+    </div>
+    <div class="card-body">
+        <form method="post">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Input.Email" class="form-label">Adresse email</label>
+                    <input asp-for="Input.Email" class="form-control" type="email" required placeholder="admin@exemple.com" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.Role" class="form-label">Rôle</label>
+                    <select asp-for="Input.Role" class="form-select">
+                        <option value="Admin">Administrateur</option>
+                        <option value="SuperAdmin">Super administrateur</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary">Envoyer l'invitation</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
