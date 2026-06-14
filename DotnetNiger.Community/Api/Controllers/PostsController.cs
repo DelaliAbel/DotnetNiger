@@ -63,6 +63,14 @@ public class PostsController(IPostService postService) : ControllerBase
         return Ok(new { Success = true, Data = post });
     }
 
+    [HttpPost("{id:guid}/views")]
+    public async Task<IActionResult> IncrementViewCount(Guid id)
+    {
+        var post = await postService.IncrementViewCountAsync(id);
+        if (post is null) return NotFound(new { Success = false, Message = "Post not found" });
+        return Ok(new { Success = true, Data = post });
+    }
+
     [HttpDelete("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Delete(Guid id)

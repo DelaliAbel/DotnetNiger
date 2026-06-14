@@ -137,11 +137,12 @@ public class PostService(AppDbContext db) : IPostService
 
     public async Task<PostResponse> CreateAsync(CreatePostRequest request, Guid authorId, string authorName)
     {
+        var slug = await EnsureUniqueSlugAsync(GenerateSlug(request.Title));
         var post = new Post
         {
             Id = Guid.NewGuid(),
             Title = request.Title,
-            Slug = GenerateSlug(request.Title),
+            Slug = slug,
             Content = request.Content,
             Excerpt = request.Excerpt,
             CoverImageUrl = request.CoverImageUrl,
@@ -172,7 +173,10 @@ public class PostService(AppDbContext db) : IPostService
             throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à modifier cette publication.");
 
         post.Title = request.Title;
-        post.Slug = GenerateSlug(request.Title);
+        var newSlug = GenerateSlug(request.Title);
+        if (newSlug != post.Slug)
+            newSlug = await EnsureUniqueSlugAsync(newSlug, id);
+        post.Slug = newSlug;
         post.Content = request.Content;
         post.Excerpt = request.Excerpt;
         post.CoverImageUrl = request.CoverImageUrl;
@@ -186,6 +190,15 @@ public class PostService(AppDbContext db) : IPostService
         db.PostTags.RemoveRange(post.PostTags);
         await AssignCategories(post, request.CategoryIds);
         await AssignTags(post, request.TagNames);
+        await db.SaveChangesAsync();
+        return MapPost(post);
+    }
+
+    public async Task<PostResponse?> IncrementViewCountAsync(Guid id)
+    {
+        var post = await db.Posts.FindAsync(id);
+        if (post is null) return null;
+        post.ViewCount++;
         await db.SaveChangesAsync();
         return MapPost(post);
     }
@@ -264,4 +277,19 @@ public class PostService(AppDbContext db) : IPostService
     }
 
     private static string GenerateSlug(string text) => SlugGenerator.Generate(text);
+
+    private async Task<string> EnsureUniqueSlugAsync(string baseSlug, Guid? excludeId = null)
+    {
+        if (!await db.Posts.AnyAsync(p => p.Slug == baseSlug && (excludeId == null || p.Id != excludeId.Value)))
+            return baseSlug;
+
+        for (var i = 1; i < 100; i++)
+        {
+            var candidate = $"{baseSlug}-{i}";
+            if (!await db.Posts.AnyAsync(p => p.Slug == candidate && (excludeId == null || p.Id != excludeId.Value)))
+                return candidate;
+        }
+
+        return $"{baseSlug}-{Guid.NewGuid():N}";
+    }
 }

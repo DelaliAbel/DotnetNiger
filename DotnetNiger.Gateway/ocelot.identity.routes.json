@@ -84,6 +84,7 @@
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5075 }],
       "RateLimitOptions": { "EnableRateLimiting": false },
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 10000, "TimeoutValue": 30000 },
       "Key": "IdentityAccountRoute",
       "SwaggerKey": "identity"
     },
