@@ -178,6 +178,17 @@
       "SwaggerKey": "community"
     },
     {
+      "UpstreamPathTemplate": "/api/upload",
+      "UpstreamHttpMethod": ["POST"],
+      "DownstreamPathTemplate": "/api/v1/upload",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5050 }],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 30000 },
+      "RateLimitOptions": { "ClientWhitelist": [], "EnableRateLimiting": true, "Period": "1m", "PeriodTimespan": 60, "Limit": 10 },
+      "Key": "CommunityUploadRoute",
+      "SwaggerKey": "community"
+    },
+    {
       "UpstreamPathTemplate": "/api/community/admin/{everything}",
       "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
       "DownstreamPathTemplate": "/api/v1/admin/{everything}",

@@ -13,11 +13,12 @@ Complete guide for integrating with the DotnetNiger Community API — posts, eve
 7. [Comments](#7-comments)
 8. [Member Profile](#8-member-profile)
 9. [Newsletters](#9-newsletters)
-10. [Search](#10-search)
-11. [Admin](#11-admin)
-12. [Response Format](#12-response-format)
-13. [Complete cURL Examples](#13-complete-curl-examples)
-14. [Error Handling](#14-error-handling)
+10. [Upload](#10-upload)
+11. [Search](#11-search)
+12. [Admin](#12-admin)
+13. [Response Format](#13-response-format)
+14. [Complete cURL Examples](#14-complete-curl-examples)
+15. [Error Handling](#15-error-handling)
 
 ---
 
@@ -419,7 +420,53 @@ Content-Type: application/json
 
 ---
 
-## 10. Search
+## 10. Upload
+
+### Upload Image File (Public)
+
+```http
+POST /api/v1/upload?type=Blog
+Content-Type: multipart/form-data
+
+file=@image.jpg
+```
+
+Supported formats: `.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`.  
+Max file size: 5 MB.  
+Upload types: `Blog` (default), `Event`, `User`.
+
+Response:
+
+```json
+{
+  "success": true,
+  "imageUrl": "/uploads/blog/guid.jpg",
+  "message": "Image uploadée avec succès."
+}
+```
+
+### Upload Image as Base64 (Public)
+
+```http
+POST /api/v1/upload/base64
+Content-Type: application/json
+
+{
+  "fileName": "image.png",
+  "base64Content": "iVBORw0KGgo...",
+  "type": "Blog"
+}
+```
+
+### Delete Uploaded Image (Public)
+
+```http
+DELETE /api/v1/upload?path=/uploads/blog/guid.jpg
+```
+
+---
+
+## 11. Search
 
 ### Full-Text Search (Public)
 
@@ -435,7 +482,7 @@ Parameters:
 
 ---
 
-## 11. Admin
+## 12. Admin
 
 Admin endpoints require the `Admin` role in the JWT.
 
@@ -481,7 +528,7 @@ PATCH /api/v1/admin/events/{id}/unpublish    # Unpublish event
 
 ---
 
-## 12. Response Format
+## 13. Response Format
 
 ### Success Response
 
@@ -523,7 +570,7 @@ PATCH /api/v1/admin/events/{id}/unpublish    # Unpublish event
 
 ---
 
-## 13. Complete cURL Examples
+## 14. Complete cURL Examples
 
 ```bash
 #!/bin/bash
@@ -532,7 +579,7 @@ PATCH /api/v1/admin/events/{id}/unpublish    # Unpublish event
 # Configuration
 # ──────────────────────────────────────────────
 IDENTITY_URL="http://localhost:5075"
-COMMUNITY_URL="http://localhost:5269"
+COMMUNITY_URL="http://localhost:5050"
 GATEWAY_URL="http://localhost:5000"
 
 # ──────────────────────────────────────────────
@@ -591,14 +638,26 @@ curl -s "$GATEWAY_URL/api/community/admin/dashboard" \
   -H "Authorization: Bearer $TOKEN" | jq .
 
 # ──────────────────────────────────────────────
-# 7. Check health (via Gateway)
+# 7. Upload an image (via Gateway)
+# ──────────────────────────────────────────────
+curl -s -X POST "$GATEWAY_URL/api/upload" \
+  -F "file=@image.jpg" \
+  -F "type=Blog" | jq .
+
+# ──────────────────────────────────────────────
+# 8. Delete uploaded image (via Gateway)
+# ──────────────────────────────────────────────
+curl -s -X DELETE "$GATEWAY_URL/api/upload?path=/uploads/blog/guid.jpg" | jq .
+
+# ──────────────────────────────────────────────
+# 9. Check health (via Gateway)
 # ──────────────────────────────────────────────
 curl -s "$GATEWAY_URL/health/downstream" | jq .
 ```
 
 ---
 
-## 14. Error Handling
+## 15. Error Handling
 
 The Gateway includes an `ErrorHandlingMiddleware` that catches unhandled exceptions and returns structured problem+json responses:
 

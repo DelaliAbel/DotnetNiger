@@ -22,7 +22,7 @@ public class PostsController(IPostService postService) : ControllerBase
         return Ok(new { Success = true, Data = result });
     }
 
-    [HttpGet("{id:guid}")]
+    [HttpGet("{id:guid}", Order = 1)]
     public async Task<IActionResult> GetById(Guid id)
     {
         var post = await postService.GetByIdAsync(id);
@@ -30,7 +30,7 @@ public class PostsController(IPostService postService) : ControllerBase
         return Ok(new { Success = true, Data = post });
     }
 
-    [HttpGet("{slug:regex(^[[a-z0-9]]+(?:-[[a-z0-9]]+)*$)}")]
+    [HttpGet("{slug:regex(^[[a-z0-9]]+(?:-[[a-z0-9]]+)*$)}", Order = 2)]
     public async Task<IActionResult> GetBySlug(string slug)
     {
         var post = await postService.GetBySlugAsync(slug);

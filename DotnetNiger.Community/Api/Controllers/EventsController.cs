@@ -37,7 +37,7 @@ public class EventsController(IEventService eventService) : ControllerBase
         return Ok(new { Success = true, Data = events });
     }
 
-    [HttpGet("{id:guid}")]
+    [HttpGet("{id:guid}", Order = 1)]
     public async Task<IActionResult> GetById(Guid id)
     {
         var ev = await eventService.GetByIdAsync(id);
@@ -45,7 +45,7 @@ public class EventsController(IEventService eventService) : ControllerBase
         return Ok(new { Success = true, Data = ev });
     }
 
-    [HttpGet("{slug:regex(^[[a-z0-9]]+(?:-[[a-z0-9]]+)*$)}")]
+    [HttpGet("{slug:regex(^[[a-z0-9]]+(?:-[[a-z0-9]]+)*$)}", Order = 2)]
     public async Task<IActionResult> GetBySlug(string slug)
     {
         var ev = await eventService.GetBySlugAsync(slug);

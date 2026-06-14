@@ -63,6 +63,7 @@ try
         options.RoutePrefix = "swagger";
     });
 
+    app.UseStaticFiles();
     app.UseCors();
     app.UseAuthentication();
     app.UseAuthorization();

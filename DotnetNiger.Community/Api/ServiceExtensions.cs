@@ -18,11 +18,11 @@ public static class ServiceExtensions
             var connStr = configuration.GetConnectionString("DefaultConnection") ?? "Data Source=DotnetNigerCommunity.db";
 
             if (provider == "SqlServer")
-                options.UseSqlServer(connStr, x => x.MigrationsAssembly("DotnetNiger.Community"));
+                options.UseSqlServer(connStr, x => x.MigrationsAssembly("DotnetNiger.Community").UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
             else if (provider is "PostgreSql" or "PostgreSQL" or "Npgsql")
-                options.UseNpgsql(connStr, x => x.MigrationsAssembly("DotnetNiger.Community"));
+                options.UseNpgsql(connStr, x => x.MigrationsAssembly("DotnetNiger.Community").UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
             else
-                options.UseSqlite(connStr, x => x.MigrationsAssembly("DotnetNiger.Community"));
+                options.UseSqlite(connStr, x => x.MigrationsAssembly("DotnetNiger.Community").UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
         });
 
         return services;

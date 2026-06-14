@@ -16,7 +16,7 @@ Community content service for the DotnetNiger platform — posts, events, resour
 DotnetNiger.Community/
 ├── Program.cs
 ├── Api/
-│   ├── Controllers/          → 7 controllers (Posts, Events, Comments, Resources, Search, Profile, Admin)
+│   ├── Controllers/          → 8 controllers (Posts, Events, Comments, Resources, Search, Profile, Admin, Upload)
 │   ├── Middleware/            → ErrorHandlingMiddleware
 │   └── ServiceExtensions.cs   → DI registration
 ├── Application/
@@ -134,6 +134,17 @@ All routes are prefixed with `/api/v1/`.
 | POST | `/admin/users/{userId}/roles` | Admin | Assign role to user |
 | PATCH | `/admin/events/{id}/publish` | Admin | Publish event |
 | PATCH | `/admin/events/{id}/unpublish` | Admin | Unpublish event |
+
+### Upload
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/upload` | — | Upload image file (multipart, max 5 MB) |
+| POST | `/upload/base64` | — | Upload image as base64 string |
+| DELETE | `/upload` | — | Delete uploaded file by path |
+
+Supported formats: `.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`.  
+Upload types: `Blog` (default), `Event`, `User`.
 
 ### Other
 

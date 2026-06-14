@@ -86,6 +86,13 @@ Registration auth is optional — configure `Gateway:RegistrationKey` in `appset
 
 Both Identity and Community automatically self-register on startup. Logs on success/failure are non-fatal.
 
+## Ocelot Route Files
+
+| File | Routes |
+|------|--------|
+| `ocelot.identity.routes.json` | `/api/auth/*`, `/api/profile/*`, `/api/admin/*`, `/api/v1/*` → Identity, `/Account/{everything}` → Identity |
+| `ocelot.community.routes.json` | `/api/posts`, `/api/events`, `/api/comments`, `/api/resources`, `/api/search`, `/api/me`, `/api/upload`, `/api/newsletters/*`, `/api/admin/*` → Community |
+
 ## Key Endpoints
 
 | Endpoint | Description |

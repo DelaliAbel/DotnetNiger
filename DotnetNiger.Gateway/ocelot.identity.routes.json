@@ -78,6 +78,16 @@
     },
 
     {
+      "UpstreamPathTemplate": "/Account/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST"],
+      "DownstreamPathTemplate": "/Account/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5075 }],
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "Key": "IdentityAccountRoute",
+      "SwaggerKey": "identity"
+    },
+    {
       "UpstreamPathTemplate": "/api/auth/forgot-password",
       "UpstreamHttpMethod": ["POST"],
       "DownstreamPathTemplate": "/api/v1/auth/forgot-password",

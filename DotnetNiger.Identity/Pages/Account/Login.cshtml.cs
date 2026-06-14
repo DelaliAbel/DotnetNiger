@@ -4,8 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure;
+using DotnetNiger.Identity.Api.Controllers;
 
 namespace DotnetNiger.Identity.Pages.Account;
 
@@ -16,17 +18,20 @@ public class LoginModel : PageModel
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IdentityDbContext _db;
     private readonly ILogger<LoginModel> _logger;
+    private readonly IMemoryCache _cache;
 
     public LoginModel(
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
         IdentityDbContext db,
-        ILogger<LoginModel> logger)
+        ILogger<LoginModel> logger,
+        IMemoryCache cache)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _db = db;
         _logger = logger;
+        _cache = cache;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -69,8 +74,10 @@ public class LoginModel : PageModel
         var result = await _signInManager.PasswordSignInAsync(user, Password, RememberMe, lockoutOnFailure: true);
         if (result.Succeeded)
         {
-            var decoded = System.Net.WebUtility.HtmlDecode(ReturnUrl ?? "/");
-            return SafeRedirect(decoded);
+            var decoded = System.Net.WebUtility.HtmlDecode(ReturnUrl);
+            if (Url.IsLocalUrl(decoded))
+                return LocalRedirect(decoded);
+            return RedirectToFrontendWithTicket(user, decoded);
         }
 
         if (result.IsLockedOut)
@@ -133,7 +140,15 @@ public class LoginModel : PageModel
         var result = await _signInManager.ExternalLoginSignInAsync(
             info.LoginProvider, info.ProviderKey, isPersistent: false);
         if (result.Succeeded)
-            return SafeRedirect(returnUrl);
+        {
+            var user = email is not null ? await _userManager.FindByEmailAsync(email) : null;
+            if (user != null)
+            {
+                var userRoles = await _userManager.GetRolesAsync(user);
+                return SafeOrTicketRedirect(user, returnUrl, userRoles.ToList());
+            }
+            return SafeLocalRedirect(returnUrl);
+        }
 
         if (result.IsLockedOut)
         {
@@ -156,7 +171,8 @@ public class LoginModel : PageModel
             existingUser.EmailConfirmed = true;
             await _userManager.UpdateAsync(existingUser);
             await _signInManager.SignInAsync(existingUser, isPersistent: false);
-            return SafeRedirect(returnUrl);
+            var existingRoles = await _userManager.GetRolesAsync(existingUser);
+            return SafeOrTicketRedirect(existingUser, returnUrl, existingRoles.ToList());
         }
 
         var tenant = await _db.Tenants.FirstOrDefaultAsync();
@@ -193,11 +209,38 @@ public class LoginModel : PageModel
         await _signInManager.SignInAsync(newUser, isPersistent: false);
 
         _logger.LogInformation("New user created via external login: {Email}", email);
-        return SafeRedirect(returnUrl);
+        return SafeOrTicketRedirect(newUser, returnUrl, new List<string> { "User" });
     }
 
-    private IActionResult SafeRedirect(string url)
+    private IActionResult SafeLocalRedirect(string url)
     {
         return Url.IsLocalUrl(url) ? LocalRedirect(url) : RedirectToPage("/Index");
+    }
+
+    private IActionResult SafeOrTicketRedirect(ApplicationUser user, string returnUrl, List<string> roles)
+    {
+        if (Url.IsLocalUrl(returnUrl))
+            return LocalRedirect(returnUrl);
+
+        return RedirectToFrontendWithTicket(user, returnUrl);
+    }
+
+    private IActionResult RedirectToFrontendWithTicket(ApplicationUser user, string returnUrl)
+    {
+        var ticket = Guid.NewGuid().ToString("N");
+        var cacheEntry = new ExternalLoginTicket
+        {
+            UserId = user.Id,
+            Email = user.Email ?? "",
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            AvatarUrl = user.AvatarUrl,
+            TenantId = user.TenantId,
+            IsActive = user.IsActive
+        };
+        _cache.Set($"external_login_{ticket}", cacheEntry, TimeSpan.FromMinutes(5));
+
+        var separator = returnUrl.Contains('?') ? '&' : '?';
+        return Redirect($"{returnUrl}{separator}ticket={ticket}");
     }
 }
