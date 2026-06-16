@@ -1,52 +1,30 @@
-version: "3.8"
-
 services:
-  consul:
-    image: hashicorp/consul:latest
-    ports:
-      - "8500:8500"
-    networks:
-      - dotnetniger
-
-  # API Gateway (port 5500)
   gateway:
     build:
       context: .
       dockerfile: DotnetNiger.Gateway/Dockerfile
     ports:
-      - "5000:5000"
+      - "${GATEWAY_PORT:-5000}:5000"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:5000
-      - ServiceDiscovery__Provider=Consul
-      - DownstreamServices__Identity__DevUrl=http://identity:8081
-      - DownstreamServices__Identity__HealthEndpoint=/api/v1/diagnostics/health
-      - DownstreamServices__Identity__SwaggerEndpoint=/swagger/v1/swagger.json
-      - DownstreamServices__Community__DevUrl=http://community:8082
-      - DownstreamServices__Community__HealthEndpoint=/api/v1/test/health
-      - DownstreamServices__Community__SwaggerEndpoint=/swagger/v1/swagger.json
+      - Jwt__Key=${JWT_KEY:?JWT_KEY is required}
+      - Jwt__Issuer=${JWT_ISSUER:-DotnetNiger.Identity}
+      - Jwt__Audience=${JWT_AUDIENCE:-DotnetNiger.Identity.Client}
+      - Gateway__BaseUrl=${PUBLIC_URL:-http://localhost:5000}
+      - DeveloperPortal__IdentityBaseUrl=${PUBLIC_URL:-http://localhost:5000}/identity-api
+      - DeveloperPortal__InternalApiKey=${INTERNAL_API_KEY:-}
+      - DeveloperPortal__HealthCheckIntervalSeconds=${HEALTH_CHECK_INTERVAL:-30}
+      - DeveloperPortal__MaxHealthCheckFailures=${HEALTH_CHECK_MAX_FAILURES:-3}
+      - ServiceDiscovery__Provider=Static
     depends_on:
-      - consul
-      - identity
-      - community
+      identity:
+        condition: service_started
+      community:
+        condition: service_started
     networks:
       - dotnetniger
-  #   image: mcr.microsoft.com/mssql/server:2022-latest
-  #   environment:
-  #     - ACCEPT_EULA=Y
-  #     - SA_PASSWORD=YourPassword123!
-  #     - MSSQL_PID=Developer
-  #   ports:
-  #     - "1433:1433"
-  #   networks:
-  #     - dotnetniger
-  #   volumes:
-  #     - sqlserver_data:/var/opt/mssql
-  #   healthcheck:
-  #     test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P YourPassword123! -Q "SELECT 1" || exit 1
-  #     interval: 10s
-  #     timeout: 5s
-  #     retries: 3
+    restart: unless-stopped
 
   identity:
     build:
@@ -56,17 +34,26 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8081
       - ConnectionStrings__DefaultConnection=Data Source=data/identity.db
-      - Consul__Host=consul
-      - Gateway__Enabled=true
-      - Gateway__RegistrationUrl=http://gateway:5000/api/service-registry/register
-      - Smtp__AppBaseUrl=http://gateway:5000
       - DatabaseProvider=Sqlite
+      - OpenIddict__Issuer=${PUBLIC_URL:-http://localhost:5000}/identity-api
+      - Smtp__AppBaseUrl=${PUBLIC_URL:-http://localhost:5000}
+      - Smtp__Host=${SMTP_HOST:-}
+      - Smtp__Port=${SMTP_PORT:-587}
+      - Smtp__Username=${SMTP_USERNAME:-}
+      - Smtp__Password=${SMTP_PASSWORD:-}
+      - Smtp__FromEmail=${SMTP_FROM_EMAIL:-noreply@dotnetniger.com}
+      - Smtp__SupportEmail=${SMTP_SUPPORT_EMAIL:-}
+      - Gateway__RegistrationUrl=http://gateway:5000/api/service-registry/register
+      - Gateway__RegistrationKey=${GATEWAY_REGISTRATION_KEY:-}
+      - InternalApiKey=${INTERNAL_API_KEY:-}
+      - Admin__DefaultPassword=${ADMIN_PASSWORD:-Admin@123456}
+      - RateLimiting__PermitLimit=${RATE_LIMIT_PERMIT:-5}
+      - RateLimiting__WindowSeconds=${RATE_LIMIT_WINDOW:-60}
     volumes:
       - identity_data:/app/data
-    depends_on:
-      - consul
     networks:
       - dotnetniger
+    restart: unless-stopped
 
   community:
     build:
@@ -76,27 +63,46 @@ services:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=http://+:8082
       - ConnectionStrings__DefaultConnection=Data Source=data/community.db
-      - Consul__Host=consul
-      - Gateway__Enabled=true
-      - Gateway__RegistrationUrl=http://gateway:5000/api/service-registry/register
-      - Jwt__Authority=http://identity:8081
-      - Jwt__MetadataAddress=http://identity:8081/.well-known/openid-configuration
-      - Identity__BaseUrl=http://identity:8081
       - DatabaseProvider=Sqlite
+      - Jwt__Authority=${PUBLIC_URL:-http://localhost:5000}/identity-api
+      - Jwt__Issuer=${PUBLIC_URL:-http://localhost:5000}/identity-api/
+      - Jwt__Audience=${JWT_AUDIENCE:-DotnetNiger.Identity.Client}
+      - Jwt__MetadataAddress=${PUBLIC_URL:-http://localhost:5000}/identity-api/.well-known/openid-configuration
+      - Gateway__RegistrationUrl=http://gateway:5000/api/service-registry/register
+      - Gateway__RegistrationKey=${GATEWAY_REGISTRATION_KEY:-}
     volumes:
       - community_data:/app/data
     depends_on:
-      - identity
-      - consul
+      identity:
+        condition: service_started
     networks:
       - dotnetniger
+    restart: unless-stopped
+
+  identity-web:
+    build:
+      context: .
+      dockerfile: DotnetNiger.Identity.Web/Dockerfile
+    ports:
+      - "${IDENTITY_WEB_PORT:-5100}:5100"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5100
+      - Identity__BaseUrl=${PUBLIC_URL:-http://localhost:5000}/identity-api
+      - Identity__ClientId=${IDENTITY_WEB_CLIENT_ID:-web-ui}
+      - Identity__ClientSecret=${IDENTITY_WEB_CLIENT_SECRET:-}
+      - DeveloperPortal__GatewayBaseUrl=${PUBLIC_URL:-http://localhost:5000}
+    depends_on:
+      gateway:
+        condition: service_started
+    networks:
+      - dotnetniger
+    restart: unless-stopped
 
 networks:
   dotnetniger:
     driver: bridge
 
 volumes:
-  sqlserver_data:
-    driver: local
   identity_data:
   community_data:
