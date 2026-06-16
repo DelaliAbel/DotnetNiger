@@ -85,7 +85,9 @@ public class ExternalServiceHealthService : BackgroundService
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Failed to fetch active external services list");
+            Log.Warning("Failed to fetch active external services list from {Url}: {Message}",
+                $"{_identityBaseUrl}/api/v1/external-services/_internal/active",
+                ex.InnerException?.Message ?? ex.Message);
             return;
         }
 
@@ -117,8 +119,9 @@ public class ExternalServiceHealthService : BackgroundService
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Health check exception for {Slug} ({Name})",
-                service.Slug, service.Name);
+            Log.Warning("Health check failed for {Slug} ({Name}): {Message}",
+                service.Slug, service.Name,
+                ex.InnerException?.Message ?? ex.Message);
             return false;
         }
     }
