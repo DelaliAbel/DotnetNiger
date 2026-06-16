@@ -2,6 +2,7 @@ using DotnetNiger.Community.Infrastructure;
 using DotnetNiger.Community.Application.DTOs;
 using DotnetNiger.Community.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
 
 namespace DotnetNiger.Community.Application.Services;
 
@@ -73,6 +74,47 @@ public class ProfileService(AppDbContext db) : IProfileService
         db.SocialLinks.Remove(link);
         await db.SaveChangesAsync();
         return true;
+    }
+
+    public async Task<CertificateResponse> SubmitCertificateAsync(Guid userId, CertificateSubmissionRequest request)
+    {
+        if (userId == Guid.Empty)
+            throw new ValidationException("Utilisateur introuvable.");
+
+        if (!Uri.TryCreate(request.CertificateUrl, UriKind.Absolute, out _))
+            throw new ValidationException("URL de certification invalide.");
+
+        if (string.IsNullOrWhiteSpace(request.CertificateType))
+            throw new ValidationException("Veuillez sélectionner un type de certificat.");
+
+        var member = await db.Members.FirstOrDefaultAsync(m => m.Id == userId);
+        if (member is null)
+        {
+            member = new Member { Id = userId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            db.Members.Add(member);
+        }
+
+        var cert = new Certificate
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            CertificateUrl = request.CertificateUrl,
+            CertificateType = request.CertificateType,
+            Status = "Pending",
+            SubmissionDate = DateTime.UtcNow
+        };
+
+        db.Certificates.Add(cert);
+        await db.SaveChangesAsync();
+
+        return new CertificateResponse
+        {
+            Id = cert.Id,
+            Status = cert.Status,
+            SubmissionDate = cert.SubmissionDate,
+            EstimatedWaitTime = "24-48 heures",
+            SupportEmail = "support@dotnetniger.org"
+        };
     }
 
     private static ProfileResponse MapProfile(Member m) => new()

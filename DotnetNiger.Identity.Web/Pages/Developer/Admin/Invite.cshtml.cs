@@ -1,30 +1,18 @@
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
+using DotnetNiger.Identity.Web.Infrastructure;
+using DotnetNiger.Identity.Web.Models;
 
 namespace DotnetNiger.Identity.Web.Pages.Developer.Admin;
 
 [Authorize(Roles = "Admin")]
-public class InviteModel : PageModel
+public class InviteModel : BasePageModel
 {
-    private readonly IHttpClientFactory _http;
-    private readonly IConfiguration _config;
-
     public InviteModel(IHttpClientFactory http, IConfiguration config)
-    {
-        _http = http;
-        _config = config;
-    }
+        : base(http, config) { }
 
     [BindProperty]
     public InviteInput Input { get; set; } = new();
-
-    public string Message { get; set; } = "";
-    public bool IsError { get; set; }
 
     public void OnGet() { }
 
@@ -32,36 +20,18 @@ public class InviteModel : PageModel
     {
         if (!ModelState.IsValid) return Page();
 
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = _http.CreateClient();
-        var token = await HttpContext.GetTokenAsync("access_token");
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var body = JsonSerializer.Serialize(new { email = Input.Email, role = Input.Role });
-        var response = await client.PostAsync(
-            $"{identityUrl}/api/v1/admin/invite",
-            new StringContent(body, Encoding.UTF8, "application/json"));
-
-        if (response.IsSuccessStatusCode)
+        var result = await PostAsync<object>($"{GetIdentityUrl()}/api/v1/admin/invite", new
         {
-            Message = "Invitation envoyée avec succès.";
-            IsError = false;
+            email = Input.Email,
+            role = Input.Role
+        });
+
+        if (result.Success)
+        {
+            SetMessage("Invitation envoyée avec succès.");
             Input = new InviteInput();
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
         }
 
         return Page();
     }
-}
-
-public class InviteInput
-{
-    public string Email { get; set; } = "";
-    public string Role { get; set; } = "Admin";
 }

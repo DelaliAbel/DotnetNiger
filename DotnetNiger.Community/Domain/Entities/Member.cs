@@ -13,4 +13,5 @@ public class Member
     public DateTime UpdatedAt { get; set; }
 
     public ICollection<SocialLink> SocialLinks { get; set; } = [];
+    public ICollection<Certificate> Certificates { get; set; } = [];
 }

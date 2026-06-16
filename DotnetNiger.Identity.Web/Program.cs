@@ -48,7 +48,13 @@ builder.Services.AddAuthentication(options =>
 
     options.Events.OnRedirectToIdentityProvider = context =>
     {
+        context.ProtocolMessage.IssuerAddress = $"{identityUrl}/connect/authorize";
         context.ProtocolMessage.Prompt = "select_account";
+        return Task.CompletedTask;
+    };
+    options.Events.OnRedirectToIdentityProviderForSignOut = context =>
+    {
+        context.ProtocolMessage.IssuerAddress = $"{identityUrl}/connect/logout";
         return Task.CompletedTask;
     };
 });

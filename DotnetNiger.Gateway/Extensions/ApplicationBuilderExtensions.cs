@@ -96,6 +96,12 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
+    public static IApplicationBuilder UseTokenCookieMiddleware(this IApplicationBuilder app)
+    {
+        app.UseMiddleware<TokenCookieMiddleware>();
+        return app;
+    }
+
     public static IApplicationBuilder UseCustomSwaggerMergeMiddleware(this IApplicationBuilder app)
     {
         app.Use(async (context, next) =>

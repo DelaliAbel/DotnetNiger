@@ -1,41 +1,25 @@
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
+using DotnetNiger.Identity.Web.Infrastructure;
+using DotnetNiger.Identity.Web.Models;
 
 namespace DotnetNiger.Identity.Web.Pages.Developer.Admin;
 
 [Authorize(Roles = "Admin")]
-public class TenantUsersModel : PageModel
+public class TenantUsersModel : BasePageModel
 {
-    private readonly IHttpClientFactory _http;
-    private readonly IConfiguration _config;
-
     public TenantUsersModel(IHttpClientFactory http, IConfiguration config)
-    {
-        _http = http;
-        _config = config;
-    }
+        : base(http, config) { }
 
     [BindProperty(SupportsGet = true)]
     public Guid TenantId { get; set; }
 
     [BindProperty(SupportsGet = true)]
-    public int CurrentPage { get; set; } = 1;
-
-    [BindProperty(SupportsGet = true)]
     public string? Search { get; set; }
 
-    public int PageSize { get; set; } = 10;
-    public int TotalCount { get; set; }
-    public int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
-
     public List<UserItem> Users { get; set; } = [];
-    public string Message { get; set; } = "";
-    public bool IsError { get; set; }
 
     [BindProperty]
     public CreateUserInput CreateInput { get; set; } = new();
@@ -59,9 +43,7 @@ public class TenantUsersModel : PageModel
             return Page();
         }
 
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
+        var client = await GetAuthenticatedClientAsync();
         var body = JsonSerializer.Serialize(new
         {
             email = CreateInput.Email,
@@ -73,20 +55,18 @@ public class TenantUsersModel : PageModel
         });
 
         var response = await client.PostAsync(
-            $"{identityUrl}/api/v1/{TenantId}/users",
+            $"{GetIdentityUrl()}/api/v1/{TenantId}/users",
             new StringContent(body, Encoding.UTF8, "application/json"));
 
         if (response.IsSuccessStatusCode)
         {
-            Message = "Utilisateur créé.";
-            IsError = false;
+            SetMessage("Utilisateur créé.");
             CreateInput = new CreateUserInput();
         }
         else
         {
             var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
+            SetMessage($"Erreur : {error}", true);
         }
 
         await LoadUsersAsync();
@@ -101,61 +81,29 @@ public class TenantUsersModel : PageModel
             return Page();
         }
 
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
-        var body = JsonSerializer.Serialize(new
+        var ok = await PutAsync($"{GetIdentityUrl()}/api/v1/{TenantId}/users/{userId}", new
         {
             firstName = EditInput.FirstName ?? "",
             lastName = EditInput.LastName ?? ""
         });
 
-        var response = await client.PutAsync(
-            $"{identityUrl}/api/v1/{TenantId}/users/{userId}",
-            new StringContent(body, Encoding.UTF8, "application/json"));
-
-        if (response.IsSuccessStatusCode)
-        {
-            Message = "Utilisateur mis à jour.";
-            IsError = false;
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
-        }
-
+        if (ok) SetMessage("Utilisateur mis à jour.");
         await LoadUsersAsync();
         return Page();
     }
 
     public async Task<IActionResult> OnPostChangePasswordAsync(Guid userId)
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
-        var body = JsonSerializer.Serialize(new
+        var result = await PostAsync<object>($"{GetIdentityUrl()}/api/v1/{TenantId}/users/{userId}/change-password", new
         {
             currentPassword = PasswordInput.CurrentPassword,
             newPassword = PasswordInput.NewPassword
         });
 
-        var response = await client.PostAsync(
-            $"{identityUrl}/api/v1/{TenantId}/users/{userId}/change-password",
-            new StringContent(body, Encoding.UTF8, "application/json"));
-
-        if (response.IsSuccessStatusCode)
+        if (result.Success)
         {
-            Message = "Mot de passe changé.";
-            IsError = false;
+            SetMessage("Mot de passe changé.");
             PasswordInput = new ChangePasswordInput();
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
         }
 
         await LoadUsersAsync();
@@ -164,80 +112,52 @@ public class TenantUsersModel : PageModel
 
     public async Task<IActionResult> OnPostToggleActiveAsync(Guid userId, bool isActive)
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
-        var body = JsonSerializer.Serialize(new { isActive = !isActive });
-        var response = await client.PutAsync(
-            $"{identityUrl}/api/v1/{TenantId}/users/{userId}",
-            new StringContent(body, Encoding.UTF8, "application/json"));
-
-        Message = isActive ? "Utilisateur désactivé." : "Utilisateur activé.";
-
+        var ok = await PutAsync($"{GetIdentityUrl()}/api/v1/{TenantId}/users/{userId}", new { isActive = !isActive });
+        if (ok) SetMessage(isActive ? "Utilisateur désactivé." : "Utilisateur activé.");
         await LoadUsersAsync();
         return Page();
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(Guid userId)
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
-        var response = await client.DeleteAsync($"{identityUrl}/api/v1/{TenantId}/users/{userId}");
-        if (response.IsSuccessStatusCode)
-        {
-            Message = "Utilisateur supprimé.";
-            IsError = false;
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
-        }
-
+        var deleted = await DeleteAsync($"{GetIdentityUrl()}/api/v1/{TenantId}/users/{userId}");
+        if (deleted) SetMessage("Utilisateur supprimé.");
         await LoadUsersAsync();
         return Page();
     }
 
     public async Task<IActionResult> OnPostForgotPasswordAsync(Guid userId)
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
         var user = Users.FirstOrDefault(u => u.Id == userId);
         if (user == null)
         {
-            Message = "Utilisateur introuvable.";
-            IsError = true;
+            SetMessage("Utilisateur introuvable.", true);
             await LoadUsersAsync();
             return Page();
         }
 
+        var client = await GetAuthenticatedClientAsync();
         var body = JsonSerializer.Serialize(new { email = user.Email });
 
         try
         {
             var response = await client.PostAsync(
-                $"{identityUrl}/api/v1/{TenantId}/users/forgot-password",
+                $"{GetIdentityUrl()}/api/v1/{TenantId}/users/forgot-password",
                 new StringContent(body, Encoding.UTF8, "application/json"));
 
             if (response.IsSuccessStatusCode)
             {
-                Message = "Email de réinitialisation envoyé.";
-                IsError = false;
+                SetMessage("Email de réinitialisation envoyé.");
             }
             else
             {
                 var error = await response.Content.ReadAsStringAsync();
-                Message = $"Erreur : {error}";
-                IsError = true;
+                SetMessage($"Erreur : {error}", true);
             }
         }
         catch (Exception ex)
         {
-            Message = $"Erreur : {ex.Message}";
-            IsError = true;
+            SetMessage($"Erreur : {ex.Message}", true);
         }
 
         await LoadUsersAsync();
@@ -246,32 +166,19 @@ public class TenantUsersModel : PageModel
 
     private async Task LoadUsersAsync()
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
+        var client = await GetAuthenticatedClientAsync();
         try
         {
-            var resp = await client.GetAsync($"{identityUrl}/api/v1/{TenantId}/users?page={CurrentPage}&pageSize={PageSize}");
+            var resp = await client.GetAsync($"{GetIdentityUrl()}/api/v1/{TenantId}/users?page={CurrentPage}&pageSize={PageSize}");
             if (resp.IsSuccessStatusCode)
             {
                 var json = await resp.Content.ReadAsStringAsync();
-                var paginated = JsonSerializer.Deserialize<PaginatedResponse<UserItem>>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                var paginated = JsonSerializer.Deserialize<PaginatedResponse<UserItem>>(json, JsonOpts);
                 Users = paginated?.Items ?? [];
                 TotalCount = paginated?.TotalCount ?? 0;
             }
         }
-        catch (Exception ex) { Message = $"Erreur lors du chargement : {ex.Message}"; IsError = true; }
-    }
-
-    private async Task<HttpClient> CreateClientAsync(string? identityUrl)
-    {
-        _ = identityUrl ?? throw new InvalidOperationException("Identity:BaseUrl n'est pas configuré.");
-        var client = _http.CreateClient();
-        var token = await HttpContext.GetTokenAsync("access_token");
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
+        catch (Exception ex) { SetMessage($"Erreur lors du chargement : {ex.Message}", true); }
     }
 }
 
@@ -294,14 +201,4 @@ public class CreateUserInput
     public bool Role { get; set; } = true;
 }
 
-public class EditUserInput
-{
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
-}
 
-public class ChangePasswordInput
-{
-    public string CurrentPassword { get; set; } = "";
-    public string NewPassword { get; set; } = "";
-}

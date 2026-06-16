@@ -94,6 +94,7 @@ public class AuthController : ControllerBase
         var scopes = (request.Scope ?? "openid profile email roles offline_access")
             .Split(' ', StringSplitOptions.RemoveEmptyEntries);
         principal.SetScopes(scopes);
+        principal.SetResources("DotnetNiger.Identity.Client");
 
         var roles = await _userManager.GetRolesAsync(user);
         foreach (var role in roles)
@@ -216,6 +217,7 @@ public class AuthController : ControllerBase
             extPrincipal.SetScopes(extScopes.Count > 0
                 ? extScopes.SelectMany(s => (s ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries))
                 : ["openid", "profile", "email", "roles"]);
+            extPrincipal.SetResources("DotnetNiger.Identity.Client");
 
             extPrincipal.SetDestinations(claim => claim.Type switch
             {
@@ -237,8 +239,13 @@ public class AuthController : ControllerBase
         if (grantType != "password")
             throw new InvalidOperationException("Unsupported grant type");
 
+        var username = Request.Form["username"].FirstOrDefault();
+        var password = Request.Form["password"].FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            throw new InvalidOperationException("Username and password are required");
+
         var (loginUser, roles) = await _authService.ValidateCredentialsAsync(
-            Request.Form["username"]!, Request.Form["password"]!, null);
+            username, password, null);
 
         if (loginUser.TwoFactorEnabled)
         {
@@ -269,6 +276,7 @@ public class AuthController : ControllerBase
         loginPrincipal.SetScopes(scopes.Count > 0
             ? scopes.SelectMany(s => (s ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries))
             : ["openid", "profile", "email", "roles"]);
+        loginPrincipal.SetResources("DotnetNiger.Identity.Client");
 
         var rememberMe = string.Equals(Request.Form["remember_me"].FirstOrDefault(), "true",
             StringComparison.OrdinalIgnoreCase);
@@ -404,6 +412,7 @@ public class AuthController : ControllerBase
         var principal = new ClaimsPrincipal(identity);
         principal.SetScopes(Request.Form["scope"].SelectMany(
             s => (s ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries)));
+        principal.SetResources("DotnetNiger.Identity.Client");
         principal.SetDestinations(claim => claim.Type switch
         {
             OpenIddictConstants.Claims.Subject
@@ -481,6 +490,7 @@ public class AuthController : ControllerBase
             ? Request.Form["scope"].SelectMany(s => (s ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries))
             : ["openid", "profile", "email", "roles"];
         principal.SetScopes(scopes);
+        principal.SetResources("DotnetNiger.Identity.Client");
 
         principal.SetDestinations(claim => claim.Type switch
         {
@@ -545,6 +555,7 @@ public class AuthController : ControllerBase
             ? Request.Form["scope"].SelectMany(s => (s ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries))
             : ["openid", "profile", "email", "roles"];
         principal.SetScopes(scopes);
+        principal.SetResources("DotnetNiger.Identity.Client");
 
         principal.SetDestinations(claim => claim.Type switch
         {

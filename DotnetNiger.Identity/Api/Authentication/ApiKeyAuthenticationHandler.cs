@@ -29,24 +29,27 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
         if (string.IsNullOrWhiteSpace(apiKey))
             return AuthenticateResult.NoResult();
 
-        var hashString = HashApiKey(apiKey);
-
         var tenantContext = Context.RequestServices.GetRequiredService<TenantContext>();
         var db = Context.RequestServices.GetRequiredService<IdentityDbContext>();
 
         IQueryable<TenantApiKey> query = db.TenantApiKeys
-            .Where(k => k.PrivateKeyHash == hashString && k.IsActive);
+            .Where(k => k.IsActive);
 
         if (tenantContext.TenantId.HasValue)
             query = query.Where(k => k.TenantId == tenantContext.TenantId.Value);
 
-        var storedKey = await query.FirstOrDefaultAsync();
+        var allActiveKeys = await query.ToListAsync();
+
+        var storedKey = allActiveKeys.FirstOrDefault(k => VerifyApiKey(apiKey, k.PrivateKeyHash));
 
         if (storedKey == null)
             return AuthenticateResult.Fail("Invalid or inactive API key");
 
-        storedKey.LastUsedAt = DateTime.UtcNow;
-        await db.SaveChangesAsync();
+        if (storedKey.LastUsedAt == null || DateTime.UtcNow - storedKey.LastUsedAt.Value > TimeSpan.FromMinutes(5))
+        {
+            storedKey.LastUsedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+        }
 
         var claims = new List<Claim>
         {
@@ -67,9 +70,35 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
         return AuthenticateResult.Success(ticket);
     }
 
-    private static string HashApiKey(string apiKey)
+    private static bool VerifyApiKey(string apiKey, string storedHash)
     {
-        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(apiKey));
-        return Convert.ToBase64String(bytes);
+        var parts = storedHash.Split(':');
+        if (parts.Length != 2)
+            return false;
+
+        var salt = Convert.FromBase64String(parts[0]);
+        var storedKey = Convert.FromBase64String(parts[1]);
+
+        var keyBytes = Rfc2898DeriveBytes.Pbkdf2(
+            Encoding.UTF8.GetBytes(apiKey),
+            salt,
+            600_000,
+            HashAlgorithmName.SHA256,
+            32);
+
+        return CryptographicOperations.FixedTimeEquals(storedKey, keyBytes);
+    }
+
+    public static string HashApiKey(string apiKey)
+    {
+        var salt = RandomNumberGenerator.GetBytes(16);
+        var keyBytes = Rfc2898DeriveBytes.Pbkdf2(
+            Encoding.UTF8.GetBytes(apiKey),
+            salt,
+            600_000,
+            HashAlgorithmName.SHA256,
+            32);
+
+        return $"{Convert.ToBase64String(salt)}:{Convert.ToBase64String(keyBytes)}";
     }
 }

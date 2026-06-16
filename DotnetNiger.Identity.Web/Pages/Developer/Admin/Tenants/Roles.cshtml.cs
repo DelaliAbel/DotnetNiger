@@ -1,40 +1,22 @@
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
+using DotnetNiger.Identity.Web.Infrastructure;
+using DotnetNiger.Identity.Web.Models;
 
 namespace DotnetNiger.Identity.Web.Pages.Developer.Admin;
 
 [Authorize(Roles = "Admin")]
-public class RolesModel : PageModel
+public class RolesModel : BasePageModel
 {
-    private readonly IHttpClientFactory _http;
-    private readonly IConfiguration _config;
-
     public RolesModel(IHttpClientFactory http, IConfiguration config)
-    {
-        _http = http;
-        _config = config;
-    }
+        : base(http, config) { }
 
     [BindProperty(SupportsGet = true)]
     public Guid TenantId { get; set; }
 
-    [BindProperty(SupportsGet = true)]
-    public int CurrentPage { get; set; } = 1;
-
-    public int PageSize { get; set; } = 10;
-    public int TotalCount { get; set; }
-    public int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
-
     public List<RoleItem> Roles { get; set; } = [];
     public List<PermissionGroup> PermissionGroups { get; set; } = [];
     public HashSet<Guid> RolePermissionIds { get; set; } = [];
-    public string Message { get; set; } = "";
-    public bool IsError { get; set; }
 
     [BindProperty]
     public CreateRoleInput CreateInput { get; set; } = new();
@@ -60,31 +42,17 @@ public class RolesModel : PageModel
             return Page();
         }
 
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
-        var body = JsonSerializer.Serialize(new
+        var result = await PostAsync<object>($"{GetIdentityUrl()}/api/v1/{TenantId}/roles", new
         {
             name = CreateInput.Name,
             description = CreateInput.Description ?? "",
             tenantId = TenantId
         });
 
-        var response = await client.PostAsync(
-            $"{identityUrl}/api/v1/{TenantId}/roles",
-            new StringContent(body, Encoding.UTF8, "application/json"));
-
-        if (response.IsSuccessStatusCode)
+        if (result.Success)
         {
-            Message = "Rôle créé.";
-            IsError = false;
+            SetMessage("Rôle créé.");
             CreateInput = new CreateRoleInput();
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
         }
 
         await LoadDataAsync();
@@ -93,222 +61,65 @@ public class RolesModel : PageModel
 
     public async Task<IActionResult> OnPostAssignPermissionsAsync(Guid roleId)
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
-        var body = JsonSerializer.Serialize(new
+        var result = await PostAsync<object>($"{GetIdentityUrl()}/api/v1/{TenantId}/permissions/assign", new
         {
             roleId,
             permissionIds = SelectedPermissionIds
         });
 
-        var response = await client.PostAsync(
-            $"{identityUrl}/api/v1/{TenantId}/permissions/assign",
-            new StringContent(body, Encoding.UTF8, "application/json"));
-
-        if (response.IsSuccessStatusCode)
-        {
-            Message = "Permissions mises à jour.";
-            IsError = false;
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
-        }
-
+        if (result.Success) SetMessage("Permissions mises à jour.");
         await LoadDataAsync();
         return Page();
     }
 
     public async Task<IActionResult> OnPostDeleteAsync(Guid roleId)
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
-        var response = await client.DeleteAsync($"{identityUrl}/api/v1/{TenantId}/roles/{roleId}");
-        if (response.IsSuccessStatusCode)
-        {
-            Message = "Rôle supprimé.";
-            IsError = false;
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
-        }
-
+        var deleted = await DeleteAsync($"{GetIdentityUrl()}/api/v1/{TenantId}/roles/{roleId}");
+        if (deleted) SetMessage("Rôle supprimé.");
         await LoadDataAsync();
         return Page();
     }
 
     public async Task<IActionResult> OnPostEditAsync(Guid roleId)
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
-        var body = JsonSerializer.Serialize(new
+        var ok = await PutAsync($"{GetIdentityUrl()}/api/v1/{TenantId}/roles/{roleId}", new
         {
             name = EditInput.Name,
             description = EditInput.Description ?? ""
         });
 
-        var response = await client.PutAsync(
-            $"{identityUrl}/api/v1/{TenantId}/roles/{roleId}",
-            new StringContent(body, Encoding.UTF8, "application/json"));
-
-        if (response.IsSuccessStatusCode)
-        {
-            Message = "Rôle mis à jour.";
-            IsError = false;
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
-        }
-
+        if (ok) SetMessage("Rôle mis à jour.");
         await LoadDataAsync();
         return Page();
     }
 
     public async Task<IActionResult> OnPostAddUserToRoleAsync(Guid roleId, Guid userId)
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
-        var response = await client.PostAsync(
-            $"{identityUrl}/api/v1/{TenantId}/roles/{roleId}/users/{userId}",
-            null);
-
-        if (response.IsSuccessStatusCode)
-        {
-            Message = "Utilisateur ajouté au rôle.";
-            IsError = false;
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
-        }
-
+        var result = await PostAsync<object>($"{GetIdentityUrl()}/api/v1/{TenantId}/roles/{roleId}/users/{userId}");
+        if (result.Success) SetMessage("Utilisateur ajouté au rôle.");
         await LoadDataAsync();
         return Page();
     }
 
     public async Task<IActionResult> OnPostRemoveUserFromRoleAsync(Guid roleId, Guid userId)
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
-        var response = await client.DeleteAsync(
-            $"{identityUrl}/api/v1/{TenantId}/roles/{roleId}/users/{userId}");
-
-        if (response.IsSuccessStatusCode)
-        {
-            Message = "Utilisateur retiré du rôle.";
-            IsError = false;
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
-        }
-
+        var deleted = await DeleteAsync($"{GetIdentityUrl()}/api/v1/{TenantId}/roles/{roleId}/users/{userId}");
+        if (deleted) SetMessage("Utilisateur retiré du rôle.");
         await LoadDataAsync();
         return Page();
     }
 
     private async Task LoadDataAsync()
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
+        var identityUrl = GetIdentityUrl();
+        var rolesData = await GetWithStatusAsync<PaginatedResponse<RoleItem>>($"{identityUrl}/api/v1/{TenantId}/roles?page={CurrentPage}&pageSize={PageSize}");
+        Roles = rolesData.Data?.Items ?? [];
+        TotalCount = rolesData.Data?.TotalCount ?? 0;
 
-        try
-        {
-            var rolesResp = await client.GetAsync($"{identityUrl}/api/v1/{TenantId}/roles?page={CurrentPage}&pageSize={PageSize}");
-            if (rolesResp.IsSuccessStatusCode)
-            {
-                var json = await rolesResp.Content.ReadAsStringAsync();
-                var paginated = JsonSerializer.Deserialize<PaginatedResponse<RoleItem>>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                Roles = paginated?.Items ?? [];
-                TotalCount = paginated?.TotalCount ?? 0;
-            }
-        }
-        catch { Roles = []; }
+        var permData = await GetAsync<List<PermissionGroup>>($"{identityUrl}/api/v1/{TenantId}/permissions/grouped");
+        PermissionGroups = permData ?? [];
 
-        try
-        {
-            var permResp = await client.GetAsync($"{identityUrl}/api/v1/{TenantId}/permissions/grouped");
-            if (permResp.IsSuccessStatusCode)
-            {
-                var json = await permResp.Content.ReadAsStringAsync();
-                PermissionGroups = JsonSerializer.Deserialize<List<PermissionGroup>>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? [];
-            }
-        }
-        catch { PermissionGroups = []; }
-
-        try
-        {
-            var usersResp = await client.GetAsync($"{identityUrl}/api/v1/{TenantId}/users?pageSize=100");
-            if (usersResp.IsSuccessStatusCode)
-            {
-                var json = await usersResp.Content.ReadAsStringAsync();
-                var paginated = JsonSerializer.Deserialize<PaginatedResponse<UserItem>>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                AllUsers = paginated?.Items ?? [];
-            }
-        }
-        catch { AllUsers = []; }
+        var usersData = await GetAsync<PaginatedResponse<UserItem>>($"{identityUrl}/api/v1/{TenantId}/users?pageSize=100");
+        AllUsers = usersData?.Items ?? [];
     }
-
-    private async Task<HttpClient> CreateClientAsync(string? identityUrl)
-    {
-        _ = identityUrl ?? throw new InvalidOperationException("Identity:BaseUrl n'est pas configuré.");
-        var client = _http.CreateClient();
-        var token = await HttpContext.GetTokenAsync("access_token");
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
-    }
-}
-
-public class RoleItem
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = "";
-    public string? Description { get; set; }
-    public int UserCount { get; set; }
-}
-
-public class PermissionGroup
-{
-    public string Category { get; set; } = "";
-    public List<PermissionItem> Permissions { get; set; } = [];
-}
-
-public class PermissionItem
-{
-    public Guid Id { get; set; }
-    public string Name { get; set; } = "";
-    public string Category { get; set; } = "";
-}
-
-public class CreateRoleInput
-{
-    public string Name { get; set; } = "";
-    public string? Description { get; set; }
-}
-
-public class EditRoleInput
-{
-    public string? Name { get; set; }
-    public string? Description { get; set; }
 }

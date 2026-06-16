@@ -8,6 +8,7 @@ public class Event
     public string Description { get; set; } = string.Empty;
     public string Location { get; set; } = string.Empty;
     public string EventType { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public string CoverImageUrl { get; set; } = string.Empty;
@@ -29,4 +30,5 @@ public class Event
     public ICollection<EventRegistration> Registrations { get; set; } = [];
     public ICollection<Comment> Comments { get; set; } = [];
     public ICollection<EventTag> EventTags { get; set; } = [];
+    public ICollection<Speaker> Speakers { get; set; } = [];
 }

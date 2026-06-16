@@ -15,6 +15,8 @@ public class CreateEventRequest
     [Required]
     public string EventType { get; set; } = string.Empty;
 
+    public string Category { get; set; } = string.Empty;
+
     [Required]
     public DateTime StartDate { get; set; }
 
@@ -27,4 +29,14 @@ public class CreateEventRequest
     public bool IsPublished { get; set; }
     public bool IsArchived { get; set; }
     public List<string> TagNames { get; set; } = [];
+    public List<string> GalleryImageUrls { get; set; } = [];
+    public List<SpeakerRequest> Speakers { get; set; } = [];
+}
+
+public class SpeakerRequest
+{
+    public Guid UserId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public string AvatarUrl { get; set; } = string.Empty;
 }

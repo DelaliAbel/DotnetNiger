@@ -152,6 +152,36 @@
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 10000, "TimeoutValue": 15000 },
       "Key": "IdentityAuthVerifyEmailRoute",
       "SwaggerKey": "identity"
+    },
+    {
+      "Key": "IdentityAuthConfirmEmailRoute",
+      "UpstreamPathTemplate": "/api/v1/auth/confirm-email",
+      "UpstreamHttpMethod": ["GET", "POST"],
+      "DownstreamPathTemplate": "/api/v1/auth/confirm-email",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5075 }],
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "SwaggerKey": "identity"
+    },
+    {
+      "Key": "IdentityProfileConfirmChangeEmailRoute",
+      "UpstreamPathTemplate": "/api/v1/profile/confirm-change-email",
+      "UpstreamHttpMethod": ["GET", "POST"],
+      "DownstreamPathTemplate": "/api/v1/profile/confirm-change-email",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5075 }],
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "SwaggerKey": "identity"
+    },
+    {
+      "Key": "IdentityApiCatchAll",
+      "UpstreamPathTemplate": "/identity-api/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+      "DownstreamPathTemplate": "/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5075 }],
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "SwaggerKey": "identity"
     }
   ]
 }

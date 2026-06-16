@@ -8,4 +8,5 @@ public interface IProfileService
     Task<ProfileResponse> UpdateAsync(Guid userId, UpdateProfileRequest request);
     Task<SocialLinkResponse> AddSocialLinkAsync(Guid userId, AddSocialLinkRequest request);
     Task<bool> DeleteSocialLinkAsync(Guid userId, Guid socialLinkId);
+    Task<CertificateResponse> SubmitCertificateAsync(Guid userId, CertificateSubmissionRequest request);
 }

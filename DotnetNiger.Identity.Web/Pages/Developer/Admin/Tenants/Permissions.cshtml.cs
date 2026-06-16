@@ -1,40 +1,23 @@
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
+using DotnetNiger.Identity.Web.Infrastructure;
 
 namespace DotnetNiger.Identity.Web.Pages.Developer.Admin.Tenants;
 
 [Authorize(Roles = "Admin")]
-public class PermissionsModel : PageModel
+public class PermissionsModel : BasePageModel
 {
-    private readonly IHttpClientFactory _http;
-    private readonly IConfiguration _config;
-
     public PermissionsModel(IHttpClientFactory http, IConfiguration config)
-    {
-        _http = http;
-        _config = config;
-    }
+        : base(http, config) { }
 
     [BindProperty(SupportsGet = true)]
     public Guid TenantId { get; set; }
 
-    [BindProperty(SupportsGet = true)]
-    public int CurrentPage { get; set; } = 1;
-
-    public int PageSize { get; set; } = 50;
-    public int TotalCount { get; set; }
-    public int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
-
     public List<PermissionGroupItem> GroupedPermissions { get; set; } = [];
     public List<PermissionItem> AllPermissions { get; set; } = [];
     public List<RoleItem> Roles { get; set; } = [];
-    public string Message { get; set; } = "";
-    public bool IsError { get; set; }
 
     [BindProperty]
     public CreatePermissionInput CreateInput { get; set; } = new();
@@ -55,31 +38,17 @@ public class PermissionsModel : PageModel
             return Page();
         }
 
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
-        var body = JsonSerializer.Serialize(new
+        var result = await PostAsync<object>($"{GetIdentityUrl()}/api/v1/{TenantId}/permissions", new
         {
             name = CreateInput.Name,
             category = CreateInput.Category,
             tenantId = TenantId
         });
 
-        var response = await client.PostAsync(
-            $"{identityUrl}/api/v1/{TenantId}/permissions",
-            new StringContent(body, Encoding.UTF8, "application/json"));
-
-        if (response.IsSuccessStatusCode)
+        if (result.Success)
         {
-            Message = "Permission créée.";
-            IsError = false;
+            SetMessage("Permission créée.");
             CreateInput = new CreatePermissionInput();
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
         }
 
         await LoadAllAsync();
@@ -88,23 +57,8 @@ public class PermissionsModel : PageModel
 
     public async Task<IActionResult> OnPostDeleteAsync(Guid permissionId)
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
-        var response = await client.DeleteAsync($"{identityUrl}/api/v1/{TenantId}/permissions/{permissionId}");
-
-        if (response.IsSuccessStatusCode)
-        {
-            Message = "Permission supprimée.";
-            IsError = false;
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
-        }
-
+        var deleted = await DeleteAsync($"{GetIdentityUrl()}/api/v1/{TenantId}/permissions/{permissionId}");
+        if (deleted) SetMessage("Permission supprimée.");
         await LoadAllAsync();
         return Page();
     }
@@ -117,9 +71,6 @@ public class PermissionsModel : PageModel
             return Page();
         }
 
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
         var selectedIds = Request.Form["AssignInput.PermissionIds"]
             .SelectMany(v => (v ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries))
             .Select(s => Guid.TryParse(s, out var g) ? g : (Guid?)null)
@@ -127,92 +78,44 @@ public class PermissionsModel : PageModel
             .Select(g => g!.Value)
             .ToList();
 
-        var body = JsonSerializer.Serialize(new
+        var result = await PostAsync<object>($"{GetIdentityUrl()}/api/v1/{TenantId}/permissions/assign", new
         {
             roleId = AssignInput.RoleId,
             permissionIds = selectedIds
         });
 
-        var response = await client.PostAsync(
-            $"{identityUrl}/api/v1/{TenantId}/permissions/assign",
-            new StringContent(body, Encoding.UTF8, "application/json"));
-
-        if (response.IsSuccessStatusCode)
-        {
-            Message = $"Permissions assignées au rôle.";
-            IsError = false;
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
-        }
-
+        if (result.Success) SetMessage("Permissions assignées au rôle.");
         await LoadAllAsync();
         return Page();
     }
 
     private async Task LoadAllAsync()
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
+        var identityUrl = GetIdentityUrl();
         var tasks = new List<Task>
         {
-            LoadPermissionsAsync(client, identityUrl),
-            LoadRolesAsync(client, identityUrl)
+            LoadPermissionsAsync(identityUrl),
+            LoadRolesAsync(identityUrl)
         };
 
         await Task.WhenAll(tasks);
     }
 
-    private async Task LoadPermissionsAsync(HttpClient client, string? identityUrl)
+    private async Task LoadPermissionsAsync(string identityUrl)
     {
-        try
+        var grouped = await GetAsync<List<PermissionGroupItem>>($"{identityUrl}/api/v1/{TenantId}/permissions/grouped");
+        if (grouped != null)
         {
-            var resp = await client.GetAsync($"{identityUrl}/api/v1/{TenantId}/permissions/grouped");
-            if (resp.IsSuccessStatusCode)
-            {
-                var json = await resp.Content.ReadAsStringAsync();
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var grouped = JsonSerializer.Deserialize<List<PermissionGroupItem>>(json, options);
-
-                if (grouped != null)
-                {
-                    GroupedPermissions = grouped;
-                    AllPermissions = grouped.SelectMany(g => g.Permissions).ToList();
-                    TotalCount = AllPermissions.Count;
-                }
-            }
+            GroupedPermissions = grouped;
+            AllPermissions = grouped.SelectMany(g => g.Permissions).ToList();
+            TotalCount = AllPermissions.Count;
         }
-        catch { }
     }
 
-    private async Task LoadRolesAsync(HttpClient client, string? identityUrl)
+    private async Task LoadRolesAsync(string identityUrl)
     {
-        try
-        {
-            var resp = await client.GetAsync($"{identityUrl}/api/v1/{TenantId}/roles?pageSize=100");
-            if (resp.IsSuccessStatusCode)
-            {
-                var json = await resp.Content.ReadAsStringAsync();
-                var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var paginated = JsonSerializer.Deserialize<RoleListResponse>(json, options);
-                Roles = paginated?.Items ?? [];
-            }
-        }
-        catch { }
-    }
-
-    private async Task<HttpClient> CreateClientAsync(string? identityUrl)
-    {
-        _ = identityUrl ?? throw new InvalidOperationException("Identity:BaseUrl n'est pas configuré.");
-        var client = _http.CreateClient();
-        var token = await HttpContext.GetTokenAsync("access_token");
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
+        var paginated = await GetAsync<RoleListResponse>($"{identityUrl}/api/v1/{TenantId}/roles?pageSize=100");
+        Roles = paginated?.Items ?? [];
     }
 }
 

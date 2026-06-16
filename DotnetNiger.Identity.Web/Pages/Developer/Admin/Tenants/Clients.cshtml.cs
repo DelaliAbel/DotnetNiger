@@ -1,38 +1,22 @@
-using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
+using DotnetNiger.Identity.Web.Infrastructure;
+using DotnetNiger.Identity.Web.Models;
 
 namespace DotnetNiger.Identity.Web.Pages.Developer.Admin;
 
 [Authorize(Roles = "Admin")]
-public class ClientsModel : PageModel
+public class ClientsModel : BasePageModel
 {
-    private readonly IHttpClientFactory _http;
-    private readonly IConfiguration _config;
-
     public ClientsModel(IHttpClientFactory http, IConfiguration config)
-    {
-        _http = http;
-        _config = config;
-    }
+        : base(http, config) { }
 
     [BindProperty(SupportsGet = true)]
     public Guid TenantId { get; set; }
 
-    [BindProperty(SupportsGet = true)]
-    public int CurrentPage { get; set; } = 1;
-
-    public int PageSize { get; set; } = 10;
-    public int TotalCount { get; set; }
-    public int TotalPages => Math.Max(1, (int)Math.Ceiling((double)TotalCount / PageSize));
-
     public List<ClientItem> Clients { get; set; } = [];
-    public string Message { get; set; } = "";
-    public bool IsError { get; set; }
 
     [BindProperty]
     public CreateClientInput Input { get; set; } = new();
@@ -47,9 +31,7 @@ public class ClientsModel : PageModel
 
     public async Task<IActionResult> OnPostCreateAsync()
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
+        var client = await GetAuthenticatedClientAsync();
         try
         {
             var body = JsonSerializer.Serialize(new
@@ -60,26 +42,23 @@ public class ClientsModel : PageModel
                 redirectUris = new[] { Input.RedirectUri }.Where(u => !string.IsNullOrEmpty(u)).ToArray(),
                 postLogoutRedirectUris = new[] { Input.PostLogoutRedirectUri }.Where(u => !string.IsNullOrEmpty(u)).ToArray()
             });
-            var resp = await client.PostAsync($"{identityUrl}/api/v1/admin/tenants/{TenantId}/clients",
+            var resp = await client.PostAsync($"{GetIdentityUrl()}/api/v1/admin/tenants/{TenantId}/clients",
                 new StringContent(body, Encoding.UTF8, "application/json"));
 
             if (resp.IsSuccessStatusCode)
             {
-                Message = "Client créé avec succès.";
-                IsError = false;
+                SetMessage("Client créé avec succès.");
                 Input = new();
             }
             else
             {
                 var err = await resp.Content.ReadAsStringAsync();
-                Message = $"Erreur : {err}";
-                IsError = true;
+                SetMessage($"Erreur : {err}", true);
             }
         }
         catch (Exception ex)
         {
-            Message = $"Erreur : {ex.Message}";
-            IsError = true;
+            SetMessage($"Erreur : {ex.Message}", true);
         }
 
         await LoadClientsAsync();
@@ -88,59 +67,15 @@ public class ClientsModel : PageModel
 
     public async Task<IActionResult> OnPostDeleteAsync(Guid clientId)
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
-        try
-        {
-            var resp = await client.DeleteAsync($"{identityUrl}/api/v1/admin/tenants/{TenantId}/clients/{clientId}");
-            if (resp.IsSuccessStatusCode)
-            {
-                Message = "Client supprimé avec succès.";
-                IsError = false;
-            }
-            else
-            {
-                var err = await resp.Content.ReadAsStringAsync();
-                Message = $"Erreur : {err}";
-                IsError = true;
-            }
-        }
-        catch (Exception ex)
-        {
-            Message = $"Erreur : {ex.Message}";
-            IsError = true;
-        }
-
+        var deleted = await DeleteAsync($"{GetIdentityUrl()}/api/v1/admin/tenants/{TenantId}/clients/{clientId}");
+        if (deleted) SetMessage("Client supprimé avec succès.");
         await LoadClientsAsync();
         return Page();
     }
 
-    private async Task LoadClientsAsync()
-    {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
-        try
-        {
-            var resp = await client.GetAsync($"{identityUrl}/api/v1/admin/tenants/{TenantId}/clients?page={CurrentPage}&pageSize={PageSize}");
-            if (resp.IsSuccessStatusCode)
-            {
-                var json = await resp.Content.ReadAsStringAsync();
-                var paginated = JsonSerializer.Deserialize<PaginatedResponse<ClientItem>>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                Clients = paginated?.Items ?? [];
-                TotalCount = paginated?.TotalCount ?? 0;
-            }
-        }
-        catch { Clients = []; }
-    }
-
     public async Task<IActionResult> OnPostEditAsync(Guid clientId)
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = await CreateClientAsync(identityUrl);
-
+        var client = await GetAuthenticatedClientAsync();
         var body = JsonSerializer.Serialize(new
         {
             clientName = EditInput.ClientName,
@@ -152,39 +87,34 @@ public class ClientsModel : PageModel
 
         try
         {
-            var resp = await client.PutAsync($"{identityUrl}/api/v1/admin/tenants/{TenantId}/clients/{clientId}",
+            var resp = await client.PutAsync($"{GetIdentityUrl()}/api/v1/admin/tenants/{TenantId}/clients/{clientId}",
                 new StringContent(body, Encoding.UTF8, "application/json"));
 
             if (resp.IsSuccessStatusCode)
             {
-                Message = "Client modifié avec succès.";
-                IsError = false;
+                SetMessage("Client modifié avec succès.");
             }
             else
             {
                 var err = await resp.Content.ReadAsStringAsync();
-                Message = $"Erreur : {err}";
-                IsError = true;
+                SetMessage($"Erreur : {err}", true);
             }
         }
         catch (Exception ex)
         {
-            Message = $"Erreur : {ex.Message}";
-            IsError = true;
+            SetMessage($"Erreur : {ex.Message}", true);
         }
 
         await LoadClientsAsync();
         return Page();
     }
 
-    private async Task<HttpClient> CreateClientAsync(string? identityUrl)
+    private async Task LoadClientsAsync()
     {
-        _ = identityUrl ?? throw new InvalidOperationException("Identity:BaseUrl n'est pas configuré.");
-        var client = _http.CreateClient();
-        var token = await HttpContext.GetTokenAsync("access_token");
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        return client;
+        var data = await GetWithStatusAsync<PaginatedResponse<ClientItem>>(
+            $"{GetIdentityUrl()}/api/v1/admin/tenants/{TenantId}/clients?page={CurrentPage}&pageSize={PageSize}");
+        Clients = data.Data?.Items ?? [];
+        TotalCount = data.Data?.TotalCount ?? 0;
     }
 }
 

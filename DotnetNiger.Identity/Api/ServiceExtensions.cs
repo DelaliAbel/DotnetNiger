@@ -66,7 +66,9 @@ public static class ServiceExtensions
             .AddCore(core => core.UseEntityFrameworkCore().UseDbContext<IdentityDbContext>())
             .AddServer(server =>
             {
-                server.SetTokenEndpointUris("/connect/token")
+                var issuerUri = config.GetValue<string>("OpenIddict:Issuer") ?? "http://localhost:5000/identity-api";
+                server.SetIssuer(new Uri(issuerUri))
+                      .SetTokenEndpointUris("/connect/token")
                       .SetAuthorizationEndpointUris("/connect/authorize")
                       .SetLogoutEndpointUris("/connect/logout")
                       .SetUserinfoEndpointUris("/connect/userinfo");

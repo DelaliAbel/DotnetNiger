@@ -48,6 +48,46 @@ namespace DotnetNiger.Community.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.Certificate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CertificateType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("CertificateUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("ReviewedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ReviewedNotes")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("SubmissionDate")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId", "Status");
+
+                    b.ToTable("Certificates");
+                });
+
             modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.Comment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -95,6 +135,43 @@ namespace DotnetNiger.Community.Migrations
                     b.ToTable("Comments");
                 });
 
+            modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.ContactMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ContactMessages");
+                });
+
             modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.Event", b =>
                 {
                     b.Property<Guid>("Id")
@@ -103,6 +180,11 @@ namespace DotnetNiger.Community.Migrations
 
                     b.Property<int>("Capacity")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("CoverImageUrl")
                         .IsRequired()
@@ -219,6 +301,11 @@ namespace DotnetNiger.Community.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AvatarUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
                         .HasColumnType("TEXT");
 
                     b.Property<Guid>("EventId")
@@ -708,6 +795,40 @@ namespace DotnetNiger.Community.Migrations
                     b.ToTable("SocialLinks");
                 });
 
+            modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.Speaker", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AvatarUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.ToTable("Speakers");
+                });
+
             modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.Tag", b =>
                 {
                     b.Property<Guid>("Id")
@@ -733,6 +854,17 @@ namespace DotnetNiger.Community.Migrations
                         .IsUnique();
 
                     b.ToTable("Tags");
+                });
+
+            modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.Certificate", b =>
+                {
+                    b.HasOne("DotnetNiger.Community.Domain.Entities.Member", "Member")
+                        .WithMany("Certificates")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Member");
                 });
 
             modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.Comment", b =>
@@ -877,6 +1009,17 @@ namespace DotnetNiger.Community.Migrations
                     b.Navigation("Member");
                 });
 
+            modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.Speaker", b =>
+                {
+                    b.HasOne("DotnetNiger.Community.Domain.Entities.Event", "Event")
+                        .WithMany("Speakers")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+                });
+
             modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.Category", b =>
                 {
                     b.Navigation("PostCategories");
@@ -898,10 +1041,14 @@ namespace DotnetNiger.Community.Migrations
                     b.Navigation("Medias");
 
                     b.Navigation("Registrations");
+
+                    b.Navigation("Speakers");
                 });
 
             modelBuilder.Entity("DotnetNiger.Community.Domain.Entities.Member", b =>
                 {
+                    b.Navigation("Certificates");
+
                     b.Navigation("SocialLinks");
                 });
 

@@ -45,6 +45,7 @@ public static class ServiceExtensions
         services.AddScoped<IUserNotificationService, UserNotificationService>();
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<ITagService, TagService>();
+        services.AddScoped<IContactService, ContactService>();
 
         return services;
     }
@@ -58,10 +59,11 @@ public static class ServiceExtensions
                 options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                 {
                     ValidateIssuer = true,
-                    ValidateAudience = false,
+                    ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = configuration["Jwt:Issuer"] ?? "http://localhost:5075/",
+                    ValidAudience = configuration["Jwt:Audience"] ?? "DotnetNiger.Identity.Client",
                 };
                 options.MetadataAddress = configuration["Jwt:MetadataAddress"] ?? "http://localhost:5075/.well-known/openid-configuration";
                 options.RequireHttpsMetadata = !environment.IsDevelopment();

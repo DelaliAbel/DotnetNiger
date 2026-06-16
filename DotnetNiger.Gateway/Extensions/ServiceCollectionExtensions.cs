@@ -3,6 +3,8 @@ using DotnetNiger.Gateway.HealthChecks;
 using DotnetNiger.Gateway.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 using MMLib.SwaggerForOcelot.DependencyInjection;
 using Ocelot.Cache.CacheManager;
@@ -61,12 +63,13 @@ public static class ServiceCollectionExtensions
             {
                 var identityUrl = (configuration["DeveloperPortal:IdentityBaseUrl"] ?? "http://localhost:5075").TrimEnd('/');
                 options.Authority = identityUrl;
-                options.RequireHttpsMetadata = false;
+                options.RequireHttpsMetadata = !environment.IsDevelopment();
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
-                    ValidIssuer = identityUrl,
-                    ValidateAudience = false,
+                    ValidIssuer = identityUrl + "/",
+                    ValidateAudience = true,
+                    ValidAudience = "DotnetNiger.Identity.Client",
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true
                 };
@@ -82,6 +85,18 @@ public static class ServiceCollectionExtensions
             });
 
         services.Configure<List<DownstreamServiceConfig>>(configuration.GetSection("DownstreamServices"));
+
+        var identityUrl = (configuration["DeveloperPortal:IdentityBaseUrl"] ?? "http://localhost:5075").TrimEnd('/');
+        services.AddSingleton<IConfigurationManager<OpenIdConnectConfiguration>>(sp =>
+        {
+            var retriever = new HttpDocumentRetriever();
+            var env = sp.GetRequiredService<IWebHostEnvironment>();
+            retriever.RequireHttps = !env.IsDevelopment();
+            return new ConfigurationManager<OpenIdConnectConfiguration>(
+                $"{identityUrl}/.well-known/openid-configuration",
+                new OpenIdConnectConfigurationRetriever(),
+                retriever);
+        });
 
         return services;
     }

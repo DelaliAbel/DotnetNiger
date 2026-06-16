@@ -1,27 +1,18 @@
-using System.Net.Http.Headers;
 using System.Security.Claims;
-using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
+using DotnetNiger.Identity.Web.Infrastructure;
+using DotnetNiger.Identity.Web.Models;
 
 namespace DotnetNiger.Identity.Web.Pages.Developer;
 
 [Authorize]
-public class ProfileModel : PageModel
+public class ProfileModel : BasePageModel
 {
-    private readonly IHttpClientFactory _http;
-    private readonly IConfiguration _config;
-    private readonly ILogger<ProfileModel> _logger;
-
     public ProfileModel(IHttpClientFactory http, IConfiguration config, ILogger<ProfileModel> logger)
-    {
-        _http = http;
-        _config = config;
-        _logger = logger;
-    }
+        : base(http, config, logger) { }
 
     [BindProperty]
     public ProfileInput Input { get; set; } = new();
@@ -29,8 +20,6 @@ public class ProfileModel : PageModel
     public string Email { get; set; } = "";
     public string TenantId { get; set; } = "";
     public List<string> Roles { get; set; } = [];
-    public string Message { get; set; } = "";
-    public bool IsError { get; set; }
 
     public bool TwoFactorEnabled { get; set; }
     public int RecoveryCodesLeft { get; set; }
@@ -41,117 +30,6 @@ public class ProfileModel : PageModel
     [BindProperty]
     public TwoFactorInput TwoFactorInput { get; set; } = new();
 
-    public async Task OnGetAsync()
-    {
-        await LoadProfileAsync();
-        await LoadTwoFactorStatusAsync();
-    }
-
-    public async Task<IActionResult> OnPostAsync()
-    {
-        if (!ModelState.IsValid)
-            return Page();
-
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = _http.CreateClient();
-        var token = await HttpContext.GetTokenAsync("access_token");
-
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var body = JsonSerializer.Serialize(new
-        {
-            firstName = Input.FirstName,
-            lastName = Input.LastName,
-            avatarUrl = Input.AvatarUrl
-        });
-
-        var response = await client.PutAsync(
-            $"{identityUrl}/api/v1/profile",
-            new StringContent(body, Encoding.UTF8, "application/json"));
-
-        if (response.IsSuccessStatusCode)
-        {
-            Message = "Profil mis à jour avec succès.";
-            IsError = false;
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
-        }
-
-        await LoadProfileAsync();
-        await LoadTwoFactorStatusAsync();
-        return Page();
-    }
-
-    private async Task LoadProfileAsync()
-    {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = _http.CreateClient();
-        var token = await HttpContext.GetTokenAsync("access_token");
-
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        try
-        {
-            var response = await client.GetAsync($"{identityUrl}/api/v1/profile");
-            if (response.IsSuccessStatusCode)
-            {
-                var json = await response.Content.ReadAsStringAsync();
-                var profile = JsonSerializer.Deserialize<ProfileResponse>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                if (profile != null)
-                {
-                    Input.FirstName = profile.FirstName ?? "";
-                    Input.LastName = profile.LastName ?? "";
-                    Input.AvatarUrl = profile.AvatarUrl ?? "";
-                    Email = profile.Email;
-                    TenantId = profile.TenantId?.ToString() ?? "";
-                    Roles = profile.Roles?.ToList() ?? [];
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to load profile from Identity API, falling back to claims");
-            Input.FirstName = User.FindFirst("given_name")?.Value ?? User.FindFirst(ClaimTypes.GivenName)?.Value ?? "";
-            Input.LastName = User.FindFirst("family_name")?.Value ?? User.FindFirst(ClaimTypes.Surname)?.Value ?? "";
-            Email = User.FindFirst("email")?.Value ?? User.FindFirst(ClaimTypes.Email)?.Value ?? "";
-            TenantId = User.FindFirst("tenant_id")?.Value ?? "";
-            Roles = User.FindAll("role").Select(c => c.Value).ToList();
-        }
-    }
-
-    private async Task LoadTwoFactorStatusAsync()
-    {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = _http.CreateClient();
-        var token = await HttpContext.GetTokenAsync("access_token");
-
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        try
-        {
-            var response = await client.GetAsync($"{identityUrl}/api/v1/profile/two-factor/status");
-            if (response.IsSuccessStatusCode)
-            {
-                var json = await response.Content.ReadAsStringAsync();
-                using var doc = JsonDocument.Parse(json);
-                var root = doc.RootElement;
-                TwoFactorEnabled = root.GetProperty("twoFactorEnabled").GetBoolean();
-                RecoveryCodesLeft = root.GetProperty("recoveryCodesLeft").GetInt32();
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogDebug(ex, "Failed to load 2FA status from Identity API");
-        }
-    }
-
     [BindProperty]
     public ChangeEmailInput ChangeEmailInput { get; set; } = new();
 
@@ -161,40 +39,42 @@ public class ProfileModel : PageModel
     [BindProperty]
     public ChangePasswordInput PasswordInput { get; set; } = new();
 
+    public List<LoginHistoryEntry> LoginHistory { get; set; } = [];
+
+    public async Task OnGetAsync()
+    {
+        await LoadProfileAsync();
+        await LoadTwoFactorStatusAsync();
+    }
+
+    public async Task<IActionResult> OnPostAsync()
+    {
+        if (!ModelState.IsValid) return Page();
+
+        var ok = await PutAsync($"{GetIdentityUrl()}/api/v1/profile", new
+        {
+            firstName = Input.FirstName,
+            lastName = Input.LastName,
+            avatarUrl = Input.AvatarUrl
+        });
+        if (!ok) return Page();
+
+        SetMessage("Profil mis à jour avec succès.");
+        await LoadProfileAsync();
+        await LoadTwoFactorStatusAsync();
+        return Page();
+    }
+
     public async Task<IActionResult> OnPostChangePasswordAsync()
     {
-        if (!ModelState.IsValid)
-            return Page();
+        if (!ModelState.IsValid) return Page();
 
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = _http.CreateClient();
-        var token = await HttpContext.GetTokenAsync("access_token");
-
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var body = JsonSerializer.Serialize(new
+        var (_, success) = await PostAsync<object>($"{GetIdentityUrl()}/api/v1/profile/change-password", new
         {
             currentPassword = PasswordInput.CurrentPassword,
             newPassword = PasswordInput.NewPassword
         });
-
-        var response = await client.PostAsync(
-            $"{identityUrl}/api/v1/profile/change-password",
-            new StringContent(body, Encoding.UTF8, "application/json"));
-
-        if (response.IsSuccessStatusCode)
-        {
-            Message = "Mot de passe changé avec succès.";
-            IsError = false;
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
-        }
-
+        if (success) SetMessage("Mot de passe changé avec succès.");
         return Page();
     }
 
@@ -202,28 +82,14 @@ public class ProfileModel : PageModel
     {
         if (!ModelState.IsValid) return Page();
 
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = _http.CreateClient();
-        var token = await HttpContext.GetTokenAsync("access_token");
-
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var body = JsonSerializer.Serialize(new { newEmail = ChangeEmailInput.NewEmail });
-        var response = await client.PostAsync(
-            $"{identityUrl}/api/v1/profile/change-email",
-            new StringContent(body, Encoding.UTF8, "application/json"));
-
-        if (response.IsSuccessStatusCode)
+        var (_, success) = await PostAsync<object>($"{GetIdentityUrl()}/api/v1/profile/change-email", new
         {
-            Message = "Un code de confirmation a été envoyé à votre nouvelle adresse email.";
-            IsError = false;
-        }
-        else
+            newEmail = ChangeEmailInput.NewEmail
+        });
+
+        if (success)
         {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
+            SetMessage("Un code de confirmation a été envoyé à votre nouvelle adresse email.");
         }
 
         await LoadProfileAsync();
@@ -235,29 +101,15 @@ public class ProfileModel : PageModel
     {
         if (!ModelState.IsValid) return Page();
 
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = _http.CreateClient();
-        var token = await HttpContext.GetTokenAsync("access_token");
-
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var body = JsonSerializer.Serialize(new { code = ConfirmChangeEmailInput.Code });
-        var response = await client.PostAsync(
-            $"{identityUrl}/api/v1/profile/confirm-change-email",
-            new StringContent(body, Encoding.UTF8, "application/json"));
-
-        if (response.IsSuccessStatusCode)
+        var (_, success) = await PostAsync<object>($"{GetIdentityUrl()}/api/v1/profile/confirm-change-email", new
         {
-            Message = "Adresse email modifiée avec succès.";
-            IsError = false;
+            code = ConfirmChangeEmailInput.Code
+        });
+
+        if (success)
+        {
+            SetMessage("Adresse email modifiée avec succès.");
             ConfirmChangeEmailInput = new ConfirmChangeEmailInput();
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
         }
 
         await LoadProfileAsync();
@@ -265,43 +117,25 @@ public class ProfileModel : PageModel
         return Page();
     }
 
-    public List<LoginHistoryEntry> LoginHistory { get; set; } = [];
-
     public async Task<IActionResult> OnPostDeleteAccountAsync(string confirmEmail, string confirmText)
     {
         if (confirmEmail != Email)
         {
-            Message = "L'email de confirmation ne correspond pas.";
-            IsError = true;
+            SetMessage("L'email de confirmation ne correspond pas.", true);
             return Page();
         }
 
         if (confirmText != "SUPPRIMER")
         {
-            Message = "Veuillez taper SUPPRIMER pour confirmer.";
-            IsError = true;
+            SetMessage("Veuillez taper SUPPRIMER pour confirmer.", true);
             return Page();
         }
 
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = _http.CreateClient();
-        var token = await HttpContext.GetTokenAsync("access_token");
-
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var response = await client.DeleteAsync($"{identityUrl}/api/v1/profile");
-
-        if (response.IsSuccessStatusCode)
+        var deleted = await DeleteAsync($"{GetIdentityUrl()}/api/v1/profile");
+        if (deleted)
         {
             await HttpContext.SignOutAsync();
             return Redirect("/Account/Login?message=compte_supprime");
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur lors de la suppression : {error}";
-            IsError = true;
         }
 
         await LoadProfileAsync();
@@ -311,24 +145,9 @@ public class ProfileModel : PageModel
 
     public async Task<IActionResult> OnPostLoadLoginHistoryAsync()
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = _http.CreateClient();
-        var token = await HttpContext.GetTokenAsync("access_token");
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        try
-        {
-            var response = await client.GetAsync($"{identityUrl}/api/v1/profile/login-history?pageSize=20");
-            if (response.IsSuccessStatusCode)
-            {
-                var json = await response.Content.ReadAsStringAsync();
-                var paginated = JsonSerializer.Deserialize<LoginHistoryPaginated>(json,
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                LoginHistory = paginated?.Items ?? [];
-            }
-        }
-        catch { LoginHistory = []; }
+        var paginated = await GetAsync<PaginatedResponse<LoginHistoryEntry>>(
+            $"{GetIdentityUrl()}/api/v1/profile/login-history?pageSize=20");
+        LoginHistory = paginated?.Items ?? [];
 
         await LoadProfileAsync();
         await LoadTwoFactorStatusAsync();
@@ -343,30 +162,12 @@ public class ProfileModel : PageModel
 
     public async Task<IActionResult> OnPostSetupTwoFactorAsync()
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = _http.CreateClient();
-        var token = await HttpContext.GetTokenAsync("access_token");
-
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var response = await client.PostAsync($"{identityUrl}/api/v1/profile/two-factor/setup", null);
-
-        if (response.IsSuccessStatusCode)
+        var (result, success) = await PostAsync<TwoFactorSetupResponse>($"{GetIdentityUrl()}/api/v1/profile/two-factor/setup");
+        if (success && result != null)
         {
-            var json = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-            SharedKey = root.GetProperty("sharedKey").GetString();
-            AuthenticatorUri = root.GetProperty("authenticatorUri").GetString();
-            Message = "Scannez le code QR avec votre application d'authentification.";
-            IsError = false;
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
+            SharedKey = result.SharedKey;
+            AuthenticatorUri = result.AuthenticatorUri;
+            SetMessage("Scannez le code QR avec votre application d'authentification.");
         }
 
         await LoadTwoFactorStatusAsync();
@@ -377,40 +178,19 @@ public class ProfileModel : PageModel
     {
         if (string.IsNullOrEmpty(TwoFactorInput.Code))
         {
-            Message = "Veuillez entrer le code de vérification.";
-            IsError = true;
+            SetMessage("Veuillez entrer le code de vérification.", true);
             return Page();
         }
 
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = _http.CreateClient();
-        var token = await HttpContext.GetTokenAsync("access_token");
-
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var body = JsonSerializer.Serialize(new { code = TwoFactorInput.Code });
-        var response = await client.PostAsync(
-            $"{identityUrl}/api/v1/profile/two-factor/enable",
-            new StringContent(body, Encoding.UTF8, "application/json"));
-
-        if (response.IsSuccessStatusCode)
+        var (result, success) = await PostAsync<Enable2FAResponse>($"{GetIdentityUrl()}/api/v1/profile/two-factor/enable", new
         {
-            var json = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-            if (root.TryGetProperty("recoveryCodes", out var codes))
-            {
-                RecoveryCodes = codes.EnumerateArray().Select(c => c.GetString()!).ToArray();
-            }
-            Message = "Double authentification activée avec succès.";
-            IsError = false;
-        }
-        else
+            code = TwoFactorInput.Code
+        });
+
+        if (success)
         {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
+            RecoveryCodes = result?.RecoveryCodes;
+            SetMessage("Double authentification activée avec succès.");
         }
 
         await LoadTwoFactorStatusAsync();
@@ -421,36 +201,21 @@ public class ProfileModel : PageModel
     {
         if (string.IsNullOrEmpty(TwoFactorInput.Code))
         {
-            Message = "Veuillez entrer le code de vérification.";
-            IsError = true;
+            SetMessage("Veuillez entrer le code de vérification.", true);
             return Page();
         }
 
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = _http.CreateClient();
-        var token = await HttpContext.GetTokenAsync("access_token");
+        var (_, success) = await PostAsync<object>($"{GetIdentityUrl()}/api/v1/profile/two-factor/disable", new
+        {
+            code = TwoFactorInput.Code
+        });
 
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var body = JsonSerializer.Serialize(new { code = TwoFactorInput.Code });
-        var response = await client.PostAsync(
-            $"{identityUrl}/api/v1/profile/two-factor/disable",
-            new StringContent(body, Encoding.UTF8, "application/json"));
-
-        if (response.IsSuccessStatusCode)
+        if (success)
         {
             SharedKey = null;
             AuthenticatorUri = null;
             RecoveryCodes = null;
-            Message = "Double authentification désactivée.";
-            IsError = false;
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
+            SetMessage("Double authentification désactivée.");
         }
 
         await LoadTwoFactorStatusAsync();
@@ -459,91 +224,47 @@ public class ProfileModel : PageModel
 
     public async Task<IActionResult> OnPostGenerateRecoveryCodesAsync()
     {
-        var identityUrl = _config["Identity:BaseUrl"]?.TrimEnd('/');
-        var client = _http.CreateClient();
-        var token = await HttpContext.GetTokenAsync("access_token");
-
-        if (!string.IsNullOrEmpty(token))
-            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-
-        var response = await client.PostAsync($"{identityUrl}/api/v1/profile/two-factor/recovery-codes", null);
-
-        if (response.IsSuccessStatusCode)
+        var (result, success) = await PostAsync<Enable2FAResponse>($"{GetIdentityUrl()}/api/v1/profile/two-factor/recovery-codes");
+        if (success)
         {
-            var json = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-            if (root.TryGetProperty("recoveryCodes", out var codes))
-            {
-                RecoveryCodes = codes.EnumerateArray().Select(c => c.GetString()!).ToArray();
-            }
-            Message = "Codes de récupération générés. Sauvegardez-les dans un endroit sûr.";
-            IsError = false;
-        }
-        else
-        {
-            var error = await response.Content.ReadAsStringAsync();
-            Message = $"Erreur : {error}";
-            IsError = true;
+            RecoveryCodes = result?.RecoveryCodes;
+            SetMessage("Codes de récupération générés. Sauvegardez-les dans un endroit sûr.");
         }
 
         await LoadTwoFactorStatusAsync();
         return Page();
     }
 
-    public class ChangePasswordInput
+    private async Task LoadProfileAsync()
     {
-        public string CurrentPassword { get; set; } = "";
-        public string NewPassword { get; set; } = "";
+        var profile = await GetAsync<ProfileResponse>($"{GetIdentityUrl()}/api/v1/profile");
+        if (profile != null)
+        {
+            Input.FirstName = profile.FirstName ?? "";
+            Input.LastName = profile.LastName ?? "";
+            Input.AvatarUrl = profile.AvatarUrl ?? "";
+            Email = profile.Email;
+            TenantId = profile.TenantId?.ToString() ?? "";
+            Roles = profile.Roles?.ToList() ?? [];
+        }
+        else
+        {
+            Input.FirstName = User.FindFirst("given_name")?.Value ?? User.FindFirst(ClaimTypes.GivenName)?.Value ?? "";
+            Input.LastName = User.FindFirst("family_name")?.Value ?? User.FindFirst(ClaimTypes.Surname)?.Value ?? "";
+            Email = User.FindFirst("email")?.Value ?? User.FindFirst(ClaimTypes.Email)?.Value ?? "";
+            TenantId = User.FindFirst("tenant_id")?.Value ?? "";
+            Roles = User.FindAll("role").Select(c => c.Value).ToList();
+        }
+    }
+
+    private async Task LoadTwoFactorStatusAsync()
+    {
+        var result = await GetAsync<TwoFactorStatusResponse>($"{GetIdentityUrl()}/api/v1/profile/two-factor/status");
+        if (result != null)
+        {
+            TwoFactorEnabled = result.TwoFactorEnabled;
+            RecoveryCodesLeft = result.RecoveryCodesLeft;
+        }
     }
 }
 
-public class LoginHistoryEntry
-{
-    public DateTime Timestamp { get; set; }
-    public string? IpAddress { get; set; }
-    public string? UserAgent { get; set; }
-    public bool Success { get; set; }
-    public string? Provider { get; set; }
-}
-
-public class LoginHistoryPaginated
-{
-    public List<LoginHistoryEntry> Items { get; set; } = [];
-    public int TotalCount { get; set; }
-}
-
-public class ChangeEmailInput
-{
-    public string NewEmail { get; set; } = "";
-}
-
-public class ConfirmChangeEmailInput
-{
-    public string Code { get; set; } = "";
-}
-
-public class ProfileInput
-{
-    public string FirstName { get; set; } = "";
-    public string LastName { get; set; } = "";
-    public string AvatarUrl { get; set; } = "";
-}
-
-public class TwoFactorInput
-{
-    public string Code { get; set; } = "";
-    public string SharedKey { get; set; } = "";
-    public string AuthenticatorUri { get; set; } = "";
-}
-
-public class ProfileResponse
-{
-    public Guid Id { get; set; }
-    public string Email { get; set; } = "";
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
-    public string? AvatarUrl { get; set; }
-    public Guid? TenantId { get; set; }
-    public List<string>? Roles { get; set; }
-}

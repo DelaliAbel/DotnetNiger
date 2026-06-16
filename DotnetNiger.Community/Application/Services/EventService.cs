@@ -15,6 +15,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
             .AsNoTracking()
             .Include(e => e.Medias)
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .Include(e => e.Speakers)
             .AsSplitQuery()
             .AsQueryable();
 
@@ -51,6 +52,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
                     Description = e.Description,
                     Location = e.Location,
                     EventType = e.EventType,
+                    Category = e.Category,
                     StartDate = e.StartDate,
                     EndDate = e.EndDate,
                     CoverImageUrl = e.CoverImageUrl,
@@ -72,6 +74,15 @@ public class EventService(AppDbContext db, INotificationService notificationServ
                         Type = m.Type,
                         Url = m.Url,
                         Title = m.Title
+                    }).ToList(),
+                    GalleryImageUrls = e.Medias.Where(m => m.Type == "Image").Select(m => m.Url).ToList(),
+                    Speakers = e.Speakers.Select(s => new SpeakerResponse
+                    {
+                        Id = s.Id,
+                        UserId = s.UserId,
+                        Name = s.Name,
+                        Role = s.Role,
+                        AvatarUrl = s.AvatarUrl
                     }).ToList(),
                     Tags = e.EventTags.Select(et => new TagResponse
                     {
@@ -99,6 +110,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
                     Description = e.Description,
                     Location = e.Location,
                     EventType = e.EventType,
+                    Category = e.Category,
                     StartDate = e.StartDate,
                     EndDate = e.EndDate,
                     CoverImageUrl = e.CoverImageUrl,
@@ -121,6 +133,15 @@ public class EventService(AppDbContext db, INotificationService notificationServ
                         Url = m.Url,
                         Title = m.Title
                     }).ToList(),
+                    GalleryImageUrls = e.Medias.Where(m => m.Type == "Image").Select(m => m.Url).ToList(),
+                    Speakers = e.Speakers.Select(s => new SpeakerResponse
+                    {
+                        Id = s.Id,
+                        UserId = s.UserId,
+                        Name = s.Name,
+                        Role = s.Role,
+                        AvatarUrl = s.AvatarUrl
+                    }).ToList(),
                     Tags = e.EventTags.Select(rt => new TagResponse
                     {
                         Id = rt.Tag.Id,
@@ -141,6 +162,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
             .AsNoTracking()
             .Include(e => e.Medias)
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .Include(e => e.Speakers)
             .AsSplitQuery()
             .Where(e => e.IsPublished && e.EndDate >= DateTime.UtcNow)
             .OrderBy(e => e.StartDate)
@@ -193,6 +215,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
             .AsNoTracking()
             .Include(e => e.Medias)
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .Include(e => e.Speakers)
             .AsSplitQuery()
             .FirstOrDefaultAsync(e => e.Id == id);
         return ev is null ? null : MapEvent(ev);
@@ -204,6 +227,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
             .AsNoTracking()
             .Include(e => e.Medias)
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .Include(e => e.Speakers)
             .AsSplitQuery()
             .FirstOrDefaultAsync(e => e.Slug == slug);
         return ev is null ? null : MapEvent(ev);
@@ -219,6 +243,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
             Description = request.Description,
             Location = request.Location,
             EventType = request.EventType,
+            Category = request.Category,
             StartDate = request.StartDate,
             EndDate = request.EndDate,
             CoverImageUrl = request.CoverImageUrl,
@@ -231,6 +256,30 @@ public class EventService(AppDbContext db, INotificationService notificationServ
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow
         };
+
+        foreach (var imageUrl in request.GalleryImageUrls.Where(u => !string.IsNullOrWhiteSpace(u)))
+        {
+            ev.Medias.Add(new EventMedia
+            {
+                Id = Guid.NewGuid(),
+                EventId = ev.Id,
+                Type = "Image",
+                Url = imageUrl
+            });
+        }
+
+        foreach (var speaker in request.Speakers)
+        {
+            ev.Speakers.Add(new Speaker
+            {
+                Id = Guid.NewGuid(),
+                EventId = ev.Id,
+                UserId = speaker.UserId,
+                Name = speaker.Name,
+                Role = speaker.Role,
+                AvatarUrl = speaker.AvatarUrl
+            });
+        }
 
         await AssignTags(ev, request.TagNames);
         db.Events.Add(ev);
@@ -248,6 +297,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
         var ev = await db.Events
             .Include(e => e.Medias)
             .Include(e => e.EventTags)
+            .Include(e => e.Speakers)
             .FirstOrDefaultAsync(e => e.Id == id);
         if (ev is null) return null;
         if (ev.CreatedBy != userId && !isAdmin)
@@ -258,6 +308,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
         ev.Description = request.Description;
         ev.Location = request.Location;
         ev.EventType = request.EventType;
+        ev.Category = request.Category;
         ev.StartDate = request.StartDate;
         ev.EndDate = request.EndDate;
         ev.CoverImageUrl = request.CoverImageUrl;
@@ -269,6 +320,33 @@ public class EventService(AppDbContext db, INotificationService notificationServ
 
         db.EventTags.RemoveRange(ev.EventTags);
         await AssignTags(ev, request.TagNames);
+
+        db.EventMedias.RemoveRange(ev.Medias.Where(m => m.Type == "Image"));
+        foreach (var imageUrl in request.GalleryImageUrls.Where(u => !string.IsNullOrWhiteSpace(u)))
+        {
+            ev.Medias.Add(new EventMedia
+            {
+                Id = Guid.NewGuid(),
+                EventId = ev.Id,
+                Type = "Image",
+                Url = imageUrl
+            });
+        }
+
+        db.Speakers.RemoveRange(ev.Speakers);
+        foreach (var speaker in request.Speakers)
+        {
+            ev.Speakers.Add(new Speaker
+            {
+                Id = Guid.NewGuid(),
+                EventId = ev.Id,
+                UserId = speaker.UserId,
+                Name = speaker.Name,
+                Role = speaker.Role,
+                AvatarUrl = speaker.AvatarUrl
+            });
+        }
+
         await db.SaveChangesAsync();
         return MapEvent(ev);
     }
@@ -313,6 +391,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
             .AsNoTracking()
             .Include(e => e.Medias)
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .Include(e => e.Speakers)
             .AsSplitQuery()
             .Where(e => !e.IsPublished && !e.IsDeleted)
             .OrderByDescending(e => e.CreatedAt)
@@ -375,7 +454,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
         return MapEvent(ev);
     }
 
-    public async Task<EventRegistrationResponse?> RegisterAsync(Guid eventId, Guid userId, string userName)
+    public async Task<EventRegistrationResponse?> RegisterAsync(Guid eventId, Guid userId, string userName, string avatarUrl = "")
     {
         var existing = await db.EventRegistrations.AnyAsync(r => r.EventId == eventId && r.UserId == userId);
         if (existing) return null;
@@ -396,6 +475,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
             EventId = eventId,
             UserId = userId,
             UserName = userName,
+            AvatarUrl = avatarUrl,
             RegisteredAt = DateTime.UtcNow,
             RegistrationStatus = "Confirmed"
         };
@@ -496,6 +576,7 @@ public class EventService(AppDbContext db, INotificationService notificationServ
         EventTitle = eventTitle,
         UserId = r.UserId,
         UserName = r.UserName,
+        AvatarUrl = r.AvatarUrl,
         RegisteredAt = r.RegisteredAt,
         IsAttended = r.IsAttended,
         RegistrationStatus = r.RegistrationStatus

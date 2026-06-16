@@ -49,6 +49,7 @@ var mergedOcelotFile = useConsul
 
     app.UseCors("AllowAll");
     app.UseSecurityHeadersMiddleware();
+    app.UseTokenCookieMiddleware();
 
     app.UseLatencyMetricsMiddleware();
     app.UseClientIdResolutionMiddleware();
@@ -98,7 +99,7 @@ var mergedOcelotFile = useConsul
     app.UseAuthorization();
 
     await app.UseOcelot();
-    app.Run();
+    await app.RunAsync();
 }
 catch (Exception ex)
 {

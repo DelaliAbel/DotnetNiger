@@ -24,6 +24,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<Partner> Partners => Set<Partner>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<Certificate> Certificates => Set<Certificate>();
+    public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
+    public DbSet<Speaker> Speakers => Set<Speaker>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -78,6 +81,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(e => e.Slug).HasMaxLength(200);
             entity.Property(e => e.EventType).HasMaxLength(50);
             entity.Property(e => e.Location).HasMaxLength(200);
+            entity.Property(e => e.Category).HasMaxLength(100);
         });
 
         modelBuilder.Entity<EventMedia>(entity =>
@@ -95,6 +99,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Navigation(e => e.Event).IsRequired(false);
             entity.HasIndex(e => new { e.EventId, e.UserId }).IsUnique();
             entity.Property(e => e.RegistrationStatus).HasMaxLength(50);
+            entity.Property(e => e.AvatarUrl).HasMaxLength(500);
         });
 
         modelBuilder.Entity<Resource>(entity =>
@@ -188,6 +193,34 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Message).HasMaxLength(500);
             entity.HasIndex(e => e.UserId);
+        });
+
+        modelBuilder.Entity<Speaker>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Event).WithMany(e => e.Speakers).HasForeignKey(e => e.EventId);
+            entity.Property(e => e.Name).HasMaxLength(200);
+            entity.Property(e => e.Role).HasMaxLength(100);
+            entity.Property(e => e.AvatarUrl).HasMaxLength(500);
+        });
+
+        modelBuilder.Entity<ContactMessage>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FullName).HasMaxLength(200);
+            entity.Property(e => e.Email).HasMaxLength(200);
+            entity.Property(e => e.Subject).HasMaxLength(200);
+            entity.Property(e => e.Message).HasMaxLength(2000);
+        });
+
+        modelBuilder.Entity<Certificate>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.CertificateUrl).HasMaxLength(500);
+            entity.Property(e => e.CertificateType).HasMaxLength(100);
+            entity.Property(e => e.Status).HasMaxLength(50);
+            entity.HasOne(e => e.Member).WithMany(e => e.Certificates).HasForeignKey(e => e.UserId).HasPrincipalKey(e => e.Id);
+            entity.HasIndex(e => new { e.UserId, e.Status });
         });
     }
 }

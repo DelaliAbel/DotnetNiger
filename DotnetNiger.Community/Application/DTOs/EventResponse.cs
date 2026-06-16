@@ -8,6 +8,7 @@ public class EventResponse
     public string Description { get; set; } = string.Empty;
     public string Location { get; set; } = string.Empty;
     public string EventType { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
     public DateTime StartDate { get; set; }
     public DateTime EndDate { get; set; }
     public string CoverImageUrl { get; set; } = string.Empty;
@@ -25,4 +26,6 @@ public class EventResponse
     public DateTime CreatedAt { get; set; }
     public List<EventMediaResponse> Medias { get; set; } = [];
     public List<TagResponse> Tags { get; set; } = [];
+    public List<string> GalleryImageUrls { get; set; } = [];
+    public List<SpeakerResponse> Speakers { get; set; } = [];
 }

@@ -1,0 +1,12 @@
+@model string
+@{
+    var message = ViewData["AlertMessage"] as string ?? Model;
+    var isError = ViewData["AlertError"] is true;
+}
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-@(isError ? "danger" : "success") alert-dismissible fade show" role="alert">
+        @message
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}

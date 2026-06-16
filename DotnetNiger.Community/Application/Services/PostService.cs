@@ -29,6 +29,8 @@ public class PostService(AppDbContext db) : IPostService
         List<PostResponse> items;
         int total;
 
+        total = await q.CountAsync();
+
         if (after.HasValue)
         {
             items = await q
@@ -68,11 +70,9 @@ public class PostService(AppDbContext db) : IPostService
                     }).ToList()
                 })
                 .ToListAsync();
-            total = items.Count;
         }
         else
         {
-            total = await q.CountAsync();
             items = await q
                 .OrderByDescending(p => p.PublishedAt ?? p.CreatedAt)
                 .Skip((page - 1) * pageSize)

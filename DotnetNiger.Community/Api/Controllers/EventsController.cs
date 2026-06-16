@@ -98,7 +98,8 @@ public class EventsController(IEventService eventService) : ControllerBase
             return Unauthorized(new { Success = false, Message = "Invalid user identity" });
 
         var userName = User.FindFirstValue("full_name") ?? "Unknown";
-        var result = await eventService.RegisterAsync(request.EventId, userId, userName);
+        var avatarUrl = User.FindFirstValue("avatar_url") ?? request.AvatarUrl;
+        var result = await eventService.RegisterAsync(request.EventId, userId, userName, avatarUrl);
         if (result is null)
             return BadRequest(new { Success = false, Message = "Event is full or already registered" });
         return Ok(new { Success = true, Data = result });
@@ -125,5 +126,36 @@ public class EventsController(IEventService eventService) : ControllerBase
 
         var registrations = await eventService.GetRegistrationsAsync(eventId);
         return Ok(new { Success = true, Data = registrations });
+    }
+
+    [HttpGet("pending")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetPending([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
+        var events = await eventService.GetPendingEventsAsync(page, pageSize);
+        return Ok(new { Success = true, Data = new { Items = events, TotalCount = events.Count, Page = page, PageSize = pageSize } });
+    }
+
+    [HttpPatch("{id:guid}/approve")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Approve(Guid id, [FromQuery] string? comment = null)
+    {
+        var ev = await eventService.ApproveAsync(id);
+        if (ev is null) return NotFound(new { Success = false, Message = "Event not found" });
+        return Ok(new { Success = true, Data = ev });
+    }
+
+    [HttpPatch("{id:guid}/reject")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Reject(Guid id, [FromQuery] string reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+            return BadRequest(new { Success = false, Message = "Rejection reason is required" });
+
+        var ev = await eventService.RejectAsync(id, reason);
+        if (ev is null) return NotFound(new { Success = false, Message = "Event not found" });
+        return Ok(new { Success = true, Data = ev });
     }
 }

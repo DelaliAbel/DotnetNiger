@@ -4,6 +4,7 @@ using DotnetNiger.Community.Application.DTOs;
 using DotnetNiger.Community.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
@@ -64,6 +65,21 @@ public class ProfileController(IProfileService profileService) : ControllerBase
         var deleted = await profileService.DeleteSocialLinkAsync(userId, id);
         if (!deleted) return NotFound(new { Success = false, Message = "Social link not found" });
         return Ok(new { Success = true, Message = "Social link deleted" });
+    }
+
+    [HttpPost("certificates")]
+    public async Task<IActionResult> SubmitCertificate([FromBody] CertificateSubmissionRequest request)
+    {
+        try
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var cert = await profileService.SubmitCertificateAsync(userId, request);
+            return Ok(new { Success = true, Data = cert });
+        }
+        catch (ValidationException ex)
+        {
+            return BadRequest(new { Success = false, Message = ex.Message });
+        }
     }
 }
 
