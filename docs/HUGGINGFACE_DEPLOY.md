@@ -18,613 +18,471 @@
 
 | Limite | Détail |
 |--------|--------|
-| **1 port exposé** | Un Space Docker expose un seul port (7860) |
+| **1 port exposé** | Un Space expose un seul port (7860) |
 | **Mise en veille** | Le Space s'endort après 48h d'inactivité (gratuit) |
-| **Stockage éphémère** | Les fichiers sont perdus au redémarrage (sauf si commit) |
+| **Stockage éphémère** | Données perdues au redémarrage (sauf Git LFS) |
 | **Pas de réseau interne** | Les Spaces ne communiquent pas entre eux |
-| **Pas de domaine personnalisé** | Payant (PRO, à partir de 9$/mois) |
+| **Pas de domaine personnalisé** | Payant (PRO, 9$/mois) |
 
 ---
 
-## 2. Architecture sur HF Spaces
+## 2. Deux Approches au Choix
+
+### Approche A : 2 Spaces séparés (recommandé)
 
 ```
-                     ┌──────────────────────────────┐
-                     │     Docker Space (1 seul)     │
-                     │                              │
-                     │  nginx (port 7860 exposé)     │
-                     │    ├── /identity-api/* → Identity:8081
-                     │    ├── /api/*          → Community:8082
-                     │    ├── /swagger        → Gateway:5000
-                     │    └── /               → Frontend WASM
-                     │                              │
-                     │  ┌──────┐ ┌────────┐ ┌─────┐ │
-                     │  │Identity││Community││Gateway│ │
-                     │  │:8081   ││:8082    ││:5000  │ │
-                     │  └──────┘ └────────┘ └─────┘ │
-                     └──────────────────────────────┘
+┌─────────────────────────┐    ┌─────────────────────────────┐
+│  Space BACKEND (Docker)  │    │  Space FRONTEND (Docker)    │
+│                          │    │                             │
+│  nginx (:7860)           │    │  nginx (:7860)              │
+│   ├── /identity-api/*    │    │   ├── / → fichiers WASM     │
+│   ├── /api/*             │    │   ├── /api/* → proxy backend│
+│   ├── /connect/*         │    │   ├── /identity-api/* → proxy│
+│   ├── /Account/*         │    │   └── /connect/* → proxy    │
+│   └── /.well-known/*     │    │                             │
+│                          │    │  Appels API same-origin     │
+│   Identity + Community   │    │  (nginx proxy → backend)    │
+│   + Gateway + Identity.Web│   └─────────────────────────────┘
+└─────────────────────────┘
+           │                          ↑
+           │  HTTPS cross-Space        │
+           └──────────────────────────┘
 ```
 
-Tous les services tournent **dans un seul conteneur** (Hugging Face expose 1 seul port). Un reverse proxy nginx route les requêtes vers le bon service interne.
+**Avantages** : Build plus rapide, chaque Space est indépendant, possibilité de mettre à jour frontend sans toucher au backend.
+**Inconvénient** : 2 Spaces à créer et maintenir.
+
+### Approche B : 1 Space combiné (tout-en-un)
+
+```
+┌─────────────────────────────────────────┐
+│         Space COMBINÉ (Docker)           │
+│                                         │
+│     nginx (:7860)                       │
+│      ├── /identity-api/* → Gateway:5000 │
+│      ├── /api/*          → Gateway:5000 │
+│      ├── / → fichiers WASM (frontend)   │
+│      └── (fallback) → Identity.Web:5100 │
+│                                         │
+│  ┌────────┐ ┌─────────┐ ┌───────┐ ┌───┐ │
+│  │Identity│ │Community│ │Gateway│ │WASM│ │
+│  │:8081   │ │:8082    │ │:5000  │ │nginx│ │
+│  └────────┘ └─────────┘ └───────┘ └───┘ │
+└─────────────────────────────────────────┘
+```
+
+**Avantage** : 1 seul Space, pas de CORS, pas de communication cross-Space.
+**Inconvénient** : Build plus long, tout est couplé.
 
 ---
 
 ## 3. Prérequis
 
 - Compte [Hugging Face](https://huggingface.co)
-- Git + Git LFS
+- Git + Git LFS (optionnel)
 - Docker (pour tester en local)
-- Projet DotnetNiger cloné
+- Projets clonés : [backend](https://github.com/akaletekoffilevis/DotnetNiger) et [frontend](https://github.com/AbdoulRaouf2005/DotnetNiger.UI)
 
 ---
 
-## 4. Créer le Space
+## 4. Approche A : Deux Spaces séparés
 
-### 4.1 Via l'interface web
+### 4.1 Créer les Spaces HF
 
-1. Aller sur https://huggingface.co
-2. Cliquer sur ton avatar → **New Space**
-3. Configurer :
-   - **Space Name** : `dotnetniger` (ou autre)
-   - **License** : MIT
-   - **Space SDK** : **Docker**
-   - **Docker Template** : **Blank**
-   - **Space Hardware** : **Free** (2 vCPU, 16 GB)
-4. **Create Space**
+Créer 2 Spaces depuis https://huggingface.co/new-space :
 
-### 4.2 Cloner le Space
+| Space | SDK | Hardware | Nom suggéré |
+|-------|-----|----------|-------------|
+| **Backend** | Docker | Free | `dotnetniger-backend` |
+| **Frontend** | Docker | Free | `dotnetniger` (principal) |
+
+### 4.2 Déployer le Backend
 
 ```bash
-# Cloner le Space HF
+# Cloner le Space backend HF
+git clone https://huggingface.co/spaces/TON_COMPTE/dotnetniger-backend
+cd dotnetniger-backend
+
+# Copier le code DotnetNiger (sauf .git)
+cp -r /chemin/vers/DotnetNiger/* .
+rm -rf .git Dockerfile.full.hf  # pas besoin du Dockerfile combiné
+
+# Pousser
+git add . && git commit -m "Deploy backend"
+git push
+```
+
+Le backend est accessible à `https://TON_COMPTE-dotnetniger-backend.hf.space`.
+
+#### Variables secrètes backend
+
+Dans **Settings → Repository Secrets**, ajouter :
+
+| Secret | Exemple | Obligatoire |
+|--------|---------|-------------|
+| `JWT_KEY` | `MaSuperCle secrete!32caracteres` | Oui |
+| `OpenIddict__Issuer` | `https://TON_COMPTE-dotnetniger-backend.hf.space/identity-api` | Oui |
+| `Smtp__AppBaseUrl` | `https://TON_COMPTE-dotnetniger-backend.hf.space` | Oui |
+| `Smtp__Host` | `smtp.gmail.com` | Non |
+| `Smtp__Username` | `ton.email@gmail.com` | Non |
+| `Smtp__Password` | `mot-de-passe-app` | Non |
+| `Admin__DefaultPassword` | `Admin@123456` | Non |
+
+> Les secrets HF sont automatiquement injectés comme variables d'environnement dans le conteneur.
+
+### 4.3 Déployer le Frontend
+
+```bash
+# Cloner le Space frontend HF
 git clone https://huggingface.co/spaces/TON_COMPTE/dotnetniger
 cd dotnetniger
 
-# Copier les fichiers de déploiement DotnetNiger
-cp -r /chemin/vers/DotnetNiger/* .
+# Copier les fichiers de déploiement frontend
+cp -r /chemin/vers/DotnetNiger.UI/* .
+rm -rf .git  # garder le .git du Space HF
+
+# Build et push
+git add . && git commit -m "Deploy frontend"
+git push
 ```
+
+#### Build arg : BACKEND_URL
+
+Le Dockerfile.hf a besoin de connaître l'URL du backend Space :
+
+```dockerfile
+# Dans Dockerfile.hf, le placeholder __BACKEND_URL__ est remplacé
+# par sed pendant le build :
+#   sed -i "s|__BACKEND_URL__|${BACKEND_URL}|g" /etc/nginx/nginx.conf
+```
+
+Pour définir cette variable sur HF :
+
+1. Aller dans **Settings → New variable**
+2. Nom : `BACKEND_URL`
+3. Valeur : `https://TON_COMPTE-dotnetniger-backend.hf.space`
+
+Puis modifier le Dockerfile.hf pour qu'il lise la variable d'env :
+
+```dockerfile
+# Utiliser une variable de build ARG (définie dans les secrets HF)
+ARG BACKEND_URL
+```
+
+Ou éditer le Dockerfile.hf pour utiliser la variable d'environnement runtime :
+
+```dockerfile
+# Solution plus simple : remplacer le placeholder au démarrage
+# au lieu du build
+RUN echo "#!/bin/bash" > /entrypoint.sh \
+    && echo "sed -i \"s|__BACKEND_URL__|${BACKEND_URL}|g\" /etc/nginx/nginx.conf" >> /entrypoint.sh \
+    && echo "nginx -g 'daemon off;'" >> /entrypoint.sh \
+    && chmod +x /entrypoint.sh
+CMD ["/entrypoint.sh"]
+```
+
+> **Alternative Static Space** : tu peux aussi déployer le frontend comme **Static Space** (pas de Docker). Il suffit de copier le dossier `wwwroot/` publié. Mais tu perds le proxy nginx → les appels API seront cross-origin → besoin de CORS.
+
+#### Vérifier la connexion frontend → backend
+
+Le frontend envoie ses appels API à la même origine (grâce au proxy nginx) :
+- `https://TON_COMPTE-dotnetniger.hf.space/api/v1/posts` → proxy → `https://TON_COMPTE-dotnetniger-backend.hf.space/api/v1/posts`
+- `https://TON_COMPTE-dotnetniger.hf.space/identity-api/.well-known/openid-configuration` → proxy → backend
+
+**Le navigateur voit une seule origine** → pas de problème CORS.
 
 ---
 
-## 5. Fichiers de Déploiement
+## 5. Approche B : Space Combiné (Backend + Frontend)
 
-### 5.1 `Dockerfile`
-
-```dockerfile
-# === Étape 1 : Build des services .NET ===
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-WORKDIR /src
-
-# Copier les fichiers projet
-COPY DotnetNiger.Gateway/DotnetNiger.Gateway.csproj DotnetNiger.Gateway/
-COPY DotnetNiger.Identity/DotnetNiger.Identity.csproj DotnetNiger.Identity/
-COPY DotnetNiger.Community/DotnetNiger.Community.csproj DotnetNiger.Community/
-COPY DotnetNiger.Identity.Web/DotnetNiger.Identity.Web.csproj DotnetNiger.Identity.Web/
-COPY DotnetNiger.slnx .
-
-# Restore
-RUN dotnet restore
-
-# Copier tout le code source
-COPY . .
-
-# Publier chaque service
-RUN dotnet publish DotnetNiger.Identity/DotnetNiger.Identity.csproj \
-    -c Release -o /app/identity /p:UseAppHost=false
-RUN dotnet publish DotnetNiger.Community/DotnetNiger.Community.csproj \
-    -c Release -o /app/community /p:UseAppHost=false
-RUN dotnet publish DotnetNiger.Gateway/DotnetNiger.Gateway.csproj \
-    -c Release -o /app/gateway /p:UseAppHost=false
-RUN dotnet publish DotnetNiger.Identity.Web/DotnetNiger.Identity.Web.csproj \
-    -c Release -o /app/identity-web /p:UseAppHost=false
-
-# === Étape 2 : Image runtime avec nginx + aspnet ===
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
-WORKDIR /app
-
-# Installer nginx et supervisor
-RUN apt-get update && apt-get install -y \
-    nginx \
-    supervisor \
-    curl \
-    && rm -rf /var/lib/apt/lists/*
-
-# Copier les binaires
-COPY --from=build /app/identity ./identity
-COPY --from=build /app/community ./community
-COPY --from=build /app/gateway ./gateway
-COPY --from=build /app/identity-web ./identity-web
-
-# Créer les dossiers de logs
-RUN mkdir -p /app/logs /var/log/supervisor
-
-# Copier la config nginx
-COPY deploy/nginx.conf /etc/nginx/nginx.conf
-
-# Copier la config supervisor
-COPY deploy/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-
-# Copier le script de démarrage
-COPY deploy/start.sh /start.sh
-RUN chmod +x /start.sh
-
-# Créer les dossiers de données SQLite
-RUN mkdir -p /app/data
-
-# Port exposé pour HF (7860 est le port par défaut HF)
-EXPOSE 7860
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD curl -f http://localhost:7860/health || exit 1
-
-CMD ["/start.sh"]
-```
-
-### 5.2 `deploy/nginx.conf`
-
-```nginx
-events {
-    worker_connections 1024;
-}
-
-http {
-    include mime.types;
-    default_type application/octet-stream;
-
-    # Buffer plus grands pour OIDC
-    proxy_buffer_size 128k;
-    proxy_buffers 4 256k;
-    proxy_busy_buffers_size 256k;
-
-    # Timeouts
-    proxy_connect_timeout 30s;
-    proxy_read_timeout 60s;
-    proxy_send_timeout 60s;
-
-    # Gzip
-    gzip on;
-    gzip_types text/css application/javascript application/json image/svg+xml;
-    gzip_min_length 256;
-
-    server {
-        listen 7860;
-
-        # === GATEWAY ===
-        location /health {
-            proxy_pass http://127.0.0.1:5000;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location /swagger {
-            proxy_pass http://127.0.0.1:5000;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location /metrics {
-            proxy_pass http://127.0.0.1:5000;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        # === IDENTITY (via Gateway) ===
-        location /identity-api/ {
-            proxy_pass http://127.0.0.1:5000/identity-api/;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location /connect/ {
-            proxy_pass http://127.0.0.1:5000;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location /Account/ {
-            proxy_pass http://127.0.0.1:5000;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        location /.well-known/ {
-            proxy_pass http://127.0.0.1:5000;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        # === COMMUNITY (via Gateway) ===
-        location /api/ {
-            proxy_pass http://127.0.0.1:5000;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-        }
-
-        # === FALLBACK : tout le reste → Identity.Web ===
-        location / {
-            proxy_pass http://127.0.0.1:5100;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-            proxy_set_header X-Forwarded-Proto $scheme;
-
-            # Buffering pour le rendu Razor Pages
-            proxy_buffering on;
-        }
-    }
-}
-```
-
-### 5.3 `deploy/supervisord.conf`
-
-```ini
-[supervisord]
-nodaemon=true
-user=root
-logfile=/var/log/supervisor/supervisord.log
-pidfile=/var/run/supervisord.pid
-
-[program:identity]
-command=dotnet /app/identity/DotnetNiger.Identity.dll
-directory=/app/identity
-environment=ASPNETCORE_URLS="http://+:8081",ASPNETCORE_ENVIRONMENT="Production"
-autostart=true
-autorestart=true
-startretries=3
-stderr_logfile=/app/logs/identity.err.log
-stdout_logfile=/app/logs/identity.out.log
-
-[program:community]
-command=dotnet /app/community/DotnetNiger.Community.dll
-directory=/app/community
-environment=ASPNETCORE_URLS="http://+:8082",ASPNETCORE_ENVIRONMENT="Production"
-autostart=true
-autorestart=true
-startretries=3
-stderr_logfile=/app/logs/community.err.log
-stdout_logfile=/app/logs/community.out.log
-
-[program:gateway]
-command=dotnet /app/gateway/DotnetNiger.Gateway.dll
-directory=/app/gateway
-environment=ASPNETCORE_URLS="http://+:5000",ASPNETCORE_ENVIRONMENT="Production"
-autostart=true
-autorestart=true
-startretries=3
-stderr_logfile=/app/logs/gateway.err.log
-stdout_logfile=/app/logs/gateway.out.log
-
-[program:identity-web]
-command=dotnet /app/identity-web/DotnetNiger.Identity.Web.dll
-directory=/app/identity-web
-environment=ASPNETCORE_URLS="http://+:5100",ASPNETCORE_ENVIRONMENT="Production"
-autostart=true
-autorestart=true
-startretries=3
-stderr_logfile=/app/logs/identity-web.err.log
-stdout_logfile=/app/logs/identity-web.out.log
-
-[program:nginx]
-command=nginx -g "daemon off;"
-autostart=true
-autorestart=true
-stderr_logfile=/var/log/nginx/error.log
-stdout_logfile=/var/log/nginx/access.log
-```
-
-### 5.4 `deploy/start.sh`
-
-```bash
-#!/bin/bash
-set -e
-
-# Appliquer les variables d'environnement HF aux appsettings
-# HF expose les secrets comme variables d'environnement
-# On les écrit dans un fichier .env que les services lisent
-
-# Démarrer supervisor (qui lance nginx + tous les services)
-exec supervisord -c /etc/supervisor/conf.d/supervisord.conf
-```
-
-### 5.5 Structure finale du Space
+### 5.1 Structure
 
 ```
-dotnetniger-hf-space/
-├── .gitignore
-├── Dockerfile
-├── deploy/
-│   ├── nginx.conf
-│   ├── supervisord.conf
-│   └── start.sh
-├── DotnetNiger.Gateway/        ← symlink ou copie
+dotnetniger-full/
+├── Dockerfile.full.hf      ← du repo backend
+├── deploy/                  ← du repo backend
+├── DotnetNiger.Gateway/
 ├── DotnetNiger.Identity/
 ├── DotnetNiger.Community/
 ├── DotnetNiger.Identity.Web/
-├── DotnetNiger.slnx
-└── README.md
+└── frontend/                ← copie du repo UIgit
+    ├── DotnetNiger.UI.csproj
+    ├── Program.cs
+    ├── Pages/
+    ├── wwwroot/
+    └── ...
 ```
 
----
-
-## 6. Configuration via Secrets HF
-
-Dans **Settings → Repository Secrets** du Space, ajouter :
-
-| Secret | Valeur | Obligatoire |
-|--------|--------|-------------|
-| `JWT_KEY` | Ta clé JWT (min 32 caractères) | **Oui** |
-| `OpenIddict__Issuer` | `https://ton-compte-dotnetniger.hf.space/identity-api` | Oui |
-| `Smtp__AppBaseUrl` | `https://ton-compte-dotnetniger.hf.space` | Oui |
-| `Smtp__Host` | `smtp.gmail.com` | Non |
-| `Smtp__Username` | ton.email@gmail.com | Non |
-| `Smtp__Password` | mot de passe d'application | Non |
-| `Smtp__FromEmail` | `noreply@dotnetniger.com` | Non |
-| `Gateway__RegistrationKey` | Une clé secrète | Non |
-| `InternalApiKey` | Une clé secrète | Non |
-| `Admin__DefaultPassword` | `Admin@123456` | Non |
-
-> Les variables d'environnement sont automatiquement disponibles dans le conteneur. Pas besoin de fichier `.env`.
-
----
-
-## 7. Déploiement
-
-### 7.1 Premier déploiement
+### 5.2 Préparer le dépôt combiné
 
 ```bash
-# Depuis le dossier du Space
-git add .
-git commit -m "Initial HF Space deployment"
-git push
+# Créer un dossier pour le Space HF
+mkdir dotnetniger-full && cd dotnetniger-full
+git init
 
-# Hugging Face build automatiquement l'image Docker
-# et déploie le Space
-```
+# Copier le backend
+cp -r /chemin/vers/DotnetNiger/* .
+rm -rf .git
 
-### 7.2 Mise à jour
+# Copier le frontend DANS un sous-dossier frontend/
+mkdir frontend
+cp -r /chemin/vers/DotnetNiger.UI/* frontend/
+rm -rf frontend/.git
 
-```bash
-# Après des changements dans le code DotnetNiger
-git add .
-git commit -m "Update DotnetNiger to version X"
+# Lier le Space HF
+git remote add origin https://huggingface.co/spaces/TON_COMPTE/dotnetniger
+
+# Pousser
+git add . && git commit -m "Deploy combined Space"
 git push
 ```
 
-Le build prend **5-15 minutes** (download NuGet + build .NET + Docker).
+### 5.3 Configuration
+
+Le `Dockerfile.full.hf` est déjà prêt :
+
+```dockerfile
+# Étapes :
+# 1. Build services .NET 9 (backend)
+# 2. Build Blazor WASM .NET 8 (frontend) avec API_BASE_URL=/
+# 3. Image runtime : aspnet:9.0 + nginx + supervisor + frontend WASM
+```
+
+Les secrets HF sont les mêmes que pour l'approche A (section 4.2).
+
+> **Important** : dans le `deploy/nginx.conf`, les blocs commentés pour les fichiers statiques du frontend doivent être activés. Le `Dockerfile.full.hf` copie les fichiers WASM dans `/usr/share/nginx/html` et le nginx les sert via le bloc `location /` avec `try_files`.
 
 ---
 
-## 8. Accès à l'Application
+## 6. Test en Local
 
-Après déploiement, l'application est accessible à :
+Avant de pousser sur HF, teste localement :
 
-```
-https://TON_COMPTE-dotnetniger.hf.space
-```
-
-| URL | Description |
-|-----|-------------|
-| `https://...hf.space` | Developer Portal (Identity.Web) |
-| `https://...hf.space/swagger` | Swagger UI |
-| `https://...hf.space/health` | Health check |
-| `https://...hf.space/identity-api/.well-known/openid-configuration` | OIDC Discovery |
-| `https://...hf.space/identity-api/api/v1/diagnostics/health` | Identity health |
-
----
-
-## 9. Déploiement du Frontend Blazor (Space Static séparé)
-
-### Alternative : 2 Spaces au lieu d'un
-
-Si tu préfères, le frontend Blazor WASM peut être dans un **Static Space** séparé.
-
-#### Créer le Static Space
-
-1. Aller sur https://huggingface.co → **New Space**
-2. **Space Name** : `dotnetniger-ui`
-3. **Space SDK** : **Static**
-4. **Create Space**
-
-#### Publier le frontend
+### Approche A : backend seul
 
 ```bash
-# Dans le repo UIgit
-dotnet publish -c Release -o publish/frontend
+cd /chemin/vers/DotnetNiger
 
-# Cloner le Static Space
-git clone https://huggingface.co/spaces/TON_COMPTE/dotnetniger-ui
-cd dotnetniger-ui
+docker build -f Dockerfile.hf -t dotnetniger-backend .
+docker run -p 7860:7860 \
+  -e JWT_KEY="TestKeyMin32CharactersLong!!" \
+  -e OpenIddict__Issuer="http://localhost:7860/identity-api" \
+  -e Smtp__AppBaseUrl="http://localhost:7860" \
+  dotnetniger-backend
 
-# Copier les fichiers statiques
-cp -r ../publish/frontend/wwwroot/* .
-
-# Modifier appsettings.json avec l'URL du backend HF
-# wwwroot/appsettings.json → "ApiBaseUrl": "https://TON_COMPTE-dotnetniger.hf.space"
-
-git add .
-git commit -m "Deploy frontend"
-git push
+# Tester
+curl http://localhost:7860/health
+curl http://localhost:7860/identity-api/.well-known/openid-configuration
 ```
 
-Le frontend est accessible à `https://TON_COMPTE-dotnetniger-ui.hf.space`.
+### Approche A : frontend seul (avec backend déjà lancé)
 
-> **Important** : le frontend Blazor WASM doit être compilé avec l'URL du backend HF dans `appsettings.json`. Voir la section Dockerfile du frontend (`API_BASE_URL` build arg).
+```bash
+cd /chemin/vers/DotnetNiger.UI
+
+docker build -f Dockerfile.hf \
+  --build-arg BACKEND_URL=http://host.docker.internal:7860 \
+  -t dotnetniger-frontend .
+docker run -p 7861:7860 dotnetniger-frontend
+
+# Ouvrir http://localhost:7861
+```
+
+### Approche B : combiné
+
+```bash
+cd /chemin/vers/dotnetniger-full
+
+# Copier le Dockerfile.full.hf en Dockerfile pour HF
+cp Dockerfile.full.hf Dockerfile
+
+docker build \
+  --build-arg API_BASE_URL=/ \
+  -t dotnetniger-full .
+docker run -p 7860:7860 \
+  -e JWT_KEY="TestKeyMin32CharactersLong!!" \
+  -e OpenIddict__Issuer="http://localhost:7860/identity-api" \
+  -e Smtp__AppBaseUrl="http://localhost:7860" \
+  dotnetniger-full
+
+# Ouvrir http://localhost:7860
+```
 
 ---
 
-## 10. Persistance SQLite
+## 7. Schéma de Connexion Frontend → Backend
 
-Hugging Face Spaces ont un **stockage éphémère**. Les bases SQLite sont perdues à chaque redémarrage (déploiement, mise en veille, etc.).
+### Approche A (2 Spaces) : Proxy nginx
 
-### Solutions
+```
+Navigateur                      Frontend HF                     Backend HF
+    │                               │                               │
+    │ GET /api/v1/posts              │                               │
+    │═══════════════════►            │                               │
+    │                    │           │                               │
+    │                    │ proxy_pass $backend_url/api/v1/posts      │
+    │                    │══════════════════════════════════════════►│
+    │                    │           │                               │
+    │                    │◄══════════ JSON response ════════════════│
+    │◄═══════════════════│           │                               │
+    │                    │           │                               │
+```
 
-| Solution | Description |
-|----------|-------------|
-| **Seed automatique** | Le DbContext crée et seed la base au premier lancement (déjà en place) |
-| **Git LFS** | Stocker les .db dans Git LFS (limité à la taille du repo) |
-| **Base externe** | Utiliser une DBaaS gratuite (Turso, Neon, Supabase) |
+**Avantage** : le navigateur voit une seule origine (`https://TON_COMPTE-dotnetniger.hf.space`) → pas de CORS. Tous les appels API sont forwardés au backend par nginx.
 
-### Seed automatique
+### Approche A (Static Space) : Cross-origin direct
 
-Par défaut, Identity se configure pour recréer la base si elle n'existe pas, et le super admin est re-seed :
+```
+Navigateur                      Frontend HF (Static)             Backend HF
+    │                               │                               │
+    │ GET https://backend/...       │                               │
+    │══════════════════════════════════════════════════════════════►│
+    │                               │                               │
+    │◄══════════ avec CORS headers ═══════════════════════════════│
+    │                               │                               │
+```
 
-```csharp
-// Déjà implémenté dans Identity
-if (!await context.Users.AnyAsync())
-{
-    await SeedSuperAdminAsync(context);
+**Problème** : deux origines différentes → le backend doit renvoyer des headers `Access-Control-Allow-Origin`. Avantage : pas de proxy, plus simple.
+
+### Approche B (Combiné) : Tout sur place
+
+```
+Navigateur                      Space Combiné HF
+    │                               │
+    │ GET /api/v1/posts              │
+    │═══════════════════►            │
+    │                    │           │
+    │               nginx proxy vers Gateway:5000
+    │               → Identity:8081 ou Community:8082
+    │                    │           │
+    │◄═══════════════════│           │
+    │                    │           │
+    │ GET / → WASM files │           │
+    │═══════════════════►            │
+    │◄════════ index.html│           │
+```
+
+**Avantage** : zéro CORS, zéro configuration réseau.
+
+---
+
+## 8. CORS (Si Static Space ou Accès Direct)
+
+Si tu utilises un **Static Space** pour le frontend (pas de proxy nginx), le backend doit accepter les requêtes cross-origin.
+
+Le fichier `deploy/nginx.conf` du backend inclut déjà la configuration CORS :
+
+```nginx
+# CORS : autorise les requêtes depuis n'importe quel Space HF
+map $http_origin $cors_origin {
+    default "";
+    "~^https://.*\.hf\.space$" $http_origin;
+    "~^http://localhost" $http_origin;
+}
+
+# Réponse OPTIONS (preflight)
+if ($request_method = OPTIONS) {
+    add_header Access-Control-Allow-Origin $cors_origin always;
+    add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
+    add_header Access-Control-Allow-Headers "Authorization, Content-Type, X-API-Key, ..." always;
+    add_header Access-Control-Allow-Credentials "true" always;
+    return 204;
 }
 ```
 
-Les données sont réinitialisées à chaque redémarrage. Pour la démo, ça suffit.
-
-### Base SQLite persistée avec Git LFS
+**Test CORS :**
 
 ```bash
-# Dans le Space
-git lfs track "*.db"
-git add .gitattributes
-git commit -m "Track SQLite with LFS"
+curl -H "Origin: https://TON_COMPTE-dotnetniger.hf.space" \
+  -I https://TON_COMPTE-dotnetniger-backend.hf.space/health
+# Doit retourner : Access-Control-Allow-Origin: https://TON_COMPTE-dotnetniger.hf.space
 ```
-
-Les bases sont alors commitées dans Git LFS et survivent aux redémarrages. Mais attention à la taille.
 
 ---
 
-## 11. Mise en veille (Free Tier)
+## 9. Fichiers de Référence
 
-Les Spaces gratuits s'endorment après **48 heures d'inactivité**.
+### Backend (`DotnetNiger/`)
 
-### Pour éviter la mise en veille
+| Fichier | Rôle |
+|---------|------|
+| `Dockerfile.hf` | Build backend seul (4 services .NET + nginx + supervisor) |
+| `Dockerfile.full.hf` | Build backend + frontend combiné |
+| `deploy/nginx.conf` | Reverse proxy nginx avec CORS |
+| `deploy/supervisord.conf` | Supervisor : démarre les 4 services + nginx |
+| `deploy/start.sh` | Entrypoint du conteneur |
+| `docs/HUGGINGFACE_DEPLOY.md` | Ce guide |
 
-- Configurer un **cron** (GitHub Actions, UptimeRobot) qui ping le Space toutes les 30 minutes :
+### Frontend (`DotnetNiger.UI/`)
+
+| Fichier | Rôle |
+|---------|------|
+| `Dockerfile.hf` | Build frontend WASM + nginx proxy vers backend HF |
+| `Dockerfile` | Build pour docker-compose local (nginx simple) |
+| `deploy/nginx.conf` | Proxy nginx (__BACKEND_URL__ remplacé au build) |
+| `nginx.conf` | Config locale (sans proxy) |
+
+---
+
+## 10. Résumé des URLs Après Déploiement
+
+### Approche A (2 Spaces)
+
+| Service | URL |
+|---------|-----|
+| Frontend (Space principal) | `https://TON_COMPTE-dotnetniger.hf.space` |
+| Backend Space | `https://TON_COMPTE-dotnetniger-backend.hf.space` |
+| Swagger | `https://TON_COMPTE-dotnetniger.hf.space/swagger` |
+| Health | `https://TON_COMPTE-dotnetniger.hf.space/health` |
+| OIDC Discovery | `https://TON_COMPTE-dotnetniger.hf.space/identity-api/.well-known/openid-configuration` |
+
+### Approche B (1 Space combiné)
+
+| Service | URL |
+|---------|-----|
+| App (frontend + backend) | `https://TON_COMPTE-dotnetniger.hf.space` |
+| Swagger | `https://TON_COMPTE-dotnetniger.hf.space/swagger` |
+| Health | `https://TON_COMPTE-dotnetniger.hf.space/health` |
+| Developer Portal | `https://TON_COMPTE-dotnetniger.hf.space/Developer/Dashboard` |
+
+---
+
+## 11. Anti-Sommeil (Keep Alive)
+
+Les Spaces gratuits s'endorment après 48h d'inactivité. Ajoute ce workflow GitHub :
 
 ```yaml
-# .github/workflows/ping.yml (dans le repo GitHub)
+# .github/workflows/ping-hf.yml (dans le repo backend)
 name: Keep HF Space alive
 on:
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '*/25 * * * *'  # toutes les 25 minutes
 jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
       - run: curl -s https://TON_COMPTE-dotnetniger.hf.space/health
+      - run: curl -s https://TON_COMPTE-dotnetniger-backend.hf.space/health
 ```
-
-- Passer en **PRO** (9$/mois) : pas de mise en veille, domaine personnalisé.
 
 ---
 
-## 12. Debug & Logs
-
-### Voir les logs
+## 12. Commandes Rapides
 
 ```bash
-# Interface HF
-Aller sur ton Space → **Logs** → onglet **Docker Logs**
+# Backend seul
+docker build -f Dockerfile.hf -t dotnetniger-backend .
+
+# Frontend seul (avec proxy vers backend)
+docker build -f Dockerfile.hf \
+  --build-arg BACKEND_URL=https://TON_COMPTE-dotnetniger-backend.hf.space \
+  -t dotnetniger-frontend .
+
+# Combiné
+docker build -f Dockerfile.full.hf \
+  --build-arg API_BASE_URL=/ \
+  -t dotnetniger-full .
+
+# Push vers HF
+git add . && git commit -m "update" && git push
 ```
-
-### Accéder au conteneur en SSH
-
-HF Spaces ne permettent pas de SSH directement. Utilise les logs pour le debug :
-
-```dockerfile
-# Dans le Dockerfile, ajouter une sortie de logs verbeuse
-ENV ASPNETCORE_LOGGING__CONSOLE__DISABLECOLORS=true
-ENV Logging__LogLevel__Default=Information
-```
-
-### Redémarrer le Space
-
-Settings → **Restart Space** ou `git commit --allow-empty -m "restart" && git push`.
-
----
-
-## 13. Exemple Complet : `Dockerfile` optimisé
-
-```dockerfile
-# === BUILD ===
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-WORKDIR /src
-COPY . .
-RUN dotnet restore DotnetNiger.slnx \
-    && dotnet publish DotnetNiger.Identity/DotnetNiger.Identity.csproj -c Release -o /app/identity /p:UseAppHost=false \
-    && dotnet publish DotnetNiger.Community/DotnetNiger.Community.csproj -c Release -o /app/community /p:UseAppHost=false \
-    && dotnet publish DotnetNiger.Gateway/DotnetNiger.Gateway.csproj -c Release -o /app/gateway /p:UseAppHost=false \
-    && dotnet publish DotnetNiger.Identity.Web/DotnetNiger.Identity.Web.csproj -c Release -o /app/identity-web /p:UseAppHost=false
-
-# === RUNTIME ===
-FROM mcr.microsoft.com/dotnet/aspnet:9.0
-WORKDIR /app
-
-RUN apt-get update && apt-get install -y nginx supervisor curl && rm -rf /var/lib/apt/lists/*
-
-COPY --from=build /app/identity ./identity
-COPY --from=build /app/community ./community
-COPY --from=build /app/gateway ./gateway
-COPY --from=build /app/identity-web ./identity-web
-COPY deploy/ /app/deploy/
-
-RUN cp /app/deploy/nginx.conf /etc/nginx/nginx.conf \
-    && cp /app/deploy/supervisord.conf /etc/supervisor/conf.d/supervisord.conf \
-    && mkdir -p /app/data /app/logs /var/log/supervisor
-
-ENV ASPNETCORE_ENVIRONMENT=Production
-EXPOSE 7860
-
-CMD ["/app/deploy/start.sh"]
-```
-
----
-
-## 14. Commandes Utiles
-
-```bash
-# Tester en local (comme sur HF)
-docker build -t dotnetniger-hf .
-docker run -p 7860:7860 \
-  -e JWT_KEY="TestKeyMin32CharactersLong!!" \
-  -e OpenIddict__Issuer="http://localhost:7860/identity-api" \
-  -e Smtp__AppBaseUrl="http://localhost:7860" \
-  dotnetniger-hf
-
-# Ouvrir http://localhost:7860
-
-# Voir les logs en local
-docker logs -f dotnetniger-hf
-```
-
----
-
-## 15. Comparaison : HF Spaces vs Oracle Cloud
-
-| Critère | Hugging Face (Free) | Oracle Cloud (Always Free) |
-|---------|---------------------|---------------------------|
-| **Prix** | Gratuit | Gratuit |
-| **RAM/CPU** | 16 GB, 2 vCPU | 1-4 GB, 1-3 OCPU |
-| **Stockage** | 50 GB (éphémère) | 200 GB (persistant) |
-| **Docker** | Oui (1 conteneur) | Oui (Docker Compose) |
-| **Services** | Tout dans 1 conteneur | Chacun son conteneur |
-| **Mise en veille** | Oui (48h) | Non |
-| **Domaine** | `*.hf.space` (HTTPS) | IP publique (HTTPS via Cloudflare) |
-| **Persistance** | Éphémère (sauf Git LFS) | Volume persistant |
-| **Setup** | Très simple | Moyen (créer VM, installer Docker) |
-| **Idéal pour** | Démo, POC, test | Production continue |
-
-> **Recommandation** : utilise Hugging Face pour une **démo rapide** ou un **POC**. Passe sur **Oracle Cloud** (ou un VPS à 5€/mois) pour une **vraie production** avec données persistantes et pas de mise en veille.

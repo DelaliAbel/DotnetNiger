@@ -1,0 +1,51 @@
+ARG API_BASE_URL=/
+
+# === ÉTAPE 1 : Build services .NET backend ===
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build-backend
+WORKDIR /src
+COPY . .
+RUN dotnet restore DotnetNiger.slnx \
+    && dotnet publish DotnetNiger.Identity/DotnetNiger.Identity.csproj -c Release -o /app/identity /p:UseAppHost=false \
+    && dotnet publish DotnetNiger.Community/DotnetNiger.Community.csproj -c Release -o /app/community /p:UseAppHost=false \
+    && dotnet publish DotnetNiger.Gateway/DotnetNiger.Gateway.csproj -c Release -o /app/gateway /p:UseAppHost=false \
+    && dotnet publish DotnetNiger.Identity.Web/DotnetNiger.Identity.Web.csproj -c Release -o /app/identity-web /p:UseAppHost=false
+
+# === ÉTAPE 2 : Build frontend Blazor WASM ===
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build-frontend
+WORKDIR /src
+ARG API_BASE_URL
+COPY frontend/ .
+COPY frontend/DotnetNiger.UI.csproj .
+RUN dotnet restore "DotnetNiger.UI.csproj"
+RUN sed -i "s|\"ApiBaseUrl\": \".*\"|\"ApiBaseUrl\": \"${API_BASE_URL}\"|" wwwroot/appsettings.json \
+    && sed -i "s|\"UseMockServices\": true|\"UseMockServices\": false|" wwwroot/appsettings.json
+RUN dotnet publish "DotnetNiger.UI.csproj" -c Release -o /app/frontend/publish
+
+# === ÉTAPE 3 : Image runtime avec tout ===
+FROM mcr.microsoft.com/dotnet/aspnet:9.0
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y nginx supervisor curl && rm -rf /var/lib/apt/lists/*
+
+# Backend
+COPY --from=build-backend /app/identity ./identity
+COPY --from=build-backend /app/community ./community
+COPY --from=build-backend /app/gateway ./gateway
+COPY --from=build-backend /app/identity-web ./identity-web
+
+# Frontend WASM
+COPY --from=build-frontend /app/frontend/publish/wwwroot /usr/share/nginx/html
+
+# Configs
+COPY deploy/ /app/deploy/
+RUN cp /app/deploy/supervisord.conf /etc/supervisor/conf.d/supervisord.conf \
+    && mkdir -p /app/data /app/logs /var/log/supervisor \
+    && chmod +x /app/deploy/start.sh
+
+ENV ASPNETCORE_ENVIRONMENT=Production
+EXPOSE 7860
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD curl -f http://localhost:7860/health || exit 1
+
+CMD ["/app/deploy/start.sh"]
