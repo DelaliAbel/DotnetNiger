@@ -9,7 +9,7 @@ using Serilog.Events;
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-    .MinimumLevel.Override("Ocelot", LogEventLevel.Information)
+    .MinimumLevel.Override("Ocelot", LogEventLevel.Warning)
     .Enrich.FromLogContext()
     .Enrich.WithProperty("Service", "Gateway")
     .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
