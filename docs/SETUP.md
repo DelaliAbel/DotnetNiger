@@ -39,9 +39,9 @@ cd DotnetNiger.Community
 dotnet run
 ```
 
-Runs on `http://localhost:5269`. Depends on Identity being running for JWT validation.
+Runs on `http://localhost:5050`. Depends on Identity being running for JWT validation. Identity is accessed via Gateway at `http://localhost:5000/identity-api`.
 
-Swagger: `http://localhost:5269/swagger`
+Swagger: `http://localhost:5050/swagger`
 
 ### Terminal 3 — Gateway Service
 
@@ -67,7 +67,7 @@ cd DotnetNiger.Identity.Web
 dotnet run
 ```
 
-Runs on `http://localhost:5100`. Requires Identity Server (port 5075) to be running.
+Runs on `http://localhost:5100`. Requires Identity Server running (accessible via Gateway at `http://localhost:5000/identity-api`).
 
 This is the developer portal UI with authentication, dashboard, admin panels, profile, and security pages. It uses the OIDC code flow to authenticate with Identity Server.
 
@@ -134,7 +134,7 @@ dotnet test DotnetNiger.slnx --configuration Release --no-build
     "Password": "your-password",
     "FromEmail": "noreply@dotnetniger.com",
     "FromName": "DotnetNiger",
-    "AppBaseUrl": "http://localhost:5075"
+    "AppBaseUrl": "http://localhost:5000"
   }
 }
 ```

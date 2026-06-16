@@ -38,7 +38,7 @@ cd DotnetNiger.Identity
 dotnet run
 ```
 
-Service available at `http://localhost:5075`. Swagger: `http://localhost:5075/swagger`.
+Service available at `http://localhost:5075` (direct) or via Gateway at `http://localhost:5000/identity-api`. Swagger: `http://localhost:5075/swagger` (direct) or `http://localhost:5000/identity-api/swagger` (via Gateway).
 
 On first run, the database is auto-created and seeded with:
 
@@ -126,6 +126,20 @@ dotnet user-secrets set "Authentication:Google:ClientId" "your-id"
 dotnet user-secrets set "Authentication:Google:ClientSecret" "your-secret"
 dotnet user-secrets set "Gateway:RegistrationKey" "your-gateway-key"
 ```
+
+## OpenIddict Issuer Configuration
+
+The Identity service uses `OpenIddict:Issuer` to set the token issuer to `http://localhost:5000/identity-api/` — the Gateway URL, not the Identity service's own URL:
+
+```json
+{
+  "OpenIddict": {
+    "Issuer": "http://localhost:5000/identity-api"
+  }
+}
+```
+
+This ensures that JWT tokens validate correctly when presented to the Gateway. The metadata endpoint (`/.well-known/openid-configuration`) still shows `http://localhost:5075/` for individual endpoint URLs because OpenIddict derives them from the actual HTTP request, not from `SetIssuer()`.
 
 ## Integration
 

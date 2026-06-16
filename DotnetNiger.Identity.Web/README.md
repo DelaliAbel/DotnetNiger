@@ -18,7 +18,7 @@ cd DotnetNiger.Identity.Web
 dotnet run
 ```
 
-Available at `http://localhost:5100`. Requires the Identity Server (`http://localhost:5075`) to be running.
+Available at `http://localhost:5100`. Requires the Identity Server (accessible via Gateway at `http://localhost:5000/identity-api`) to be running.
 
 Test credentials: `admin@dotnetniger.com` / `Admin@123456`
 
@@ -29,7 +29,7 @@ Test credentials: `admin@dotnetniger.com` / `Admin@123456`
 ```json
 {
   "Identity": {
-    "BaseUrl": "http://localhost:5075",
+    "BaseUrl": "http://localhost:5000/identity-api",
     "ClientId": "web-ui",
     "ClientSecret": ""
   },
@@ -48,7 +48,7 @@ dotnet user-secrets set "Identity:ClientSecret" "your-client-secret"
 
 | Key | Required | Default | Description |
 |-----|----------|---------|-------------|
-| `Identity:BaseUrl` | Yes | — | Identity Server base URL |
+| `Identity:BaseUrl` | Yes | — | Identity Server base URL (via Gateway) |
 | `Identity:ClientId` | Yes | `web-ui` | OIDC client ID (registered in Identity) |
 | `Identity:ClientSecret` | No | — | OIDC client secret |
 | `DeveloperPortal:GatewayBaseUrl` | No | — | Gateway URL for API calls |

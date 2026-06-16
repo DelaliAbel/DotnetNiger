@@ -22,7 +22,7 @@ DotnetNiger follows a **microservices architecture** with an **API Gateway** as 
               │            │            │
        ┌──────▼──────┐ ┌──▼──────┐ ┌──▼──────────┐
        │  Identity   │ │Community│ │  Future      │
-       │  :5075      │ │ :5269   │ │  Services    │
+       │  :5075      │         │ :5050   │ │  Services    │
        │  (:8081)    │ │ (:8082) │ │  (...)       │
        │  OpenIddict │ │ JWT     │ │              │
        │  OIDC       │ │ Bearer  │ │              │
@@ -33,6 +33,21 @@ DotnetNiger follows a **microservices architecture** with an **API Gateway** as 
        │  (EF Core)  │
        └─────────────┘
 ```
+
+### Identity-API Catch-All Route
+
+The Gateway defines a catch-all route `/identity-api/{everything}` that forwards all matching requests to the Identity API (`http://localhost:5075/{everything}`). This route handles:
+
+- All OpenIddict OIDC/OAuth2 endpoints (`/connect/token`, `/.well-known/openid-configuration`, `/.well-known/jwks`, `/connect/authorize`, `/connect/logout`)
+- Identity API controllers (`/api/v1/auth/*`, `/api/v1/profile/*`, `/api/v1/admin/*`, `/api/v1/diagnostics/*`)
+- Account pages (`/Account/*`)
+
+### OIDC Flow Through Gateway
+
+1. Browser redirects (authorize, logout, account pages) go through Gateway at `http://localhost:5000/identity-api/...`
+2. OpenIddict metadata endpoint URLs (`authorization_endpoint`, `token_endpoint`) show `http://localhost:5075/` because OpenIddict derives them from the actual HTTP request, not from `SetIssuer()`
+3. Token issuer is `http://localhost:5000/identity-api/` (via `OpenIddict:Issuer` configuration)
+4. Backchannel OIDC calls (token exchange, userinfo) bypass the Gateway — they go directly to Identity API
 
 ## Service Responsibilities
 
@@ -165,8 +180,8 @@ Both Identity and Community auto-register with the Gateway at startup:
 
 | Service | Config Source | URL Used |
 |---------|-------------|----------|
-| Identity | `Smtp:AppBaseUrl` (default `http://localhost:5075`) | Base for health token |
-| Community | `Jwt:Authority` (default `http://localhost:5269`) | Base for health token |
+| Identity | `OpenIddict:Issuer` / `Smtp:AppBaseUrl` (default `http://localhost:5000`) | Base for health token |
+| Community | Config (default `http://localhost:5050`) | Base for health token |
 
 ```json
 {

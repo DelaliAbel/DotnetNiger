@@ -25,22 +25,22 @@ Complete guide for integrating with the DotnetNiger Community API — posts, eve
 ## 1. Prerequisites
 
 - .NET 9.0+ SDK
-- [DotnetNiger.Identity](https://github.com/akaletekoffilevis/DotnetNiger) running on `http://localhost:5075`
-- JWT Bearer token obtained from Identity (`/connect/token`)
+- [DotnetNiger.Identity](https://github.com/akaletekoffilevis/DotnetNiger) running (directly on `http://localhost:5075` or via Gateway at `http://localhost:5000/identity-api`)
+- JWT Bearer token obtained from Identity (`/connect/token` via Gateway at `http://localhost:5000/connect/token`)
 
 ---
 
 ## 2. Architecture
 
 ```
-Client → Gateway (:5000) → Community (:5269 / :8082)
+Client → Gateway (:5000) → Community (:5050 / :8082)
                               │
                               ▼
-                         Identity (:5075)
+                     Identity (via Gateway :5000/identity-api)
                       (JWT validation, user mgmt)
 ```
 
-In development, you can call Community directly on `http://localhost:5269`. In production, always go through the Gateway at `http://localhost:5000`.
+In development, you can call Community directly on `http://localhost:5050`. In production, always go through the Gateway at `http://localhost:5000`.
 
 ---
 
@@ -49,7 +49,7 @@ In development, you can call Community directly on `http://localhost:5269`. In p
 ### Obtain a Token
 
 ```bash
-TOKEN=$(curl -s -X POST http://localhost:5075/connect/token \
+TOKEN=$(curl -s -X POST http://localhost:5000/connect/token \
   -d "grant_type=password&username=admin@dotnetniger.com&password=Admin@123456&scope=openid+profile+email+roles+offline_access" \
   | jq -r '.access_token')
 ```
@@ -57,7 +57,7 @@ TOKEN=$(curl -s -X POST http://localhost:5075/connect/token \
 ### Use the Token
 
 ```bash
-curl -s http://localhost:5269/api/v1/admin/dashboard \
+curl -s http://localhost:5000/api/v1/admin/dashboard \
   -H "Authorization: Bearer $TOKEN"
 ```
 

@@ -16,7 +16,7 @@ Ocelot API Gateway — the single entry point for the DotnetNiger platform. Rout
 
 ```
 Client → Gateway (:5000) → Identity (:5075 / :8081)
-                        → Community (:5269 / :8082)
+                         → Community (:5050 / :8082)
                         → Future services (...)
 ```
 
@@ -57,7 +57,7 @@ The Gateway uses a **two-tier service discovery** system:
 {
   "DownstreamServices": {
     "Identity": { "Id": "identity", "DevUrl": "http://localhost:5075", ... },
-    "Community": { "Id": "community", "DevUrl": "http://localhost:5269", ... }
+    "Community": { "Id": "community", "DevUrl": "http://localhost:5050", ... }
   }
 }
 ```
@@ -90,8 +90,10 @@ Both Identity and Community automatically self-register on startup. Logs on succ
 
 | File | Routes |
 |------|--------|
-| `ocelot.identity.routes.json` | `/api/auth/*`, `/api/profile/*`, `/api/admin/*`, `/api/v1/*` → Identity, `/Account/{everything}` → Identity |
-| `ocelot.community.routes.json` | `/api/posts`, `/api/events`, `/api/comments`, `/api/resources`, `/api/search`, `/api/me`, `/api/upload`, `/api/newsletters/*`, `/api/admin/*` → Community |
+| `ocelot.identity.routes.json` | Routes identity via `/api/auth/*`, `/api/profile/*`, `/api/identity/admin/*`, `/connect/token`, `/Account/*`, and catch-all `/identity-api/*` → Identity on port 5075 |
+| `ocelot.community.routes.json` | 30+ routes for all Community APIs (`/api/posts`, `/api/events`, `/api/comments`, `/api/resources`, `/api/search`, `/api/me`, `/api/upload`, `/api/newsletters/*`, `/api/admin/*` → Community) |
+
+The catch-all route `/identity-api/{everything}` handles all OpenIddict OIDC/OAuth2 endpoints (authorize, token, userinfo, logout, discovery) and forwards them to the Identity API. This ensures browser redirects, token requests, and metadata discovery all work through the Gateway as the single entry point.
 
 ## Key Endpoints
 

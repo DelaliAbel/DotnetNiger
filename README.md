@@ -76,7 +76,11 @@ cd DotnetNiger.Identity.Web && dotnet run
 | `http://localhost:5075/swagger`                           | Identity Swagger (direct)                         |
 | `http://localhost:5050/swagger`                           | Community Swagger (direct)                        |
 | `http://localhost:5100`                                   | Identity.Web developer portal                     |
+| `http://localhost:5000/identity-api/.well-known/openid-configuration` | OIDC discovery via Gateway          |
+| `http://localhost:5000/identity-api/swagger`               | Identity Swagger via Gateway                    |
 | `http://localhost:5200`                                   | TestIdentity OIDC test app                        |
+
+Identity API is also accessible directly at `http://localhost:5075` but all production traffic should go through Gateway.
 
 ## Tech Stack
 

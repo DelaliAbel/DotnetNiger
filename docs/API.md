@@ -16,6 +16,7 @@ In production, **only the Gateway** port (`5000`) should be exposed. Downstream 
 | `http://localhost:5000/swagger` | Aggregated (all services) |
 | `http://localhost:5075/swagger` | Identity only (direct) |
 | `http://localhost:5050/swagger` | Community only (direct) |
+| `http://localhost:5000/identity-api/swagger` | Identity via Gateway |
 
 ## Gateway Endpoints
 
@@ -37,6 +38,18 @@ In production, **only the Gateway** port (`5000`) should be exposed. Downstream 
 | `{any}` | `/ext/{slug}/{everything}` | Proxy to registered external service by slug |
 
 External services register via the Identity API and are cached by the Gateway using `ext:{slug}` cache keys (60s TTL).
+
+### Identity API via Gateway (`http://localhost:5000/identity-api`)
+
+All Identity API endpoints are accessible through the Gateway via the `/identity-api/` prefix:
+
+| Method | Gateway URL | Description |
+|--------|-------------|-------------|
+| GET | `/identity-api/.well-known/openid-configuration` | OIDC discovery |
+| GET | `/identity-api/api/v1/profile` | Profile endpoint |
+| POST | `/identity-api/connect/token` | Token endpoint |
+
+The `/connect/token` endpoint is available both directly (`http://localhost:5075/connect/token`) and through the Gateway (`http://localhost:5000/connect/token`).
 
 ---
 
@@ -148,11 +161,11 @@ External services register via the Identity API and are cached by the Gateway us
 ### OIDC Login Flow
 
 1. User → **GET** `/` on Identity.Web (port 5100)
-2. Identity.Web → **302** → Identity Server `/connect/authorize?client_id=web-ui&...` (port 5075)
-3. Identity Server → **302** → `/Account/Login?ReturnUrl=...` (if not authenticated)
+2. Identity.Web → **302** → Gateway `/identity-api/connect/authorize?client_id=web-ui&...` (forwarded to Identity on port 5075)
+3. Gateway/Identity → **302** → `/identity-api/Account/Login?ReturnUrl=...` (if not authenticated)
 4. User submits email/password or chooses external provider
 5. Identity Server validates, redirects to `/signin-oidc` with authorization code
-6. Identity.Web exchanges code for tokens at `/connect/token`
+6. Identity.Web exchanges code for tokens at `/connect/token` (direct or via Gateway)
 7. User is now authenticated on the developer portal
 
 ### Developer Portal Pages

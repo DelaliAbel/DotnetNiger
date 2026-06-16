@@ -38,7 +38,7 @@ dotnet run
 
 Service available at `http://localhost:5050`. Swagger: `http://localhost:5050/swagger`.
 
-Requires [DotnetNiger.Identity](https://github.com/akaletekoffilevis/DotnetNiger) for JWT authentication (must be running on `http://localhost:5075`).
+Requires [DotnetNiger.Identity](https://github.com/akaletekoffilevis/DotnetNiger) for JWT authentication. JWT validation is configured to use the Gateway URL — see Configuration section below.
 
 ## API Endpoints
 
@@ -192,11 +192,11 @@ Paginated responses:
 Protected endpoints require a JWT Bearer token obtained from the Identity service:
 
 ```bash
-TOKEN=$(curl -s -X POST http://localhost:5075/connect/token \
+TOKEN=$(curl -s -X POST http://localhost:5000/connect/token \
   -d "grant_type=password&username=admin@dotnetniger.com&password=Admin@123456&scope=openid+profile+email+roles+offline_access" \
   | jq -r '.access_token')
 
-curl -s http://localhost:5269/api/v1/admin/dashboard \
+curl -s http://localhost:5000/api/v1/admin/dashboard \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -227,11 +227,9 @@ If the Gateway is unavailable at startup, the service logs a warning and continu
     "DefaultConnection": "Data Source=DotnetNigerCommunity.db"
   },
   "Jwt": {
-    "Authority": "http://localhost:5075",
-    "MetadataAddress": "http://localhost:5075/.well-known/openid-configuration"
-  },
-  "Identity": {
-    "BaseUrl": "http://localhost:5075"
+    "Authority": "http://localhost:5000/identity-api",
+    "Issuer": "http://localhost:5000/identity-api/",
+    "MetadataAddress": "http://localhost:5000/identity-api/.well-known/openid-configuration"
   },
   "Gateway": {
     "RegistrationUrl": "http://localhost:5000/api/service-registry/register",
