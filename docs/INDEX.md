@@ -9,6 +9,8 @@ Central documentation for the DotnetNiger monorepo.
 | [SETUP.md](SETUP.md)               | Local setup, prerequisites, service startup  |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Microservices architecture, dependency rules |
 | [API.md](API.md)                   | API endpoints, routing, conventions          |
+| [DEPLOY_GUIDE.md](DEPLOY_GUIDE.md) | Déploiement (MonsterASP, Somee, Oracle Cloud, Docker) |
+| [HUGGINGFACE_DEPLOY.md](HUGGINGFACE_DEPLOY.md) | Déploiement Hugging Face Spaces |
 
 ## Service Documentation
 
