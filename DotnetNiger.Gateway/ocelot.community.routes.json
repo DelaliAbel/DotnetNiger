@@ -454,7 +454,7 @@
       "SwaggerKey": "community"
     },
     {
-      "UpstreamPathTemplate": "/api/v1/social-links",
+      "UpstreamPathTemplate": "/api/social-links",
       "UpstreamHttpMethod": ["GET", "POST"],
       "DownstreamPathTemplate": "/api/v1/profile/social-links",
       "DownstreamScheme": "http",
@@ -465,7 +465,7 @@
       "SwaggerKey": "community"
     },
     {
-      "UpstreamPathTemplate": "/api/v1/social-links/{everything}",
+      "UpstreamPathTemplate": "/api/social-links/{everything}",
       "UpstreamHttpMethod": ["DELETE"],
       "DownstreamPathTemplate": "/api/v1/profile/social-links/{everything}",
       "DownstreamScheme": "http",
@@ -476,7 +476,7 @@
       "SwaggerKey": "community"
     },
     {
-      "UpstreamPathTemplate": "/api/v1/me",
+      "UpstreamPathTemplate": "/api/me",
       "UpstreamHttpMethod": ["GET", "PUT"],
       "DownstreamPathTemplate": "/api/v1/profile/me",
       "DownstreamScheme": "http",
@@ -487,7 +487,7 @@
       "SwaggerKey": "community"
     },
     {
-      "UpstreamPathTemplate": "/api/v1/profile/certificates",
+      "UpstreamPathTemplate": "/api/profile/certificates",
       "UpstreamHttpMethod": ["POST"],
       "DownstreamPathTemplate": "/api/v1/profile/certificates",
       "DownstreamScheme": "http",
@@ -498,7 +498,7 @@
       "SwaggerKey": "community"
     },
     {
-      "UpstreamPathTemplate": "/api/v1/contact",
+      "UpstreamPathTemplate": "/api/contact",
       "UpstreamHttpMethod": ["POST"],
       "DownstreamPathTemplate": "/api/v1/contact",
       "DownstreamScheme": "http",
