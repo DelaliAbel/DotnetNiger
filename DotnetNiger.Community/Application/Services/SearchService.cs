@@ -14,6 +14,8 @@ public class SearchService(AppDbContext db) : ISearchService
         var query = request.Query?.Trim();
         var type = request.Type?.Trim();
 
+        var maxPerType = request.Page * request.PageSize * 3;
+
         var results = new List<SearchResultResponse>();
 
         if (string.IsNullOrWhiteSpace(type) || type == "Post")
@@ -27,7 +29,7 @@ public class SearchService(AppDbContext db) : ISearchService
                 });
             if (!string.IsNullOrWhiteSpace(query))
                 posts = posts.Where(p => p.Title != null && p.Title.Contains(query) || p.Content != null && p.Content.Contains(query));
-            results.AddRange(await posts.ToListAsync());
+            results.AddRange(await posts.OrderByDescending(p => p.CreatedAt).Take(maxPerType).ToListAsync());
         }
 
         if (string.IsNullOrWhiteSpace(type) || type == "Event")
@@ -41,7 +43,7 @@ public class SearchService(AppDbContext db) : ISearchService
                 });
             if (!string.IsNullOrWhiteSpace(query))
                 events = events.Where(e => e.Title != null && e.Title.Contains(query) || e.Description != null && e.Description.Contains(query));
-            results.AddRange(await events.ToListAsync());
+            results.AddRange(await events.OrderByDescending(e => e.CreatedAt).Take(maxPerType).ToListAsync());
         }
 
         if (string.IsNullOrWhiteSpace(type) || type == "Resource")
@@ -54,7 +56,7 @@ public class SearchService(AppDbContext db) : ISearchService
                 });
             if (!string.IsNullOrWhiteSpace(query))
                 resources = resources.Where(r => r.Title != null && r.Title.Contains(query) || r.Description != null && r.Description.Contains(query));
-            results.AddRange(await resources.ToListAsync());
+            results.AddRange(await resources.OrderByDescending(r => r.CreatedAt).Take(maxPerType).ToListAsync());
         }
 
         var total = results.Count;

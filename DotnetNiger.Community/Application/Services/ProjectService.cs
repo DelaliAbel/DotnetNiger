@@ -4,10 +4,12 @@ using DotnetNiger.Community.Application.Notifications;
 using DotnetNiger.Community.Domain;
 using DotnetNiger.Community.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace DotnetNiger.Community.Application.Services;
 
-public class ProjectService(AppDbContext db, INotificationService notificationService) : IProjectService
+public class ProjectService(AppDbContext db, IServiceScopeFactory scopeFactory, ILogger<ProjectService> logger) : IProjectService
 {
     public async Task<PaginatedResponse<ProjectResponse>> GetAllAsync(string? status, string? query, int page = 1, int pageSize = 10)
     {
@@ -19,24 +21,24 @@ public class ProjectService(AppDbContext db, INotificationService notificationSe
             q = q.Where(p => p.Title.Contains(query) || p.Description.Contains(query) || p.Technologies.Contains(query));
 
         var total = await q.CountAsync();
-        var items = await q
+        var projectEntities = await q
             .OrderByDescending(p => p.IsFeatured)
             .ThenByDescending(p => p.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(p => MapProject(p))
             .ToListAsync();
+        var items = projectEntities.Select(MapProject).ToList();
 
         return new PaginatedResponse<ProjectResponse> { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }
 
     public async Task<List<ProjectResponse>> GetFeaturedAsync()
     {
-        return await db.Set<Project>().AsNoTracking()
+        var projects = await db.Set<Project>().AsNoTracking()
             .Where(p => p.IsFeatured && p.IsPublished)
             .OrderByDescending(p => p.CreatedAt)
-            .Select(p => MapProject(p))
             .ToListAsync();
+        return projects.Select(MapProject).ToList();
     }
 
     public async Task<ProjectResponse?> GetByIdAsync(Guid id)
@@ -68,8 +70,10 @@ public class ProjectService(AppDbContext db, INotificationService notificationSe
         await db.SaveChangesAsync();
         _ = Task.Run(async () =>
         {
-            try { await notificationService.NotifyNewProjectAsync(project.Title, project.Description, project.AuthorName); }
-            catch { /* logged internally */ }
+            using var scope = scopeFactory.CreateScope();
+            var notification = scope.ServiceProvider.GetRequiredService<INotificationService>();
+            try { await notification.NotifyNewProjectAsync(project.Title, project.Description, project.AuthorName); }
+            catch (Exception ex) { logger.LogWarning(ex, "Échec de notification pour le nouveau projet {Title}", project.Title); }
         });
         return MapProject(project);
     }

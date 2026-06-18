@@ -10,10 +10,10 @@ public class TagService(AppDbContext db) : ITagService
 {
     public async Task<List<TagResponse>> GetAllAsync()
     {
-        return await db.Tags.AsNoTracking()
+        var tags = await db.Tags.AsNoTracking()
             .OrderBy(t => t.Name)
-            .Select(t => MapTag(t))
             .ToListAsync();
+        return tags.Select(MapTag).ToList();
     }
 
     public async Task<TagResponse?> GetByIdAsync(Guid id)

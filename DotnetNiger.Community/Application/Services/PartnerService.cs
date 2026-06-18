@@ -15,11 +15,11 @@ public class PartnerService(AppDbContext db) : IPartnerService
         if (!string.IsNullOrWhiteSpace(partnerType))
             q = q.Where(p => p.PartnerType == partnerType);
 
-        return await q
+        var partners = await q
             .OrderBy(p => p.SortOrder)
             .ThenBy(p => p.Name)
-            .Select(p => MapPartner(p))
             .ToListAsync();
+        return partners.Select(MapPartner).ToList();
     }
 
     public async Task<PartnerResponse?> GetByIdAsync(Guid id)

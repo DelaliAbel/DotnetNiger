@@ -27,6 +27,7 @@ public class ProfileService(AppDbContext db) : IProfileService
             member = new Member
             {
                 Id = userId,
+                SocialLinks = new List<SocialLink>(),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -50,7 +51,7 @@ public class ProfileService(AppDbContext db) : IProfileService
         var member = await db.Members.FirstOrDefaultAsync(m => m.Id == userId);
         if (member is null)
         {
-            member = new Member { Id = userId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            member = new Member { Id = userId, SocialLinks = new List<SocialLink>(), CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
             db.Members.Add(member);
         }
 
@@ -90,7 +91,7 @@ public class ProfileService(AppDbContext db) : IProfileService
         var member = await db.Members.FirstOrDefaultAsync(m => m.Id == userId);
         if (member is null)
         {
-            member = new Member { Id = userId, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            member = new Member { Id = userId, SocialLinks = new List<SocialLink>(), CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
             db.Members.Add(member);
         }
 

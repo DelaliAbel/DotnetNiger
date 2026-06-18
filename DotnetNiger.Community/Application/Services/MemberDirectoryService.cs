@@ -19,12 +19,12 @@ public class MemberDirectoryService(AppDbContext db) : IMemberDirectoryService
             q = q.Where(m => m.Country == country);
 
         var total = await q.CountAsync();
-        var items = await q
+        var memberEntities = await q
             .OrderBy(m => m.FullName)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(m => MapMember(m))
             .ToListAsync();
+        var items = memberEntities.Select(MapMember).ToList();
 
         return new PaginatedResponse<MemberDirectoryResponse> { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }

@@ -10,10 +10,10 @@ public class CategoryService(AppDbContext db) : ICategoryService
 {
     public async Task<List<CategoryResponse>> GetAllAsync()
     {
-        return await db.Categories.AsNoTracking()
+        var categories = await db.Categories.AsNoTracking()
             .OrderBy(c => c.Name)
-            .Select(c => MapCategory(c))
             .ToListAsync();
+        return categories.Select(MapCategory).ToList();
     }
 
     public async Task<CategoryResponse?> GetByIdAsync(Guid id)

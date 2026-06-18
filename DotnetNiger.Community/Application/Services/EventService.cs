@@ -4,10 +4,12 @@ using DotnetNiger.Community.Application.Notifications;
 using DotnetNiger.Community.Domain;
 using DotnetNiger.Community.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace DotnetNiger.Community.Application.Services;
 
-public class EventService(AppDbContext db, INotificationService notificationService) : IEventService
+public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, ILogger<EventService> logger) : IEventService
 {
     public async Task<PaginatedResponse<EventResponse>> GetAllAsync(string? published, string? past, string? eventType, string? query, string? tag, DateTime? startDateFrom, DateTime? startDateTo, Guid? submitterId = null, int page = 1, int pageSize = 10, Guid? after = null)
     {
@@ -286,8 +288,10 @@ public class EventService(AppDbContext db, INotificationService notificationServ
         await db.SaveChangesAsync();
         _ = Task.Run(async () =>
         {
-            try { await notificationService.NotifyNewEventAsync(ev.Title, ev.Description, ev.StartDate); }
-            catch { /* logged internally */ }
+            using var scope = scopeFactory.CreateScope();
+            var notification = scope.ServiceProvider.GetRequiredService<INotificationService>();
+            try { await notification.NotifyNewEventAsync(ev.Title, ev.Description, ev.StartDate); }
+            catch (Exception ex) { logger.LogWarning(ex, "Échec de notification pour le nouvel événement {Title}", ev.Title); }
         });
         return MapEvent(ev);
     }
@@ -365,7 +369,10 @@ public class EventService(AppDbContext db, INotificationService notificationServ
 
     public async Task<EventResponse?> PublishAsync(Guid id)
     {
-        var ev = await db.Events.Include(e => e.Medias).FirstOrDefaultAsync(e => e.Id == id);
+        var ev = await db.Events
+            .Include(e => e.Medias)
+            .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .FirstOrDefaultAsync(e => e.Id == id);
         if (ev is null) return null;
         ev.IsPublished = true;
         ev.PublishedAt = DateTime.UtcNow;
@@ -376,7 +383,10 @@ public class EventService(AppDbContext db, INotificationService notificationServ
 
     public async Task<EventResponse?> UnpublishAsync(Guid id)
     {
-        var ev = await db.Events.Include(e => e.Medias).FirstOrDefaultAsync(e => e.Id == id);
+        var ev = await db.Events
+            .Include(e => e.Medias)
+            .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .FirstOrDefaultAsync(e => e.Id == id);
         if (ev is null) return null;
         ev.IsPublished = false;
         ev.PublishedAt = null;
@@ -445,7 +455,10 @@ public class EventService(AppDbContext db, INotificationService notificationServ
 
     public async Task<EventResponse?> RejectAsync(Guid id, string reason)
     {
-        var ev = await db.Events.Include(e => e.Medias).FirstOrDefaultAsync(e => e.Id == id);
+        var ev = await db.Events
+            .Include(e => e.Medias)
+            .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .FirstOrDefaultAsync(e => e.Id == id);
         if (ev is null) return null;
         ev.IsPublished = false;
         ev.RejectionReason = reason;
@@ -460,31 +473,37 @@ public class EventService(AppDbContext db, INotificationService notificationServ
         if (existing) return null;
 
         using var tx = await db.Database.BeginTransactionAsync();
-        var rows = await db.Database.ExecuteSqlRawAsync(
-            "UPDATE Events SET RegisteredCount = RegisteredCount + 1 WHERE Id = ? AND RegisteredCount < Capacity",
-            eventId);
-
-        if (rows == 0) return null;
-
-        var ev = await db.Events.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.Id == eventId);
-        if (ev is null) return null;
-
-        var registration = new EventRegistration
+        try
         {
-            Id = Guid.NewGuid(),
-            EventId = eventId,
-            UserId = userId,
-            UserName = userName,
-            AvatarUrl = avatarUrl,
-            RegisteredAt = DateTime.UtcNow,
-            RegistrationStatus = "Confirmed"
-        };
+            var rows = await db.Events
+                .Where(e => e.Id == eventId && e.RegisteredCount < e.Capacity)
+                .ExecuteUpdateAsync(setters => setters.SetProperty(e => e.RegisteredCount, e => e.RegisteredCount + 1));
 
-        db.EventRegistrations.Add(registration);
-        await db.SaveChangesAsync();
-        await tx.CommitAsync();
+            if (rows == 0) return null;
 
-        return MapRegistration(registration, ev.Title);
+            var ev = await db.Events.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.Id == eventId);
+            if (ev is null) return null;
+
+            var registration = new EventRegistration
+            {
+                Id = Guid.NewGuid(),
+                EventId = eventId,
+                UserId = userId,
+                UserName = userName,
+                AvatarUrl = avatarUrl,
+                RegisteredAt = DateTime.UtcNow,
+            };
+
+            db.EventRegistrations.Add(registration);
+            await db.SaveChangesAsync();
+            await tx.CommitAsync();
+            return MapRegistration(registration, ev.Title);
+        }
+        catch (DbUpdateException)
+        {
+            await tx.RollbackAsync();
+            return null;
+        }
     }
 
     public async Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId)
@@ -492,19 +511,27 @@ public class EventService(AppDbContext db, INotificationService notificationServ
         var reg = await db.EventRegistrations.FirstOrDefaultAsync(r => r.EventId == eventId && r.UserId == userId);
         if (reg is null) return false;
 
-        var ev = await db.Events.FindAsync(eventId);
-        if (ev is not null) ev.RegisteredCount--;
+        using var tx = await db.Database.BeginTransactionAsync();
+        await db.Events
+            .Where(e => e.Id == eventId && e.RegisteredCount > 0)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(e => e.RegisteredCount, e => e.RegisteredCount - 1));
 
         db.EventRegistrations.Remove(reg);
         await db.SaveChangesAsync();
+        await tx.CommitAsync();
         return true;
     }
 
     public async Task<List<EventRegistrationResponse>> GetRegistrationsAsync(Guid eventId)
     {
+        var eventTitle = await db.Events.AsNoTracking()
+            .Where(e => e.Id == eventId)
+            .Select(e => e.Title)
+            .FirstOrDefaultAsync() ?? "";
+
         return await db.EventRegistrations.AsNoTracking()
             .Where(r => r.EventId == eventId)
-            .Select(r => MapRegistration(r, ""))
+            .Select(r => MapRegistration(r, eventTitle))
             .ToListAsync();
     }
 
@@ -559,6 +586,16 @@ public class EventService(AppDbContext db, INotificationService notificationServ
             Type = m.Type,
             Url = m.Url,
             Title = m.Title
+        }).ToList(),
+        GalleryImageUrls = e.Medias.Where(m => m.Type == "Image").Select(m => m.Url).ToList(),
+        Speakers = e.Speakers.Select(s => new SpeakerResponse
+        {
+            Id = s.Id,
+            EventId = s.EventId,
+            UserId = s.UserId,
+            Name = s.Name,
+            Role = s.Role,
+            AvatarUrl = s.AvatarUrl
         }).ToList(),
         Tags = e.EventTags.Select(et => new TagResponse
         {
