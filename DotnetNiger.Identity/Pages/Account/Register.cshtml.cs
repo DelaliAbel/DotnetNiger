@@ -137,7 +137,14 @@ public class RegisterModel : PageModel
         user.EmailConfirmationCodeExpiry = DateTime.UtcNow.AddMinutes(15);
         await _userManager.UpdateAsync(user);
 
-        await SendConfirmationEmailAsync(user, code, tenant.Name);
+        try
+        {
+            await SendConfirmationEmailAsync(user, code, tenant.Name);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to send confirmation email to {Email}. User can request a new code.", Email);
+        }
 
         ShowCodeForm = true;
         PendingEmail = Email;
@@ -221,7 +228,14 @@ public class RegisterModel : PageModel
         user.EmailConfirmationCodeExpiry = DateTime.UtcNow.AddMinutes(15);
         await _userManager.UpdateAsync(user);
 
-        await SendConfirmationEmailAsync(user, code, tenant?.Name ?? "Plateforme");
+        try
+        {
+            await SendConfirmationEmailAsync(user, code, tenant?.Name ?? "Plateforme");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to resend confirmation email to {Email}.", email);
+        }
 
         ShowCodeForm = true;
         PendingEmail = email;
