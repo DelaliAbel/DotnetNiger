@@ -42,7 +42,25 @@ public class ProfileService(AppDbContext db) : IProfileService
         if (request.City is not null) member.City = request.City;
         member.UpdatedAt = DateTime.UtcNow;
 
-        await db.SaveChangesAsync();
+        try
+        {
+            await db.SaveChangesAsync();
+        }
+        catch (DbUpdateException) when (member.Id != Guid.Empty)
+        {
+            db.Entry(member).State = EntityState.Detached;
+            member = await db.Members.Include(m => m.SocialLinks).FirstOrDefaultAsync(m => m.Id == userId);
+            if (member is null) throw;
+            if (request.FullName is not null) member.FullName = request.FullName;
+            if (request.PhoneNumber is not null) member.PhoneNumber = request.PhoneNumber;
+            if (request.Bio is not null) member.Bio = request.Bio;
+            if (request.AvatarUrl is not null) member.AvatarUrl = request.AvatarUrl;
+            if (request.Country is not null) member.Country = request.Country;
+            if (request.City is not null) member.City = request.City;
+            member.UpdatedAt = DateTime.UtcNow;
+            await db.SaveChangesAsync();
+        }
+
         return MapProfile(member);
     }
 
@@ -64,7 +82,18 @@ public class ProfileService(AppDbContext db) : IProfileService
         };
 
         db.SocialLinks.Add(link);
-        await db.SaveChangesAsync();
+
+        try
+        {
+            await db.SaveChangesAsync();
+        }
+        catch (DbUpdateException) when (member.Id != Guid.Empty)
+        {
+            db.Entry(member).State = EntityState.Detached;
+            member = await db.Members.FirstOrDefaultAsync(m => m.Id == userId);
+            if (member is null) throw;
+        }
+
         return new SocialLinkResponse { Id = link.Id, Platform = link.Platform, Url = link.Url };
     }
 
@@ -106,7 +135,19 @@ public class ProfileService(AppDbContext db) : IProfileService
         };
 
         db.Certificates.Add(cert);
-        await db.SaveChangesAsync();
+
+        try
+        {
+            await db.SaveChangesAsync();
+        }
+        catch (DbUpdateException) when (member.Id != Guid.Empty)
+        {
+            db.Entry(member).State = EntityState.Detached;
+            member = await db.Members.FirstOrDefaultAsync(m => m.Id == userId);
+            if (member is null) throw;
+            db.Certificates.Add(cert);
+            await db.SaveChangesAsync();
+        }
 
         return new CertificateResponse
         {
