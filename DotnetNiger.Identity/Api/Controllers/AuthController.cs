@@ -189,12 +189,23 @@ public class AuthController : ControllerBase
             if (string.IsNullOrEmpty(ticket))
                 throw new InvalidOperationException("ticket is required");
 
-            if (!_cache.TryGetValue($"external_login_{ticket}", out ExternalLoginTicket? extTicket) || extTicket == null)
+            var cacheKey = $"external_login_{ticket}";
+            if (!_cache.TryGetValue(cacheKey, out ExternalLoginTicket? extTicket) || extTicket == null)
                 throw new InvalidOperationException("Ticket invalide ou expiré");
 
-            _cache.Remove($"external_login_{ticket}");
-
-            var extUser = await _userManager.FindByIdAsync(extTicket.UserId.ToString());
+            ApplicationUser? extUser;
+            if (extTicket.ConsumedAt != null)
+            {
+                extUser = await _userManager.FindByIdAsync(extTicket.UserId.ToString());
+                if (extUser == null || !extUser.IsActive)
+                    throw new InvalidOperationException("Utilisateur introuvable ou inactif");
+            }
+            else
+            {
+                extTicket.ConsumedAt = DateTime.UtcNow;
+                _cache.Set(cacheKey, extTicket, TimeSpan.FromSeconds(10));
+                extUser = await _userManager.FindByIdAsync(extTicket.UserId.ToString());
+            }
             if (extUser == null || !extUser.IsActive)
                 throw new InvalidOperationException("Utilisateur introuvable ou inactif");
 
@@ -794,4 +805,5 @@ public class ExternalLoginTicket
     public Guid? TenantId { get; set; }
     public List<string> Roles { get; set; } = new();
     public bool IsActive { get; set; }
+    public DateTime? ConsumedAt { get; set; }
 }
