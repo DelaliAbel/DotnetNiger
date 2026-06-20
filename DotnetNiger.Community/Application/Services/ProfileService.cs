@@ -12,6 +12,7 @@ public class ProfileService(AppDbContext db) : IProfileService
     {
         var member = await db.Members.AsNoTracking()
             .Include(m => m.SocialLinks)
+            .Include(m => m.Skills)
             .FirstOrDefaultAsync(m => m.Id == userId);
         return member is null ? null : MapProfile(member);
     }
@@ -20,6 +21,7 @@ public class ProfileService(AppDbContext db) : IProfileService
     {
         var member = await db.Members
             .Include(m => m.SocialLinks)
+            .Include(m => m.Skills)
             .FirstOrDefaultAsync(m => m.Id == userId);
 
         if (member is null)
@@ -40,6 +42,16 @@ public class ProfileService(AppDbContext db) : IProfileService
         if (request.AvatarUrl is not null) member.AvatarUrl = request.AvatarUrl;
         if (request.Country is not null) member.Country = request.Country;
         if (request.City is not null) member.City = request.City;
+        if (request.Skills is not null)
+        {
+            db.MemberSkills.RemoveRange(member.Skills);
+            member.Skills = request.Skills.Select(s => new MemberSkill
+            {
+                Id = Guid.NewGuid(),
+                MemberId = userId,
+                Name = s
+            }).ToList();
+        }
         member.UpdatedAt = DateTime.UtcNow;
 
         try
@@ -49,7 +61,7 @@ public class ProfileService(AppDbContext db) : IProfileService
         catch (DbUpdateException) when (member.Id != Guid.Empty)
         {
             db.Entry(member).State = EntityState.Detached;
-            member = await db.Members.Include(m => m.SocialLinks).FirstOrDefaultAsync(m => m.Id == userId);
+            member = await db.Members.Include(m => m.SocialLinks).Include(m => m.Skills).FirstOrDefaultAsync(m => m.Id == userId);
             if (member is null) throw;
             if (request.FullName is not null) member.FullName = request.FullName;
             if (request.PhoneNumber is not null) member.PhoneNumber = request.PhoneNumber;
@@ -57,6 +69,16 @@ public class ProfileService(AppDbContext db) : IProfileService
             if (request.AvatarUrl is not null) member.AvatarUrl = request.AvatarUrl;
             if (request.Country is not null) member.Country = request.Country;
             if (request.City is not null) member.City = request.City;
+            if (request.Skills is not null)
+            {
+                db.MemberSkills.RemoveRange(member.Skills);
+                member.Skills = request.Skills.Select(s => new MemberSkill
+                {
+                    Id = Guid.NewGuid(),
+                    MemberId = userId,
+                    Name = s
+                }).ToList();
+            }
             member.UpdatedAt = DateTime.UtcNow;
             await db.SaveChangesAsync();
         }
@@ -174,6 +196,7 @@ public class ProfileService(AppDbContext db) : IProfileService
             Id = s.Id,
             Platform = s.Platform,
             Url = s.Url
-        }).ToList()
+        }).ToList(),
+        Skills = m.Skills.Select(s => s.Name).ToList()
     };
 }

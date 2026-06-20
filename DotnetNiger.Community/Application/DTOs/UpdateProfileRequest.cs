@@ -8,4 +8,5 @@ public class UpdateProfileRequest
     public string? AvatarUrl { get; set; }
     public string? Country { get; set; }
     public string? City { get; set; }
+    public List<string>? Skills { get; set; }
 }

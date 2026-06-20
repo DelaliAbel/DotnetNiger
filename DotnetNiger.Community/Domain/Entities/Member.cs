@@ -14,4 +14,5 @@ public class Member
 
     public ICollection<SocialLink> SocialLinks { get; set; } = [];
     public ICollection<Certificate> Certificates { get; set; } = [];
+    public ICollection<MemberSkill> Skills { get; set; } = [];
 }

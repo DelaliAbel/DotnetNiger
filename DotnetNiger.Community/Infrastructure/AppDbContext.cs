@@ -20,6 +20,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<Member> Members => Set<Member>();
     public DbSet<SocialLink> SocialLinks => Set<SocialLink>();
+    public DbSet<MemberSkill> MemberSkills => Set<MemberSkill>();
     public DbSet<NewsletterSubscription> NewsletterSubscriptions => Set<NewsletterSubscription>();
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<Partner> Partners => Set<Partner>();
@@ -221,6 +222,13 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.Property(e => e.Status).HasMaxLength(50);
             entity.HasOne(e => e.Member).WithMany(e => e.Certificates).HasForeignKey(e => e.UserId).HasPrincipalKey(e => e.Id);
             entity.HasIndex(e => new { e.UserId, e.Status });
+        });
+
+        modelBuilder.Entity<MemberSkill>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.HasOne(e => e.Member).WithMany(e => e.Skills).HasForeignKey(e => e.MemberId);
+            entity.Property(e => e.Name).HasMaxLength(100);
         });
     }
 }
