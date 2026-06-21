@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Identity.Application.Services;
@@ -17,11 +18,13 @@ public class AdminController : ControllerBase
 {
     private readonly AdminService _adminService;
     private readonly IdentityDbContext _db;
+    private readonly UserManager<ApplicationUser> _userManager;
 
-    public AdminController(AdminService adminService, IdentityDbContext db)
+    public AdminController(AdminService adminService, IdentityDbContext db, UserManager<ApplicationUser> userManager)
     {
         _adminService = adminService;
         _db = db;
+        _userManager = userManager;
     }
 
     [HttpPost("invite")]
@@ -73,5 +76,26 @@ public class AdminController : ControllerBase
             .ToListAsync();
 
         return Ok(new PaginatedResponse<AuditLog>(items, total, page, pageSize));
+    }
+
+    [HttpGet("users")]
+    public async Task<ActionResult<List<UserResponse>>> GetAllUsers()
+    {
+        var users = await _adminService.GetAllUsersAcrossTenantsAsync();
+        return Ok(users);
+    }
+
+    [HttpGet("users/{id:guid}")]
+    public async Task<ActionResult<UserResponse>> GetUserById(Guid id)
+    {
+        var user = await _userManager.FindByIdAsync(id.ToString());
+        if (user == null)
+            return NotFound(new ErrorResponse("Utilisateur non trouvé"));
+
+        var roles = await _userManager.GetRolesAsync(user);
+        return Ok(new UserResponse(
+            user.Id, user.Email!, user.FirstName, user.LastName,
+            user.AvatarUrl, user.TenantId, user.IsActive,
+            user.EmailConfirmed, user.CreatedAt, roles.ToList()));
     }
 }

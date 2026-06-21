@@ -48,6 +48,7 @@ coverage/
 *.userosscache
 
 # Development settings (local secrets)
+**/appsettings.Local.json
 DotnetNiger.Identity/appsettings.Development.json
 *.sln.docstates
 

@@ -81,6 +81,12 @@ public class EmailSender : IEmailSender<ApplicationUser>
         message.Body = body;
 
         using var client = new SmtpClient();
+
+        if (string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Development", StringComparison.OrdinalIgnoreCase))
+        {
+            client.ServerCertificateValidationCallback = (sender, certificate, chain, errors) => true;
+        }
+
         await client.ConnectAsync(_smtp.Host, _smtp.Port, SecureSocketOptions.StartTlsWhenAvailable);
         if (!string.IsNullOrEmpty(_smtp.Username))
             await client.AuthenticateAsync(_smtp.Username, _smtp.Password);

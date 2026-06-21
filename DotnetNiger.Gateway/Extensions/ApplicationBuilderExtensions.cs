@@ -102,6 +102,12 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
+    public static IApplicationBuilder UseOpenGraphMiddleware(this IApplicationBuilder app)
+    {
+        app.UseMiddleware<OpenGraphMiddleware>();
+        return app;
+    }
+
     public static IApplicationBuilder UseCustomSwaggerMergeMiddleware(this IApplicationBuilder app)
     {
         app.Use(async (context, next) =>

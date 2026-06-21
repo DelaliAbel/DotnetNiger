@@ -54,6 +54,7 @@ var mergedOcelotFile = useConsul
     app.UseLatencyMetricsMiddleware();
     app.UseClientIdResolutionMiddleware();
     app.UseRequestTracingMiddleware();
+    app.UseOpenGraphMiddleware();
     app.UseCustomSwaggerMergeMiddleware();
     app.UseExternalServiceProxy();
 

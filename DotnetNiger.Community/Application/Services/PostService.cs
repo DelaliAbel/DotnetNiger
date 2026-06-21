@@ -53,6 +53,7 @@ public class PostService(AppDbContext db) : IPostService
                     PublishedAt = p.PublishedAt ?? DateTime.MinValue,
                     ViewCount = p.ViewCount,
                     CreatedAt = p.CreatedAt,
+                    UpdatedAt = p.UpdatedAt,
                     Categories = p.PostCategories.Select(pc => new CategoryResponse
                     {
                         Id = pc.Category.Id,
@@ -93,6 +94,7 @@ public class PostService(AppDbContext db) : IPostService
                     PublishedAt = p.PublishedAt ?? DateTime.MinValue,
                     ViewCount = p.ViewCount,
                     CreatedAt = p.CreatedAt,
+                    UpdatedAt = p.UpdatedAt,
                     Categories = p.PostCategories.Select(pc => new CategoryResponse
                     {
                         Id = pc.Category.Id,
@@ -230,6 +232,7 @@ public class PostService(AppDbContext db) : IPostService
         PublishedAt = p.PublishedAt ?? DateTime.MinValue,
         ViewCount = p.ViewCount,
         CreatedAt = p.CreatedAt,
+        UpdatedAt = p.UpdatedAt,
         Categories = p.PostCategories.Select(pc => new CategoryResponse
         {
             Id = pc.Category.Id,

@@ -549,6 +549,39 @@
       "RateLimitOptions": { "EnableRateLimiting": false },
       "Key": "CommunityV1NotificationsRoute",
       "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/posts/by-slug/{slug}",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/api/v1/posts/by-slug/{slug}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5050 }],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 10000 },
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "Key": "CommunityPostsBySlugRoute",
+      "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/events/by-slug/{slug}",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/api/v1/events/by-slug/{slug}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5050 }],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 10000 },
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "Key": "CommunityEventsBySlugRoute",
+      "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/resources/by-slug/{slug}",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/api/v1/resources/by-slug/{slug}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5050 }],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 10000 },
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "Key": "CommunityResourcesBySlugRoute",
+      "SwaggerKey": "community"
     }
   ]
 }

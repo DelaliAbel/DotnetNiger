@@ -42,6 +42,24 @@ public class ResourcesController(IResourceService resourceService) : ControllerB
         return Ok(new { Success = true, Data = resource });
     }
 
+    [HttpGet("by-slug/{slug}")]
+    public async Task<ActionResult<OGMetadata>> GetOGBySlug(string slug)
+    {
+        var resource = await resourceService.GetBySlugAsync(slug);
+        if (resource is null) return NotFound(new { Success = false, Message = "Resource not found" });
+
+        return Ok(new ApiSuccessResponse<OGMetadata>
+        {
+            Data = new OGMetadata
+            {
+                Title = resource.Title,
+                Description = resource.Description,
+                ImageUrl = string.Empty,
+                UpdatedAt = resource.UpdatedAt
+            }
+        });
+    }
+
     [HttpGet("types")]
     public async Task<IActionResult> GetTypes()
     {

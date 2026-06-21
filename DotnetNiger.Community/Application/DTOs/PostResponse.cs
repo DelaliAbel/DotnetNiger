@@ -16,6 +16,7 @@ public class PostResponse
     public DateTime PublishedAt { get; set; }
     public int ViewCount { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
     public List<CategoryResponse> Categories { get; set; } = [];
     public List<TagResponse> Tags { get; set; } = [];
 }

@@ -86,9 +86,10 @@ public static class ServiceExtensions
 
                 if (env.IsDevelopment())
                 {
-                    // Load development certificate for HTTPS
-                    var certPath = Path.Combine(AppContext.BaseDirectory, "https", "localhost.pfx");
-                    var certPassword = "1234"; // Default password for dotnet dev certs
+                    // Load development certificate from solution-root https/ directory
+                    var certPath = Path.Combine(env.ContentRootPath, "..", "https", "localhost.pfx");
+                    certPath = Path.GetFullPath(certPath);
+                    var certPassword = "1234";
                     
                     if (File.Exists(certPath))
                     {
@@ -99,14 +100,20 @@ public static class ServiceExtensions
                             server.AddEncryptionCertificate(cert)
                                   .AddSigningCertificate(cert);
                         }
-                        catch
+                        catch (Exception ex)
                         {
+                            var loggerFactory = LoggerFactory.Create(b => b.AddConsole());
+                            var logger = loggerFactory.CreateLogger("OpenIddict");
+                            logger.LogWarning(ex, "Failed to load PFX certificate from {Path}, falling back to ephemeral keys", certPath);
                             server.AddEphemeralEncryptionKey()
                                   .AddEphemeralSigningKey();
                         }
                     }
                     else
                     {
+                        var loggerFactory = LoggerFactory.Create(b => b.AddConsole());
+                        var logger = loggerFactory.CreateLogger("OpenIddict");
+                        logger.LogWarning("PFX certificate not found at {Path}, using ephemeral keys", certPath);
                         server.AddEphemeralEncryptionKey()
                               .AddEphemeralSigningKey();
                     }

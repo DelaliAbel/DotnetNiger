@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using DotnetNiger.Community.Application.DTOs;
 using DotnetNiger.Community.Application.Notifications;
 using DotnetNiger.Community.Application.Services;
@@ -5,6 +6,7 @@ using DotnetNiger.Community.Domain.Entities;
 using DotnetNiger.Community.Infrastructure;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
 
@@ -25,6 +27,16 @@ public class EventServiceTests
         return new Mock<INotificationService>();
     }
 
+    private static EventService CreateEventService(AppDbContext db)
+    {
+        var serviceCollection = new ServiceCollection();
+        serviceCollection.AddScoped(_ => CreateNotificationMock().Object);
+        var serviceProvider = serviceCollection.BuildServiceProvider();
+        var scopeFactory = serviceProvider.GetRequiredService<IServiceScopeFactory>();
+        var logger = new Mock<ILogger<EventService>>().Object;
+        return new EventService(db, scopeFactory, logger);
+    }
+
     [Fact]
     public async Task GetAllAsync_ReturnsPagedEvents()
     {
@@ -34,7 +46,7 @@ public class EventServiceTests
             new Event { Id = Guid.NewGuid(), Title = "E2", Slug = "e2" });
         await db.SaveChangesAsync();
 
-        var svc = new EventService(db, CreateNotificationMock().Object);
+        var svc = CreateEventService(db);
         var result = await svc.GetAllAsync(null, null, null, null, null, null, null, null, 1, 10);
 
         result.Items.Should().HaveCount(2);
@@ -45,7 +57,7 @@ public class EventServiceTests
     public async Task GetByIdAsync_ReturnsNull_WhenNotFound()
     {
         var db = CreateDb();
-        var svc = new EventService(db, CreateNotificationMock().Object);
+        var svc = CreateEventService(db);
         var result = await svc.GetByIdAsync(Guid.NewGuid());
 
         result.Should().BeNull();
@@ -57,7 +69,7 @@ public class EventServiceTests
         var db = CreateDb();
         var request = new CreateEventRequest { Title = "New Event", Description = "Desc", StartDate = DateTime.UtcNow.AddDays(1), EndDate = DateTime.UtcNow.AddDays(2) };
 
-        var svc = new EventService(db, CreateNotificationMock().Object);
+        var svc = CreateEventService(db);
         var result = await svc.CreateAsync(request, Guid.NewGuid());
 
         result.Title.Should().Be("New Event");

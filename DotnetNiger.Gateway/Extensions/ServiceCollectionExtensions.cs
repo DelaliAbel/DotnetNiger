@@ -29,6 +29,16 @@ public static class ServiceCollectionExtensions
         services.AddHttpClient();
         services.AddMemoryCache();
         services.AddHostedService<ExternalServiceHealthService>();
+
+        services.AddHttpClient("Community", client =>
+        {
+            var devUrl = configuration.GetSection("DownstreamServices:Community:DevUrl").Value ?? "http://localhost:5050";
+            client.BaseAddress = new Uri(devUrl);
+            client.Timeout = TimeSpan.FromSeconds(5);
+        });
+
+        services.AddSingleton<IOpenGraphService, OpenGraphService>();
+        services.AddSingleton<OpenGraphHtmlBuilder>();
         services.AddEndpointsApiExplorer();
         services.AddSwaggerForOcelot(configuration);
 

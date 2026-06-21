@@ -70,6 +70,7 @@ public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, IL
                     SubmittedAt = e.SubmittedAt,
                     PublishedAt = e.PublishedAt,
                     CreatedAt = e.CreatedAt,
+                    UpdatedAt = e.UpdatedAt,
                     Medias = e.Medias.Select(m => new EventMediaResponse
                     {
                         Id = m.Id,
@@ -128,6 +129,7 @@ public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, IL
                     SubmittedAt = e.SubmittedAt,
                     PublishedAt = e.PublishedAt,
                     CreatedAt = e.CreatedAt,
+                    UpdatedAt = e.UpdatedAt,
                     Medias = e.Medias.Select(m => new EventMediaResponse
                     {
                         Id = m.Id,

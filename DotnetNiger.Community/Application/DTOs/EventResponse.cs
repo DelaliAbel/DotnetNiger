@@ -24,6 +24,7 @@ public class EventResponse
     public DateTime? SubmittedAt { get; set; }
     public DateTime? PublishedAt { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
     public List<EventMediaResponse> Medias { get; set; } = [];
     public List<TagResponse> Tags { get; set; } = [];
     public List<string> GalleryImageUrls { get; set; } = [];

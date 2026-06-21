@@ -12,6 +12,7 @@ public class ResourceResponse
     public Guid CreatedBy { get; set; }
     public int ViewCount { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
     public List<Guid> CategoryIds { get; set; } = [];
     public List<TagResponse> Tags { get; set; } = [];
 }

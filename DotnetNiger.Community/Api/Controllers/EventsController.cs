@@ -53,6 +53,24 @@ public class EventsController(IEventService eventService) : ControllerBase
         return Ok(new { Success = true, Data = ev });
     }
 
+    [HttpGet("by-slug/{slug}")]
+    public async Task<ActionResult<OGMetadata>> GetOGBySlug(string slug)
+    {
+        var ev = await eventService.GetBySlugAsync(slug);
+        if (ev is null) return NotFound(new { Success = false, Message = "Event not found" });
+
+        return Ok(new ApiSuccessResponse<OGMetadata>
+        {
+            Data = new OGMetadata
+            {
+                Title = ev.Title,
+                Description = ev.Description,
+                ImageUrl = ev.CoverImageUrl,
+                UpdatedAt = ev.UpdatedAt
+            }
+        });
+    }
+
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> Create([FromBody] CreateEventRequest request)

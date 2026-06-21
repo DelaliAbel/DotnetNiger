@@ -47,6 +47,7 @@ public class ResourceService(AppDbContext db) : IResourceService
                     CreatedBy = r.CreatedBy,
                     ViewCount = r.ViewCount,
                     CreatedAt = r.CreatedAt,
+                    UpdatedAt = r.UpdatedAt,
                     CategoryIds = r.ResourceCategories.Select(rc => rc.CategoryId).ToList(),
                     Tags = r.ResourceTags.Select(rt => new TagResponse
                     {
@@ -78,6 +79,7 @@ public class ResourceService(AppDbContext db) : IResourceService
                     CreatedBy = r.CreatedBy,
                     ViewCount = r.ViewCount,
                     CreatedAt = r.CreatedAt,
+                    UpdatedAt = r.UpdatedAt,
                     CategoryIds = r.ResourceCategories.Select(rc => rc.CategoryId).ToList(),
                     Tags = r.ResourceTags.Select(rt => new TagResponse
                     {
@@ -252,6 +254,7 @@ public class ResourceService(AppDbContext db) : IResourceService
         CreatedBy = r.CreatedBy,
         ViewCount = r.ViewCount,
         CreatedAt = r.CreatedAt,
+        UpdatedAt = r.UpdatedAt,
         CategoryIds = r.ResourceCategories.Select(rc => rc.CategoryId).ToList(),
         Tags = r.ResourceTags.Select(rt => new TagResponse
         {
