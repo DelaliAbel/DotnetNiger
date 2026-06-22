@@ -13,12 +13,6 @@ try
     var builder = ApplicationSetup.CreateBuilder(args);
     var app = ApplicationSetup.ConfigureApp(builder);
 
-    if (args.Contains("--seed"))
-    {
-        await ApplicationSetup.SeedDataAsync(app);
-        Log.Information("Seed completed. Starting normally...");
-    }
-
     Log.Information("DotnetNiger.Identity starting...");
     await app.RunAsync();
     return 0;
