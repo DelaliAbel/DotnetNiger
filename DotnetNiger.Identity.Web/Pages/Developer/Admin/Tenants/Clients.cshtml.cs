@@ -7,7 +7,7 @@ using DotnetNiger.Identity.Web.Models;
 
 namespace DotnetNiger.Identity.Web.Pages.Developer.Admin;
 
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,SuperAdmin")]
 public class ClientsModel : BasePageModel
 {
     public ClientsModel(IHttpClientFactory http, IConfiguration config)

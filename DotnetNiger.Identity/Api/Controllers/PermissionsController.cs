@@ -10,7 +10,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/{tenantId:guid}/permissions")]
-[Authorize(Roles = RoleConstants.Admin)]
+[Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.SuperAdmin)]
 public class PermissionsController : ControllerBase
 {
     private readonly PermissionService _permissionService;

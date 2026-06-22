@@ -14,7 +14,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/admin")]
-[Authorize(Roles = RoleConstants.Admin)]
+[Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.SuperAdmin)]
 public class AdminController : ControllerBase
 {
     private readonly AdminService _adminService;

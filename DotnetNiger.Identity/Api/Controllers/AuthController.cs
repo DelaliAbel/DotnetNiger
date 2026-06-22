@@ -687,7 +687,7 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>Bootstrap du client OIDC "web-ui" (création ou mise à jour des permissions/URIs).</summary>
-    [Authorize(Roles = RoleConstants.Admin)]
+    [Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.SuperAdmin)]
     [HttpPost("bootstrap-web-ui")]
     public async Task<IActionResult> BootstrapWebUi(
         [FromServices] IOpenIddictApplicationManager appManager)

@@ -5,7 +5,7 @@ using DotnetNiger.Identity.Web.Models;
 
 namespace DotnetNiger.Identity.Web.Pages.Developer.Admin.Tenants;
 
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,SuperAdmin")]
 public class LoginHistoryModel : BasePageModel
 {
     public LoginHistoryModel(IHttpClientFactory http, IConfiguration config)

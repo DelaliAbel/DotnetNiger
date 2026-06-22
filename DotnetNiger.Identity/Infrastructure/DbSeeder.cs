@@ -43,6 +43,13 @@ public class DbSeeder
 
         tenantContext.TenantId = platformTenant.Id;
 
+        var superAdminRole = new ApplicationRole
+        {
+            Name = SuperAdmin,
+            NormalizedName = "SUPERADMIN",
+            TenantId = platformTenant.Id,
+            Description = "Super administrateur de la plateforme"
+        };
         var adminRole = new ApplicationRole
         {
             Name = Admin,
@@ -57,6 +64,7 @@ public class DbSeeder
             TenantId = platformTenant.Id,
             Description = "Utilisateur standard"
         };
+        await roleManager.CreateAsync(superAdminRole);
         await roleManager.CreateAsync(adminRole);
         await roleManager.CreateAsync(userRole);
 
@@ -84,6 +92,7 @@ public class DbSeeder
         var result = await userManager.CreateAsync(adminUser, adminPassword);
         if (result.Succeeded)
         {
+            await userManager.AddToRoleAsync(adminUser, SuperAdmin);
             await userManager.AddToRoleAsync(adminUser, Admin);
         }
 

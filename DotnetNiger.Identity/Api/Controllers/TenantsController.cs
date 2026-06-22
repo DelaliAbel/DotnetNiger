@@ -10,7 +10,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiVersion("1.0")]
 
 [Route("api/v{version:apiVersion}/admin/tenants")]
-[Authorize(Roles = RoleConstants.Admin)]
+[Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.SuperAdmin)]
 public class TenantsController : ControllerBase
 {
     private readonly TenantService _tenantService;

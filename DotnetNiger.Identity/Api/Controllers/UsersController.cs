@@ -10,7 +10,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiVersion("1.0")]
 
 [Route("api/v{version:apiVersion}/{tenantId:guid}/users")]
-[Authorize(Roles = RoleConstants.Admin)]
+[Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.SuperAdmin)]
 public class UsersController : ControllerBase
 {
     private readonly UserService _userService;

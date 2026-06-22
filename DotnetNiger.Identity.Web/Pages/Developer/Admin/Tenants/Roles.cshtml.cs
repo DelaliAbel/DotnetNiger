@@ -5,7 +5,7 @@ using DotnetNiger.Identity.Web.Models;
 
 namespace DotnetNiger.Identity.Web.Pages.Developer.Admin;
 
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,SuperAdmin")]
 public class RolesModel : BasePageModel
 {
     public RolesModel(IHttpClientFactory http, IConfiguration config)

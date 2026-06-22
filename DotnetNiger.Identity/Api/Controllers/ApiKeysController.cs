@@ -10,7 +10,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/admin/tenants/{tenantId:guid}/api-keys")]
-[Authorize(Roles = RoleConstants.Admin)]
+[Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.SuperAdmin)]
 public class ApiKeysController : ControllerBase
 {
     private readonly TenantApiKeyService _apiKeyService;

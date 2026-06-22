@@ -4,7 +4,7 @@ using DotnetNiger.Identity.Web.Models;
 
 namespace DotnetNiger.Identity.Web.Pages.Developer.Admin;
 
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,SuperAdmin")]
 public class IndexModel : BasePageModel
 {
     public IndexModel(IHttpClientFactory http, IConfiguration config)

@@ -61,6 +61,15 @@ public class TenantService
         };
         await _roleManager.CreateAsync(adminRole);
 
+        var collaboratorRole = new ApplicationRole
+        {
+            Name = "Collaborator",
+            NormalizedName = "COLLABORATOR",
+            TenantId = tenant.Id,
+            Description = $"Contributeur de {tenant.Name}"
+        };
+        await _roleManager.CreateAsync(collaboratorRole);
+
         var adminUser = new ApplicationUser
         {
             UserName = $"admin@{tenant.Slug}.dotnetniger.com",
@@ -153,6 +162,13 @@ public class TenantService
             TenantId = tenant.Id,
             Description = $"Administrateur de {tenant.Name}"
         };
+        var collaboratorRole = new ApplicationRole
+        {
+            Name = "Collaborator",
+            NormalizedName = "COLLABORATOR",
+            TenantId = tenant.Id,
+            Description = $"Contributeur de {tenant.Name}"
+        };
         var userRole = new ApplicationRole
         {
             Name = User,
@@ -161,6 +177,7 @@ public class TenantService
             Description = "Utilisateur standard"
         };
         await _roleManager.CreateAsync(adminRole);
+        await _roleManager.CreateAsync(collaboratorRole);
         await _roleManager.CreateAsync(userRole);
 
         var adminUser = new ApplicationUser

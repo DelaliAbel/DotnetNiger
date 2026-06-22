@@ -6,7 +6,7 @@ using DotnetNiger.Identity.Web.Infrastructure;
 
 namespace DotnetNiger.Identity.Web.Pages.Developer.Admin.Tenants;
 
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,SuperAdmin")]
 public class PermissionsModel : BasePageModel
 {
     public PermissionsModel(IHttpClientFactory http, IConfiguration config)

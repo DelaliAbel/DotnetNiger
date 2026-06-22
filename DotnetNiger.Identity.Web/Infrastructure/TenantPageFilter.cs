@@ -13,7 +13,7 @@ public class TenantPageFilter : IAsyncPageFilter
     {
         var tenantIdRoute = context.RouteData.Values["tenantId"]?.ToString();
         var tenantIdClaim = context.HttpContext.User.FindFirst("tenant_id")?.Value;
-        var isPlatformAdmin = context.HttpContext.User.IsInRole("Admin");
+        var isPlatformAdmin = context.HttpContext.User.IsInRole("Admin") || context.HttpContext.User.IsInRole("SuperAdmin");
 
         if (!string.IsNullOrEmpty(tenantIdRoute))
         {
