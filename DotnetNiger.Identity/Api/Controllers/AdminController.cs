@@ -99,4 +99,64 @@ public class AdminController : ControllerBase
             user.AvatarUrl, user.TenantId, user.IsActive,
             user.EmailConfirmed, user.CreatedAt, roles.ToList()));
     }
+
+    [HttpPatch("users/{id:guid}/status")]
+    public async Task<ActionResult> UpdateUserStatus(Guid id, [FromBody] UpdateUserRequest request)
+    {
+        var updated = await _adminService.UpdateUserStatusAsync(id, request.IsActive ?? true);
+        if (!updated)
+            return NotFound(new ErrorResponse("Utilisateur non trouvé"));
+        return Ok(new { message = "Statut mis à jour avec succès" });
+    }
+
+    [HttpPost("users/{id:guid}/roles")]
+    public async Task<ActionResult> AssignRoleToUser(Guid id, [FromBody] AssignRoleRequest request)
+    {
+        var assigned = await _adminService.AssignRoleToUserAsync(id, request.RoleName);
+        if (!assigned)
+            return BadRequest(new ErrorResponse("Impossible d'assigner le rôle"));
+        return Ok(new { message = "Rôle assigné avec succès" });
+    }
+
+    [HttpDelete("users/{id:guid}")]
+    public async Task<ActionResult> DeleteUser(Guid id)
+    {
+        var deleted = await _adminService.DeleteUserAsync(id);
+        if (!deleted)
+            return NotFound(new ErrorResponse("Utilisateur non trouvé"));
+        return Ok(new { message = "Utilisateur supprimé avec succès" });
+    }
+
+    [HttpPost("users")]
+    public async Task<ActionResult> CreateUser([FromBody] AdminCreateUserRequest request)
+    {
+        var tenant = await _db.Tenants.FirstOrDefaultAsync();
+        if (tenant == null)
+            return BadRequest(new ErrorResponse("Aucun tenant trouvé"));
+
+        var user = new ApplicationUser
+        {
+            UserName = request.Email,
+            Email = request.Email,
+            FirstName = request.FirstName,
+            LastName = request.LastName ?? ".",
+            TenantId = tenant.Id,
+            IsActive = true,
+            EmailConfirmed = true
+        };
+
+        var result = await _userManager.CreateAsync(user, request.Password);
+        if (!result.Succeeded)
+            return BadRequest(new ErrorResponse(string.Join(", ", result.Errors.Select(e => e.Description))));
+
+        if (!string.IsNullOrEmpty(request.Role))
+            await _userManager.AddToRoleAsync(user, request.Role);
+        else
+            await _userManager.AddToRoleAsync(user, RoleConstants.User);
+
+        var roles = await _userManager.GetRolesAsync(user);
+        return Ok(new UserResponse(user.Id, user.Email!, user.FirstName, user.LastName,
+            user.AvatarUrl, user.TenantId, user.IsActive, user.EmailConfirmed,
+            user.CreatedAt, roles.ToList()));
+    }
 }

@@ -33,7 +33,7 @@ public class DbSeeder
         var platformTenant = new Tenant
         {
             Id = Guid.NewGuid(),
-            Name = "Plateforme",
+            Name = "DotnetNiger Community",
             Slug = "platform",
             Description = "Tenant de la plateforme DotnetNiger",
             IsActive = true

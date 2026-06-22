@@ -9,6 +9,8 @@ public class Member
     public string PhoneNumber { get; set; } = string.Empty;
     public string Country { get; set; } = string.Empty;
     public string City { get; set; } = string.Empty;
+    public bool IsTeamMember { get; set; }
+    public string Position { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 

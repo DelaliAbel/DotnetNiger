@@ -11,6 +11,8 @@ public class UserDto
     public string AvatarUrl { get; set; } = string.Empty;
     public string Country { get; set; } = string.Empty;
     public string City { get; set; } = string.Empty;
+    public bool IsTeamMember { get; set; }
+    public string Position { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? LastLoginAt { get; set; }

@@ -19,3 +19,13 @@ public record UpdateUserRequest(
 
 public record ResendEmailConfirmationRequest(
     [Required][EmailAddress] string Email);
+
+public record AssignRoleRequest(
+    [Required] string RoleName);
+
+public record AdminCreateUserRequest(
+    [Required][EmailAddress] string Email,
+    [Required] string Password,
+    [Required] string FirstName,
+    string? LastName,
+    string? Role);

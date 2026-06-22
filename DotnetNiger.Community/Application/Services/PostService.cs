@@ -205,6 +205,33 @@ public class PostService(AppDbContext db) : IPostService
         return MapPost(post);
     }
 
+    public async Task<PostResponse?> PublishAsync(Guid id, Guid userId, bool isAdmin)
+    {
+        var post = await db.Posts.FindAsync(id);
+        if (post is null) return null;
+        if (post.AuthorId != userId && !isAdmin)
+            throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à publier cette publication.");
+
+        post.IsPublished = true;
+        post.PublishedAt ??= DateTime.UtcNow;
+        post.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+        return MapPost(post);
+    }
+
+    public async Task<PostResponse?> UnpublishAsync(Guid id, Guid userId, bool isAdmin)
+    {
+        var post = await db.Posts.FindAsync(id);
+        if (post is null) return null;
+        if (post.AuthorId != userId && !isAdmin)
+            throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à dépublier cette publication.");
+
+        post.IsPublished = false;
+        post.UpdatedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+        return MapPost(post);
+    }
+
     public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin)
     {
         var post = await db.Posts.FindAsync(id);

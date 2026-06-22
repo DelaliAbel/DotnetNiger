@@ -88,6 +88,30 @@ public class AdminController(IAdminService adminService, IEventService eventServ
         return Ok(new { Success = true, Message = "User status updated" });
     }
 
+    [HttpPatch("users/{id:guid}/team")]
+    public async Task<IActionResult> UpdateUserTeam(Guid id, [FromBody] UpdateUserTeamRequest request)
+    {
+        var updated = await adminService.UpdateUserTeamAsync(id, request.IsTeamMember, request.Position);
+        if (!updated) return NotFound(new { Success = false, Message = "User not found" });
+        return Ok(new { Success = true, Message = "Team status updated" });
+    }
+
+    [HttpPost("users")]
+    public async Task<IActionResult> CreateUser([FromBody] CreateAdminUserRequest request)
+    {
+        var user = await adminService.CreateUserAsync(request);
+        if (user is null) return BadRequest(new { Success = false, Message = "Failed to create user" });
+        return Ok(new { Success = true, Data = user });
+    }
+
+    [HttpDelete("users/{id:guid}")]
+    public async Task<IActionResult> DeleteUser(Guid id)
+    {
+        var deleted = await adminService.DeleteUserAsync(id);
+        if (!deleted) return NotFound(new { Success = false, Message = "User not found" });
+        return Ok(new { Success = true, Message = "User deleted" });
+    }
+
     [HttpGet("roles")]
     public async Task<IActionResult> GetRoles()
     {

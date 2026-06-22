@@ -9,6 +9,8 @@ public interface IPostService
     Task<PostResponse?> GetBySlugAsync(string slug);
     Task<PostResponse> CreateAsync(CreatePostRequest request, Guid authorId, string authorName);
     Task<PostResponse?> UpdateAsync(Guid id, UpdatePostRequest request, Guid userId, bool isAdmin);
+    Task<PostResponse?> PublishAsync(Guid id, Guid userId, bool isAdmin);
+    Task<PostResponse?> UnpublishAsync(Guid id, Guid userId, bool isAdmin);
     Task<PostResponse?> IncrementViewCountAsync(Guid id);
     Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin);
 }

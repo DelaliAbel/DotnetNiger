@@ -47,6 +47,12 @@ public class ProjectService(AppDbContext db, IServiceScopeFactory scopeFactory, 
         return p is null ? null : MapProject(p);
     }
 
+    public async Task<ProjectResponse?> GetBySlugAsync(string slug)
+    {
+        var p = await db.Set<Project>().AsNoTracking().FirstOrDefaultAsync(x => x.Slug == slug);
+        return p is null ? null : MapProject(p);
+    }
+
     public async Task<ProjectResponse> CreateAsync(CreateProjectRequest request, Guid userId, string authorName)
     {
         var project = new Project

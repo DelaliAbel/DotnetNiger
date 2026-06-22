@@ -7,6 +7,8 @@ public interface IIdentityApiClient
     Task<List<UserDto>> GetUsersAsync();
     Task<UserDto?> GetUserAsync(Guid id);
     Task<bool> UpdateUserStatusAsync(Guid id, bool isActive);
+    Task<string?> RegisterUserAsync(string email, string password, string fullName);
+    Task<bool> DeleteUserAsync(Guid id);
     Task<List<RoleDto>> GetRolesAsync();
     Task<RoleDto?> CreateRoleAsync(string name);
     Task<List<PermissionDto>> GetPermissionsAsync();

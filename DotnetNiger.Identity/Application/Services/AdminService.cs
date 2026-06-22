@@ -137,9 +137,48 @@ public class AdminService
     public async Task<List<UserResponse>> GetAllUsersAcrossTenantsAsync()
     {
         var users = await _db.Users.IgnoreQueryFilters().ToListAsync();
-        return users.Select(u => new UserResponse(
-            u.Id, u.Email!, u.FirstName, u.LastName, u.AvatarUrl,
-            u.TenantId, u.IsActive, u.EmailConfirmed, u.CreatedAt,
-            new List<string>())).ToList();
+        var result = new List<UserResponse>();
+        foreach (var u in users)
+        {
+            var roles = await _userManager.GetRolesAsync(u);
+            result.Add(new UserResponse(
+                u.Id, u.Email!, u.FirstName, u.LastName, u.AvatarUrl,
+                u.TenantId, u.IsActive, u.EmailConfirmed, u.CreatedAt,
+                roles.ToList()));
+        }
+        return result;
+    }
+
+    public async Task<bool> UpdateUserStatusAsync(Guid id, bool isActive)
+    {
+        var user = await _userManager.FindByIdAsync(id.ToString());
+        if (user is null) return false;
+
+        user.IsActive = isActive;
+        var result = await _userManager.UpdateAsync(user);
+        return result.Succeeded;
+    }
+
+    public async Task<bool> AssignRoleToUserAsync(Guid userId, string roleName)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null) return false;
+
+        var roleExists = await _db.Roles.AnyAsync(r => r.Name == roleName);
+        if (!roleExists) return false;
+
+        var currentRoles = await _userManager.GetRolesAsync(user);
+        if (currentRoles.Contains(roleName)) return true;
+
+        var result = await _userManager.AddToRoleAsync(user, roleName);
+        return result.Succeeded;
+    }
+
+    public async Task<bool> DeleteUserAsync(Guid id)
+    {
+        var user = await _userManager.FindByIdAsync(id.ToString());
+        if (user is null) return false;
+        var result = await _userManager.DeleteAsync(user);
+        return result.Succeeded;
     }
 }

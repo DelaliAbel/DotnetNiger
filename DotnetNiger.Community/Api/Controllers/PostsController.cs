@@ -81,6 +81,32 @@ public class PostsController(IPostService postService) : ControllerBase
         return Ok(new { Success = true, Data = post });
     }
 
+    [HttpPatch("{id:guid}/publish")]
+    [Authorize]
+    public async Task<IActionResult> Publish(Guid id)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+            return Unauthorized(new { Success = false, Message = "Invalid user identity" });
+
+        var isAdmin = User.IsInRole(RoleConstants.Admin);
+        var post = await postService.PublishAsync(id, userId, isAdmin);
+        if (post is null) return NotFound(new { Success = false, Message = "Post not found" });
+        return Ok(new { Success = true, Data = post });
+    }
+
+    [HttpPatch("{id:guid}/unpublish")]
+    [Authorize]
+    public async Task<IActionResult> Unpublish(Guid id)
+    {
+        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
+            return Unauthorized(new { Success = false, Message = "Invalid user identity" });
+
+        var isAdmin = User.IsInRole(RoleConstants.Admin);
+        var post = await postService.UnpublishAsync(id, userId, isAdmin);
+        if (post is null) return NotFound(new { Success = false, Message = "Post not found" });
+        return Ok(new { Success = true, Data = post });
+    }
+
     [HttpPost("{id:guid}/views")]
     public async Task<IActionResult> IncrementViewCount(Guid id)
     {

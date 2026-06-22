@@ -164,8 +164,17 @@ public static class ServiceExtensions
 
         var authBuilder = services.AddAuthentication(options =>
         {
-            options.DefaultAuthenticateScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+            options.DefaultAuthenticateScheme = "SmartScheme";
+            options.DefaultChallengeScheme = "SmartScheme";
+        })
+        .AddPolicyScheme("SmartScheme", "JWT or API Key", options =>
+        {
+            options.ForwardDefaultSelector = context =>
+            {
+                if (context.Request.Headers.ContainsKey("X-API-Key"))
+                    return ApiKeyAuthenticationDefaults.AuthenticationScheme;
+                return OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+            };
         })
         .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(
             ApiKeyAuthenticationDefaults.AuthenticationScheme, null);

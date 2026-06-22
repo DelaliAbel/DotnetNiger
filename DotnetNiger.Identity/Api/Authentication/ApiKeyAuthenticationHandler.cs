@@ -5,6 +5,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using DotnetNiger.Identity.Application;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure;
 
@@ -29,10 +30,34 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
         if (string.IsNullOrWhiteSpace(apiKey))
             return AuthenticateResult.NoResult();
 
-        var tenantContext = Context.RequestServices.GetRequiredService<TenantContext>();
-        var db = Context.RequestServices.GetRequiredService<IdentityDbContext>();
+        var config = Context.RequestServices.GetRequiredService<IConfiguration>();
+        var internalApiKey = config["InternalApiKey"] ?? "";
 
-        IQueryable<TenantApiKey> query = db.TenantApiKeys
+        if (!string.IsNullOrEmpty(internalApiKey) && apiKey == internalApiKey)
+        {
+            var db = Context.RequestServices.GetRequiredService<IdentityDbContext>();
+            var defaultTenant = await db.Tenants.IgnoreQueryFilters().FirstOrDefaultAsync();
+            var tenantId = defaultTenant?.Id ?? Guid.Empty;
+
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.NameIdentifier, "internal-api"),
+                new(ClaimTypes.Role, RoleConstants.Admin),
+                new(ClaimTypes.Role, RoleConstants.SuperAdmin),
+                new("tenant_id", tenantId.ToString()),
+                new("client_id", "internal-api"),
+            };
+
+            var identity = new ClaimsIdentity(claims, ApiKeyAuthenticationDefaults.AuthenticationScheme);
+            var principal = new ClaimsPrincipal(identity);
+            var ticket = new AuthenticationTicket(principal, Scheme.Name);
+            return AuthenticateResult.Success(ticket);
+        }
+
+        var tenantContext = Context.RequestServices.GetRequiredService<TenantContext>();
+        var dbCtx = Context.RequestServices.GetRequiredService<IdentityDbContext>();
+
+        IQueryable<TenantApiKey> query = dbCtx.TenantApiKeys
             .Where(k => k.IsActive);
 
         if (tenantContext.TenantId.HasValue)
@@ -48,10 +73,10 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
         if (storedKey.LastUsedAt == null || DateTime.UtcNow - storedKey.LastUsedAt.Value > TimeSpan.FromMinutes(5))
         {
             storedKey.LastUsedAt = DateTime.UtcNow;
-            await db.SaveChangesAsync();
+            await dbCtx.SaveChangesAsync();
         }
 
-        var claims = new List<Claim>
+        var keyClaims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, storedKey.TenantId.ToString()),
             new("tenant_id", storedKey.TenantId.ToString()),
@@ -61,13 +86,13 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
 
         var scopeList = JsonSerializer.Deserialize<string[]>(storedKey.Scopes) ?? [];
         foreach (var scope in scopeList)
-            claims.Add(new Claim("scope", scope));
+            keyClaims.Add(new Claim("scope", scope));
 
-        var identity = new ClaimsIdentity(claims, ApiKeyAuthenticationDefaults.AuthenticationScheme);
-        var principal = new ClaimsPrincipal(identity);
-        var ticket = new AuthenticationTicket(principal, Scheme.Name);
+        var keyIdentity = new ClaimsIdentity(keyClaims, ApiKeyAuthenticationDefaults.AuthenticationScheme);
+        var keyPrincipal = new ClaimsPrincipal(keyIdentity);
+        var keyTicket = new AuthenticationTicket(keyPrincipal, Scheme.Name);
 
-        return AuthenticateResult.Success(ticket);
+        return AuthenticateResult.Success(keyTicket);
     }
 
     private static bool VerifyApiKey(string apiKey, string storedHash)
