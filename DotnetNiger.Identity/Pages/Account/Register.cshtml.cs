@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure;
+//
 
 namespace DotnetNiger.Identity.Pages.Account;
 
@@ -129,7 +130,7 @@ public class RegisterModel : PageModel
             return Page();
         }
 
-        await _userManager.AddToRoleAsync(user, "User");
+        await _userManager.AddToRoleAsync(user, DotnetNiger.Identity.Application.RoleConstants.User);
         _logger.LogInformation("New user registered (pending confirmation): {Email}", Email);
 
         var code = GenerateCode();

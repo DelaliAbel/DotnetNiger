@@ -56,7 +56,7 @@ public class ProjectsController(IProjectService projectService) : ControllerBase
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
             return Unauthorized(new { Success = false, Message = "Invalid user identity" });
 
-        var isAdmin = User.IsInRole("Admin");
+        var isAdmin = User.IsInRole(RoleConstants.Admin);
         var project = await projectService.UpdateAsync(id, request, userId, isAdmin);
         if (project is null) return NotFound(new { Success = false, Message = "Projet non trouvé" });
         return Ok(new { Success = true, Data = project });
@@ -69,7 +69,7 @@ public class ProjectsController(IProjectService projectService) : ControllerBase
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
             return Unauthorized(new { Success = false, Message = "Invalid user identity" });
 
-        var isAdmin = User.IsInRole("Admin");
+        var isAdmin = User.IsInRole(RoleConstants.Admin);
         var deleted = await projectService.DeleteAsync(id, userId, isAdmin);
         if (!deleted) return NotFound(new { Success = false, Message = "Projet non trouvé" });
         return Ok(new { Success = true, Message = "Projet supprimé" });

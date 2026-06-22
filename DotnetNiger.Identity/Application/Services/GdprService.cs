@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Identity.Domain.Entities;
+using DotnetNiger.Identity.Application;
 using DotnetNiger.Identity.Infrastructure;
 using DotnetNiger.Identity.Application.DTOs;
 
@@ -134,7 +135,7 @@ public class GdprService
         user.Email = anonymizedEmail;
         user.UserName = anonymizedEmail;
         user.FirstName = "Anonymized";
-        user.LastName = "User";
+        user.LastName = RoleConstants.User;
         user.AvatarUrl = null;
         user.IsActive = false;
         user.EmailConfirmed = false;

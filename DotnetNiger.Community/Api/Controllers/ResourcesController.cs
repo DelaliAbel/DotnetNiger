@@ -92,7 +92,7 @@ public class ResourcesController(IResourceService resourceService) : ControllerB
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
             return Unauthorized(new { Success = false, Message = "Invalid user identity" });
 
-        var isAdmin = User.IsInRole("Admin");
+        var isAdmin = User.IsInRole(RoleConstants.Admin);
         var resource = await resourceService.UpdateAsync(id, request, userId, isAdmin);
         if (resource is null) return NotFound(new { Success = false, Message = "Resource not found" });
         return Ok(new { Success = true, Data = resource });
@@ -105,7 +105,7 @@ public class ResourcesController(IResourceService resourceService) : ControllerB
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
             return Unauthorized(new { Success = false, Message = "Invalid user identity" });
 
-        var isAdmin = User.IsInRole("Admin");
+        var isAdmin = User.IsInRole(RoleConstants.Admin);
         var deleted = await resourceService.DeleteAsync(id, userId, isAdmin);
         if (!deleted) return NotFound(new { Success = false, Message = "Resource not found" });
         return Ok(new { Success = true, Message = "Resource deleted" });

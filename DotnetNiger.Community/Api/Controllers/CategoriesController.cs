@@ -2,6 +2,7 @@ using Asp.Versioning;
 using DotnetNiger.Community.Application.DTOs;
 using DotnetNiger.Community.Application.Services;
 using Microsoft.AspNetCore.Authorization;
+using DotnetNiger.Community.Application;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Community.Api.Controllers;
@@ -35,7 +36,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Create([FromBody] CreateCategoryRequest request)
     {
         var c = await categoryService.CreateAsync(request.Name, request.Description);
@@ -43,7 +44,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Update(Guid id, [FromBody] CreateCategoryRequest request)
     {
         var c = await categoryService.UpdateAsync(id, request.Name, request.Description);
@@ -52,7 +53,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Delete(Guid id)
     {
         var deleted = await categoryService.DeleteAsync(id);

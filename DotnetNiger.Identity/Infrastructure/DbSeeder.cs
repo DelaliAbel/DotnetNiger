@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using DotnetNiger.Identity.Domain.Entities;
+using static DotnetNiger.Identity.Application.RoleConstants;
 
 namespace DotnetNiger.Identity.Infrastructure;
 
@@ -44,14 +45,14 @@ public class DbSeeder
 
         var adminRole = new ApplicationRole
         {
-            Name = "Admin",
+            Name = Admin,
             NormalizedName = "ADMIN",
             TenantId = platformTenant.Id,
             Description = "Administrateur de la plateforme"
         };
         var userRole = new ApplicationRole
         {
-            Name = "User",
+            Name = User,
             NormalizedName = "USER",
             TenantId = platformTenant.Id,
             Description = "Utilisateur standard"
@@ -83,7 +84,7 @@ public class DbSeeder
         var result = await userManager.CreateAsync(adminUser, adminPassword);
         if (result.Succeeded)
         {
-            await userManager.AddToRoleAsync(adminUser, "Admin");
+            await userManager.AddToRoleAsync(adminUser, Admin);
         }
 
         await CreateWebUiClientAsync(appManager);

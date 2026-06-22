@@ -73,8 +73,30 @@ public class TokenCookieMiddleware
         await _next(context);
     }
 
+    private static bool IsValidOrigin(HttpContext context, string allowedOrigin)
+    {
+        var origin = context.Request.Headers.Origin.FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(origin))
+        {
+            var referer = context.Request.Headers.Referer.FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(referer))
+                return false;
+            return referer.StartsWith(allowedOrigin, StringComparison.OrdinalIgnoreCase);
+        }
+        return origin.StartsWith(allowedOrigin, StringComparison.OrdinalIgnoreCase);
+    }
+
     private async Task HandlePostTokens(HttpContext context)
     {
+        var allowedOrigin = _identityBaseUrl;
+        if (!IsValidOrigin(context, allowedOrigin))
+        {
+            context.Response.StatusCode = 403;
+            await context.Response.WriteAsync(
+                JsonSerializer.Serialize(new { error = "Origine non autorisée" }));
+            return;
+        }
+
         using var reader = new StreamReader(context.Request.Body);
         var body = await reader.ReadToEndAsync();
 
@@ -267,7 +289,7 @@ public class TokenCookieMiddleware
         context.Response.Cookies.Append(name, value, new CookieOptions
         {
             HttpOnly = true,
-            Secure = false,
+            Secure = context.Request.IsHttps,
             SameSite = SameSiteMode.Lax,
             Path = "/",
             MaxAge = TimeSpan.FromDays(14),
@@ -279,7 +301,7 @@ public class TokenCookieMiddleware
         context.Response.Cookies.Append(name, "", new CookieOptions
         {
             HttpOnly = true,
-            Secure = false,
+            Secure = context.Request.IsHttps,
             SameSite = SameSiteMode.Lax,
             Path = "/",
             Expires = DateTimeOffset.UnixEpoch,

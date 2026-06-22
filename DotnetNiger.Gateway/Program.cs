@@ -26,13 +26,15 @@ try
 var seedServices = LoadDownstreamServices(builder.Configuration);
 var useConsul = string.Equals(
     builder.Configuration["ServiceDiscovery:Provider"], "Consul", StringComparison.OrdinalIgnoreCase);
+var useContainerHosts = string.Equals(
+    builder.Configuration["ServiceDiscovery:UseContainerHosts"], "true", StringComparison.OrdinalIgnoreCase);
 
 var mergedOcelotFile = useConsul
     ? OcelotConfigurationBuilder.BuildMergedConfigWithConsul(
         builder.Environment.ContentRootPath, seedServices)
     : OcelotConfigurationBuilder.BuildMergedConfig(
         builder.Environment.ContentRootPath,
-        builder.Environment.IsProduction(),
+        useContainerHosts,
         seedServices,
         builder.Configuration);
 

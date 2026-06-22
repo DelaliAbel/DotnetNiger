@@ -2,6 +2,7 @@ using Asp.Versioning;
 using DotnetNiger.Community.Application.DTOs;
 using DotnetNiger.Community.Application.Services;
 using Microsoft.AspNetCore.Authorization;
+using DotnetNiger.Community.Application;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Community.Api.Controllers;
@@ -27,7 +28,7 @@ public class PartnersController(IPartnerService partnerService) : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Create([FromBody] CreatePartnerRequest request)
     {
         var partner = await partnerService.CreateAsync(request);
@@ -35,7 +36,7 @@ public class PartnersController(IPartnerService partnerService) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePartnerRequest request)
     {
         var p = await partnerService.UpdateAsync(id, request);
@@ -44,7 +45,7 @@ public class PartnersController(IPartnerService partnerService) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Delete(Guid id)
     {
         var deleted = await partnerService.DeleteAsync(id);

@@ -89,7 +89,7 @@ public class EventsController(IEventService eventService) : ControllerBase
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
             return Unauthorized(new { Success = false, Message = "Invalid user identity" });
 
-        var isAdmin = User.IsInRole("Admin");
+        var isAdmin = User.IsInRole(RoleConstants.Admin);
         var ev = await eventService.UpdateAsync(id, request, userId, isAdmin);
         if (ev is null) return NotFound(new { Success = false, Message = "Event not found" });
         return Ok(new { Success = true, Data = ev });
@@ -102,7 +102,7 @@ public class EventsController(IEventService eventService) : ControllerBase
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
             return Unauthorized(new { Success = false, Message = "Invalid user identity" });
 
-        var isAdmin = User.IsInRole("Admin");
+        var isAdmin = User.IsInRole(RoleConstants.Admin);
         var deleted = await eventService.DeleteAsync(id, userId, isAdmin);
         if (!deleted) return NotFound(new { Success = false, Message = "Event not found" });
         return Ok(new { Success = true, Message = "Event deleted" });
@@ -147,7 +147,7 @@ public class EventsController(IEventService eventService) : ControllerBase
     }
 
     [HttpGet("pending")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetPending([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         page = Math.Max(1, page);
@@ -157,7 +157,7 @@ public class EventsController(IEventService eventService) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/approve")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Approve(Guid id, [FromQuery] string? comment = null)
     {
         var ev = await eventService.ApproveAsync(id);
@@ -166,7 +166,7 @@ public class EventsController(IEventService eventService) : ControllerBase
     }
 
     [HttpPatch("{id:guid}/reject")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Reject(Guid id, [FromQuery] string reason)
     {
         if (string.IsNullOrWhiteSpace(reason))

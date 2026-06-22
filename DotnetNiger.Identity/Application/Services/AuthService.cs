@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure;
 using DotnetNiger.Identity.Application.DTOs;
+using static DotnetNiger.Identity.Application.RoleConstants;
 
 namespace DotnetNiger.Identity.Application.Services;
 
@@ -86,7 +87,7 @@ public class AuthService
         if (!result.Succeeded)
             throw new InvalidOperationException($"Erreur création: {string.Join(", ", result.Errors.Select(e => e.Description))}");
 
-        await _userManager.AddToRoleAsync(user, "User");
+        await _userManager.AddToRoleAsync(user, User);
 
         var code = GenerateCode();
         user.EmailConfirmationCode = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(code)));
@@ -188,9 +189,9 @@ public class AuthService
             throw new InvalidOperationException("Erreur création utilisateur");
 
         await _userManager.AddLoginAsync(newUser, info);
-        await _userManager.AddToRoleAsync(newUser, "User");
+        await _userManager.AddToRoleAsync(newUser, User);
         _tenantContext.TenantId = newUser.TenantId;
-        return (newUser, new List<string> { "User" });
+        return (newUser, new List<string> { User });
     }
 
     private static string GenerateCode()

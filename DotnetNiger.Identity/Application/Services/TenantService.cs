@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using DotnetNiger.Identity.Application.Exceptions;
+using static DotnetNiger.Identity.Application.RoleConstants;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure;
 using DotnetNiger.Identity.Application.DTOs;
@@ -53,7 +54,7 @@ public class TenantService
 
         var adminRole = new ApplicationRole
         {
-            Name = "Admin",
+            Name = Admin,
             NormalizedName = "ADMIN",
             TenantId = tenant.Id,
             Description = $"Administrateur de {tenant.Name}"
@@ -73,7 +74,7 @@ public class TenantService
         var result = await _userManager.CreateAsync(adminUser, _adminPassword);
         if (result.Succeeded)
         {
-            await _userManager.AddToRoleAsync(adminUser, "Admin");
+            await _userManager.AddToRoleAsync(adminUser, Admin);
         }
 
         return MapToResponse(tenant);
@@ -147,14 +148,14 @@ public class TenantService
 
         var adminRole = new ApplicationRole
         {
-            Name = "Admin",
+            Name = Admin,
             NormalizedName = "ADMIN",
             TenantId = tenant.Id,
             Description = $"Administrateur de {tenant.Name}"
         };
         var userRole = new ApplicationRole
         {
-            Name = "User",
+            Name = User,
             NormalizedName = "USER",
             TenantId = tenant.Id,
             Description = "Utilisateur standard"
@@ -177,7 +178,7 @@ public class TenantService
             throw new InvalidOperationException(
                 $"Échec création admin : {string.Join(", ", result.Errors.Select(e => e.Description))}");
 
-        await _userManager.AddToRoleAsync(adminUser, "Admin");
+        await _userManager.AddToRoleAsync(adminUser, Admin);
 
         var (clientId, clientSecret) = await CreateDefaultClientAsync(tenant);
         var apiKey = await CreateDefaultApiKeyAsync(tenant);

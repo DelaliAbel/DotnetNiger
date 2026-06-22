@@ -8,6 +8,7 @@ using Microsoft.Extensions.Caching.Memory;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure;
 using DotnetNiger.Identity.Api.Controllers;
+//
 
 namespace DotnetNiger.Identity.Pages.Account;
 
@@ -205,11 +206,11 @@ public class LoginModel : PageModel
         }
 
         await _userManager.AddLoginAsync(newUser, info);
-        await _userManager.AddToRoleAsync(newUser, "User");
+        await _userManager.AddToRoleAsync(newUser, DotnetNiger.Identity.Application.RoleConstants.User);
         await _signInManager.SignInAsync(newUser, isPersistent: false);
 
         _logger.LogInformation("New user created via external login: {Email}", email);
-        return SafeOrTicketRedirect(newUser, returnUrl, new List<string> { "User" });
+        return SafeOrTicketRedirect(newUser, returnUrl, new List<string> { DotnetNiger.Identity.Application.RoleConstants.User });
     }
 
     private IActionResult SafeLocalRedirect(string url)

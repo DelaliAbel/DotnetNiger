@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Asp.Versioning;
+using DotnetNiger.Identity.Application;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -686,7 +687,7 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>Bootstrap du client OIDC "web-ui" (création ou mise à jour des permissions/URIs).</summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     [HttpPost("bootstrap-web-ui")]
     public async Task<IActionResult> BootstrapWebUi(
         [FromServices] IOpenIddictApplicationManager appManager)

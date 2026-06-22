@@ -75,7 +75,7 @@ public class PostsController(IPostService postService) : ControllerBase
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
             return Unauthorized(new { Success = false, Message = "Invalid user identity" });
 
-        var isAdmin = User.IsInRole("Admin");
+        var isAdmin = User.IsInRole(RoleConstants.Admin);
         var post = await postService.UpdateAsync(id, request, userId, isAdmin);
         if (post is null) return NotFound(new { Success = false, Message = "Post not found" });
         return Ok(new { Success = true, Data = post });
@@ -96,7 +96,7 @@ public class PostsController(IPostService postService) : ControllerBase
         if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
             return Unauthorized(new { Success = false, Message = "Invalid user identity" });
 
-        var isAdmin = User.IsInRole("Admin");
+        var isAdmin = User.IsInRole(RoleConstants.Admin);
         var deleted = await postService.DeleteAsync(id, userId, isAdmin);
         if (!deleted) return NotFound(new { Success = false, Message = "Post not found" });
         return Ok(new { Success = true, Message = "Post deleted" });

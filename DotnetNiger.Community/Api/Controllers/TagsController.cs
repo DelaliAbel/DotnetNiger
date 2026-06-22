@@ -2,6 +2,7 @@ using Asp.Versioning;
 using DotnetNiger.Community.Application.DTOs;
 using DotnetNiger.Community.Application.Services;
 using Microsoft.AspNetCore.Authorization;
+using DotnetNiger.Community.Application;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Community.Api.Controllers;
@@ -35,7 +36,7 @@ public class TagsController(ITagService tagService) : ControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Create([FromBody] CreateTagRequest request)
     {
         var t = await tagService.CreateAsync(request.Name);
@@ -43,7 +44,7 @@ public class TagsController(ITagService tagService) : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Update(Guid id, [FromBody] CreateTagRequest request)
     {
         var t = await tagService.UpdateAsync(id, request.Name);
@@ -52,7 +53,7 @@ public class TagsController(ITagService tagService) : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Delete(Guid id)
     {
         var deleted = await tagService.DeleteAsync(id);

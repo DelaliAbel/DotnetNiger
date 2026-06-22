@@ -1,3 +1,4 @@
+using DotnetNiger.Identity.Application;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using DotnetNiger.Identity.Application.DTOs;
@@ -9,7 +10,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiVersion("1.0")]
 
 [Route("api/v{version:apiVersion}/{tenantId:guid}/users")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = RoleConstants.Admin)]
 public class UsersController : ControllerBase
 {
     private readonly UserService _userService;

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure;
@@ -13,37 +14,47 @@ public class AdminService
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IEmailSender<ApplicationUser> _emailSender;
     private readonly SmtpOptions _smtp;
+    private readonly IMemoryCache _cache;
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
 
     public AdminService(IdentityDbContext db, UserManager<ApplicationUser> userManager,
-        IEmailSender<ApplicationUser> emailSender, Microsoft.Extensions.Options.IOptions<SmtpOptions> smtp)
+        IEmailSender<ApplicationUser> emailSender, IOptions<SmtpOptions> smtp,
+        IMemoryCache cache)
     {
         _db = db;
         _userManager = userManager;
         _emailSender = emailSender;
         _smtp = smtp.Value;
+        _cache = cache;
     }
 
     public async Task<object> GetSystemStatsAsync()
     {
-        var totalTenants = await _db.Tenants.CountAsync();
-        var totalUsers = await _db.Users.IgnoreQueryFilters().CountAsync();
-        var totalRoles = await _db.Roles.IgnoreQueryFilters().CountAsync();
-        var totalPermissions = await _db.Permissions.IgnoreQueryFilters().CountAsync();
-        var totalApiKeys = await _db.TenantApiKeys.IgnoreQueryFilters().CountAsync();
-        var totalServices = await _db.ExternalServices.IgnoreQueryFilters().CountAsync();
-        var totalClients = await _db.TenantClients.IgnoreQueryFilters().CountAsync();
-
-        return new
+        var stats = await _cache.GetOrCreateAsync("SystemStats", async entry =>
         {
-            totalTenants,
-            totalUsers,
-            totalRoles,
-            totalPermissions,
-            totalApiKeys,
-            totalServices,
-            totalClients,
-            activeTenants = await _db.Tenants.CountAsync(t => t.IsActive)
-        };
+            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
+
+            var totalTenants = await _db.Tenants.CountAsync();
+            var totalUsers = await _db.Users.IgnoreQueryFilters().CountAsync();
+            var totalRoles = await _db.Roles.IgnoreQueryFilters().CountAsync();
+            var totalPermissions = await _db.Permissions.IgnoreQueryFilters().CountAsync();
+            var totalApiKeys = await _db.TenantApiKeys.IgnoreQueryFilters().CountAsync();
+            var totalServices = await _db.ExternalServices.IgnoreQueryFilters().CountAsync();
+            var totalClients = await _db.TenantClients.IgnoreQueryFilters().CountAsync();
+
+            return new
+            {
+                totalTenants,
+                totalUsers,
+                totalRoles,
+                totalPermissions,
+                totalApiKeys,
+                totalServices,
+                totalClients,
+                activeTenants = await _db.Tenants.CountAsync(t => t.IsActive)
+            };
+        });
+        return stats!;
     }
 
     public async Task InviteAsync(string email, string role)
@@ -75,6 +86,8 @@ public class AdminService
         var inviteUrl = $"{_smtp.AppBaseUrl.TrimEnd('/')}/Account/Register?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(token)}";
         if (_emailSender is EmailSender typed)
             await typed.SendInviteEmailAsync(email, inviteUrl, role);
+
+        _cache.Remove("SystemStats");
     }
 
     private static string GenerateTemporaryPassword()
