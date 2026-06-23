@@ -73,7 +73,7 @@ public static class ServiceCollectionExtensions
             {
                 var identityUrl = (configuration["DeveloperPortal:IdentityBaseUrl"] ?? "http://localhost:5075").TrimEnd('/');
                 options.Authority = identityUrl;
-                options.RequireHttpsMetadata = !environment.IsDevelopment();
+                options.RequireHttpsMetadata = !environment.IsDevelopment() && !configuration.GetValue<bool>("Jwt:DisableHttpsRequirement");
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
@@ -101,7 +101,7 @@ public static class ServiceCollectionExtensions
         {
             var retriever = new HttpDocumentRetriever();
             var env = sp.GetRequiredService<IWebHostEnvironment>();
-            retriever.RequireHttps = !env.IsDevelopment();
+            retriever.RequireHttps = !env.IsDevelopment() && !configuration.GetValue<bool>("Jwt:DisableHttpsRequirement");
             return new ConfigurationManager<OpenIdConnectConfiguration>(
                 $"{identityUrl}/.well-known/openid-configuration",
                 new OpenIdConnectConfigurationRetriever(),

@@ -4,6 +4,7 @@ using DotnetNiger.Community.Application.Services;
 using DotnetNiger.Community.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.OpenApi.Models;
 
 namespace DotnetNiger.Community.Api;
@@ -16,6 +17,8 @@ public static class ServiceExtensions
         {
             var provider = configuration.GetValue<string>("DatabaseProvider", "Sqlite");
             var connStr = configuration.GetConnectionString("DefaultConnection") ?? "Data Source=DotnetNigerCommunity.db";
+
+            options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
 
             if (provider == "SqlServer")
                 options.UseSqlServer(connStr, x => x.MigrationsAssembly("DotnetNiger.Community").UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
@@ -66,7 +69,7 @@ public static class ServiceExtensions
                     ValidAudience = configuration["Jwt:Audience"] ?? "DotnetNiger.Identity.Client",
                 };
                 options.MetadataAddress = configuration["Jwt:MetadataAddress"] ?? "http://localhost:5075/.well-known/openid-configuration";
-                options.RequireHttpsMetadata = !environment.IsDevelopment();
+                options.RequireHttpsMetadata = !environment.IsDevelopment() && !configuration.GetValue<bool>("Jwt:DisableHttpsRequirement");
             });
 
         services.AddAuthorization();

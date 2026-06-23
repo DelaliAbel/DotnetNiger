@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DotnetNiger.Community.Api;
 using DotnetNiger.Community.Api.Middleware;
+using Microsoft.AspNetCore.HttpOverrides;
 using DotnetNiger.Community.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
@@ -63,6 +64,10 @@ try
         options.RoutePrefix = "swagger";
     });
 
+    app.UseForwardedHeaders(new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    });
     app.UseStaticFiles();
     app.UseCors();
     app.UseAuthentication();

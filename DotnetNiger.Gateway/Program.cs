@@ -1,5 +1,6 @@
 using DotnetNiger.Gateway.Configuration;
 using DotnetNiger.Gateway.Extensions;
+using Microsoft.AspNetCore.HttpOverrides;
 using DotnetNiger.Gateway.Services;
 using MMLib.SwaggerForOcelot.Middleware;
 using Ocelot.Middleware;
@@ -49,6 +50,10 @@ var mergedOcelotFile = useConsul
 
     var app = builder.Build();
 
+    app.UseForwardedHeaders(new ForwardedHeadersOptions
+    {
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+    });
     app.UseCors("AllowAll");
     app.UseSecurityHeadersMiddleware();
     app.UseTokenCookieMiddleware();

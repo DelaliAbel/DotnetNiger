@@ -163,3 +163,6 @@ docs/DotnetNiger_Presentation*.pptx
 DotnetNiger
 
 .fake
+
+# User secrets export (contient des clés API, mots de passe)
+user-secrets-dotnetniger.txt

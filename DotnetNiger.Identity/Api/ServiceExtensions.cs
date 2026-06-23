@@ -145,7 +145,7 @@ public static class ServiceExtensions
                       .EnableAuthorizationEndpointPassthrough()
                       .EnableLogoutEndpointPassthrough();
 
-                if (env.IsDevelopment())
+                if (env.IsDevelopment() || config.GetValue<bool>("OpenIddict:DisableTransportSecurityRequirement"))
                     aspNetCore.DisableTransportSecurityRequirement();
 
                 server.RegisterScopes(

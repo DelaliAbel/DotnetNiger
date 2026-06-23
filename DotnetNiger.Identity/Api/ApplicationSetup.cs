@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
@@ -37,6 +38,10 @@ public static class ApplicationSetup
     {
         var app = builder.Build();
 
+        app.UseForwardedHeaders(new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        });
         app.UseSerilogRequestLogging();
         app.UseCors("AllowAll");
         app.UseMiddleware<ErrorHandlingMiddleware>();
