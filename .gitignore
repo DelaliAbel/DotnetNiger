@@ -166,3 +166,7 @@ DotnetNiger
 
 # User secrets export (contient des clés API, mots de passe)
 user-secrets-dotnetniger.txt
+
+# Production configs (contient des mots de passe, clés API)
+appsettings.Identity.Production.json
+prod-configs/

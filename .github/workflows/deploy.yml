@@ -1,0 +1,72 @@
+name: Build & Push to Deploy Branches
+
+on:
+  push:
+    branches: [BackEnd]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore DotnetNiger.slnx
+
+      - name: Publish Identity
+        run: dotnet publish DotnetNiger.Identity/DotnetNiger.Identity.csproj -c Release -o publish/identity --no-restore
+
+      - name: Publish Identity.Web
+        run: dotnet publish DotnetNiger.Identity.Web/DotnetNiger.Identity.Web.csproj -c Release -o publish/identity-web --no-restore
+
+      - name: Publish Community
+        run: dotnet publish DotnetNiger.Community/DotnetNiger.Community.csproj -c Release -o publish/community --no-restore
+
+      - name: Publish Gateway
+        run: dotnet publish DotnetNiger.Gateway/DotnetNiger.Gateway.csproj -c Release -o publish/gateway --no-restore
+
+      - name: Push to deploy/identity
+        run: |
+          cd publish/identity
+          git init
+          git checkout -b deploy/identity
+          git add -A
+          git -c user.name=github-actions -c user.email=actions@github.com commit -m "Deploy Identity from ${GITHUB_SHA}"
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push origin deploy/identity --force
+
+      - name: Push to deploy/identity-web
+        run: |
+          cd publish/identity-web
+          git init
+          git checkout -b deploy/identity-web
+          git add -A
+          git -c user.name=github-actions -c user.email=actions@github.com commit -m "Deploy Identity.Web from ${GITHUB_SHA}"
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push origin deploy/identity-web --force
+
+      - name: Push to deploy/community
+        run: |
+          cd publish/community
+          git init
+          git checkout -b deploy/community
+          git add -A
+          git -c user.name=github-actions -c user.email=actions@github.com commit -m "Deploy Community from ${GITHUB_SHA}"
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push origin deploy/community --force
+
+      - name: Push to deploy/gateway
+        run: |
+          cd publish/gateway
+          git init
+          git checkout -b deploy/gateway
+          git add -A
+          git -c user.name=github-actions -c user.email=actions@github.com commit -m "Deploy Gateway from ${GITHUB_SHA}"
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push origin deploy/gateway --force
