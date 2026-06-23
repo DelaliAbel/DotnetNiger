@@ -146,7 +146,12 @@ public static class ApplicationSetup
         using var scope = app.Services.CreateScope();
         var tenantContext = scope.ServiceProvider.GetRequiredService<TenantContext>();
         var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-        await db.Database.MigrateAsync();
+
+        var provider = app.Configuration.GetValue<string>("DatabaseProvider");
+        if (provider == "SqlServer")
+            await db.Database.EnsureCreatedAsync();
+        else
+            await db.Database.MigrateAsync();
 
         var userManager = scope.ServiceProvider.GetRequiredService<
             Microsoft.AspNetCore.Identity.UserManager<DotnetNiger.Identity.Domain.Entities.ApplicationUser>>();

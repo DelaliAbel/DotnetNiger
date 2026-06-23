@@ -77,15 +77,23 @@ try
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        try
+        var provider = app.Configuration.GetValue<string>("DatabaseProvider");
+        if (provider == "SqlServer")
         {
-            await db.Database.MigrateAsync();
-        }
-        catch (Exception ex)
-        {
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            logger.LogWarning(ex, "Migration failed, attempting EnsureCreated");
             await db.Database.EnsureCreatedAsync();
+        }
+        else
+        {
+            try
+            {
+                await db.Database.MigrateAsync();
+            }
+            catch (Exception ex)
+            {
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                logger.LogWarning(ex, "Migration failed, attempting EnsureCreated");
+                await db.Database.EnsureCreatedAsync();
+            }
         }
         await DbSeeder.SeedAsync(db);
     }
