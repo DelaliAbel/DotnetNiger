@@ -49,7 +49,10 @@ public static class ServiceCollectionExtensions
         services.AddCors(options =>
         {
             options.AddPolicy("AllowAll", policy =>
-                policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+                policy.AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .SetPreflightMaxAge(TimeSpan.FromMinutes(10)));
         });
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

@@ -79,7 +79,9 @@ public static class ApplicationBuilderExtensions
             context.Response.Headers["X-Frame-Options"] = "DENY";
             context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
             context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-            context.Response.Headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'";
+            // Content-Security-Policy header is not set here because this is an API gateway.
+            // CSP is only meaningful for HTML pages, not for JSON API responses.
+            // If needed in the future, apply it conditionally based on response content-type.
 
             if (!context.Response.Headers.ContainsKey("Strict-Transport-Security"))
                 context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
