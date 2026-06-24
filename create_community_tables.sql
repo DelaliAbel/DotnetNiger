@@ -251,9 +251,9 @@ CREATE TABLE [Comments] (
     [CreatedAt] datetime2 NOT NULL,
     [UpdatedAt] datetime2 NULL,
     CONSTRAINT [PK_Comments] PRIMARY KEY ([Id]),
-    CONSTRAINT [FK_Comments_Comments_ParentCommentId] FOREIGN KEY ([ParentCommentId]) REFERENCES [Comments] ([Id]) ON DELETE SET NULL,
-    CONSTRAINT [FK_Comments_Events_EventId] FOREIGN KEY ([EventId]) REFERENCES [Events] ([Id]) ON DELETE CASCADE,
-    CONSTRAINT [FK_Comments_Posts_PostId] FOREIGN KEY ([PostId]) REFERENCES [Posts] ([Id]) ON DELETE CASCADE
+    CONSTRAINT [FK_Comments_Comments_ParentCommentId] FOREIGN KEY ([ParentCommentId]) REFERENCES [Comments] ([Id]),
+    CONSTRAINT [FK_Comments_Events_EventId] FOREIGN KEY ([EventId]) REFERENCES [Events] ([Id]),
+    CONSTRAINT [FK_Comments_Posts_PostId] FOREIGN KEY ([PostId]) REFERENCES [Posts] ([Id])
 );
 GO
 

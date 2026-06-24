@@ -13,9 +13,6 @@ try
     var builder = ApplicationSetup.CreateBuilder(args);
     var app = ApplicationSetup.ConfigureApp(builder);
 
-    Log.Information("DotnetNiger.Identity seeding database...");
-    await ApplicationSetup.SeedDataAsync(app);
-
     Log.Information("DotnetNiger.Identity starting...");
     await app.RunAsync();
     return 0;
