@@ -81,6 +81,7 @@ var mergedOcelotFile = useConsul
             {
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = 500;
+                context.Response.Headers["Access-Control-Allow-Origin"] = "*";
                 await context.Response.WriteAsync(
                     System.Text.Json.JsonSerializer.Serialize(new
                     {
