@@ -267,7 +267,7 @@ public class RegisterModel : PageModel
     {
         var schemes = await _signInManager.GetExternalAuthenticationSchemesAsync();
         ExternalProviders = schemes
-            .Where(s => !string.IsNullOrEmpty(s.DisplayName))
+            .Where(s => !string.IsNullOrEmpty(s.DisplayName) && s.Name != "SmartScheme")
             .Select(s => new ExternalProvider { Name = s.Name, DisplayName = s.DisplayName! })
             .ToList();
     }

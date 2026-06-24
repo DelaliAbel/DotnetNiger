@@ -57,7 +57,7 @@ public class LoginModel : PageModel
         if (Request.Query.TryGetValue("error", out var errorVal) && !string.IsNullOrEmpty(errorVal))
             ErrorMessage = Uri.UnescapeDataString(errorVal!);
         ExternalProviders = (await _signInManager.GetExternalAuthenticationSchemesAsync())
-            .Where(s => !string.IsNullOrEmpty(s.DisplayName))
+            .Where(s => !string.IsNullOrEmpty(s.DisplayName) && s.Name != "SmartScheme")
             .ToList();
     }
 
