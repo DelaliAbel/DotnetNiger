@@ -48,24 +48,8 @@ public static class ServiceCollectionExtensions
 
         services.AddCors(options =>
         {
-            if (environment.IsDevelopment())
-                options.AddPolicy("AllowAll", policy =>
-                    policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-            else
-            {
-                var origins = configuration["Cors:AllowedOrigins"];
-                if (!string.IsNullOrWhiteSpace(origins))
-                    options.AddPolicy("AllowAll", policy =>
-                        policy.WithOrigins(origins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                              .AllowAnyMethod().AllowAnyHeader().AllowCredentials());
-                else
-                {
-                    var identityUrl = (configuration["DeveloperPortal:IdentityBaseUrl"] ?? "http://localhost:5075").TrimEnd('/');
-                    options.AddPolicy("AllowAll", policy =>
-                        policy.WithOrigins(identityUrl)
-                              .AllowAnyMethod().AllowAnyHeader().AllowCredentials());
-                }
-            }
+            options.AddPolicy("AllowAll", policy =>
+                policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
         });
 
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
