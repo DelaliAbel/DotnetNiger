@@ -82,7 +82,7 @@
       "UpstreamHttpMethod": ["GET", "POST"],
       "DownstreamPathTemplate": "/Account/{everything}",
       "DownstreamScheme": "http",
-      "DownstreamHostAndPorts": [{ "Host": "identity-dotnetniger.runasp.net", "Port": 80 }],
+      "DownstreamHostAndPorts": [{ "Host": "dtniger-portal.runasp.net", "Port": 80 }],
       "RateLimitOptions": { "EnableRateLimiting": false },
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 10000, "TimeoutValue": 30000 },
       "Key": "IdentityAccountRoute",
