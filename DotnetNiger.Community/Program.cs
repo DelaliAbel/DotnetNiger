@@ -3,8 +3,6 @@ using System.Text.Json.Serialization;
 using DotnetNiger.Community.Api;
 using DotnetNiger.Community.Api.Middleware;
 using Microsoft.AspNetCore.HttpOverrides;
-using DotnetNiger.Community.Infrastructure;
-using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 Log.Logger = new LoggerConfiguration()
@@ -73,30 +71,6 @@ try
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
-
-    using (var scope = app.Services.CreateScope())
-    {
-        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-        var provider = app.Configuration.GetValue<string>("DatabaseProvider");
-        if (provider == "SqlServer")
-        {
-            await db.Database.EnsureCreatedAsync();
-        }
-        else
-        {
-            try
-            {
-                await db.Database.MigrateAsync();
-            }
-            catch (Exception ex)
-            {
-                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-                logger.LogWarning(ex, "Migration failed, attempting EnsureCreated");
-                await db.Database.EnsureCreatedAsync();
-            }
-        }
-        await DbSeeder.SeedAsync(db);
-    }
 
     Log.Information("DotnetNiger.Community starting...");
     await app.RunAsync();

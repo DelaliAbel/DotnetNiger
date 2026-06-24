@@ -21,7 +21,7 @@ public static class ServiceExtensions
             options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
 
             if (provider == "SqlServer")
-                options.UseSqlServer(connStr, x => x.MigrationsAssembly("DotnetNiger.Community").UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
+                options.UseSqlServer(connStr, x => x.MigrationsHistoryTable("__EFMigrationsHistory_Community").MigrationsAssembly("DotnetNiger.Community").UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
             else if (provider is "PostgreSql" or "PostgreSQL" or "Npgsql")
                 options.UseNpgsql(connStr, x => x.MigrationsAssembly("DotnetNiger.Community").UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
             else
