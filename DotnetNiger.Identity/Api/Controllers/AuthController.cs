@@ -702,6 +702,7 @@ public class AuthController : ControllerBase
             descriptor.Permissions.Add("ep:logout");
             descriptor.Permissions.Add("ep:userinfo");
             descriptor.Permissions.Add("gt:authorization_code");
+            descriptor.Permissions.Add("gt:external_login");
             descriptor.Permissions.Add("gt:refresh_token");
             descriptor.Permissions.Add("rst:code");
             descriptor.Permissions.Add("scp:openid");
@@ -732,6 +733,7 @@ public class AuthController : ControllerBase
         newDescriptor.Permissions.Add("ep:logout");
         newDescriptor.Permissions.Add("ep:userinfo");
         newDescriptor.Permissions.Add("gt:authorization_code");
+        newDescriptor.Permissions.Add("gt:external_login");
         newDescriptor.Permissions.Add("gt:refresh_token");
         newDescriptor.Permissions.Add("rst:code");
         newDescriptor.Permissions.Add("scp:openid");

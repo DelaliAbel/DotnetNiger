@@ -157,6 +157,7 @@ public class DbSeeder
         descriptor.Permissions.Add("ep:logout");
         descriptor.Permissions.Add("ep:userinfo");
         descriptor.Permissions.Add("gt:authorization_code");
+        descriptor.Permissions.Add("gt:external_login");
         descriptor.Permissions.Add("gt:refresh_token");
         descriptor.Permissions.Add("rst:code");
         descriptor.Permissions.Add("scp:openid");
