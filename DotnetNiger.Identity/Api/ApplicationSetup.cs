@@ -138,7 +138,42 @@ public static class ApplicationSetup
         app.MapControllers();
         app.MapRazorPages();
 
+        EnsureWebUiPermissions(app);
+
         return app;
+    }
+
+    private static void EnsureWebUiPermissions(WebApplication app)
+    {
+        try
+        {
+            using var scope = app.Services.CreateScope();
+            var appManager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
+
+            var existing = appManager.FindByClientIdAsync("web-ui").GetAwaiter().GetResult();
+            if (existing == null)
+            {
+                Log.Information("web-ui client not found, skipping permission check");
+                return;
+            }
+
+            var descriptor = new OpenIddictApplicationDescriptor();
+            appManager.PopulateAsync(descriptor, existing).GetAwaiter().GetResult();
+
+            if (descriptor.Permissions.Contains("gt:external_login"))
+            {
+                Log.Information("web-ui client already has gt:external_login permission");
+                return;
+            }
+
+            descriptor.Permissions.Add("gt:external_login");
+            appManager.UpdateAsync(existing, descriptor).GetAwaiter().GetResult();
+            Log.Information("Added gt:external_login permission to web-ui client");
+        }
+        catch (Exception ex)
+        {
+            Log.Warning(ex, "Failed to ensure web-ui client permissions");
+        }
     }
 
     public static async Task SeedDataAsync(WebApplication app)
