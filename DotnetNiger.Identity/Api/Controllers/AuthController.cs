@@ -697,10 +697,10 @@ public class AuthController : ControllerBase
         {
             var descriptor = new OpenIddictApplicationDescriptor();
             await appManager.PopulateAsync(descriptor, existing);
-            descriptor.Permissions.Add("ep:token");
-            descriptor.Permissions.Add("ep:authorization");
-            descriptor.Permissions.Add("ep:logout");
-            descriptor.Permissions.Add("ep:userinfo");
+            descriptor.Permissions.Add("ept:token");
+            descriptor.Permissions.Add("ept:authorization");
+            descriptor.Permissions.Add("ept:logout");
+            descriptor.Permissions.Add("ept:userinfo");
             descriptor.Permissions.Add("gt:authorization_code");
             descriptor.Permissions.Add("gt:external_login");
             descriptor.Permissions.Add("gt:refresh_token");
@@ -728,10 +728,10 @@ public class AuthController : ControllerBase
 
         newDescriptor.RedirectUris.Add(new Uri("http://localhost:5100/signin-oidc"));
         newDescriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:5100/"));
-        newDescriptor.Permissions.Add("ep:token");
-        newDescriptor.Permissions.Add("ep:authorization");
-        newDescriptor.Permissions.Add("ep:logout");
-        newDescriptor.Permissions.Add("ep:userinfo");
+        newDescriptor.Permissions.Add("ept:token");
+        newDescriptor.Permissions.Add("ept:authorization");
+        newDescriptor.Permissions.Add("ept:logout");
+        newDescriptor.Permissions.Add("ept:userinfo");
         newDescriptor.Permissions.Add("gt:authorization_code");
         newDescriptor.Permissions.Add("gt:external_login");
         newDescriptor.Permissions.Add("gt:refresh_token");

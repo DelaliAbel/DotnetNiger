@@ -43,10 +43,10 @@ public class TenantClientService
             ApplicationType = OpenIddictConstants.ApplicationTypes.Web,
         };
 
-        descriptor.Permissions.Add("ep:token");
-        descriptor.Permissions.Add("ep:authorization");
-        descriptor.Permissions.Add("ep:logout");
-        descriptor.Permissions.Add("ep:userinfo");
+        descriptor.Permissions.Add("ept:token");
+        descriptor.Permissions.Add("ept:authorization");
+        descriptor.Permissions.Add("ept:logout");
+        descriptor.Permissions.Add("ept:userinfo");
 
         foreach (var grant in grantTypes)
         {
@@ -182,10 +182,10 @@ public class TenantClientService
             tenantClient.AllowedGrantTypes = request.AllowedGrantTypes;
             var grants = ParseJsonArray(request.AllowedGrantTypes);
             descriptor.Permissions.Clear();
-            descriptor.Permissions.Add("ep:token");
-            descriptor.Permissions.Add("ep:authorization");
-            descriptor.Permissions.Add("ep:logout");
-            descriptor.Permissions.Add("ep:userinfo");
+            descriptor.Permissions.Add("ept:token");
+            descriptor.Permissions.Add("ept:authorization");
+            descriptor.Permissions.Add("ept:logout");
+            descriptor.Permissions.Add("ept:userinfo");
             foreach (var grant in grants)
             {
                 descriptor.Permissions.Add(grant switch

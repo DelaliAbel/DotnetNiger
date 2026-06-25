@@ -119,10 +119,10 @@ public class DbSeeder
         descriptor.RedirectUris.Add(new Uri("http://localhost:5200/signin-oidc"));
         descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:5200/"));
         descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:5200/signout-callback-oidc"));
-        descriptor.Permissions.Add("ep:token");
-        descriptor.Permissions.Add("ep:authorization");
-        descriptor.Permissions.Add("ep:logout");
-        descriptor.Permissions.Add("ep:userinfo");
+        descriptor.Permissions.Add("ept:token");
+        descriptor.Permissions.Add("ept:authorization");
+        descriptor.Permissions.Add("ept:logout");
+        descriptor.Permissions.Add("ept:userinfo");
         descriptor.Permissions.Add("gt:authorization_code");
         descriptor.Permissions.Add("gt:refresh_token");
         descriptor.Permissions.Add("rst:code");
@@ -152,10 +152,10 @@ public class DbSeeder
         descriptor.RedirectUris.Add(new Uri("http://localhost:5100/signin-oidc"));
         descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:5100/"));
         descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:5100/signout-callback-oidc"));
-        descriptor.Permissions.Add("ep:token");
-        descriptor.Permissions.Add("ep:authorization");
-        descriptor.Permissions.Add("ep:logout");
-        descriptor.Permissions.Add("ep:userinfo");
+        descriptor.Permissions.Add("ept:token");
+        descriptor.Permissions.Add("ept:authorization");
+        descriptor.Permissions.Add("ept:logout");
+        descriptor.Permissions.Add("ept:userinfo");
         descriptor.Permissions.Add("gt:authorization_code");
         descriptor.Permissions.Add("gt:external_login");
         descriptor.Permissions.Add("gt:refresh_token");
@@ -182,10 +182,10 @@ public class DbSeeder
             ClientType = OpenIddictConstants.ClientTypes.Confidential,
         };
 
-        descriptor.Permissions.Add("ep:token");
-        descriptor.Permissions.Add("ep:authorization");
-        descriptor.Permissions.Add("ep:logout");
-        descriptor.Permissions.Add("ep:userinfo");
+        descriptor.Permissions.Add("ept:token");
+        descriptor.Permissions.Add("ept:authorization");
+        descriptor.Permissions.Add("ept:logout");
+        descriptor.Permissions.Add("ept:userinfo");
         descriptor.Permissions.Add("gt:password");
         descriptor.Permissions.Add("gt:refresh_token");
         descriptor.Permissions.Add("gt:client_credentials");
