@@ -33,24 +33,6 @@ try
     builder.Services.AddCommunityServices();
     builder.Services.AddCommunityHttpClients(builder.Configuration);
 
-    builder.Services.AddCors(options =>
-    {
-        if (builder.Environment.IsDevelopment())
-            options.AddDefaultPolicy(policy =>
-                policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-        else
-        {
-            var origins = builder.Configuration["Cors:AllowedOrigins"];
-            if (!string.IsNullOrWhiteSpace(origins))
-                options.AddDefaultPolicy(policy =>
-                    policy.WithOrigins(origins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                          .AllowAnyMethod().AllowAnyHeader().AllowCredentials());
-            else
-                options.AddDefaultPolicy(policy =>
-                    policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-        }
-    });
-
     var app = builder.Build();
 
     app.UseMiddleware<ErrorHandlingMiddleware>();
@@ -67,7 +49,6 @@ try
         ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
     });
     app.UseStaticFiles();
-    app.UseCors();
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();

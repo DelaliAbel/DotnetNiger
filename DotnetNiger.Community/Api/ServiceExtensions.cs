@@ -9,8 +9,12 @@ using Microsoft.OpenApi.Models;
 
 namespace DotnetNiger.Community.Api;
 
+/// <summary>Méthodes d'extension pour enregistrer les services de la communauté dans le conteneur DI.</summary>
 public static class ServiceExtensions
 {
+    /// <summary>Configure le DbContext avec le fournisseur de base de données (Sqlite, SqlServer ou PostgreSQL).</summary>
+    /// <param name="services">Collection de services.</param>
+    /// <param name="configuration">Configuration de l'application.</param>
     public static IServiceCollection AddCommunityInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<AppDbContext>(options =>
@@ -31,6 +35,8 @@ public static class ServiceExtensions
         return services;
     }
 
+    /// <summary>Enregistre tous les services métier (posts, événements, ressources, etc.) en tant que services Scoped.</summary>
+    /// <param name="services">Collection de services.</param>
     public static IServiceCollection AddCommunityServices(this IServiceCollection services)
     {
         services.AddScoped<IPostService, PostService>();
@@ -53,6 +59,10 @@ public static class ServiceExtensions
         return services;
     }
 
+    /// <summary>Configure l'authentification JWT avec Authority et les paramètres de validation.</summary>
+    /// <param name="services">Collection de services.</param>
+    /// <param name="configuration">Configuration de l'application.</param>
+    /// <param name="environment">Environnement d'hébergement.</param>
     public static IServiceCollection AddCommunityAuthentication(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -77,6 +87,9 @@ public static class ServiceExtensions
         return services;
     }
 
+    /// <summary>Configure le client HTTP pour l'API d'identité (Identity API).</summary>
+    /// <param name="services">Collection de services.</param>
+    /// <param name="configuration">Configuration de l'application.</param>
     public static IServiceCollection AddCommunityHttpClients(this IServiceCollection services, IConfiguration configuration)
     {
         var apiKey = configuration["Identity:ApiKey"] ?? configuration["Integration:ProvisioningApiKey"] ?? "";
@@ -91,6 +104,8 @@ public static class ServiceExtensions
         return services;
     }
 
+    /// <summary>Configure le versioning d'API et la documentation Swagger avec support JWT.</summary>
+    /// <param name="services">Collection de services.</param>
     public static IServiceCollection AddApiVersioningWithSwagger(
         this IServiceCollection services)
     {

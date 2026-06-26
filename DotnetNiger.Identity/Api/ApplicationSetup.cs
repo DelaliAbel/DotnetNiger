@@ -26,7 +26,6 @@ public static class ApplicationSetup
 
         builder.Services.AddIdentityInfrastructure(builder.Configuration, builder.Environment);
         builder.Services.AddIdentityServices();
-        builder.Services.AddCorsPolicy(builder.Environment, builder.Configuration);
         builder.Services.AddRateLimitingPolicies(builder.Configuration);
         builder.Services.AddTransient<IClaimsTransformation, RoleClaimsTransformer>();
         builder.Services.AddApiVersioningWithSwagger();
@@ -43,7 +42,6 @@ public static class ApplicationSetup
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
         });
         app.UseSerilogRequestLogging();
-        app.UseCors("AllowAll");
         app.UseMiddleware<ErrorHandlingMiddleware>();
         app.UseRouting();
         app.UseRateLimiter();

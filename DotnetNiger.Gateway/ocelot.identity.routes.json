@@ -111,6 +111,46 @@
       "SwaggerKey": "identity"
     },
     {
+      "Key": "IdentityConnectAuthorizeRoute",
+      "UpstreamPathTemplate": "/connect/authorize",
+      "UpstreamHttpMethod": ["GET", "POST"],
+      "DownstreamPathTemplate": "/connect/authorize",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [{ "Host": "identity-dotnetniger.runasp.net", "Port": 443 }],
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "SwaggerKey": "identity"
+    },
+    {
+      "Key": "IdentityConnectLogoutRoute",
+      "UpstreamPathTemplate": "/connect/logout",
+      "UpstreamHttpMethod": ["GET", "POST"],
+      "DownstreamPathTemplate": "/connect/logout",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [{ "Host": "identity-dotnetniger.runasp.net", "Port": 443 }],
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "SwaggerKey": "identity"
+    },
+    {
+      "Key": "IdentityConnectUserinfoRoute",
+      "UpstreamPathTemplate": "/connect/userinfo",
+      "UpstreamHttpMethod": ["GET", "POST"],
+      "DownstreamPathTemplate": "/connect/userinfo",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [{ "Host": "identity-dotnetniger.runasp.net", "Port": 443 }],
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "SwaggerKey": "identity"
+    },
+    {
+      "Key": "IdentityWellKnownRoute",
+      "UpstreamPathTemplate": "/.well-known/{everything}",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/.well-known/{everything}",
+      "DownstreamScheme": "https",
+      "DownstreamHostAndPorts": [{ "Host": "identity-dotnetniger.runasp.net", "Port": 443 }],
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "SwaggerKey": "identity"
+    },
+    {
       "UpstreamPathTemplate": "/connect/token",
       "UpstreamHttpMethod": ["POST"],
       "DownstreamPathTemplate": "/connect/token",
@@ -173,15 +213,6 @@
       "RateLimitOptions": { "EnableRateLimiting": false },
       "SwaggerKey": "identity"
     },
-    {
-      "Key": "IdentityApiCatchAll",
-      "UpstreamPathTemplate": "/identity-api/{everything}",
-      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
-      "DownstreamPathTemplate": "/{everything}",
-      "DownstreamScheme": "https",
-      "DownstreamHostAndPorts": [{ "Host": "identity-dotnetniger.runasp.net", "Port": 443 }],
-      "RateLimitOptions": { "EnableRateLimiting": false },
-      "SwaggerKey": "identity"
-    }
+
   ]
 }

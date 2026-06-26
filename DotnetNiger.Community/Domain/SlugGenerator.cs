@@ -2,8 +2,12 @@ using System.Text.RegularExpressions;
 
 namespace DotnetNiger.Community.Domain;
 
+/// <summary>Génère des slugs SEO-friendly à partir de titres ou de textes.</summary>
 public static partial class SlugGenerator
 {
+    /// <summary>Transforme un texte en slug URL-friendly (supprime accents, caractères spéciaux, espaces).</summary>
+    /// <param name="text">Texte à convertir.</param>
+    /// <returns>Slug nettoyé et en minuscules.</returns>
     public static string Generate(string text)
     {
         var slug = text.ToLowerInvariant()

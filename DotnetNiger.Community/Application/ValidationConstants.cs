@@ -1,5 +1,6 @@
 namespace DotnetNiger.Community.Application;
 
+/// <summary>Constantes de validation pour la pagination et les limites de contenu.</summary>
 public static class ValidationConstants
 {
     public const int DefaultPageSize = 10;
@@ -12,6 +13,7 @@ public static class ValidationConstants
     public const int RateLimitWindowSeconds = 300;
 }
 
+/// <summary>Messages de validation prédéfinis pour les formulaires.</summary>
 public static class ValidationMessages
 {
     public const string TitleRequired = "Le titre est requis";

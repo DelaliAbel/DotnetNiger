@@ -66,7 +66,7 @@ public static class ServiceExtensions
             .AddCore(core => core.UseEntityFrameworkCore().UseDbContext<IdentityDbContext>())
             .AddServer(server =>
             {
-                var issuerUri = config.GetValue<string>("OpenIddict:Issuer") ?? "http://localhost:5000/identity-api";
+                var issuerUri = config.GetValue<string>("OpenIddict:Issuer") ?? "http://localhost:5075";
                 server.SetIssuer(new Uri(issuerUri))
                       .SetTokenEndpointUris("/connect/token")
                       .SetAuthorizationEndpointUris("/connect/authorize")
@@ -274,30 +274,6 @@ public static class ServiceExtensions
                 };
             });
         }
-
-        return services;
-    }
-
-    /// <summary>Configure CORS en fonction de l'environnement.</summary>
-    public static IServiceCollection AddCorsPolicy(this IServiceCollection services, IHostEnvironment environment, IConfiguration configuration)
-    {
-        services.AddCors(options =>
-        {
-            if (environment.IsDevelopment())
-                options.AddPolicy("AllowAll", builder =>
-                    builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-            else
-            {
-                var origins = configuration["Cors:AllowedOrigins"];
-                if (!string.IsNullOrWhiteSpace(origins))
-                    options.AddPolicy("AllowAll", builder =>
-                        builder.WithOrigins(origins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                              .AllowAnyMethod().AllowAnyHeader().AllowCredentials());
-                else
-                    options.AddPolicy("AllowAll", builder =>
-                        builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-            }
-        });
 
         return services;
     }

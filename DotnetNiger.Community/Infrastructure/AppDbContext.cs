@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Infrastructure;
 
+/// <summary>Contexte Entity Framework Core pour la base de données de la communauté.</summary>
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     public DbSet<Post> Posts => Set<Post>();
@@ -29,6 +30,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
     public DbSet<Speaker> Speakers => Set<Speaker>();
 
+    /// <summary>Configure le modèle de données : index, relations, contraintes et filtres de requête.</summary>
+    /// <param name="modelBuilder">Constructeur du modèle EF Core.</param>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Event>().HasQueryFilter(e => !e.IsDeleted);

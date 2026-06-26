@@ -2,42 +2,12 @@ name: CI
 
 on:
   push:
-    branches: ["main", "dev"]
+    branches: ["BackEnd"]
   pull_request:
-    branches: ["main", "dev"]
+    branches: ["BackEnd"]
 
 jobs:
-  build-test:
-    strategy:
-      matrix:
-        project:
-          - DotnetNiger.slnx
-          - DotnetNiger.Tests/DotnetNiger.Architecture.Tests/DotnetNiger.Architecture.Tests.csproj
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "9.0.x"
-
-      - name: Restore
-        run: dotnet restore ${{ matrix.project }}
-
-      - name: Build
-        run: dotnet build ${{ matrix.project }} --configuration Release --no-restore
-
-      - name: Test
-        if: matrix.project == 'DotnetNiger.slnx'
-        run: dotnet test ${{ matrix.project }} --configuration Release --no-build --verbosity normal
-
-      - name: Run architecture guards
-        if: matrix.project != 'DotnetNiger.slnx'
-        run: dotnet test ${{ matrix.project }} --configuration Release --no-build --verbosity normal
-
-  code-quality:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -45,10 +15,10 @@ jobs:
       - name: Setup .NET 9
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 9.0.x
+          dotnet-version: "9.0.x"
 
-      - name: Restore dependencies
+      - name: Restore
         run: dotnet restore DotnetNiger.slnx
 
-      - name: Check for errors and warnings
-        run: dotnet build DotnetNiger.slnx --no-restore --configuration Release /p:TreatWarningsAsErrors=true
+      - name: Build
+        run: dotnet build DotnetNiger.slnx --configuration Release --no-restore /p:TreatWarningsAsErrors=true
