@@ -2,15 +2,18 @@ using System.Web;
 
 namespace DotnetNiger.Gateway.Services;
 
+/// <summary>Constructeur de pages HTML statiques avec balises Open Graph pour les crawlers sociaux.</summary>
 public class OpenGraphHtmlBuilder
 {
     private readonly string _frontendBaseUrl;
 
+    /// <summary>Initialise le builder avec l'URL de base du frontend.</summary>
     public OpenGraphHtmlBuilder(IConfiguration configuration)
     {
         _frontendBaseUrl = (configuration["FrontendBaseUrl"] ?? "http://localhost:5100").TrimEnd('/');
     }
 
+    /// <summary>Construit une page HTML complète avec les balises Open Graph pour un contenu spécifique.</summary>
     public string Build(OGMetadata meta, string slug, string type)
     {
         var frontendUrl = $"{_frontendBaseUrl}/{type}/{HttpUtility.UrlEncode(slug)}";
@@ -44,6 +47,7 @@ public class OpenGraphHtmlBuilder
         """;
     }
 
+    /// <summary>Construit une page HTML par défaut avec les balises Open Graph génériques.</summary>
     public string BuildDefault()
     {
         return $"""

@@ -3,6 +3,7 @@ using DotnetNiger.Gateway.Services;
 
 namespace DotnetNiger.Gateway.Middleware;
 
+/// <summary>Middleware qui détecte les crawlers sociaux (Facebook, Twitter, etc.) et retourne des balises Open Graph statiques.</summary>
 public class OpenGraphMiddleware
 {
     private readonly RequestDelegate _next;
@@ -22,11 +23,13 @@ public class OpenGraphMiddleware
         @"^\/(blog|evenements|ressources)\/([^\/\?]+)",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    /// <summary>Initialise le middleware avec le délégué suivant.</summary>
     public OpenGraphMiddleware(RequestDelegate next)
     {
         _next = next;
     }
 
+    /// <summary>Exécute le middleware : vérifie l'user-agent et retourne le HTML Open Graph approprié.</summary>
     public async Task InvokeAsync(HttpContext context, IOpenGraphService ogService, OpenGraphHtmlBuilder htmlBuilder)
     {
         var userAgent = context.Request.Headers.UserAgent.FirstOrDefault();

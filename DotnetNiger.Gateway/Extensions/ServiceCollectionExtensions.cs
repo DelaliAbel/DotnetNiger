@@ -14,8 +14,10 @@ using Ocelot.Provider.Consul;
 
 namespace DotnetNiger.Gateway.Extensions;
 
+/// <summary>Extensions pour l'enregistrement des services du Gateway dans le conteneur DI.</summary>
 public static class ServiceCollectionExtensions
 {
+    /// <summary>Enregistre tous les services nécessaires au Gateway : Ocelot, health checks, authentification, CORS, etc.</summary>
     public static IServiceCollection AddGatewayServices(
         this IServiceCollection services,
         IConfiguration configuration,
@@ -61,7 +63,6 @@ public static class ServiceCollectionExtensions
                 var identityUrl = (configuration["DeveloperPortal:IdentityBaseUrl"] ?? "http://localhost:5075").TrimEnd('/');
                 options.Authority = identityUrl;
                 options.RequireHttpsMetadata = !environment.IsDevelopment() && !configuration.GetValue<bool>("Jwt:DisableHttpsRequirement");
-                if (!environment.IsDevelopment()) options.RequireHttpsMetadata = false;
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,

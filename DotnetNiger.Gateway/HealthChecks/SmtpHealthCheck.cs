@@ -3,17 +3,20 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace DotnetNiger.Gateway.HealthChecks;
 
+/// <summary>Vérifie la disponibilité du serveur SMTP par une connexion TCP.</summary>
 public class SmtpHealthCheck : IHealthCheck
 {
     private readonly string _host;
     private readonly int _port;
 
+    /// <summary>Initialise le health check avec la configuration SMTP.</summary>
     public SmtpHealthCheck(IConfiguration configuration)
     {
         _host = configuration["Smtp:Host"] ?? "localhost";
         _port = int.TryParse(configuration["Smtp:Port"], out var p) ? p : 587;
     }
 
+    /// <summary>Exécute le health check en tentant une connexion TCP au serveur SMTP.</summary>
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context, CancellationToken cancellationToken = default)
     {

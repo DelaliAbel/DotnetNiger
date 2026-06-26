@@ -1,16 +1,19 @@
 namespace DotnetNiger.Gateway.Metrics;
 
+/// <summary>Collecte et expose les métriques de latence des endpoints avec calcul des percentiles (P50, P95, P99).</summary>
 public static class EndpointLatencyMetrics
 {
     private const int MaxSamples = 2048;
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, EndpointLatencyWindow> Windows = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Enregistre une mesure de latence pour un endpoint.</summary>
     public static void Record(string endpointKey, double elapsedMs, int statusCode)
     {
         var window = Windows.GetOrAdd(endpointKey, _ => new EndpointLatencyWindow(MaxSamples));
         window.Record(elapsedMs, statusCode);
     }
 
+    /// <summary>Retourne un instantané des métriques trié par latence P95 décroissante.</summary>
     public static object GetSnapshot(int top = 5)
     {
         var endpoints = Windows

@@ -5,6 +5,7 @@ using Serilog;
 
 namespace DotnetNiger.Gateway.Services;
 
+/// <summary>Service d'arrière-plan qui vérifie périodiquement l'état de santé des services externes enregistrés.</summary>
 public class ExternalServiceHealthService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
@@ -15,6 +16,7 @@ public class ExternalServiceHealthService : BackgroundService
     private readonly IMemoryCache _cache;
     private readonly string _internalApiKey;
 
+    /// <summary>Initialise le service avec la configuration et les dépendances.</summary>
     public ExternalServiceHealthService(
         IServiceScopeFactory scopeFactory,
         IConfiguration configuration,
@@ -33,6 +35,7 @@ public class ExternalServiceHealthService : BackgroundService
         _internalApiKey = configuration["DeveloperPortal:InternalApiKey"] ?? "";
     }
 
+    /// <summary>Boucle principale du service : vérifie tous les services à intervalle régulier.</summary>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         Log.Information("ExternalServiceHealthService started (interval: {Interval}s)", _intervalSeconds);
@@ -152,8 +155,6 @@ public class ExternalServiceHealthService : BackgroundService
             if (!isHealthy)
             {
                 var cacheKey = $"ext:{service.Slug}";
-                // Only clear cache if the service was previously healthy
-                // _cache.Remove(cacheKey);
             }
         }
         catch (Exception ex)

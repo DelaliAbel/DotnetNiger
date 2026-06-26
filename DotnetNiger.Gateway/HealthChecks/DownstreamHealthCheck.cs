@@ -4,17 +4,20 @@ using DotnetNiger.Gateway.Services;
 
 namespace DotnetNiger.Gateway.HealthChecks;
 
+/// <summary>Vérifie l'état de santé de tous les services aval (downstream) configurés.</summary>
 public class DownstreamHealthCheck : IHealthCheck
 {
     private readonly IServiceRegistry _registry;
     private readonly IHttpClientFactory _factory;
 
+    /// <summary>Initialise le health check avec le registre des services et le factory HTTP.</summary>
     public DownstreamHealthCheck(IServiceRegistry registry, IHttpClientFactory factory)
     {
         _registry = registry;
         _factory = factory;
     }
 
+    /// <summary>Vérifie chaque service aval en appelant son endpoint de santé.</summary>
     public async Task<HealthCheckResult> CheckHealthAsync(
         HealthCheckContext context, CancellationToken cancellationToken = default)
     {

@@ -3,6 +3,7 @@ using DotnetNiger.Gateway.Configuration;
 
 namespace DotnetNiger.Gateway.Services;
 
+/// <summary>Représente l'enregistrement d'un service dynamique dans le registre.</summary>
 public sealed class ServiceRegistration
 {
     public required string Id { get; init; }
@@ -16,6 +17,7 @@ public sealed class ServiceRegistration
     public DateTime? LastHeartbeat { get; set; }
 }
 
+/// <summary>Interface du registre des services dynamiques.</summary>
 public interface IServiceRegistry
 {
     void RegisterOrUpdate(ServiceRegistration registration);
@@ -25,11 +27,13 @@ public interface IServiceRegistry
     IReadOnlyList<DownstreamServiceConfig> GetCombinedConfig();
 }
 
+/// <summary>Registre thread-safe des services dynamiques, combiné avec les services de démarrage (seed).</summary>
 public sealed class ServiceRegistry : IServiceRegistry
 {
     private readonly ConcurrentDictionary<string, ServiceRegistration> _dynamic = new();
     private readonly IReadOnlyDictionary<string, DownstreamServiceConfig> _seed;
 
+    /// <summary>Initialise le registre avec les services de démarrage (seed).</summary>
     public ServiceRegistry(IEnumerable<DownstreamServiceConfig> seedServices)
     {
         _seed = seedServices.ToDictionary(s => s.Id);
@@ -49,6 +53,7 @@ public sealed class ServiceRegistry : IServiceRegistry
         }
     }
 
+    /// <summary>Enregistre ou met à jour un service dynamique.</summary>
     public void RegisterOrUpdate(ServiceRegistration registration)
     {
         _dynamic.AddOrUpdate(registration.Id, registration, (_, existing) =>
@@ -68,11 +73,14 @@ public sealed class ServiceRegistry : IServiceRegistry
         });
     }
 
+    /// <summary>Désenregistre un service dynamique.</summary>
     public bool Unregister(string serviceId) => _dynamic.TryRemove(serviceId, out _);
 
+    /// <summary>Récupère un service par son identifiant.</summary>
     public ServiceRegistration? Get(string serviceId) =>
         _dynamic.TryGetValue(serviceId, out var reg) ? reg : null;
 
+    /// <summary>Retourne la liste de tous les services enregistrés.</summary>
     public IReadOnlyList<ServiceRegistration> GetAll() =>
         _dynamic.Values.Select(s => new ServiceRegistration
         {
@@ -87,6 +95,7 @@ public sealed class ServiceRegistry : IServiceRegistry
             LastHeartbeat = s.LastHeartbeat
         }).ToList();
 
+    /// <summary>Retourne la configuration combinée (seed + dynamique) pour tous les services.</summary>
     public IReadOnlyList<DownstreamServiceConfig> GetCombinedConfig()
     {
         var result = _seed.Values.Select(seed =>

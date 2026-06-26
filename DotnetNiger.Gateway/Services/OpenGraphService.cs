@@ -3,15 +3,18 @@ using System.Text.Json.Serialization;
 
 namespace DotnetNiger.Gateway.Services;
 
+/// <summary>Implémentation du service Open Graph qui récupère les métadonnées depuis l'API Community.</summary>
 public class OpenGraphService : IOpenGraphService
 {
     private readonly IHttpClientFactory _httpClientFactory;
 
+    /// <summary>Initialise le service avec le factory HTTP.</summary>
     public OpenGraphService(IHttpClientFactory httpClientFactory)
     {
         _httpClientFactory = httpClientFactory;
     }
 
+    /// <summary>Récupère les métadonnées Open Graph pour un type et un slug donnés.</summary>
     public async Task<OGMetadata?> FetchMetadataAsync(string type, string slug)
     {
         var endpoint = type switch
