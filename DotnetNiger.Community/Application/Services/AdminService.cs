@@ -5,8 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Application.Services;
 
+/// <summary>Service d'administration : statistiques et gestion centralisée des utilisateurs.</summary>
 public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdminService
 {
+    /// <summary>Agrège les statistiques globales de la plateforme.</summary>
     public async Task<DashboardResponse> GetDashboardAsync()
     {
         var now = DateTime.UtcNow;
@@ -44,6 +46,7 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
         };
     }
 
+    /// <summary>Liste tous les utilisateurs Identity avec leurs données de profil enrichies (compétences, liens sociaux).</summary>
     public async Task<List<UserDto>> GetUsersAsync()
     {
         var identityUsers = await identity.GetUsersAsync();
@@ -79,6 +82,7 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
         return identityUsers;
     }
 
+    /// <summary>Détail d'un utilisateur avec son profil membre (retourne null si inconnu d'Identity).</summary>
     public async Task<UserDto?> GetUserAsync(Guid id)
     {
         var user = await identity.GetUserAsync(id);
@@ -111,8 +115,10 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
         return user;
     }
 
+    /// <summary>Active ou désactive un compte utilisateur via l'API Identity.</summary>
     public async Task<bool> UpdateUserStatusAsync(Guid id, bool isActive) => await identity.UpdateUserStatusAsync(id, isActive);
 
+    /// <summary>Définit le statut d'équipe et le poste d'un membre (crée le profil si inexistant).</summary>
     public async Task<bool> UpdateUserTeamAsync(Guid id, bool isTeamMember, string position)
     {
         var member = await db.Members.FindAsync(id);
@@ -128,6 +134,7 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
         return true;
     }
 
+    /// <summary>Crée un utilisateur via Identity, puis son profil membre en base.</summary>
     public async Task<UserDto?> CreateUserAsync(CreateAdminUserRequest request)
     {
         var userId = await identity.RegisterUserAsync(request.Email, request.Password, request.FullName);
@@ -148,6 +155,7 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
         return await GetUserAsync(parsedId);
     }
 
+    /// <summary>Supprime le profil membre puis le compte Identity.</summary>
     public async Task<bool> DeleteUserAsync(Guid id)
     {
         var member = await db.Members.FindAsync(id);
@@ -159,15 +167,6 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
         return await identity.DeleteUserAsync(id);
     }
 
-    public async Task<List<RoleDto>> GetRolesAsync() => await identity.GetRolesAsync();
-
-    public async Task<RoleDto?> CreateRoleAsync(string name) => await identity.CreateRoleAsync(name);
-
-    public async Task<List<PermissionDto>> GetPermissionsAsync() => await identity.GetPermissionsAsync();
-
-    public async Task<PermissionDto?> CreatePermissionAsync(string name, string description) => await identity.CreatePermissionAsync(name, description);
-
-    public async Task<bool> AssignPermissionToRoleAsync(Guid roleId, Guid permissionId) => await identity.AssignPermissionToRoleAsync(roleId, permissionId);
-
+    /// <summary>Assigne un rôle à un utilisateur via l'API Identity.</summary>
     public async Task<bool> AssignRoleToUserAsync(Guid userId, string roleName) => await identity.AssignRoleToUserAsync(userId, roleName);
 }

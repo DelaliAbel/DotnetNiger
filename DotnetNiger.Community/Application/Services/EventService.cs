@@ -1,3 +1,4 @@
+using DotnetNiger.Community.Application.Constants;
 using DotnetNiger.Community.Infrastructure;
 using DotnetNiger.Community.Application.DTOs;
 using DotnetNiger.Community.Application.Notifications;
@@ -9,8 +10,10 @@ using Microsoft.Extensions.Logging;
 
 namespace DotnetNiger.Community.Application.Services;
 
+/// <summary>Gestion des événements : CRUD, inscriptions et workflow de modération.</summary>
 public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, ILogger<EventService> logger) : IEventService
 {
+    /// <summary>Recherche des événements avec filtres multiples. Supporte le curseur (after) ou la pagination classique.</summary>
     public async Task<PaginatedResponse<EventResponse>> GetAllAsync(string? published, string? past, string? eventType, string? query, string? tag, DateTime? startDateFrom, DateTime? startDateTo, Guid? submitterId = null, int page = 1, int pageSize = 10, Guid? after = null)
     {
         var q = db.Events
@@ -160,6 +163,7 @@ public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, IL
         return new PaginatedResponse<EventResponse> { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }
 
+    /// <summary>Événements publiés à venir, triés par date de début croissante.</summary>
     public async Task<List<EventResponse>> GetUpcomingAsync(int page = 1, int pageSize = 10)
     {
         return await db.Events
@@ -213,6 +217,7 @@ public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, IL
             .ToListAsync();
     }
 
+    /// <summary>Détail d'un événement avec médias, speakers et tags.</summary>
     public async Task<EventResponse?> GetByIdAsync(Guid id)
     {
         var ev = await db.Events
@@ -225,6 +230,7 @@ public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, IL
         return ev is null ? null : MapEvent(ev);
     }
 
+    /// <summary>Détail d'un événement par son slug.</summary>
     public async Task<EventResponse?> GetBySlugAsync(string slug)
     {
         var ev = await db.Events
@@ -237,6 +243,7 @@ public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, IL
         return ev is null ? null : MapEvent(ev);
     }
 
+    /// <summary>Crée un événement avec ses médias, speakers et tags, puis notifie les abonnés en arrière-plan.</summary>
     public async Task<EventResponse> CreateAsync(CreateEventRequest request, Guid userId)
     {
         var ev = new Event
@@ -298,6 +305,7 @@ public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, IL
         return MapEvent(ev);
     }
 
+    /// <summary>Modifie un événement. Reconstruit les médias, speakers et tags à partir de la requête.</summary>
     public async Task<EventResponse?> UpdateAsync(Guid id, CreateEventRequest request, Guid userId, bool isAdmin)
     {
         var ev = await db.Events
@@ -307,7 +315,7 @@ public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, IL
             .FirstOrDefaultAsync(e => e.Id == id);
         if (ev is null) return null;
         if (ev.CreatedBy != userId && !isAdmin)
-            throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à modifier cet événement.");
+            throw new UnauthorizedAccessException(Messages.Event.NotAuthorizedModify);
 
         ev.Title = request.Title;
         ev.Slug = GenerateSlug(request.Title);
@@ -357,18 +365,20 @@ public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, IL
         return MapEvent(ev);
     }
 
+    /// <summary>Suppression logique : masque l'événement au lieu de le supprimer définitivement.</summary>
     public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin)
     {
         var ev = await db.Events.IgnoreQueryFilters().FirstOrDefaultAsync(e => e.Id == id);
         if (ev is null) return false;
         if (ev.CreatedBy != userId && !isAdmin)
-            throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à supprimer cet événement.");
+            throw new UnauthorizedAccessException(Messages.Event.NotAuthorizedDelete);
         ev.IsDeleted = true;
         ev.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
         return true;
     }
 
+    /// <summary>Publie un événement et enregistre la date de publication.</summary>
     public async Task<EventResponse?> PublishAsync(Guid id)
     {
         var ev = await db.Events
@@ -383,6 +393,7 @@ public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, IL
         return MapEvent(ev);
     }
 
+    /// <summary>Dépublie un événement et efface sa date de publication.</summary>
     public async Task<EventResponse?> UnpublishAsync(Guid id)
     {
         var ev = await db.Events
@@ -397,6 +408,7 @@ public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, IL
         return MapEvent(ev);
     }
 
+    /// <summary>Événements soumis en attente de publication (non publiés et non supprimés).</summary>
     public async Task<List<EventResponse>> GetPendingEventsAsync(int page = 1, int pageSize = 10)
     {
         return await db.Events
@@ -450,11 +462,13 @@ public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, IL
             .ToListAsync();
     }
 
+    /// <summary>Approuve et publie un événement en attente (délègue à PublishAsync).</summary>
     public async Task<EventResponse?> ApproveAsync(Guid id)
     {
         return await PublishAsync(id);
     }
 
+    /// <summary>Rejette un événement avec un motif (reste non publié).</summary>
     public async Task<EventResponse?> RejectAsync(Guid id, string reason)
     {
         var ev = await db.Events
@@ -469,6 +483,7 @@ public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, IL
         return MapEvent(ev);
     }
 
+    /// <summary>Inscrit un utilisateur à un événement si la capacité le permet (transaction BD).</summary>
     public async Task<EventRegistrationResponse?> RegisterAsync(Guid eventId, Guid userId, string userName, string avatarUrl = "")
     {
         var existing = await db.EventRegistrations.AnyAsync(r => r.EventId == eventId && r.UserId == userId);
@@ -508,6 +523,7 @@ public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, IL
         }
     }
 
+    /// <summary>Annule l'inscription et décrémente le compteur de participants.</summary>
     public async Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId)
     {
         var reg = await db.EventRegistrations.FirstOrDefaultAsync(r => r.EventId == eventId && r.UserId == userId);
@@ -524,6 +540,7 @@ public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, IL
         return true;
     }
 
+    /// <summary>Liste des inscriptions à un événement.</summary>
     public async Task<List<EventRegistrationResponse>> GetRegistrationsAsync(Guid eventId)
     {
         var eventTitle = await db.Events.AsNoTracking()

@@ -4,8 +4,10 @@ using DotnetNiger.Community.Application.DTOs;
 
 namespace DotnetNiger.Community.Application.Services;
 
+/// <summary>Client HTTP vers l'API Identity distante pour la gestion des utilisateurs.</summary>
 public class IdentityApiClient(HttpClient http) : IIdentityApiClient
 {
+    /// <summary>Récupère la liste de tous les utilisateurs depuis l'API distante.</summary>
     public async Task<List<UserDto>> GetUsersAsync()
     {
         var response = await http.GetAsync("api/v1/admin/users");
@@ -14,6 +16,7 @@ public class IdentityApiClient(HttpClient http) : IIdentityApiClient
         return users ?? [];
     }
 
+    /// <summary>Détail d'un utilisateur distant.</summary>
     public async Task<UserDto?> GetUserAsync(Guid id)
     {
         var response = await http.GetAsync($"api/v1/admin/users/{id}");
@@ -21,12 +24,14 @@ public class IdentityApiClient(HttpClient http) : IIdentityApiClient
         return await response.Content.ReadFromJsonAsync<UserDto>();
     }
 
+    /// <summary>Active ou désactive un compte distant.</summary>
     public async Task<bool> UpdateUserStatusAsync(Guid id, bool isActive)
     {
         var response = await http.PatchAsJsonAsync($"api/v1/admin/users/{id}/status", new { isActive });
         return response.IsSuccessStatusCode;
     }
 
+    /// <summary>Crée un utilisateur distant et retourne son identifiant.</summary>
     public async Task<string?> RegisterUserAsync(string email, string password, string fullName)
     {
         var parts = fullName.Split(' ', 2, StringSplitOptions.TrimEntries);
@@ -48,50 +53,14 @@ public class IdentityApiClient(HttpClient http) : IIdentityApiClient
         return null;
     }
 
+    /// <summary>Supprime un utilisateur distant.</summary>
     public async Task<bool> DeleteUserAsync(Guid id)
     {
         var response = await http.DeleteAsync($"api/v1/admin/users/{id}");
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<List<RoleDto>> GetRolesAsync()
-    {
-        var response = await http.GetAsync("api/v1/admin/roles");
-        if (!response.IsSuccessStatusCode) return [];
-        var wrapped = await response.Content.ReadFromJsonAsync<ApiSuccessResponse<List<RoleDto>>>();
-        return wrapped?.Data ?? [];
-    }
-
-    public async Task<RoleDto?> CreateRoleAsync(string name)
-    {
-        var response = await http.PostAsJsonAsync("api/v1/admin/roles", new { name });
-        if (!response.IsSuccessStatusCode) return null;
-        var wrapped = await response.Content.ReadFromJsonAsync<ApiSuccessResponse<RoleDto>>();
-        return wrapped?.Data;
-    }
-
-    public async Task<List<PermissionDto>> GetPermissionsAsync()
-    {
-        var response = await http.GetAsync("api/v1/admin/permissions");
-        if (!response.IsSuccessStatusCode) return [];
-        var wrapped = await response.Content.ReadFromJsonAsync<ApiSuccessResponse<List<PermissionDto>>>();
-        return wrapped?.Data ?? [];
-    }
-
-    public async Task<PermissionDto?> CreatePermissionAsync(string name, string description)
-    {
-        var response = await http.PostAsJsonAsync("api/v1/admin/permissions", new { name, description });
-        if (!response.IsSuccessStatusCode) return null;
-        var wrapped = await response.Content.ReadFromJsonAsync<ApiSuccessResponse<PermissionDto>>();
-        return wrapped?.Data;
-    }
-
-    public async Task<bool> AssignPermissionToRoleAsync(Guid roleId, Guid permissionId)
-    {
-        var response = await http.PostAsJsonAsync($"api/v1/admin/roles/{roleId}/permissions", new { permissionId });
-        return response.IsSuccessStatusCode;
-    }
-
+    /// <summary>Assigne un rôle à un utilisateur distant.</summary>
     public async Task<bool> AssignRoleToUserAsync(Guid userId, string roleName)
     {
         var response = await http.PostAsJsonAsync($"api/v1/admin/users/{userId}/roles", new { roleName });

@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using DotnetNiger.Community.Application.Constants;
 using DotnetNiger.Community.Infrastructure;
 using DotnetNiger.Community.Application.DTOs;
 using DotnetNiger.Community.Domain.Entities;
@@ -6,8 +7,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Application.Services;
 
+/// <summary>Gestion des abonnements à la newsletter avec tokens de désabonnement sécurisés.</summary>
 public class NewsletterService(AppDbContext db) : INewsletterService
 {
+    /// <summary>Inscrit un email. S'il était déjà abonné et inactif, le réactive.</summary>
     public async Task<NewsletterSubscriptionResponse> SubscribeAsync(SubscribeRequest request)
     {
         var existing = await db.Set<NewsletterSubscription>()
@@ -16,7 +19,7 @@ public class NewsletterService(AppDbContext db) : INewsletterService
         if (existing != null)
         {
             if (existing.IsActive)
-                throw new InvalidOperationException("Cet email est déjà abonné");
+                throw new InvalidOperationException(Messages.Newsletter.AlreadySubscribed);
 
             existing.IsActive = true;
             existing.Name = request.Name;
@@ -41,6 +44,7 @@ public class NewsletterService(AppDbContext db) : INewsletterService
         return MapSubscription(sub);
     }
 
+    /// <summary>Désabonne via email + token. Le token est généré à l'inscription pour éviter les désabonnements abusifs.</summary>
     public async Task<bool> UnsubscribeAsync(UnsubscribeRequest request)
     {
         var sub = await db.Set<NewsletterSubscription>()
@@ -54,6 +58,7 @@ public class NewsletterService(AppDbContext db) : INewsletterService
         return true;
     }
 
+    /// <summary>Liste paginée des abonnés, du plus récent au plus ancien.</summary>
     public async Task<PaginatedResponse<NewsletterSubscriptionResponse>> GetAllAsync(int page = 1, int pageSize = 10)
     {
         var query = db.Set<NewsletterSubscription>().AsNoTracking().OrderByDescending(s => s.SubscribedAt);
@@ -69,6 +74,7 @@ public class NewsletterService(AppDbContext db) : INewsletterService
             { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }
 
+    /// <summary>Nombre d'abonnés actuellement actifs.</summary>
     public async Task<int> GetActiveCountAsync()
     {
         return await db.Set<NewsletterSubscription>().AsNoTracking().CountAsync(s => s.IsActive);

@@ -1,3 +1,4 @@
+using DotnetNiger.Community.Application.Constants;
 using DotnetNiger.Community.Infrastructure;
 using DotnetNiger.Community.Application.DTOs;
 using DotnetNiger.Community.Domain;
@@ -6,8 +7,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Application.Services;
 
+/// <summary>Gestion des articles de blog : CRUD, publication et catégorisation.</summary>
 public class PostService(AppDbContext db) : IPostService
 {
+    /// <summary>Recherche paginée avec filtres (publié/brouillon, catégorie, tag, mot-clé). Supporte le curseur (after).</summary>
     public async Task<PaginatedResponse<PostResponse>> GetAllAsync(string? published, string? category, string? tag, string? query, int page = 1, int pageSize = 10, Guid? after = null)
     {
         var q = db.Posts
@@ -42,7 +45,7 @@ public class PostService(AppDbContext db) : IPostService
                     Id = p.Id,
                     Title = p.Title,
                     Slug = p.Slug,
-                    Content = p.Content,
+                    Content = "",
                     Excerpt = p.Excerpt,
                     CoverImageUrl = p.CoverImageUrl,
                     AuthorId = p.AuthorId,
@@ -83,7 +86,7 @@ public class PostService(AppDbContext db) : IPostService
                     Id = p.Id,
                     Title = p.Title,
                     Slug = p.Slug,
-                    Content = p.Content,
+                    Content = "",
                     Excerpt = p.Excerpt,
                     CoverImageUrl = p.CoverImageUrl,
                     AuthorId = p.AuthorId,
@@ -117,6 +120,7 @@ public class PostService(AppDbContext db) : IPostService
         return new PaginatedResponse<PostResponse> { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }
 
+    /// <summary>Détail d'un article avec ses catégories et tags.</summary>
     public async Task<PostResponse?> GetByIdAsync(Guid id)
     {
         var post = await db.Posts
@@ -127,6 +131,7 @@ public class PostService(AppDbContext db) : IPostService
         return post is null ? null : MapPost(post);
     }
 
+    /// <summary>Détail d'un article par son slug.</summary>
     public async Task<PostResponse?> GetBySlugAsync(string slug)
     {
         var post = await db.Posts
@@ -137,6 +142,7 @@ public class PostService(AppDbContext db) : IPostService
         return post is null ? null : MapPost(post);
     }
 
+    /// <summary>Crée un article avec un slug unique, ses catégories et ses tags.</summary>
     public async Task<PostResponse> CreateAsync(CreatePostRequest request, Guid authorId, string authorName)
     {
         var slug = await EnsureUniqueSlugAsync(GenerateSlug(request.Title));
@@ -164,6 +170,7 @@ public class PostService(AppDbContext db) : IPostService
         return MapPost(post);
     }
 
+    /// <summary>Modifie un article (recalcule le slug si le titre change, vérifie les droits).</summary>
     public async Task<PostResponse?> UpdateAsync(Guid id, UpdatePostRequest request, Guid userId, bool isAdmin)
     {
         var post = await db.Posts
@@ -172,7 +179,7 @@ public class PostService(AppDbContext db) : IPostService
             .FirstOrDefaultAsync(p => p.Id == id);
         if (post is null) return null;
         if (post.AuthorId != userId && !isAdmin)
-            throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à modifier cette publication.");
+            throw new UnauthorizedAccessException(Messages.Post.NotAuthorizedModify);
 
         post.Title = request.Title;
         var newSlug = GenerateSlug(request.Title);
@@ -196,6 +203,7 @@ public class PostService(AppDbContext db) : IPostService
         return MapPost(post);
     }
 
+    /// <summary>Incémente le compteur de vues de l'article.</summary>
     public async Task<PostResponse?> IncrementViewCountAsync(Guid id)
     {
         var post = await db.Posts.FindAsync(id);
@@ -205,12 +213,13 @@ public class PostService(AppDbContext db) : IPostService
         return MapPost(post);
     }
 
+    /// <summary>Publie un article (vérifie les droits de l'utilisateur).</summary>
     public async Task<PostResponse?> PublishAsync(Guid id, Guid userId, bool isAdmin)
     {
         var post = await db.Posts.FindAsync(id);
         if (post is null) return null;
         if (post.AuthorId != userId && !isAdmin)
-            throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à publier cette publication.");
+            throw new UnauthorizedAccessException(Messages.Post.NotAuthorizedPublish);
 
         post.IsPublished = true;
         post.PublishedAt ??= DateTime.UtcNow;
@@ -219,12 +228,13 @@ public class PostService(AppDbContext db) : IPostService
         return MapPost(post);
     }
 
+    /// <summary>Dépublie un article (vérifie les droits).</summary>
     public async Task<PostResponse?> UnpublishAsync(Guid id, Guid userId, bool isAdmin)
     {
         var post = await db.Posts.FindAsync(id);
         if (post is null) return null;
         if (post.AuthorId != userId && !isAdmin)
-            throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à dépublier cette publication.");
+            throw new UnauthorizedAccessException(Messages.Post.NotAuthorizedUnpublish);
 
         post.IsPublished = false;
         post.UpdatedAt = DateTime.UtcNow;
@@ -232,12 +242,13 @@ public class PostService(AppDbContext db) : IPostService
         return MapPost(post);
     }
 
+    /// <summary>Supprime définitivement un article.</summary>
     public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin)
     {
         var post = await db.Posts.FindAsync(id);
         if (post is null) return false;
         if (post.AuthorId != userId && !isAdmin)
-            throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à supprimer cette publication.");
+            throw new UnauthorizedAccessException(Messages.Post.NotAuthorizedDelete);
         db.Posts.Remove(post);
         await db.SaveChangesAsync();
         return true;

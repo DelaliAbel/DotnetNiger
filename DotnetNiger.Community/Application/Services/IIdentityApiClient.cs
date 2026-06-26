@@ -2,6 +2,10 @@ using DotnetNiger.Community.Application.DTOs;
 
 namespace DotnetNiger.Community.Application.Services;
 
+/// <summary>
+/// Client HTTP vers l'API Identity pour la gestion des utilisateurs du tenant.
+/// L'authentification se fait via X-Api-Key (InternalApiKey) qui donne les claims Admin+SuperAdmin.
+/// </summary>
 public interface IIdentityApiClient
 {
     Task<List<UserDto>> GetUsersAsync();
@@ -9,10 +13,5 @@ public interface IIdentityApiClient
     Task<bool> UpdateUserStatusAsync(Guid id, bool isActive);
     Task<string?> RegisterUserAsync(string email, string password, string fullName);
     Task<bool> DeleteUserAsync(Guid id);
-    Task<List<RoleDto>> GetRolesAsync();
-    Task<RoleDto?> CreateRoleAsync(string name);
-    Task<List<PermissionDto>> GetPermissionsAsync();
-    Task<PermissionDto?> CreatePermissionAsync(string name, string description);
-    Task<bool> AssignPermissionToRoleAsync(Guid roleId, Guid permissionId);
     Task<bool> AssignRoleToUserAsync(Guid userId, string roleName);
 }

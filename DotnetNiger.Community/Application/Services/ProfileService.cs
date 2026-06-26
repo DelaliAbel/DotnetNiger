@@ -1,3 +1,4 @@
+using DotnetNiger.Community.Application.Constants;
 using DotnetNiger.Community.Infrastructure;
 using DotnetNiger.Community.Application.DTOs;
 using DotnetNiger.Community.Domain.Entities;
@@ -6,8 +7,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DotnetNiger.Community.Application.Services;
 
+/// <summary>Gestion des profils membres : informations personnelles, compétences et certificats.</summary>
 public class ProfileService(AppDbContext db) : IProfileService
 {
+    /// <summary>Profil complet d'un membre (compétences, liens sociaux).</summary>
     public async Task<ProfileResponse?> GetAsync(Guid userId)
     {
         var member = await db.Members.AsNoTracking()
@@ -17,6 +20,7 @@ public class ProfileService(AppDbContext db) : IProfileService
         return member is null ? null : MapProfile(member);
     }
 
+    /// <summary>Met à jour le profil (le crée s'il n'existe pas). Gère un conflit d'insertion concurrent.</summary>
     public async Task<ProfileResponse> UpdateAsync(Guid userId, UpdateProfileRequest request)
     {
         var member = await db.Members
@@ -86,6 +90,7 @@ public class ProfileService(AppDbContext db) : IProfileService
         return MapProfile(member);
     }
 
+    /// <summary>Ajoute un lien social au profil d'un membre.</summary>
     public async Task<SocialLinkResponse> AddSocialLinkAsync(Guid userId, AddSocialLinkRequest request)
     {
         var member = await db.Members.FirstOrDefaultAsync(m => m.Id == userId);
@@ -119,6 +124,7 @@ public class ProfileService(AppDbContext db) : IProfileService
         return new SocialLinkResponse { Id = link.Id, Platform = link.Platform, Url = link.Url };
     }
 
+    /// <summary>Supprime un lien social du profil (vérifie l'appartenance).</summary>
     public async Task<bool> DeleteSocialLinkAsync(Guid userId, Guid socialLinkId)
     {
         var link = await db.SocialLinks.FirstOrDefaultAsync(s => s.Id == socialLinkId && s.MemberId == userId);
@@ -128,16 +134,17 @@ public class ProfileService(AppDbContext db) : IProfileService
         return true;
     }
 
+    /// <summary>Soumet un certificat pour validation. Valide l'URL et le type avant enregistrement.</summary>
     public async Task<CertificateResponse> SubmitCertificateAsync(Guid userId, CertificateSubmissionRequest request)
     {
         if (userId == Guid.Empty)
-            throw new ValidationException("Utilisateur introuvable.");
+            throw new ValidationException(Messages.User.NotFound);
 
         if (!Uri.TryCreate(request.CertificateUrl, UriKind.Absolute, out _))
-            throw new ValidationException("URL de certification invalide.");
+            throw new ValidationException(Messages.Certificate.InvalidUrl);
 
         if (string.IsNullOrWhiteSpace(request.CertificateType))
-            throw new ValidationException("Veuillez sélectionner un type de certificat.");
+            throw new ValidationException(Messages.Certificate.TypeRequired);
 
         var member = await db.Members.FirstOrDefaultAsync(m => m.Id == userId);
         if (member is null)
@@ -152,7 +159,7 @@ public class ProfileService(AppDbContext db) : IProfileService
             UserId = userId,
             CertificateUrl = request.CertificateUrl,
             CertificateType = request.CertificateType,
-            Status = "Pending",
+            Status = Messages.Certificate.StatusPending,
             SubmissionDate = DateTime.UtcNow
         };
 
@@ -176,9 +183,56 @@ public class ProfileService(AppDbContext db) : IProfileService
             Id = cert.Id,
             Status = cert.Status,
             SubmissionDate = cert.SubmissionDate,
-            EstimatedWaitTime = "24-48 heures",
-            SupportEmail = "support@dotnetniger.org"
+            EstimatedWaitTime = Messages.Certificate.EstimatedWait,
+            SupportEmail = Messages.Certificate.SupportEmail
         };
+    }
+
+    /// <summary>Approuve un certificat en attente.</summary>
+    public async Task<CertificateResponse?> ApproveCertificateAsync(Guid certificateId)
+    {
+        var cert = await db.Certificates.FindAsync(certificateId);
+        if (cert is null) return null;
+
+        cert.Status = Messages.Certificate.StatusApproved;
+        cert.ReviewedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+
+        return new CertificateResponse
+        {
+            Id = cert.Id,
+            Status = cert.Status,
+            SubmissionDate = cert.SubmissionDate,
+            EstimatedWaitTime = string.Empty,
+            SupportEmail = Messages.Certificate.SupportEmail
+        };
+    }
+
+    /// <summary>Rejette un certificat avec un motif.</summary>
+    public async Task<CertificateResponse?> RejectCertificateAsync(Guid certificateId, string reason)
+    {
+        var cert = await db.Certificates.FindAsync(certificateId);
+        if (cert is null) return null;
+
+        cert.Status = Messages.Certificate.StatusRejected;
+        cert.ReviewedNotes = reason;
+        cert.ReviewedAt = DateTime.UtcNow;
+        await db.SaveChangesAsync();
+
+        return new CertificateResponse
+        {
+            Id = cert.Id,
+            Status = cert.Status,
+            SubmissionDate = cert.SubmissionDate,
+            EstimatedWaitTime = string.Empty,
+            SupportEmail = Messages.Certificate.SupportEmail
+        };
+    }
+
+    /// <summary>Vérifie si un utilisateur a déjà un certificat approuvé.</summary>
+    public async Task<bool> HasApprovedCertificateAsync(Guid userId)
+    {
+        return await db.Certificates.AnyAsync(c => c.UserId == userId && c.Status == "Approved");
     }
 
     private static ProfileResponse MapProfile(Member m) => new()

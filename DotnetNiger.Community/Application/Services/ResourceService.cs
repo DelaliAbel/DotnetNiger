@@ -1,3 +1,4 @@
+using DotnetNiger.Community.Application.Constants;
 using DotnetNiger.Community.Infrastructure;
 using DotnetNiger.Community.Application.DTOs;
 using DotnetNiger.Community.Domain;
@@ -6,8 +7,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Application.Services;
 
+/// <summary>Gestion des ressources pédagogiques (liens, tutoriels, etc.).</summary>
 public class ResourceService(AppDbContext db) : IResourceService
 {
+    /// <summary>Recherche paginée avec filtres (type, niveau, tag, catégorie, mot-clé). Supporte le curseur (after).</summary>
     public async Task<PaginatedResponse<ResourceResponse>> GetAllAsync(string? resourceType, string? level, string? query, string? tag, Guid? categoryId, int page = 1, int pageSize = 10, Guid? after = null)
     {
         var q = db.Resources
@@ -95,6 +98,7 @@ public class ResourceService(AppDbContext db) : IResourceService
         return new PaginatedResponse<ResourceResponse> { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }
 
+    /// <summary>Détail d'une ressource avec ses tags.</summary>
     public async Task<ResourceResponse?> GetByIdAsync(Guid id)
     {
         var r = await db.Resources
@@ -105,6 +109,7 @@ public class ResourceService(AppDbContext db) : IResourceService
         return r is null ? null : MapResource(r);
     }
 
+    /// <summary>Détail d'une ressource par son slug.</summary>
     public async Task<ResourceResponse?> GetBySlugAsync(string slug)
     {
         var r = await db.Resources
@@ -115,6 +120,7 @@ public class ResourceService(AppDbContext db) : IResourceService
         return r is null ? null : MapResource(r);
     }
 
+    /// <summary>Crée une ressource avec ses catégories et tags associés.</summary>
     public async Task<ResourceResponse> CreateAsync(CreateResourceRequest request, Guid userId)
     {
         var resource = new Resource
@@ -146,6 +152,7 @@ public class ResourceService(AppDbContext db) : IResourceService
         return MapResource(resource);
     }
 
+    /// <summary>Modifie une ressource (reconstruit les catégories et tags).</summary>
     public async Task<ResourceResponse?> UpdateAsync(Guid id, CreateResourceRequest request, Guid userId, bool isAdmin)
     {
         var r = await db.Resources
@@ -153,7 +160,7 @@ public class ResourceService(AppDbContext db) : IResourceService
             .FirstOrDefaultAsync(r => r.Id == id);
         if (r is null) return null;
         if (r.CreatedBy != userId && !isAdmin)
-            throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à modifier cette ressource.");
+            throw new UnauthorizedAccessException(Messages.Resource.NotAuthorizedModify);
 
         r.Title = request.Title;
         r.Slug = GenerateSlug(request.Title);
@@ -180,18 +187,20 @@ public class ResourceService(AppDbContext db) : IResourceService
         return MapResource(r);
     }
 
+    /// <summary>Suppression logique d'une ressource.</summary>
     public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin)
     {
         var r = await db.Resources.IgnoreQueryFilters().FirstOrDefaultAsync(r => r.Id == id);
         if (r is null) return false;
         if (r.CreatedBy != userId && !isAdmin)
-            throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à supprimer cette ressource.");
+            throw new UnauthorizedAccessException(Messages.Resource.NotAuthorizedDelete);
         r.IsDeleted = true;
         r.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
         return true;
     }
 
+    /// <summary>Liste des types de ressources distincts.</summary>
     public async Task<List<string>> GetResourceTypesAsync()
     {
         return await db.Resources
@@ -202,6 +211,7 @@ public class ResourceService(AppDbContext db) : IResourceService
             .ToListAsync();
     }
 
+    /// <summary>Liste des niveaux disponibles.</summary>
     public async Task<List<string>> GetLevelsAsync()
     {
         return await db.Resources
@@ -211,6 +221,7 @@ public class ResourceService(AppDbContext db) : IResourceService
             .ToListAsync();
     }
 
+    /// <summary>Incémente le compteur de vues de la ressource.</summary>
     public async Task<ResourceResponse?> IncrementViewCountAsync(Guid id)
     {
         var r = await db.Resources.FindAsync(id);
