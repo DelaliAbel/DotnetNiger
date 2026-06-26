@@ -1,5 +1,6 @@
 ﻿@* Composant admin : barre latérale de navigation (responsive + mode réduit). *@
 @inject IUserStateService UserStateService
+@inject IUploadService UploadService
 
 <div class="h-full">
       <aside class="hidden h-full flex-col justify-between bg-secondary text-white shadow-lg transition-all duration-300 sm:flex @DesktopSidebarWidthClass">
@@ -8,7 +9,7 @@
                         <div class="flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-full bg-slate-700 text-lg font-semibold text-white">
                               @if (HasAvatar)
                               {
-                                    <img src="@AvatarUrl" class="h-full w-full object-cover" alt="Avatar de @DisplayName">
+                                    <ResolvedImage Src="@(UserStateService.CurrentUser?.AvatarUrl)" class="h-full w-full object-cover" alt="@($"Avatar de {DisplayName}")" />
                               }
                               else
                               {
@@ -118,7 +119,7 @@
                         <div class="flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-full bg-slate-700 text-lg font-semibold text-white">
                               @if (HasAvatar)
                               {
-                                    <img src="@AvatarUrl" class="h-full w-full object-cover" alt="Avatar de @DisplayName">
+                                    <ResolvedImage Src="@(UserStateService.CurrentUser?.AvatarUrl)" class="h-full w-full object-cover" alt="@($"Avatar de {DisplayName}")" />
                               }
                               else
                               {

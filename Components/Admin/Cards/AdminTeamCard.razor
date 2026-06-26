@@ -8,7 +8,7 @@
             <div class="h-14 w-14 flex-shrink-0 overflow-hidden rounded-full bg-gray-100">
                 @if (!string.IsNullOrWhiteSpace(User.AvatarUrl))
                 {
-                    <img src="@User.AvatarUrl" alt="@User.FullName" class="h-full w-full object-cover" />
+                    <ResolvedImage Src="@User.AvatarUrl" alt="@User.FullName" class="h-full w-full object-cover" />
                 }
                 else
                 {

@@ -5,6 +5,7 @@
 @using System.Globalization
 @inject IEventService EventService
 @inject NavigationManager NavigationManager
+@inject IUploadService UploadService
 
 @{
     var frCulture = CultureInfo.GetCultureInfo("fr-FR");
@@ -76,7 +77,7 @@
                     @* --- Hero card --- *@
                     <article class="overflow-hidden rounded-lg bg-white shadow-sm">
                         <div class="overflow-hidden rounded-md bg-[#0b1220] shadow-[0_18px_40px_rgba(15,23,42,0.16)] mx-4 sm:mx-8 mt-4 sm:mt-8 aspect-video">
-                            <img src="@GetEventCoverUrl()" alt="@CurrentEvent.Title" class="h-full w-full object-cover" />
+                            <ResolvedImage Src="@CurrentEvent?.CoverImageUrl" Fallback="/Images/Fond1.jpeg" alt="@CurrentEvent.Title" class="h-full w-full object-cover" />
                         </div>
                         <div class="space-y-4 p-4 sm:space-y-5 sm:p-8">
                             <div class="flex justify-between items-center">
@@ -188,7 +189,7 @@
                                         <div class="mx-auto flex h-16 w-16 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-indigo-700 text-sm sm:text-lg font-bold text-white ring-2 ring-indigo-200 overflow-hidden">
                                             @if (!string.IsNullOrWhiteSpace(speaker.AvatarUrl))
                                             {
-                                                <img src="@speaker.AvatarUrl" alt="@speaker.Name" class="h-full w-full object-cover" />
+                                                <ResolvedImage Src="@speaker.AvatarUrl" alt="@speaker.Name" class="h-full w-full object-cover" />
                                             }
                                             else
                                             {
@@ -214,7 +215,7 @@
                                 @foreach (var img in galleryImages)
                                 {
                                     <a href="@img" target="_blank" class="block">
-                                        <img src="@img"
+                                        <ResolvedImage Src="@img"
                                              class="h-28 sm:h-32 w-full rounded-lg object-cover border border-gray-200 hover:opacity-90 transition" />
                                     </a>
                                 }
@@ -229,7 +230,7 @@
                                 @foreach (var media in CurrentEvent.Medias)
                                 {
                                     <div class="overflow-hidden rounded-lg bg-gray-100">
-                                        <img src="@media.Url" alt="@CurrentEvent.Title" class="h-32 w-full object-cover" />
+                                        <ResolvedImage Src="@media.Url" alt="@CurrentEvent.Title" class="h-32 w-full object-cover" />
                                     </div>
                                 }
                             </div>
@@ -334,13 +335,6 @@
             "hybrid" => "Hybride",
             _ => string.IsNullOrWhiteSpace(eventType) ? "Événement" : eventType
         };
-    }
-
-    private string GetEventCoverUrl()
-    {
-        return string.IsNullOrWhiteSpace(CurrentEvent?.CoverImageUrl)
-            ? "/Images/Fond1.jpeg"
-            : CurrentEvent.CoverImageUrl;
     }
 
     private void GoBack()

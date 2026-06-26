@@ -5,7 +5,7 @@
 <article class="overflow-hidden rounded-lg border border-white bg-white shadow-[0_10px_28px_rgba(15,23,42,0.08)] ring-1 ring-slate-100">
     <div class="relative h-56 sm:h-64 md:h-72 overflow-hidden bg-gradient-to-br from-[#5C2020] via-[#2D3A44] to-[#0E1A22]">
         <div class="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.20),_transparent_48%)]"></div>
-        <img src="@GetAvatarUrl()" alt="@GetDisplayName()"
+        <ResolvedImage Src="@Member?.AvatarUrl" Fallback="/Images/upload/user.png" alt="@GetDisplayName()"
              class="absolute inset-0 h-full w-full object-cover object-center opacity-90" />
     </div>
 
@@ -61,8 +61,4 @@
         return Member?.Roles?.FirstOrDefault() ?? "Membre";
     }
 
-    private string GetAvatarUrl()
-    {
-        return string.IsNullOrWhiteSpace(Member?.AvatarUrl) ? "/Images/upload/user.png" : Member.AvatarUrl;
-    }
 }

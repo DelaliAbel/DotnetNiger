@@ -185,16 +185,7 @@
                             {
                                 <div class="flex items-center gap-3 bg-gray-50 rounded-lg p-3">
                                     <div class="flex-shrink-0 w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center overflow-hidden">
-                                        @if (!string.IsNullOrWhiteSpace(speakers[i].AvatarUrl))
-                                        {
-                                            <img src="@speakers[i].AvatarUrl" alt="@speakers[i].Name" class="h-full w-full object-cover" />
-                                        }
-                                        else
-                                        {
-                                            <span class="text-secondary font-bold text-sm">
-                                                @(speakers[i].Name.Length > 0 ? speakers[i].Name[..1].ToUpper() : "?")
-                                            </span>
-                                        }
+                                            <ResolvedImage Src="@speakers[i].AvatarUrl" class="h-full w-full object-cover" alt="@speakers[i].Name" fallback="@(speakers[i].Name.Length > 0 ? speakers[i].Name[..1].ToUpper() : "?")" />
                                     </div>
                                     <div class="flex-1">
                                         <p class="text-sm font-semibold text-gray-800">@speakers[i].Name</p>
@@ -226,14 +217,7 @@
                                             <button type="button" @onclick="() => AddSpeakerFromMember(member)"
                                                     class="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-gray-50 text-left">
                                                 <div class="w-8 h-8 rounded-full bg-secondary/10 flex-shrink-0 flex items-center justify-center overflow-hidden">
-                                                    @if (!string.IsNullOrWhiteSpace(member.AvatarUrl))
-                                                    {
-                                                        <img src="@member.AvatarUrl" alt="@member.FullName" class="h-full w-full object-cover" />
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="text-secondary font-bold text-xs">@(string.IsNullOrWhiteSpace(member.FullName) ? "?" : member.FullName[..1].ToUpper())</span>
-                                                    }
+                                                    <ResolvedImage Src="@member.AvatarUrl" class="h-full w-full object-cover" alt="@member.FullName" fallback="@(string.IsNullOrWhiteSpace(member.FullName) ? "?" : member.FullName[..1].ToUpper())" />
                                                 </div>
                                                 <div>
                                                     <p class="text-sm font-semibold text-gray-800">@member.FullName</p>
@@ -272,7 +256,7 @@
                             @foreach (var (url, index) in galleryImageUrls.Select((u, i) => (u, i)))
                             {
                                 <div class="relative group">
-                                    <img src="@url" class="h-24 w-full rounded-lg object-cover border border-gray-200" />
+                                    <ResolvedImage Src="@url" class="h-24 w-full rounded-lg object-cover border border-gray-200" />
                                     <button type="button" @onclick="() => RemoveGalleryImage(index)"
                                             class="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white text-xs shadow opacity-0 group-hover:opacity-100 transition hover:bg-red-600">
                                         <i class="fas fa-times"></i>

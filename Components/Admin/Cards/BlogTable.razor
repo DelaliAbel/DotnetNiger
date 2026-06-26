@@ -35,7 +35,7 @@
                             <td class="px-6 py-4">
                                 <div class="flex items-center gap-3">
                                     <div class="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
-                                        <img src="@(post.CoverImageUrl ?? "/Images/ImageBlog.jpg")" alt="@post.Title" class="h-full w-full object-cover" />
+                                        <ResolvedImage Src="@post.CoverImageUrl" Fallback="/Images/ImageBlog.jpg" alt="@post.Title" class="h-full w-full object-cover" />
                                     </div>
                                     <div class="min-w-0">
                                         <p class="truncate text-sm font-semibold text-title">@post.Title</p>

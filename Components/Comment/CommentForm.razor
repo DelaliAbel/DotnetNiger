@@ -13,7 +13,7 @@
         <div class="h-9 w-9 flex-shrink-0 rounded-full bg-avatar-bg flex items-center justify-center text-sm font-bold text-accent overflow-hidden">
             @if (!string.IsNullOrWhiteSpace(userAvatar))
             {
-                <img src="@userAvatar" alt="Avatar" class="h-full w-full object-cover" />
+                <ResolvedImage Src="@userAvatar" class="h-full w-full object-cover" alt="Avatar" />
             }
             else
             {

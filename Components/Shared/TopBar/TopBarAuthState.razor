@@ -23,9 +23,9 @@
                 <div class="flex items-center justify-between border-b p-4">
                     <div class="flex flex-col justify-center items-center gap-3">
                         <button class="h-20 w-20 overflow-hidden rounded-full border-2 border-secondary" @onclick="NavigateToProfileAsync">
-                            @if (!string.IsNullOrWhiteSpace(ResolvedAvatarUrl))
+                            @if (!string.IsNullOrWhiteSpace(profile?.AvatarUrl))
                             {
-                                <img src="@ResolvedAvatarUrl" alt="@DisplayName" class="h-full w-full object-cover" />
+                                <ResolvedImage Src="@profile.AvatarUrl" class="h-full w-full object-cover" alt="@DisplayName" />
                             }
                             else
                             {
@@ -139,8 +139,6 @@
         profile?.Username,
         "Utilisateur"
     )!;
-
-    private string? ResolvedAvatarUrl => StringHelper.NormalizeImagePath(profile?.AvatarUrl);
 
     private string Initials => StringHelper.GetInitials(DisplayName);
 

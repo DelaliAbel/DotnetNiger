@@ -1,0 +1,24 @@
+@inject IUploadService UploadService
+
+<img src="@(_resolvedUrl ?? Fallback)" @attributes="AdditionalAttributes" />
+
+@code {
+    [Parameter] public string? Src { get; set; }
+    [Parameter] public string? Fallback { get; set; }
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string? _resolvedUrl;
+    private string? _previousSrc;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_previousSrc != Src)
+        {
+            _previousSrc = Src;
+            _resolvedUrl = !string.IsNullOrWhiteSpace(Src)
+                ? await UploadService.ResolveImageUrlAsync(Src)
+                : null;
+        }
+    }
+}
