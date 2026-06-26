@@ -6,8 +6,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Application.Services;
 
+/// <summary>Gestion des partenaires de la communauté.</summary>
 public class PartnerService(AppDbContext db) : IPartnerService
 {
+    /// <summary>Liste des partenaires actifs, triés par ordre d'affichage puis par nom.</summary>
     public async Task<List<PartnerResponse>> GetAllActiveAsync(string? partnerType)
     {
         var q = db.Set<Partner>().AsNoTracking().Where(p => p.IsActive).AsQueryable();
@@ -22,12 +24,14 @@ public class PartnerService(AppDbContext db) : IPartnerService
         return partners.Select(MapPartner).ToList();
     }
 
+    /// <summary>Détail d'un partenaire.</summary>
     public async Task<PartnerResponse?> GetByIdAsync(Guid id)
     {
         var p = await db.Set<Partner>().FindAsync(id);
         return p is null ? null : MapPartner(p);
     }
 
+    /// <summary>Ajoute un partenaire avec un slug généré automatiquement.</summary>
     public async Task<PartnerResponse> CreateAsync(CreatePartnerRequest request)
     {
         var partner = new Partner
@@ -48,6 +52,7 @@ public class PartnerService(AppDbContext db) : IPartnerService
         return MapPartner(partner);
     }
 
+    /// <summary>Modifie un partenaire existant.</summary>
     public async Task<PartnerResponse?> UpdateAsync(Guid id, UpdatePartnerRequest request)
     {
         var p = await db.Set<Partner>().FindAsync(id);
@@ -67,6 +72,7 @@ public class PartnerService(AppDbContext db) : IPartnerService
         return MapPartner(p);
     }
 
+    /// <summary>Supprime un partenaire.</summary>
     public async Task<bool> DeleteAsync(Guid id)
     {
         var p = await db.Set<Partner>().FindAsync(id);

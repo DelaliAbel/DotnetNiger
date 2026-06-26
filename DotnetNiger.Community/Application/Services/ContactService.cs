@@ -4,8 +4,10 @@ using DotnetNiger.Community.Infrastructure;
 
 namespace DotnetNiger.Community.Application.Services;
 
+/// <summary>Enregistre les messages du formulaire de contact en base.</summary>
 public class ContactService(AppDbContext db) : IContactService
 {
+    /// <summary>Sauvegarde un message de contact et le marque comme non lu.</summary>
     public async Task<bool> SendAsync(ContactRequest request)
     {
         var message = new ContactMessage

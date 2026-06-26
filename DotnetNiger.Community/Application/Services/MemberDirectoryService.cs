@@ -4,8 +4,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Application.Services;
 
+/// <summary>Annuaire public des membres de la communauté DotnetNiger.</summary>
 public class MemberDirectoryService(AppDbContext db) : IMemberDirectoryService
 {
+    /// <summary>Liste paginée filtrée par mot-clé et/ou pays.</summary>
     public async Task<PaginatedResponse<MemberDirectoryResponse>> GetAllAsync(string? query, string? country, int page = 1, int pageSize = 10)
     {
         var q = db.Members.AsNoTracking()
@@ -29,6 +31,7 @@ public class MemberDirectoryService(AppDbContext db) : IMemberDirectoryService
         return new PaginatedResponse<MemberDirectoryResponse> { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }
 
+    /// <summary>Détail d'un membre avec ses liens sociaux.</summary>
     public async Task<MemberDirectoryResponse?> GetByIdAsync(Guid id)
     {
         var m = await db.Members.AsNoTracking().Include(m => m.SocialLinks).FirstOrDefaultAsync(m => m.Id == id);

@@ -6,8 +6,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Application.Services;
 
+/// <summary>Gestion des tags (étiquettes attachées aux articles, événements, ressources).</summary>
 public class TagService(AppDbContext db) : ITagService
 {
+    /// <summary>Liste tous les tags triés par nom.</summary>
     public async Task<List<TagResponse>> GetAllAsync()
     {
         var tags = await db.Tags.AsNoTracking()
@@ -16,18 +18,21 @@ public class TagService(AppDbContext db) : ITagService
         return tags.Select(MapTag).ToList();
     }
 
+    /// <summary>Détail d'un tag par son identifiant.</summary>
     public async Task<TagResponse?> GetByIdAsync(Guid id)
     {
         var t = await db.Tags.FindAsync(id);
         return t is null ? null : MapTag(t);
     }
 
+    /// <summary>Détail d'un tag par son slug.</summary>
     public async Task<TagResponse?> GetBySlugAsync(string slug)
     {
         var t = await db.Tags.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == slug);
         return t is null ? null : MapTag(t);
     }
 
+    /// <summary>Crée un tag avec un slug généré automatiquement.</summary>
     public async Task<TagResponse> CreateAsync(string name)
     {
         var tag = new Tag
@@ -42,6 +47,7 @@ public class TagService(AppDbContext db) : ITagService
         return MapTag(tag);
     }
 
+    /// <summary>Modifie un tag (nom et slug recalculé).</summary>
     public async Task<TagResponse?> UpdateAsync(Guid id, string name)
     {
         var t = await db.Tags.FindAsync(id);
@@ -53,6 +59,7 @@ public class TagService(AppDbContext db) : ITagService
         return MapTag(t);
     }
 
+    /// <summary>Supprime un tag.</summary>
     public async Task<bool> DeleteAsync(Guid id)
     {
         var t = await db.Tags.FindAsync(id);

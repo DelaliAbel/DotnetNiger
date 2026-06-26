@@ -4,8 +4,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Application.Services;
 
+/// <summary>Recherche unifiée dans les articles publiés, événements publiés et ressources.</summary>
 public class SearchService(AppDbContext db) : ISearchService
 {
+    /// <summary>Cherche dans tous les types de contenu, avec pagination et filtre par type optionnel.</summary>
     public async Task<PaginatedResponse<SearchResultResponse>> SearchAsync(SearchQueryRequest request)
     {
         request.Page = Math.Max(1, request.Page);
