@@ -1,0 +1,7 @@
+namespace DotnetNiger.Models.Requests;
+
+public class ChangeRoleRequest
+{
+    public Guid UserId { get; set; }
+    public string NewRole { get; set; } = string.Empty;
+}

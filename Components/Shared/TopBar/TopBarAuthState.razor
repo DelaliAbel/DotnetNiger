@@ -15,55 +15,55 @@
                 <i class="fa-solid fa-bars text-2xl"></i>
             </button>
 
-            @if (isOverlayOpen)
-            {
-                <div class="fixed inset-0 z-30 bg-black/50" @onclick="CloseOverlay"></div>
-                <div class="fixed top-0 right-0 z-40 flex h-screen w-[75%] flex-col bg-white shadow-xl">
-                    <div class="flex items-center justify-between border-b p-4">
-                        <div class="flex flex-col items-center gap-3">
-                            <button class="h-20 w-20 overflow-hidden rounded-full border-2 border-secondary" @onclick="NavigateToProfileAsync">
-                                @if (!string.IsNullOrWhiteSpace(ResolvedAvatarUrl))
-                                {
-                                    <img src="@ResolvedAvatarUrl" alt="@DisplayName" class="h-full w-full object-cover" />
-                                }
-                                else
-                                {
-                                    <span
-                                    class="flex h-full w-full items-center justify-center bg-gray-100 text-sm font-semibold text-secondary">@Initials</span>
-                                }
-                            </button>
-                            <div>
-                                <p class="text-lg text-center font-bold text-gray-900">@DisplayName</p>
-                            </div>
+            @* Overlay *@
+            <div class="fixed inset-0 z-30 bg-black/50 transition-opacity duration-300 @(isOverlayOpen ? "opacity-100" : "opacity-0 pointer-events-none")" @onclick="CloseOverlay"></div>
+
+            @* Panneau coulissant *@
+            <div class="fixed top-0 right-0 z-40 flex h-screen w-[75%] flex-col bg-white shadow-xl transition-transform duration-300 @(isOverlayOpen ? "translate-x-0" : "translate-x-full")">
+                <div class="flex items-center justify-between border-b p-4">
+                    <div class="flex flex-col justify-center items-center gap-3">
+                        <button class="h-20 w-20 overflow-hidden rounded-full border-2 border-secondary" @onclick="NavigateToProfileAsync">
+                            @if (!string.IsNullOrWhiteSpace(ResolvedAvatarUrl))
+                            {
+                                <img src="@ResolvedAvatarUrl" alt="@DisplayName" class="h-full w-full object-cover" />
+                            }
+                            else
+                            {
+                                <span
+                                class="flex h-full w-full items-center justify-center bg-gray-100 text-sm font-semibold text-secondary">@Initials</span>
+                            }
+                        </button>
+                        <div>
+                            <p class="text-lg text-center font-bold text-gray-900">@DisplayName</p>
                         </div>
-                        <button @onclick="CloseOverlay"
-                                class="absolute top-3 right-3 z-40 flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100">
-                            <i class="fa-solid fa-xmark text-xl"></i>
-                        </button>
                     </div>
-
-                    <nav class="flex-1 space-y-1 overflow-y-auto p-4">
-                        @foreach (var item in MobileNavigationItems)
-                        {
-                            if (item.Href == "/admin" && !UserStateService.IsAdmin) { continue; }
-                            <NavLink href="@item.Href" Match="@item.Match"
-                                     class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-                                     ActiveClass="bg-secondary/10 text-secondary" @onclick="CloseOverlay">
-                                <i class="@item.Icon w-6 text-lg"></i>
-                                <span>@item.Label</span>
-                            </NavLink>
-                        }
-                    </nav>
-
-                    <div class="border-t p-4">
-                        <button @onclick="LogoutAsync"
-                                class="flex w-full items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600">
-                            <i class="fa-solid fa-sign-out-alt"></i>
-                            <span>Déconnexion</span>
-                        </button>
-                    </div>
+                    <button @onclick="CloseOverlay"
+                            class="absolute top-3 right-3 z-40 flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
                 </div>
-            }
+
+                <nav class="flex-1 space-y-1 overflow-y-auto p-4">
+                    @foreach (var item in MobileNavigationItems)
+                    {
+                        if (item.Href == "/admin" && !UserStateService.IsAdmin) { continue; }
+                        <NavLink href="@item.Href" Match="@item.Match"
+                                 class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+                                 ActiveClass="bg-secondary/10 text-secondary" @onclick="CloseOverlay">
+                            <i class="@item.Icon w-6 text-lg"></i>
+                            <span>@item.Label</span>
+                        </NavLink>
+                    }
+                </nav>
+
+                <div class="border-t p-4">
+                    <button @onclick="LogoutAsync"
+                            class="flex w-full items-center justify-center gap-2 rounded-lg bg-red-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-red-600">
+                        <i class="fa-solid fa-sign-out-alt"></i>
+                        <span>Déconnexion</span>
+                    </button>
+                </div>
+            </div>
         }
         else
         {
@@ -79,39 +79,39 @@
                 </button>
             </div>
 
-            @if (isOverlayOpen)
-            {
-                <div class="fixed inset-0 z-30 bg-black/50" @onclick="CloseOverlay"></div>
-                <div class="fixed top-0 right-0 z-40 flex h-screen w-[75%] flex-col bg-white shadow-xl">
-                    <div class="flex items-center justify-between border-b p-4">
-                        <span class="text-lg font-bold text-gray-900">Menu</span>
-                        <button @onclick="CloseOverlay"
-                                class="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100">
-                            <i class="fa-solid fa-xmark text-xl"></i>
-                        </button>
-                    </div>
+            @* Overlay *@
+            <div class="fixed inset-0 z-30 bg-black/50 transition-opacity duration-300 @(isOverlayOpen ? "opacity-100" : "opacity-0 pointer-events-none")" @onclick="CloseOverlay"></div>
 
-                    <nav class="flex-1 space-y-1 overflow-y-auto p-4">
-                        @foreach (var item in GuestMobileNavigationItems)
-                        {
-                            <NavLink href="@item.Href" Match="@item.Match"
-                                     class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-                                     ActiveClass="bg-secondary/10 text-secondary" @onclick="CloseOverlay">
-                                <i class="@item.Icon w-6 text-lg"></i>
-                                <span>@item.Label</span>
-                            </NavLink>
-                        }
-                    </nav>
-
-                    <div class="border-t p-4">
-                        <button @onclick="NavigateToLoginAsync"
-                                class="flex w-full items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-3 text-sm font-semibold text-white transition hover:bg-hover">
-                            <i class="fa-solid fa-sign-in-alt"></i>
-                            <span>Connexion</span>
-                        </button>
-                    </div>
+            @* Panneau coulissant *@
+            <div class="fixed top-0 right-0 z-40 flex h-screen w-[75%] flex-col bg-white shadow-xl transition-transform duration-300 @(isOverlayOpen ? "translate-x-0" : "translate-x-full")">
+                <div class="flex items-center justify-between border-b p-4">
+                    <span class="text-lg font-bold text-gray-900">Menu</span>
+                    <button @onclick="CloseOverlay"
+                            class="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
                 </div>
-            }
+
+                <nav class="flex-1 space-y-1 overflow-y-auto p-4">
+                    @foreach (var item in GuestMobileNavigationItems)
+                    {
+                        <NavLink href="@item.Href" Match="@item.Match"
+                                 class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+                                 ActiveClass="bg-secondary/10 text-secondary" @onclick="CloseOverlay">
+                            <i class="@item.Icon w-6 text-lg"></i>
+                            <span>@item.Label</span>
+                        </NavLink>
+                    }
+                </nav>
+
+                <div class="border-t p-4">
+                    <button @onclick="NavigateToLoginAsync"
+                            class="flex w-full items-center justify-center gap-2 rounded-lg bg-secondary px-4 py-3 text-sm font-semibold text-white transition hover:bg-hover">
+                        <i class="fa-solid fa-sign-in-alt"></i>
+                        <span>Connexion</span>
+                    </button>
+                </div>
+            </div>
         }
         else
         {

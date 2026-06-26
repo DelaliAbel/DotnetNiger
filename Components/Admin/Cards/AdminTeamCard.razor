@@ -1,3 +1,4 @@
+@using DotnetNiger.Models.Requests
 @using DotnetNiger.UI.Models.Responses
 @using DotnetNiger.UI.Components.Admin.Shared
 
@@ -33,7 +34,8 @@
                              DeleteLabel="Retirer de l'équipe"
                              OnView="OnView"
                              OnEdit="OnEdit"
-                             OnDelete="OnRemoveFromTeam" />
+                             OnDelete="OnRemoveFromTeam"
+                             OnChangeRole="OnChangeRole" />
     </div>
 
     <div class="mt-4 flex items-center justify-between text-xs text-gray-500">
@@ -49,6 +51,7 @@
     [Parameter] public EventCallback<Guid> OnView { get; set; }
     [Parameter] public EventCallback<Guid> OnEdit { get; set; }
     [Parameter] public EventCallback<Guid> OnRemoveFromTeam { get; set; }
+    [Parameter] public EventCallback<ChangeRoleRequest> OnChangeRole { get; set; }
 
     private string GetPrimaryRole() => User.Roles.FirstOrDefault() ?? "Member";
 

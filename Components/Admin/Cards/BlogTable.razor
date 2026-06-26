@@ -80,7 +80,7 @@
     [Parameter] public List<PostDto> Posts { get; set; } = new();
     [Parameter] public EventCallback OnChanged { get; set; }
 
-    private static bool IsPublished(PostDto post) => post.PublishedAt != DateTime.MinValue;
+    private static bool IsPublished(PostDto post) => post.PublishedAt.HasValue;
 
     private static string GetPostTypeLabel(string? postType)
     {

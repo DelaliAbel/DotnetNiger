@@ -1,4 +1,5 @@
-﻿@using DotnetNiger.UI.Models.Responses
+﻿@using DotnetNiger.Models.Requests
+@using DotnetNiger.UI.Models.Responses
 @using DotnetNiger.UI.Components.Admin.Shared
 
 <div class="overflow-hidden rounded-lg bg-white shadow">
@@ -50,9 +51,11 @@
                                                                DeleteLabel="Supprimer"
                                                                ToggleStatusLabel="Activer / Désactiver"
                                                                OnView="OnView"
-                                                               OnEdit="OnEdit"
-                                                               OnDelete="OnDelete"
-                                                               OnToggleStatus="OnToggleStatus" />
+                                                                OnEdit="OnEdit"
+                                                                OnDelete="OnDelete"
+                                                                OnToggleStatus="OnToggleStatus"
+                                                                OnAddToTeam="OnAddToTeam"
+                                                                OnChangeRole="OnChangeRole" />
                                     </td>
                               </tr>
                               }
@@ -68,6 +71,8 @@
       [Parameter] public EventCallback<Guid> OnEdit { get; set; }
       [Parameter] public EventCallback<Guid> OnDelete { get; set; }
       [Parameter] public EventCallback<Guid> OnToggleStatus { get; set; }
+      [Parameter] public EventCallback<Guid> OnAddToTeam { get; set; }
+      [Parameter] public EventCallback<ChangeRoleRequest> OnChangeRole { get; set; }
 
       private static string GetPrimaryRole(UserDto user)
             => user.Roles.FirstOrDefault() ?? "Member";

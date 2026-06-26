@@ -51,8 +51,10 @@ internal static class ApiResponseReader
         {
             return JsonSerializer.Deserialize<T>(json, Options);
         }
-        catch
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"[ApiResponseReader] Échec désérialisation {typeof(T).Name}: {ex.Message}");
+            Console.Error.WriteLine($"[ApiResponseReader] JSON (premiers 500 char): {(json?.Length > 500 ? json[..500] + "..." : json)}");
             return default;
         }
     }

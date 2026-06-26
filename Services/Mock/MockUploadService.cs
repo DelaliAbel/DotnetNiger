@@ -8,7 +8,7 @@ namespace DotnetNiger.UI.Services.Mock;
 public class MockUploadService : IUploadService
 {
     private readonly ILocalStorageService _localStorage;
-    private const long MaxFileSize = 5 * 1024 * 1024;
+    private const long MaxFileSize = 3 * 1024 * 1024;
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".jpg", ".jpeg", ".png", ".webp", ".gif"
@@ -53,7 +53,7 @@ public class MockUploadService : IUploadService
             return new UploadResponse
             {
                 Success = false,
-                Message = $"Le fichier dépasse la taille maximale de 5 Mo."
+                Message = $"Le fichier dépasse la taille maximale de 3 Mo."
             };
         }
 
@@ -108,7 +108,7 @@ public class MockUploadService : IUploadService
             return new UploadResponse
             {
                 Success = false,
-                Message = $"Le fichier dépasse la taille maximale de 5 Mo."
+                Message = $"Le fichier dépasse la taille maximale de 3 Mo."
             };
         }
 

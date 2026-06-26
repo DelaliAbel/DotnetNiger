@@ -1,4 +1,5 @@
 @* Tableau admin des membres de l'équipe. *@
+@using DotnetNiger.Models.Requests
 @using DotnetNiger.UI.Models.Responses
 
 <div class="overflow-hidden rounded-lg bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
@@ -74,7 +75,8 @@
                                                      DeleteLabel="Retirer de l'équipe"
                                                      OnView="OnView"
                                                      OnEdit="OnEdit"
-                                                     OnDelete="OnRemoveFromTeam" />
+                                                     OnDelete="OnRemoveFromTeam"
+                                                     OnChangeRole="OnChangeRole" />
                             </td>
                         </tr>
                     }
@@ -89,6 +91,7 @@
     [Parameter] public EventCallback<Guid> OnView { get; set; }
     [Parameter] public EventCallback<Guid> OnEdit { get; set; }
     [Parameter] public EventCallback<Guid> OnRemoveFromTeam { get; set; }
+    [Parameter] public EventCallback<ChangeRoleRequest> OnChangeRole { get; set; }
 
     private static string GetInitial(string name)
     {

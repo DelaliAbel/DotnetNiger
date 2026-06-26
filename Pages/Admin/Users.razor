@@ -1,7 +1,10 @@
 @page "/admin/Users"
+@using DotnetNiger.Models.Requests
 @using DotnetNiger.UI.Components.Admin.Cards
 @using DotnetNiger.UI.Components.Admin.Shared
+@using DotnetNiger.UI.Services.Contracts
 @inject IUserService UserService
+@inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IToastService ToastService
 
@@ -100,7 +103,7 @@
         @if (isListView)
         {
             <UsersTable Users="pagedUsers" OnView="ViewAsync" OnEdit="EditAsync" OnDelete="DeleteAsync"
-                        OnToggleStatus="ToggleStatusAsync" />
+                        OnToggleStatus="ToggleStatusAsync" OnAddToTeam="HandleAddToTeam" OnChangeRole="HandleChangeRole" />
         }
         else
         {
@@ -108,7 +111,7 @@
                 @foreach (var user in pagedUsers)
                 {
                     <AdminUsersCard User="user" OnView="ViewAsync" OnEdit="EditAsync" OnDelete="DeleteAsync"
-                                    OnToggleStatus="ToggleStatusAsync" />
+                                    OnToggleStatus="ToggleStatusAsync" OnAddToTeam="HandleAddToTeam" OnChangeRole="HandleChangeRole" />
                 }
             </div>
         }
@@ -394,6 +397,47 @@ StringComparison.OrdinalIgnoreCase))).ToList();
         catch
         {
             ToastService.ShowToast("Erreur lors du changement de statut.", ToastLevel.Error);
+        }
+    }
+
+    private async Task HandleAddToTeam(Guid userId)
+    {
+        try
+        {
+            var user = await UserService.GetUserByIdAsync(userId);
+            if (user is null)
+                return;
+
+            user.IsTeamMember = true;
+            user.Position = string.Empty;
+            await UserService.UpdateUserAsync(user);
+            await NotificationService.SendNotificationAsync(userId, "Vous avez été intégré(e) à l'équipe DotnetNiger.");
+            ToastService.ShowToast("Utilisateur intégré à l'équipe.", ToastLevel.Success);
+            await ReloadAsync();
+        }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors de l'intégration à l'équipe.", ToastLevel.Error);
+        }
+    }
+
+    private async Task HandleChangeRole(ChangeRoleRequest request)
+    {
+        try
+        {
+            var user = await UserService.GetUserByIdAsync(request.UserId);
+            if (user is null)
+                return;
+
+            user.Roles = new List<string> { request.NewRole };
+            await UserService.UpdateUserAsync(user);
+            await NotificationService.SendNotificationAsync(request.UserId, $"Votre rôle a été changé en \"{request.NewRole}\".");
+            ToastService.ShowToast("Rôle modifié avec succès.", ToastLevel.Success);
+            await ReloadAsync();
+        }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors du changement de rôle.", ToastLevel.Error);
         }
     }
 

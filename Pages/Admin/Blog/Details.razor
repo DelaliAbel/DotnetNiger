@@ -241,7 +241,7 @@
     private PostDto? post;
     private bool isLoading = true;
 
-    private bool IsPublished => post?.PublishedAt != DateTime.MinValue;
+    private bool IsPublished => post?.PublishedAt.HasValue == true;
 
     protected override async Task OnInitializedAsync()
     {

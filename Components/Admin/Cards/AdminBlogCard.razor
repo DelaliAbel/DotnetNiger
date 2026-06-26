@@ -7,7 +7,7 @@
 @inject NavigationManager NavigationManager
 @inject IToastService ToastService
 
-<div class="group overflow-hidden rounded-[22px] bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
+<div class="group overflow-hidden rounded-lg bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
     <div class="relative w-full overflow-hidden aspect-video">
         <img src="@(post?.CoverImageUrl ?? "/Images/ImageBlog.jpg")" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" alt="@post?.Title">
     </div>
@@ -52,7 +52,7 @@
     [Parameter]
     public EventCallback OnPostDeleted { get; set; }
 
-    private bool IsPublished => post?.PublishedAt != DateTime.MinValue;
+    private bool IsPublished => post?.PublishedAt.HasValue == true;
 
     private string GetPostTypeLabel()
     {

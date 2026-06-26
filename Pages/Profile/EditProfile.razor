@@ -74,7 +74,7 @@
                                         <InputFile accept=".jpg,.jpeg,.png,.webp,.gif"
                                                    OnChange="HandleFileSelected"
                                                    class="block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 file:mr-3 file:rounded-md file:border-0 file:bg-secondary file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white hover:file:brightness-110" />
-                                        <p class="mt-1 text-xs text-slate-500">Formats : JPG, PNG, WebP, GIF — Max 5 Mo</p>
+                                        <p class="mt-1 text-xs text-slate-500">Formats : JPG, PNG, WebP, GIF — Max 3 Mo</p>
                                     </div>
 
                                     @if (isUploading)
@@ -310,9 +310,9 @@ else
         var file = e.File;
         if (file is null) return;
 
-        if (file.Size > 5 * 1024 * 1024)
+        if (file.Size > 3 * 1024 * 1024)
         {
-            uploadError = "Le fichier ne doit pas dépasser 5 Mo.";
+            uploadError = "Le fichier ne doit pas dépasser 3 Mo.";
             return;
         }
 
@@ -320,18 +320,8 @@ else
         try
         {
             using var memoryStream = new MemoryStream();
-            await file.OpenReadStream(maxAllowedSize: 5 * 1024 * 1024).CopyToAsync(memoryStream);
+            await file.OpenReadStream(maxAllowedSize: 3 * 1024 * 1024).CopyToAsync(memoryStream);
             var bytes = memoryStream.ToArray();
-
-            using var dimStream = new MemoryStream(bytes);
-            using var dotNetRef = new DotNetStreamReference(dimStream);
-            var dims = await JS.InvokeAsync<ImageDimensions>("getImageDimensionsFromStream", dotNetRef);
-
-            if (dims.width > 1200 || dims.height > 1200)
-            {
-                uploadError = $"L'image dépasse 1200×1200 px (actuelle : {dims.width}×{dims.height} px).";
-                return;
-            }
 
             var base64 = Convert.ToBase64String(bytes);
             var response = await UploadService.UploadImageBase64Async(base64, file.Name, UploadType.User);
@@ -398,9 +388,4 @@ else
 
     private string AvatarPreviewUrl => string.IsNullOrWhiteSpace(model.AvatarUrl) ? "/Images/Fond.jpeg" : model.AvatarUrl;
 
-    private class ImageDimensions
-    {
-        public int width { get; set; }
-        public int height { get; set; }
-    }
 }

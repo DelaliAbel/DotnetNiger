@@ -9,14 +9,36 @@ namespace DotnetNiger.UI.Services.Api;
 
 public class ApiUploadService : ApiServiceBase, IUploadService
 {
-    private const long MaxFileSize = 5 * 1024 * 1024;
+    private const long MaxFileSize = 3 * 1024 * 1024;
     private static readonly HashSet<string> AllowedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
         ".jpg", ".jpeg", ".png", ".webp", ".gif"
     };
+    private readonly ILogger<ApiUploadService> _logger;
 
-    public ApiUploadService(HttpClient http) : base(http)
+    public ApiUploadService(HttpClient http, ILogger<ApiUploadService> logger) : base(http)
     {
+        _logger = logger;
+    }
+
+    private static async Task<byte[]> ReadFileBytesAsync(IBrowserFile file)
+    {
+        using var memoryStream = new MemoryStream();
+        await file.OpenReadStream(MaxFileSize).CopyToAsync(memoryStream);
+        return memoryStream.ToArray();
+    }
+
+    private async Task<string?> ReadErrorBodyAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            return await response.Content.ReadAsStringAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Impossible de lire le corps de la réponse d'erreur");
+            return null;
+        }
     }
 
     public async Task<UploadResponse> UploadImageAsync(IBrowserFile file, UploadType type)
@@ -37,24 +59,29 @@ public class ApiUploadService : ApiServiceBase, IUploadService
             return new UploadResponse
             {
                 Success = false,
-                Message = "Le fichier dépasse la taille maximale de 5 Mo."
+                Message = "Le fichier dépasse la taille maximale de 3 Mo."
             };
         }
 
+        var fileBytes = await ReadFileBytesAsync(file);
+
         using var content = new MultipartFormDataContent();
-        using var stream = file.OpenReadStream(MaxFileSize);
-        var fileContent = new StreamContent(stream);
+        var fileContent = new ByteArrayContent(fileBytes);
         fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
         content.Add(fileContent, "file", file.Name);
+
+        _logger.LogInformation("Upload {Type} : {Name} ({Size} octets)", type, file.Name, file.Size);
 
         var response = await Http.PostAsync(BuildUrl(ApiEndpoints.Upload, new Dictionary<string, string?> { ["type"] = type.ToString() }), content);
 
         if (!response.IsSuccessStatusCode)
         {
+            var body = await ReadErrorBodyAsync(response);
+            _logger.LogWarning("Upload échoué {StatusCode} : {Body}", response.StatusCode, body);
             return new UploadResponse
             {
                 Success = false,
-                Message = $"Erreur lors de l'upload : {response.StatusCode}"
+                Message = body ?? $"Erreur lors de l'upload : {response.StatusCode}"
             };
         }
 
@@ -90,14 +117,18 @@ public class ApiUploadService : ApiServiceBase, IUploadService
             type = type.ToString()
         };
 
+        _logger.LogInformation("Upload base64 {Type} : {Name}", type, fileName);
+
         var response = await Http.PostAsJsonAsync(ApiEndpoints.UploadBase64, request);
 
         if (!response.IsSuccessStatusCode)
         {
+            var body = await ReadErrorBodyAsync(response);
+            _logger.LogWarning("Upload base64 échoué {StatusCode} : {Body}", response.StatusCode, body);
             return new UploadResponse
             {
                 Success = false,
-                Message = $"Erreur lors de l'upload : {response.StatusCode}"
+                Message = body ?? $"Erreur lors de l'upload : {response.StatusCode}"
             };
         }
 

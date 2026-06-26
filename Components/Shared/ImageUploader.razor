@@ -1,9 +1,4 @@
-@* Composant réutilisable d'upload d'image avec prévisualisation et suppression.
-   Utilisation :
-   <ImageUploader UploadType="UploadType.Event"
-                  ExistingImageUrl="@model.CoverImageUrl"
-                  OnImageUploaded="@(url => model.CoverImageUrl = url)"
-                  OnImageDeleted="@(() => model.CoverImageUrl = null)" /> *@
+
 @using DotnetNiger.UI.Models
 @inject IUploadService UploadService
 @inject IJSRuntime JS
@@ -44,7 +39,7 @@
                         <span class="text-blue-600 underline">Cliquez</span> pour sélectionner un fichier
                     </p>
                     <p class="text-gray-400 text-sm mt-1">
-                        Formats : JPG, PNG, WebP, GIF &mdash; Max 5 Mo
+                        Formats : JPG, PNG, WebP, GIF &mdash; Max 3 Mo
                     </p>
                 </div>
             </div>
@@ -84,8 +79,7 @@
     [Parameter] public EventCallback<string> OnImageUploaded { get; set; }
     [Parameter] public EventCallback OnImageDeleted { get; set; }
     [Parameter] public string? ExistingImageUrl { get; set; }
-    [Parameter] public int MaxWidth { get; set; } = 1920;
-    [Parameter] public int MaxHeight { get; set; } = 1080;
+
 
     protected override async Task OnParametersSetAsync()
     {
@@ -125,13 +119,6 @@
 
         try
         {
-            var dimensions = await GetImageDimensionsAsync(file);
-            if (dimensions is not null && (dimensions.Width > MaxWidth || dimensions.Height > MaxHeight))
-            {
-                ErrorMessage = $"L'image est trop grande ({dimensions.Width}x{dimensions.Height}). Dimensions max autorisées : {MaxWidth}x{MaxHeight}px.";
-                return;
-            }
-
             var response = await UploadService.UploadImageAsync(file, UploadType);
 
             if (response.Success)
@@ -184,19 +171,4 @@
         }
     }
 
-    private async Task<ImageDimensions?> GetImageDimensionsAsync(IBrowserFile file)
-    {
-        try
-        {
-            await using var stream = file.OpenReadStream(maxAllowedSize: 20 * 1024 * 1024);
-            var jsStreamRef = new DotNetStreamReference(stream);
-            return await JS.InvokeAsync<ImageDimensions>("getImageDimensionsFromStream", jsStreamRef);
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private record ImageDimensions(int Width, int Height);
 }

@@ -42,6 +42,7 @@
                     class="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-title shadow-sm outline-none transition hover:border-gray-300">
                 <option value="">Statut</option>
                 <option value="published">Publié</option>
+                <option value="draft">Brouillon</option>
             </select>
 
             <ViewToggle @bind-IsListView="isListView" />
@@ -166,8 +167,8 @@
                     p.AuthorName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
         .Where(p => string.IsNullOrEmpty(selectedType) || p.PostType == selectedType)
         .Where(p => string.IsNullOrEmpty(selectedStatus) ||
-                    (selectedStatus == "published" && p.PublishedAt != DateTime.MinValue) ||
-                    (selectedStatus == "draft" && p.PublishedAt == DateTime.MinValue))
+                    (selectedStatus == "published" && p.PublishedAt.HasValue) ||
+                    (selectedStatus == "draft" && !p.PublishedAt.HasValue))
         .ToList();
 
     private int totalPages => Math.Max(1, (int)Math.Ceiling((double)filteredPosts.Count / pageSize));

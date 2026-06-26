@@ -1,6 +1,9 @@
 @page "/admin/team"
+@using DotnetNiger.Models.Requests
 @using DotnetNiger.UI.Models.Responses
 @using DotnetNiger.UI.Components.Admin.Cards
+@using DotnetNiger.UI.Services.Contracts
+@inject INotificationService NotificationService
 @inject NavigationManager Navigation
 @inject IUserService UserService
 @inject IToastService ToastService
@@ -75,7 +78,8 @@ else
                 <TeamTable Members="teamMembers"
                            OnView="HandleView"
                            OnEdit="HandleEdit"
-                           OnRemoveFromTeam="HandleRemoveFromTeam" />
+                           OnRemoveFromTeam="HandleRemoveFromTeam"
+                           OnChangeRole="HandleChangeRole" />
             }
             else
             {
@@ -93,7 +97,8 @@ else
                             <AdminTeamCard User="member"
                                            OnView="HandleView"
                                            OnEdit="HandleEdit"
-                                           OnRemoveFromTeam="HandleRemoveFromTeam" />
+                                           OnRemoveFromTeam="HandleRemoveFromTeam"
+                                           OnChangeRole="HandleChangeRole" />
                         }
                     </div>
                 }
@@ -154,6 +159,25 @@ else
         catch
         {
             ToastService.ShowToast("Erreur lors du retrait de l'équipe.", ToastLevel.Error);
+        }
+    }
+
+    private async Task HandleChangeRole(ChangeRoleRequest request)
+    {
+        try
+        {
+            var user = await UserService.GetUserByIdAsync(request.UserId);
+            if (user is null) return;
+
+            user.Roles = new List<string> { request.NewRole };
+            await UserService.UpdateUserAsync(user);
+            await NotificationService.SendNotificationAsync(request.UserId, $"Votre rôle a été changé en \"{request.NewRole}\".");
+            ToastService.ShowToast("Rôle modifié avec succès.", ToastLevel.Success);
+            await LoadTeamAsync();
+        }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors du changement de rôle.", ToastLevel.Error);
         }
     }
 

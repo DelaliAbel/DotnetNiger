@@ -194,12 +194,14 @@ else
     builder.Services.AddScoped<IUserStateService, UserStateService>();
 
     builder.Services.AddScoped<IUploadService>(sp =>
-        new ApiUploadService(CreateGatewayHttpClient(
-            apiBaseUrl,
-            sp.GetRequiredService<ClientIdentifierProvider>(),
-            sp.GetRequiredService<CustomAuthStateProvider>(),
-            sp,
-            sp.GetRequiredService<ILogger<ClientIdHeaderHandler>>())));
+        new ApiUploadService(
+            CreateGatewayHttpClient(
+                apiBaseUrl,
+                sp.GetRequiredService<ClientIdentifierProvider>(),
+                sp.GetRequiredService<CustomAuthStateProvider>(),
+                sp,
+                sp.GetRequiredService<ILogger<ClientIdHeaderHandler>>()),
+            sp.GetRequiredService<ILogger<ApiUploadService>>()));
 }
 
 await builder.Build().RunAsync();
