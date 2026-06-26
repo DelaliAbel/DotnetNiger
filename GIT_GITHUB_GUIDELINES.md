@@ -19,7 +19,7 @@ GitHub pour travailler ensemble efficacement.
 -   Entre dans ton dossier de travail
 -   tu ouvres le terminal git(bash)
 -   git clone https://github.com/DelaliAbel/DotnetNiger.git
--   cd DotnetNiger-Frontend
+-   cd DotnetNiger
 - dotnet restore
 
 ------------------------------------------------------------------------
