@@ -21,4 +21,6 @@ public interface IProfileService
     Task<CertificateResponse?> RejectCertificateAsync(Guid certificateId, string reason);
     /// <summary>Vérifie si l'utilisateur possède un certificat approuvé.</summary>
     Task<bool> HasApprovedCertificateAsync(Guid userId);
+    /// <summary>Liste des certificats avec filtre optionnel par statut.</summary>
+    Task<List<CertificateAdminDto>> GetCertificatesAsync(string? status = null);
 }

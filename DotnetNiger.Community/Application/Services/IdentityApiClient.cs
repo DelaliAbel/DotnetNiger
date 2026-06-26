@@ -66,4 +66,21 @@ public class IdentityApiClient(HttpClient http) : IIdentityApiClient
         var response = await http.PostAsJsonAsync($"api/v1/admin/users/{userId}/roles", new { roleName });
         return response.IsSuccessStatusCode;
     }
+
+    /// <summary>Remplace tous les rôles d'un utilisateur par un seul (supprime les anciens via DELETE puis ajoute le nouveau).</summary>
+    public async Task<bool> ReplaceUserRolesAsync(Guid userId, string newRole)
+    {
+        var user = await GetUserAsync(userId);
+        if (user is null) return false;
+
+        foreach (var role in user.Roles)
+        {
+            if (!role.Equals(newRole, StringComparison.OrdinalIgnoreCase))
+            {
+                await http.DeleteAsync($"api/v1/admin/users/{userId}/roles/{role}");
+            }
+        }
+
+        return await AssignRoleToUserAsync(userId, newRole);
+    }
 }

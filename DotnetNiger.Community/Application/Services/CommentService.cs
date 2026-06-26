@@ -28,6 +28,15 @@ public class CommentService(AppDbContext db) : ICommentService
         return BuildTree(comments);
     }
 
+    /// <summary>Liste tous les commentaires pour l'administration (modération).</summary>
+    public async Task<List<CommentResponse>> GetAllAsync()
+    {
+        var comments = await db.Comments.AsNoTracking()
+            .OrderByDescending(c => c.CreatedAt)
+            .ToListAsync();
+        return comments.Select(MapComment).ToList();
+    }
+
     /// <summary>Détail d'un commentaire.</summary>
     public async Task<CommentResponse?> GetByIdAsync(Guid id)
     {

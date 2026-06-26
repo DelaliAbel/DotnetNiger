@@ -29,6 +29,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Certificate> Certificates => Set<Certificate>();
     public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
     public DbSet<Speaker> Speakers => Set<Speaker>();
+    public DbSet<SiteSetting> SiteSettings => Set<SiteSetting>();
 
     /// <summary>Configure le modèle de données : index, relations, contraintes et filtres de requête.</summary>
     /// <param name="modelBuilder">Constructeur du modèle EF Core.</param>
@@ -232,6 +233,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             entity.HasKey(e => e.Id);
             entity.HasOne(e => e.Member).WithMany(e => e.Skills).HasForeignKey(e => e.MemberId);
             entity.Property(e => e.Name).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<SiteSetting>(entity =>
+        {
+            entity.HasKey(e => e.Key);
+            entity.Property(e => e.Key).HasMaxLength(100);
+            entity.Property(e => e.Type).HasMaxLength(50);
+            entity.Property(e => e.Description).HasMaxLength(500);
         });
     }
 }

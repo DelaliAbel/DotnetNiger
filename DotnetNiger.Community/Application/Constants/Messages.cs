@@ -166,4 +166,13 @@ public static class Messages
         public const string TitleTooLong = "Le titre est trop long.";
         public const string ContentRequired = "Le contenu est requis.";
     }
+
+    /// <summary>Messages liés aux paramètres du site (settings).</summary>
+    public static class Setting
+    {
+        public const string NotFound = "Paramètre introuvable.";
+        public const string Updated = "Paramètre mis à jour.";
+        public const string BatchUpdated = "Paramètres mis à jour avec succès.";
+        public const string Deleted = "Paramètre supprimé.";
+    }
 }

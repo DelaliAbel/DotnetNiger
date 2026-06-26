@@ -16,4 +16,5 @@ public class DashboardResponse
     public int CommentsCount { get; set; }
     public int ProjectsCount { get; set; }
     public int PartnersCount { get; set; }
+    public int PendingCertificatesCount { get; set; }
 }

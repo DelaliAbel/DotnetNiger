@@ -26,6 +26,7 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
         var commentsCount = await db.Comments.CountAsync();
         var projectsCount = await db.Projects.CountAsync();
         var partnersCount = await db.Partners.CountAsync();
+        var pendingCertificatesCount = await db.Certificates.CountAsync(c => c.Status == "Pending");
 
         return new DashboardResponse
         {
@@ -42,7 +43,8 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
             ActiveNewsletterCount = activeNewsletterCount,
             CommentsCount = commentsCount,
             ProjectsCount = projectsCount,
-            PartnersCount = partnersCount
+            PartnersCount = partnersCount,
+            PendingCertificatesCount = pendingCertificatesCount
         };
     }
 
@@ -169,4 +171,10 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
 
     /// <summary>Assigne un rôle à un utilisateur via l'API Identity.</summary>
     public async Task<bool> AssignRoleToUserAsync(Guid userId, string roleName) => await identity.AssignRoleToUserAsync(userId, roleName);
+
+    /// <summary>Remplace tous les rôles d'un utilisateur par un seul (supprime les anciens, ajoute le nouveau).</summary>
+    public async Task<bool> ReplaceUserRolesAsync(Guid userId, string newRole)
+    {
+        return await identity.ReplaceUserRolesAsync(userId, newRole);
+    }
 }

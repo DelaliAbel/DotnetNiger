@@ -229,6 +229,35 @@ public class ProfileService(AppDbContext db) : IProfileService
         };
     }
 
+    /// <summary>Liste des certificats avec filtre optionnel par statut.</summary>
+    public async Task<List<CertificateAdminDto>> GetCertificatesAsync(string? status = null)
+    {
+        var query = db.Certificates
+            .Include(c => c.Member)
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(status))
+            query = query.Where(c => c.Status == status);
+
+        return await query
+            .OrderByDescending(c => c.SubmissionDate)
+            .Select(c => new CertificateAdminDto
+            {
+                Id = c.Id,
+                UserId = c.UserId,
+                UserName = c.Member.FullName ?? "",
+                UserEmail = "",
+                AvatarUrl = c.Member.AvatarUrl ?? "",
+                CertificateUrl = c.CertificateUrl,
+                CertificateType = c.CertificateType,
+                Status = c.Status,
+                SubmissionDate = c.SubmissionDate,
+                ReviewedNotes = c.ReviewedNotes,
+                ReviewedAt = c.ReviewedAt
+            })
+            .ToListAsync();
+    }
+
     /// <summary>Vérifie si un utilisateur a déjà un certificat approuvé.</summary>
     public async Task<bool> HasApprovedCertificateAsync(Guid userId)
     {

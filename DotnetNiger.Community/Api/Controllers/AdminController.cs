@@ -1,19 +1,24 @@
 using Asp.Versioning;
+using DotnetNiger.Community.Application;
 using DotnetNiger.Community.Application.DTOs;
 using DotnetNiger.Community.Application.Services;
 using DotnetNiger.Community.Application.Constants;
 using Microsoft.AspNetCore.Authorization;
-using DotnetNiger.Community.Application;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
-/// <summary>Points d'accès pour l'administration de la plateforme : utilisateurs, événements et certificats.</summary>
+/// <summary>Points d'accès pour l'administration de la plateforme : utilisateurs, événements, posts, commentaires et certificats.</summary>
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/admin")]
 [Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
-public class AdminController(IAdminService adminService, IEventService eventService, IProfileService profileService) : ControllerBase
+public class AdminController(
+    IAdminService adminService,
+    IEventService eventService,
+    IProfileService profileService,
+    IPostService postService,
+    ICommentService commentService) : ControllerBase
 {
     /// <summary>Retourne les statistiques du tableau de bord d'administration.</summary>
     [HttpGet("dashboard")]
@@ -185,5 +190,44 @@ public class AdminController(IAdminService adminService, IEventService eventServ
         var cert = await profileService.RejectCertificateAsync(id, reason);
         if (cert is null) return NotFound(new { Success = false, Message = Messages.Certificate.NotFound });
         return Ok(new { Success = true, Data = cert });
+    }
+
+    /// <summary>Liste les certificats avec filtre optionnel par statut ("Pending", "Approved", "Rejected").</summary>
+    /// <param name="status">Filtre par statut (optionnel).</param>
+    [HttpGet("certificates")]
+    public async Task<IActionResult> GetCertificates([FromQuery] string? status)
+    {
+        var certs = await profileService.GetCertificatesAsync(status);
+        return Ok(new { Success = true, Data = certs });
+    }
+
+    /// <summary>Liste les articles avec filtre par statut ("published", "draft", "pending").</summary>
+    /// <param name="status">Filtre par statut.</param>
+    /// <param name="page">Page demandée.</param>
+    /// <param name="pageSize">Taille de la page.</param>
+    [HttpGet("posts")]
+    public async Task<IActionResult> GetPosts([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        var paginated = await postService.GetAllAsync(status, null, null, null, page, pageSize);
+        return Ok(new { Success = true, Data = paginated });
+    }
+
+    /// <summary>Liste tous les commentaires pour la modération.</summary>
+    [HttpGet("comments")]
+    public async Task<IActionResult> GetComments()
+    {
+        var comments = await commentService.GetAllAsync();
+        return Ok(new { Success = true, Data = comments });
+    }
+
+    /// <summary>Remplace tous les rôles d'un utilisateur par un seul nouveau rôle.</summary>
+    /// <param name="userId">Identifiant de l'utilisateur.</param>
+    /// <param name="request">Nouveau rôle à assigner.</param>
+    [HttpPut("users/{userId:guid}/roles")]
+    public async Task<IActionResult> ReplaceUserRoles(Guid userId, [FromBody] AssignRoleRequest request)
+    {
+        var replaced = await adminService.ReplaceUserRolesAsync(userId, request.RoleName);
+        if (!replaced) return BadRequest(new { Success = false, Message = Messages.User.RoleFailed });
+        return Ok(new { Success = true, Message = Messages.User.RoleAssigned });
     }
 }

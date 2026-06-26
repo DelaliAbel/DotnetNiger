@@ -17,4 +17,6 @@ public interface ICommentService
     Task<CommentResponse?> UpdateAsync(Guid id, UpdateCommentRequest request, Guid userId, bool isAdmin = false);
     /// <summary>Supprime un commentaire. Le masque s'il a des réponses, sauf si deleteAllReplies est vrai.</summary>
     Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin = false, bool deleteAllReplies = false);
+    /// <summary>Liste tous les commentaires pour l'administration (modération).</summary>
+    Task<List<CommentResponse>> GetAllAsync();
 }
