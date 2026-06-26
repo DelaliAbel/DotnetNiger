@@ -1,8 +1,10 @@
+using DotnetNiger.Community.Application.Constants;
 using Microsoft.AspNetCore.Mvc;
 using SkiaSharp;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
+/// <summary>Gestion des uploads d'images pour les articles, événements et profils.</summary>
 [ApiController]
 [Route("api/v1/upload")]
 public class UploadController(IWebHostEnvironment env) : ControllerBase
@@ -12,34 +14,31 @@ public class UploadController(IWebHostEnvironment env) : ControllerBase
     {
         "image/jpeg", "image/png", "image/webp", "image/gif"
     };
-    private const long MaxFileSize = 2 * 1024 * 1024;
-    private const int MaxImageWidth = 4096;
-    private const int MaxImageHeight = 4096;
+    private const long MaxFileSize = 3 * 1024 * 1024;
 
+    /// <summary>Upload un fichier image (multipart/form-data).</summary>
+    /// <param name="file">Fichier image à uploader.</param>
+    /// <param name="type">Type d'utilisation (Blog, Event, User).</param>
     [HttpPost]
     [RequestSizeLimit(MaxFileSize)]
     public async Task<IActionResult> Upload(IFormFile file, [FromQuery] string type = "Blog")
     {
         if (file is null || file.Length == 0)
-            return BadRequest(new { Success = false, Message = "Aucun fichier fourni." });
+            return BadRequest(new { Success = false, Message = Messages.Upload.NoFile });
 
         var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!AllowedExtensions.Contains(ext))
-            return BadRequest(new { Success = false, Message = $"Extension non autorisée : {ext}" });
+            return BadRequest(new { Success = false, Message = $"{Messages.Upload.ExtensionNotAllowed}{ext}" });
 
         if (!AllowedMimeTypes.Contains(file.ContentType))
-            return BadRequest(new { Success = false, Message = $"Type MIME non autorisé : {file.ContentType}" });
+            return BadRequest(new { Success = false, Message = $"{Messages.Upload.MimeNotAllowed}{file.ContentType}" });
 
         if (file.Length > MaxFileSize)
-            return BadRequest(new { Success = false, Message = "Fichier trop volumineux (max 2 Mo)." });
+            return BadRequest(new { Success = false, Message = Messages.Upload.TooLarge });
 
         using var ms = new MemoryStream();
         await file.CopyToAsync(ms);
         ms.Position = 0;
-
-        var dimError = ValidateImageDimensions(ms);
-        if (dimError != null)
-            return BadRequest(new { Success = false, Message = dimError });
 
         var folder = type switch
         {
@@ -63,32 +62,29 @@ public class UploadController(IWebHostEnvironment env) : ControllerBase
         {
             Success = true,
             ImageUrl = $"/{folder}/{fileName}",
-            Message = "Image uploadée avec succès."
+            Message = Messages.Upload.Uploaded
         });
     }
 
+    /// <summary>Upload une image encodée en base64.</summary>
+    /// <param name="request">Fichier en base64 avec nom et type.</param>
     [HttpPost("base64")]
     [RequestSizeLimit(MaxFileSize)]
     public async Task<IActionResult> UploadBase64([FromBody] UploadBase64Request request)
     {
         var ext = Path.GetExtension(request.FileName).ToLowerInvariant();
         if (!AllowedExtensions.Contains(ext))
-            return BadRequest(new { Success = false, Message = $"Extension non autorisée : {ext}" });
+            return BadRequest(new { Success = false, Message = $"{Messages.Upload.ExtensionNotAllowed}{ext}" });
 
         var data = Convert.FromBase64String(request.Base64Content);
 
         if (data.Length > MaxFileSize)
-            return BadRequest(new { Success = false, Message = "Fichier trop volumineux (max 2 Mo)." });
+            return BadRequest(new { Success = false, Message = Messages.Upload.TooLarge });
 
         using var ms = new MemoryStream(data);
         var mimeError = ValidateImageMime(ms);
         if (mimeError != null)
             return BadRequest(new { Success = false, Message = mimeError });
-
-        ms.Position = 0;
-        var dimError = ValidateImageDimensions(ms);
-        if (dimError != null)
-            return BadRequest(new { Success = false, Message = dimError });
 
         var folder = request.Type switch
         {
@@ -110,43 +106,24 @@ public class UploadController(IWebHostEnvironment env) : ControllerBase
         {
             Success = true,
             ImageUrl = $"/{folder}/{fileName}",
-            Message = "Image uploadée avec succès."
+            Message = Messages.Upload.Uploaded
         });
     }
 
+    /// <summary>Supprime un fichier image uploadé.</summary>
+    /// <param name="path">Chemin relatif du fichier.</param>
     [HttpDelete]
     public IActionResult Delete([FromQuery] string path)
     {
         if (string.IsNullOrWhiteSpace(path))
-            return BadRequest(new { Success = false, Message = "Chemin requis." });
+            return BadRequest(new { Success = false, Message = Messages.Upload.PathRequired });
 
         var fullPath = Path.Combine(env.WebRootPath, path.TrimStart('/'));
         if (!System.IO.File.Exists(fullPath))
-            return NotFound(new { Success = false, Message = "Fichier introuvable." });
+            return NotFound(new { Success = false, Message = Messages.Upload.NotFound });
 
         System.IO.File.Delete(fullPath);
-        return Ok(new { Success = true, Message = "Fichier supprimé." });
-    }
-
-    private static string? ValidateImageDimensions(Stream stream)
-    {
-        try
-        {
-            using var codec = SKCodec.Create(stream);
-            if (codec == null)
-                return "Format d'image non valide ou corrompu.";
-
-            var info = codec.Info;
-            if (info.Width > MaxImageWidth || info.Height > MaxImageHeight)
-                return $"Dimensions trop grandes ({info.Width}x{info.Height}). Maximum : {MaxImageWidth}x{MaxImageHeight} px.";
-            if (info.Width < 50 || info.Height < 50)
-                return $"Dimensions trop petites ({info.Width}x{info.Height}). Minimum : 50x50 px.";
-            return null;
-        }
-        catch
-        {
-            return "Format d'image non valide ou corrompu.";
-        }
+        return Ok(new { Success = true, Message = Messages.Upload.Deleted });
     }
 
     private static string? ValidateImageMime(Stream stream)
@@ -155,7 +132,7 @@ public class UploadController(IWebHostEnvironment env) : ControllerBase
         {
             using var codec = SKCodec.Create(stream);
             if (codec == null)
-                return "Format d'image non valide ou corrompu.";
+                return Messages.Upload.InvalidImage;
 
             var detected = codec.EncodedFormat switch
             {
@@ -167,12 +144,12 @@ public class UploadController(IWebHostEnvironment env) : ControllerBase
             };
 
             if (detected == null || !AllowedMimeTypes.Contains(detected))
-                return "Type d'image non autorisé.";
+                return Messages.Upload.TypeNotAllowed;
             return null;
         }
         catch
         {
-            return "Format d'image non valide ou corrompu.";
+            return Messages.Upload.InvalidImage;
         }
     }
 }
