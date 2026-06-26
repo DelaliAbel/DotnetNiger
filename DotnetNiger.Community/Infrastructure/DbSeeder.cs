@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Infrastructure;
 
+/// <summary>Alimente la base de données avec des données de démonstration au premier démarrage.</summary>
 public static class DbSeeder
 {
     private static readonly Guid AdminId = Guid.Parse("A1B2C3D4-E5F6-7890-ABCD-EF1234567890");
