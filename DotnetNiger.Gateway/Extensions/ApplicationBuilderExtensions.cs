@@ -10,8 +10,10 @@ using Serilog;
 
 namespace DotnetNiger.Gateway.Extensions;
 
+/// <summary>Extensions pour configurer le pipeline middleware du Gateway.</summary>
 public static class ApplicationBuilderExtensions
 {
+    /// <summary>Ajoute le middleware de mesure de latence des endpoints.</summary>
     public static IApplicationBuilder UseLatencyMetricsMiddleware(this IApplicationBuilder app)
     {
         app.Use(async (context, next) =>
@@ -35,6 +37,7 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
+    /// <summary>Ajoute le middleware qui résout et injecte le ClientId dans les en-têtes de la requête.</summary>
     public static IApplicationBuilder UseClientIdResolutionMiddleware(this IApplicationBuilder app)
     {
         app.Use(async (context, next) =>
@@ -56,6 +59,7 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
+    /// <summary>Ajoute le middleware de traçage des requêtes avec journalisation et identifiant unique.</summary>
     public static IApplicationBuilder UseRequestTracingMiddleware(this IApplicationBuilder app)
     {
         app.Use(async (context, next) =>
@@ -71,6 +75,7 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
+    /// <summary>Ajoute les en-têtes de sécurité HTTP (X-Content-Type-Options, X-Frame-Options, HSTS, etc.).</summary>
     public static IApplicationBuilder UseSecurityHeadersMiddleware(this IApplicationBuilder app)
     {
         app.Use(async (context, next) =>
@@ -92,24 +97,28 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
+    /// <summary>Ajoute le middleware de proxy pour les services externes.</summary>
     public static IApplicationBuilder UseExternalServiceProxy(this IApplicationBuilder app)
     {
         app.UseMiddleware<ExternalServiceProxyMiddleware>();
         return app;
     }
 
+    /// <summary>Ajoute le middleware de gestion des cookies d'authentification.</summary>
     public static IApplicationBuilder UseTokenCookieMiddleware(this IApplicationBuilder app)
     {
         app.UseMiddleware<TokenCookieMiddleware>();
         return app;
     }
 
+    /// <summary>Ajoute le middleware de génération des balises Open Graph pour les crawlers sociaux.</summary>
     public static IApplicationBuilder UseOpenGraphMiddleware(this IApplicationBuilder app)
     {
         app.UseMiddleware<OpenGraphMiddleware>();
         return app;
     }
 
+    /// <summary>Ajoute le middleware de fusion des documents Swagger des services aval.</summary>
     public static IApplicationBuilder UseCustomSwaggerMergeMiddleware(this IApplicationBuilder app)
     {
         app.Use(async (context, next) =>
@@ -149,7 +158,7 @@ public static class ApplicationBuilderExtensions
                     Log.Warning("Swagger aggregation failed: all downstream documents unavailable");
                     context.Response.StatusCode = 503;
                     context.Response.ContentType = "application/json";
-                    await context.Response.WriteAsync("{\"message\":\"Downstream swagger documents are unavailable\"}");
+                    await context.Response.WriteAsync($"{{\"message\":\"{Messages.Swagger.DownstreamUnavailable}\"}}");
                     return;
                 }
 
@@ -162,13 +171,14 @@ public static class ApplicationBuilderExtensions
             {
                 Log.Error(ex, "Swagger merge middleware error");
                 context.Response.StatusCode = 500;
-                await context.Response.WriteAsync("{\"error\":\"Swagger merge failed\"}");
+                await context.Response.WriteAsync($"{{\"error\":\"{Messages.Swagger.MergeFailed}\"}}");
             }
         });
 
         return app;
     }
 
+    /// <summary>Mappe les endpoints de santé du Gateway (/health, /health/downstream, /health/ready, /health/services, /metrics/latency).</summary>
     public static IApplicationBuilder MapGatewayHealthEndpoints(this IApplicationBuilder app)
     {
         app.Map("/health", healthApp =>
@@ -282,6 +292,7 @@ public static class ApplicationBuilderExtensions
         return app;
     }
 
+    /// <summary>Mappe l'endpoint /admin/clear-swagger-cache pour vider le cache Swagger manuellement.</summary>
     public static IApplicationBuilder MapCacheBusterEndpoint(this IApplicationBuilder app)
     {
         app.Use(async (context, next) =>
@@ -300,7 +311,7 @@ public static class ApplicationBuilderExtensions
 
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsync(
-                    JsonSerializer.Serialize(new { success = true, message = "Cache Swagger vidé" }));
+                    JsonSerializer.Serialize(new { success = true, message = Messages.Swagger.CacheCleared }));
                 return;
             }
 

@@ -1,11 +1,13 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Text.Json;
+using DotnetNiger.Gateway.Configuration;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
 
 namespace DotnetNiger.Gateway.Middleware;
 
+/// <summary>Middleware qui gère les cookies d'authentification (access_token, refresh_token) et injecte le header Authorization pour Ocelot.</summary>
 public class TokenCookieMiddleware
 {
     private const string AccessTokenCookie = "access_token";
@@ -16,6 +18,7 @@ public class TokenCookieMiddleware
     private readonly IConfigurationManager<OpenIdConnectConfiguration> _configurationManager;
     private readonly IHttpClientFactory _httpClientFactory;
 
+    /// <summary>Initialise le middleware avec les dépendances nécessaires.</summary>
     public TokenCookieMiddleware(
         RequestDelegate next,
         IConfiguration configuration,
@@ -28,6 +31,7 @@ public class TokenCookieMiddleware
         _httpClientFactory = httpClientFactory;
     }
 
+    /// <summary>Exécute le middleware : gère les endpoints d'auth locale et injecte le Bearer token dans les requêtes.</summary>
     public async Task InvokeAsync(HttpContext context)
     {
         var path = context.Request.Path.Value ?? "";
@@ -93,7 +97,7 @@ public class TokenCookieMiddleware
         {
             context.Response.StatusCode = 403;
             await context.Response.WriteAsync(
-                JsonSerializer.Serialize(new { error = "Origine non autorisée" }));
+                JsonSerializer.Serialize(new { error = Messages.Auth.OriginNotAllowed }));
             return;
         }
 
@@ -109,7 +113,7 @@ public class TokenCookieMiddleware
         {
             context.Response.StatusCode = 400;
             await context.Response.WriteAsync(
-                JsonSerializer.Serialize(new { error = "Invalid JSON" }));
+                JsonSerializer.Serialize(new { error = Messages.Auth.InvalidJson }));
             return;
         }
 
@@ -123,7 +127,7 @@ public class TokenCookieMiddleware
             {
                 context.Response.StatusCode = 400;
                 await context.Response.WriteAsync(
-                    JsonSerializer.Serialize(new { error = "accessToken is required" }));
+                    JsonSerializer.Serialize(new { error = Messages.Auth.AccessTokenRequired }));
                 return;
             }
 
@@ -134,7 +138,7 @@ public class TokenCookieMiddleware
             context.Response.StatusCode = 200;
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(
-                JsonSerializer.Serialize(new { message = "Tokens stored in secure cookies" }));
+                JsonSerializer.Serialize(new { message = Messages.Auth.TokensStored }));
         }
     }
 
@@ -146,7 +150,7 @@ public class TokenCookieMiddleware
         context.Response.StatusCode = 200;
         context.Response.ContentType = "application/json";
         context.Response.WriteAsync(
-            JsonSerializer.Serialize(new { message = "Tokens cleared" }));
+            JsonSerializer.Serialize(new { message = Messages.Auth.TokensCleared }));
     }
 
     private async Task HandleGetSession(HttpContext context)
@@ -214,7 +218,7 @@ public class TokenCookieMiddleware
         {
             context.Response.StatusCode = 401;
             await context.Response.WriteAsync(
-                JsonSerializer.Serialize(new { error = "refresh_token manquant" }));
+                JsonSerializer.Serialize(new { error = Messages.Auth.RefreshTokenMissing }));
             return;
         }
 
@@ -239,7 +243,7 @@ public class TokenCookieMiddleware
                 ClearTokenCookie(context, RefreshTokenCookie);
                 context.Response.StatusCode = 401;
                 await context.Response.WriteAsync(
-                    JsonSerializer.Serialize(new { error = "Refresh token invalide ou expiré" }));
+                    JsonSerializer.Serialize(new { error = Messages.Auth.RefreshTokenInvalid }));
                 return;
             }
 
@@ -254,7 +258,7 @@ public class TokenCookieMiddleware
             {
                 context.Response.StatusCode = 500;
                 await context.Response.WriteAsync(
-                    JsonSerializer.Serialize(new { error = "Réponse invalide du serveur d'authentification" }));
+                    JsonSerializer.Serialize(new { error = Messages.Auth.InvalidAuthResponse }));
                 return;
             }
 
@@ -280,7 +284,7 @@ public class TokenCookieMiddleware
         {
             context.Response.StatusCode = 500;
             await context.Response.WriteAsync(
-                JsonSerializer.Serialize(new { error = "Erreur lors du rafraîchissement du token", detail = ex.Message }));
+                JsonSerializer.Serialize(new { error = Messages.Auth.RefreshError, detail = ex.Message }));
         }
     }
 

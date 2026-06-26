@@ -1,3 +1,4 @@
+/// <summary>Point d'entrée du API Gateway DotnetNiger. Configure et lance le pipeline Ocelot avec les middlewares personnalisés.</summary>
 using DotnetNiger.Gateway.Configuration;
 using DotnetNiger.Gateway.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -85,7 +86,7 @@ var mergedOcelotFile = useConsul
                 await context.Response.WriteAsync(
                     System.Text.Json.JsonSerializer.Serialize(new
                     {
-                        error = "An internal server error occurred",
+                        error = Messages.Common.InternalServerError,
                         statusCode = 500
                     }));
             });
@@ -119,6 +120,7 @@ finally
     await Log.CloseAndFlushAsync();
 }
 
+/// <summary>Charge la liste des services aval depuis la configuration.</summary>
 static List<DownstreamServiceConfig> LoadDownstreamServices(IConfiguration configuration)
 {
     var services = new List<DownstreamServiceConfig>();

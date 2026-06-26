@@ -1,10 +1,13 @@
 using System.Text.Json;
+using DotnetNiger.Gateway.Configuration;
 using Serilog;
 
 namespace DotnetNiger.Gateway.Services;
 
+/// <summary>Endpoint dynamique permettant aux services de s'enregistrer auprès du Gateway.</summary>
 public static class ServiceRegistrationEndpoint
 {
+    /// <summary>Mappe l'endpoint /api/service-registry/register pour l'enregistrement des services.</summary>
     public static IApplicationBuilder MapServiceRegistryEndpoint(this IApplicationBuilder app)
     {
         app.Map("/api/service-registry", registryApp =>
@@ -41,14 +44,14 @@ public static class ServiceRegistrationEndpoint
                 catch
                 {
                     context.Response.StatusCode = 400;
-                    await context.Response.WriteAsync("{\"error\":\"Invalid JSON\"}");
+                    await context.Response.WriteAsync($"{{\"error\":\"{Messages.Registration.InvalidJson}\"}}");
                     return;
                 }
 
                 if (request == null || string.IsNullOrWhiteSpace(request.Id) || string.IsNullOrWhiteSpace(request.Url))
                 {
                     context.Response.StatusCode = 400;
-                    await context.Response.WriteAsync("{\"error\":\"Id and Url are required\"}");
+                    await context.Response.WriteAsync($"{{\"error\":\"{Messages.Registration.IdAndUrlRequired}\"}}");
                     return;
                 }
 
@@ -79,6 +82,7 @@ public static class ServiceRegistrationEndpoint
     }
 }
 
+/// <summary>Requête d'enregistrement d'un service auprès du Gateway.</summary>
 public sealed class ServiceRegistrationRequest
 {
     public string? Id { get; init; }

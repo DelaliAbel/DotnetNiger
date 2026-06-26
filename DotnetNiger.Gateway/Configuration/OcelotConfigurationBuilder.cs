@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace DotnetNiger.Gateway.Configuration;
 
+/// <summary>Configuration d'un service aval (downstream) pour Ocelot.</summary>
 public sealed class DownstreamServiceConfig
 {
     public string Id { get; init; } = string.Empty;
@@ -16,10 +17,12 @@ public sealed class DownstreamServiceConfig
     public string RoutesConfig { get; init; } = string.Empty;
 }
 
+/// <summary>Construit la configuration Ocelot fusionnée à partir des fichiers de routes individuels.</summary>
 public static class OcelotConfigurationBuilder
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
+    /// <summary>Fusionne les fichiers de routes en un seul fichier ocelot.json avec réécriture des hôtes.</summary>
     public static string BuildMergedConfig(
         string contentRootPath,
         bool useContainerHosts,
@@ -28,10 +31,10 @@ public static class OcelotConfigurationBuilder
     {
         var globalPath = Path.Combine(contentRootPath, "ocelot.global.json");
         if (!File.Exists(globalPath))
-            throw new FileNotFoundException("Missing ocelot.global.json");
+            throw new FileNotFoundException(Messages.Ocelot.MissingGlobalConfig);
 
         var globalNode = JsonNode.Parse(File.ReadAllText(globalPath))?.AsObject()
-            ?? throw new InvalidOperationException("Invalid JSON in ocelot.global.json");
+            ?? throw new InvalidOperationException(Messages.Ocelot.InvalidGlobalJson);
 
         var mergedRoutes = new JsonArray();
 
@@ -61,10 +64,7 @@ public static class OcelotConfigurationBuilder
             ["SwaggerEndPoints"] = BuildSwaggerEndPoints(services, useContainerHosts)
         };
 
-        if (useContainerHosts)
-        {
-            RewriteToContainerHosts(mergedRoutes, services);
-        }
+        RewriteDownstreamHosts(mergedRoutes, services, useContainerHosts);
 
         var baseUrl = configuration["Gateway:BaseUrl"] ?? "http://localhost:5000";
         if (merged["GlobalConfiguration"] is JsonObject gc)
@@ -104,48 +104,49 @@ public static class OcelotConfigurationBuilder
         return endpoints;
     }
 
-    private static void RewriteToContainerHosts(JsonArray routes, IReadOnlyCollection<DownstreamServiceConfig> services)
+    private static void RewriteDownstreamHosts(JsonArray routes, IReadOnlyCollection<DownstreamServiceConfig> services, bool useContainerHosts)
     {
         foreach (var routeNode in routes.OfType<JsonObject>())
         {
-            if (routeNode["DownstreamHostAndPorts"] is not JsonArray hostAndPorts)
+            var swaggerKey = routeNode["SwaggerKey"]?.GetValue<string>();
+            if (string.IsNullOrWhiteSpace(swaggerKey))
                 continue;
 
-            foreach (var hp in hostAndPorts.OfType<JsonObject>())
+            var service = services.FirstOrDefault(s =>
+                string.Equals(s.Id, swaggerKey, StringComparison.OrdinalIgnoreCase));
+            if (service == null)
+                continue;
+
+            if (!Uri.TryCreate(service.DevUrl, UriKind.Absolute, out var uri))
+                continue;
+
+            var scheme = useContainerHosts ? "http" : uri.Scheme;
+            var host = useContainerHosts ? service.ContainerName : uri.Host;
+            var port = useContainerHosts ? service.Port : uri.Port;
+
+            routeNode["DownstreamScheme"] = scheme;
+            routeNode["DownstreamHostAndPorts"] = new JsonArray
             {
-                var host = hp["Host"]?.GetValue<string>();
-                var port = hp["Port"]?.GetValue<int>();
-
-                if (host == null || port == null) continue;
-
-                var match = services.FirstOrDefault(s =>
+                new JsonObject
                 {
-                    try
-                    {
-                        return s.DevUrl != null && new Uri(s.DevUrl).Port == port;
-                    }
-                    catch { return false; }
-                });
-
-                if (match != null)
-                {
-                    hp["Host"] = match.ContainerName;
-                    hp["Port"] = match.Port;
+                    ["Host"] = host,
+                    ["Port"] = port
                 }
-            }
+            };
         }
     }
 
+    /// <summary>Fusionne les fichiers de routes pour une utilisation avec Consul (découverte de services).</summary>
     public static string BuildMergedConfigWithConsul(
         string contentRootPath,
         IReadOnlyCollection<DownstreamServiceConfig> services)
     {
         var globalPath = Path.Combine(contentRootPath, "ocelot.global.json");
         if (!File.Exists(globalPath))
-            throw new FileNotFoundException("Missing ocelot.global.json");
+            throw new FileNotFoundException(Messages.Ocelot.MissingGlobalConfig);
 
         var globalNode = JsonNode.Parse(File.ReadAllText(globalPath))?.AsObject()
-            ?? throw new InvalidOperationException("Invalid JSON in ocelot.global.json");
+            ?? throw new InvalidOperationException(Messages.Ocelot.InvalidGlobalJson);
 
         var mergedRoutes = new JsonArray();
 

@@ -1,11 +1,13 @@
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Text.Json;
+using DotnetNiger.Gateway.Configuration;
 using Microsoft.Extensions.Caching.Memory;
 using Serilog;
 
 namespace DotnetNiger.Gateway.Middleware;
 
+/// <summary>Middleware qui proxy les requêtes vers des services externes via un slug, avec mise en cache de la résolution.</summary>
 public partial class ExternalServiceProxyMiddleware
 {
     private readonly RequestDelegate _next;
@@ -14,6 +16,7 @@ public partial class ExternalServiceProxyMiddleware
     private readonly string _identityBaseUrl;
     private readonly TimeSpan _cacheDuration;
 
+    /// <summary>Initialise le middleware avec le cache, le factory HTTP et la configuration.</summary>
     public ExternalServiceProxyMiddleware(
         RequestDelegate next,
         IMemoryCache cache,
@@ -30,6 +33,7 @@ public partial class ExternalServiceProxyMiddleware
         _cacheDuration = TimeSpan.FromSeconds(cacheSeconds);
     }
 
+    /// <summary>Exécute le middleware : résout le slug, proxy la requête vers le service externe ou passe au suivant.</summary>
     public async Task InvokeAsync(HttpContext context)
     {
         var path = context.Request.Path.Value ?? "";
@@ -76,7 +80,7 @@ public partial class ExternalServiceProxyMiddleware
             context.Response.StatusCode = 404;
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(
-                JsonSerializer.Serialize(new { error = "Service not found or not active" }),
+                JsonSerializer.Serialize(new { error = Messages.Proxy.ServiceNotFound }),
                 context.RequestAborted);
             return;
         }
@@ -144,7 +148,7 @@ public partial class ExternalServiceProxyMiddleware
                 context.Response.StatusCode = 502;
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsync(
-                    JsonSerializer.Serialize(new { error = "Upstream service unavailable" }),
+                    JsonSerializer.Serialize(new { error = Messages.Proxy.UpstreamUnavailable }),
                     context.RequestAborted);
             }
         }
