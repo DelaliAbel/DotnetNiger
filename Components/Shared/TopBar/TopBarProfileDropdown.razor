@@ -28,9 +28,9 @@
                 aria-haspopup="true"
                 aria-label="Menu profil utilisateur"
                 title="@DisplayName">
-            @if (!string.IsNullOrWhiteSpace(ResolvedAvatarUrl))
+            @if (!string.IsNullOrWhiteSpace(profile?.AvatarUrl))
             {
-                <img src="@ResolvedAvatarUrl" alt="Avatar de @DisplayName" class="h-full w-full object-cover" />
+                <ResolvedImage Src="@profile.AvatarUrl" class="h-full w-full object-cover" alt="@($"Avatar de {DisplayName}")" />
             }
             else
             {
@@ -50,9 +50,9 @@
             <div class="border-b border-white px-4 py-4">
                 <div class="flex items-center gap-3">
                     <div class="h-11 w-11 overflow-hidden rounded-full border border-white bg-white shadow-sm">
-                        @if (!string.IsNullOrWhiteSpace(ResolvedAvatarUrl))
+                        @if (!string.IsNullOrWhiteSpace(profile?.AvatarUrl))
                         {
-                            <img src="@ResolvedAvatarUrl" alt="Avatar de @DisplayName" class="h-full w-full object-cover" />
+                            <ResolvedImage Src="@profile.AvatarUrl" class="h-full w-full object-cover" alt="@($"Avatar de {DisplayName}")" />
                         }
                         else
                         {
@@ -140,16 +140,6 @@
         new MobileNavItem("/profile", "Mon Profil", "material-symbols:person-rounded"),
         new MobileNavItem("/contact", "Messagerie", "material-symbols:mail-rounded", HasNotification: true)
     ];
-
-	private string? ResolvedAvatarUrl => StringHelper.NormalizeImagePath(StringHelper.FirstNotEmpty(
-		profile?.AvatarUrl,
-		GetClaimValue("avatar_url"),
-		GetClaimValue("avatarUrl"),
-		GetClaimValue("avatar"),
-		GetClaimValue("picture"),
-		GetClaimValue("image"),
-		GetClaimValue("profile_picture")
-	));
 
     private int UnreadNotificationCount => unreadNotificationCount > 0 ? unreadNotificationCount : NotificationCount ?? ParseNotificationCountFromClaims();
 

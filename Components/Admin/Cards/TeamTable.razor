@@ -32,7 +32,7 @@
                                     <div class="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-gray-100">
                                         @if (!string.IsNullOrWhiteSpace(member.AvatarUrl))
                                         {
-                                            <img src="@member.AvatarUrl" alt="@member.FullName" class="h-full w-full object-cover" />
+                                            <ResolvedImage Src="@member.AvatarUrl" alt="@member.FullName" class="h-full w-full object-cover" />
                                         }
                                         else
                                         {

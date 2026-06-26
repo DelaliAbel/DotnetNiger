@@ -2,6 +2,7 @@
 @using DotnetNiger.UI.Models.Responses
 @inject PreviewStateService PreviewState
 @inject NavigationManager Navigation
+@inject IUploadService UploadService
 
 <PageTitle>Aperçu - @(post?.Title ?? "Blog") - .NET Niger</PageTitle>
 
@@ -51,7 +52,7 @@ else
                         <div class="h-10 w-10 sm:h-11 sm:w-11 overflow-hidden rounded-full bg-info-bg">
                             @if (!string.IsNullOrWhiteSpace(post.AuthorAvatar))
                             {
-                                <img src="@post.AuthorAvatar" alt="@post.AuthorName" class="h-full w-full object-cover" />
+                                <ResolvedImage Src="@post.AuthorAvatar" alt="@post.AuthorName" class="h-full w-full object-cover" />
                             }
                             else
                             {
@@ -67,7 +68,7 @@ else
                     <hr class="border-gray-200" />
 
                     <div class="overflow-hidden rounded-3xl bg-[#0b1220] shadow-[0_18px_40px_rgba(15,23,42,0.16)] aspect-video">
-                        <img src="@GetCoverImage()" alt="@post.Title" class="h-full w-full object-cover" />
+                        <ResolvedImage Src="@post?.CoverImageUrl" Fallback="/Images/ImageBlog.jpg" alt="@post.Title" class="h-full w-full object-cover" />
                     </div>
 
                     <div class="space-y-8 sm:space-y-10 pt-1">
@@ -119,13 +120,6 @@ else
     {
         var returnUrl = PreviewState.ReturnUrl ?? "/admin/blog/create";
         Navigation.NavigateTo(returnUrl);
-    }
-
-    private string GetCoverImage()
-    {
-        return string.IsNullOrWhiteSpace(post?.CoverImageUrl)
-            ? "/Images/ImageBlog.jpg"
-            : post.CoverImageUrl;
     }
 
     private static string GetInitial(string? value)
