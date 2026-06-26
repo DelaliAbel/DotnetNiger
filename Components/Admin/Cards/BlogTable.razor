@@ -56,17 +56,15 @@
                             <td class="px-6 py-4 text-sm text-body">@GetDateLabel(post)</td>
                             <td class="px-6 py-4 text-sm">
                                 <AdminActionDropdown ItemId="post.Id"
-                                                     Status="@(IsPublished(post) ? "Published" : "Pending")"
+                                                     Status=""
                                                      ViewLabel="Voir l'article"
                                                      EditLabel="Modifier"
                                                      DeleteLabel="Supprimer"
-                                                     ApproveLabel="Publier"
-                                                     RejectLabel="Rejeter"
+                                                     ToggleStatusLabel="@(IsPublished(post) ? "Dépublier" : "Publier")"
                                                      OnView="OpenPost"
                                                      OnEdit="EditPost"
                                                      OnDelete="DeletePost"
-                                                     OnApprove="PublishPost"
-                                                     OnReject="DeletePost" />
+                                                     OnToggleStatus="TogglePublishStatus" />
                             </td>
                         </tr>
                     }
@@ -125,28 +123,33 @@
         await OnChanged.InvokeAsync();
     }
 
-    private async Task PublishPost(Guid id)
+    private async Task TogglePublishStatus(Guid id)
     {
         var post = Posts.FirstOrDefault(item => item.Id == id);
-        if (post is null)
+        if (post is null) return;
+
+        if (IsPublished(post))
         {
-            return;
+            await PostService.UnPublishPostAsync(id);
+        }
+        else
+        {
+            var request = new UpdatePostRequest
+            {
+                Title = post.Title,
+                Content = post.Content,
+                Excerpt = post.Excerpt,
+                CoverImageUrl = post.CoverImageUrl,
+                PostType = post.PostType,
+                SeoDescription = string.IsNullOrWhiteSpace(post.Excerpt) ? post.Title : post.Excerpt,
+                CategoryIds = post.Categories.Select(category => category.Id).ToList(),
+                TagNames = post.Tags.Select(tag => tag.Name).ToList(),
+                IsPublished = true
+            };
+
+            await PostService.UpdatePostAsync(id, request);
         }
 
-        var request = new UpdatePostRequest
-        {
-            Title = post.Title,
-            Content = post.Content,
-            Excerpt = post.Excerpt,
-            CoverImageUrl = post.CoverImageUrl,
-            PostType = post.PostType,
-            SeoDescription = string.IsNullOrWhiteSpace(post.Excerpt) ? post.Title : post.Excerpt,
-            CategoryIds = post.Categories.Select(category => category.Id).ToList(),
-            TagNames = post.Tags.Select(tag => tag.Name).ToList(),
-            IsPublished = true
-        };
-
-        await PostService.UpdatePostAsync(id, request);
         await OnChanged.InvokeAsync();
     }
 }

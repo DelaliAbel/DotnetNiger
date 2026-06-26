@@ -227,5 +227,15 @@ namespace DotnetNiger.UI.Services.Mock
 
         private static string GenerateSlug(string title)
             => StringHelper.GenerateSlug(title);
+
+        public Task<List<PostDto>> GetAdminPostsAsync(string? status = null)
+        {
+            var posts = _posts.AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(status))
+                posts = posts.Where(p =>
+                    (status == "published" && p.PublishedAt != default) ||
+                    (status == "draft" && p.PublishedAt == default));
+            return Task.FromResult(posts.ToList());
+        }
     }
 }

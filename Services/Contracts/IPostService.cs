@@ -18,4 +18,5 @@ public interface IPostService
     Task<bool> PublishPostAsync(Guid postId);
     Task<bool> UnPublishPostAsync(Guid postId);
     Task IncrementViewCountAsync(Guid id);
+    Task<List<PostDto>> GetAdminPostsAsync(string? status = null);
 }

@@ -23,17 +23,15 @@
             </div>
 
             <AdminActionDropdown ItemId="@(post?.Id ?? Guid.Empty)"
-                                 Status="@(IsPublished ? "Published" : "Pending")"
+                                 Status=""
                                  ViewLabel="Voir l'article"
                                  EditLabel="Modifier"
                                  DeleteLabel="Supprimer"
-                                 ApproveLabel="Publier"
-                                 RejectLabel="Rejeter"
+                                 ToggleStatusLabel="@(IsPublished ? "Dépublier" : "Publier")"
                                  OnView="OpenPost"
                                  OnEdit="EditPost"
                                  OnDelete="DeletePost"
-                                 OnApprove="PublishPost"
-                                 OnReject="DeletePost" />
+                                 OnToggleStatus="TogglePublishStatus" />
         </div>
 
         <p class="mb-4 line-clamp-3 text-sm leading-6 text-body break-words">@GetPreviewText()</p>
@@ -109,30 +107,36 @@
         }
     }
 
-    private async Task PublishPost(Guid id)
+    private async Task TogglePublishStatus(Guid id)
     {
-        if (post is null)
-        {
-            return;
-        }
+        if (post is null) return;
 
         try
         {
-            var request = new UpdatePostRequest
+            if (IsPublished)
             {
-                Title = post.Title,
-                Content = post.Content,
-                Excerpt = post.Excerpt,
-                CoverImageUrl = post.CoverImageUrl,
-                PostType = post.PostType,
-                SeoDescription = string.IsNullOrWhiteSpace(post.Excerpt) ? post.Title : post.Excerpt,
-                CategoryIds = post.Categories.Select(category => category.Id).ToList(),
-                TagNames = post.Tags.Select(tag => tag.Name).ToList(),
-                IsPublished = true
-            };
+                await PostService.UnPublishPostAsync(post.Id);
+                ToastService.ShowToast("Article dépublié.", ToastLevel.Success);
+            }
+            else
+            {
+                var request = new UpdatePostRequest
+                {
+                    Title = post.Title,
+                    Content = post.Content,
+                    Excerpt = post.Excerpt,
+                    CoverImageUrl = post.CoverImageUrl,
+                    PostType = post.PostType,
+                    SeoDescription = string.IsNullOrWhiteSpace(post.Excerpt) ? post.Title : post.Excerpt,
+                    CategoryIds = post.Categories.Select(category => category.Id).ToList(),
+                    TagNames = post.Tags.Select(tag => tag.Name).ToList(),
+                    IsPublished = true
+                };
 
-            await PostService.UpdatePostAsync(post.Id, request);
-            ToastService.ShowToast("Article publié.", ToastLevel.Success);
+                await PostService.UpdatePostAsync(post.Id, request);
+                ToastService.ShowToast("Article publié.", ToastLevel.Success);
+            }
+
             await OnPostDeleted.InvokeAsync();
         }
         catch

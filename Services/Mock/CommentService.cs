@@ -11,7 +11,10 @@ public class CommentService : ICommentService
     private List<CommentResponse> _comments = new();
     private readonly IUserStateService _userStateService;
 
-    public Guid CurrentUserId =>
+    public Task<Guid> GetCurrentUserIdAsync() =>
+        Task.FromResult(CurrentUserId);
+
+    private Guid CurrentUserId =>
         _userStateService.CurrentUser?.Id ?? Guid.Parse("11111111-1111-1111-1111-111111111111");
 
     public CommentService(IUserStateService userStateService)
@@ -285,5 +288,10 @@ public class CommentService : ICommentService
             ParentCommentId = comment.ParentCommentId,
             Replies = comment.Replies.Select(CloneCommentTree).ToList()
         };
+    }
+
+    public Task<List<CommentResponse>> GetAllCommentsAsync()
+    {
+        return Task.FromResult(_comments.ToList());
     }
 }

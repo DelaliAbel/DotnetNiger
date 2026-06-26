@@ -13,7 +13,7 @@
             OnReplySubmitted="OnReplySubmitted"
             OnCommentUpdated="OnCommentUpdated"
             OnCommentDeleted="OnCommentDeleted"
-            CurrentUserId="CommentService.CurrentUserId" />
+            CurrentUserId="_currentUserId" />
     }
 </div>
 
@@ -29,4 +29,11 @@
 
     [Parameter]
     public EventCallback OnCommentDeleted { get; set; }
+
+    private Guid _currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _currentUserId = await CommentService.GetCurrentUserIdAsync();
+    }
 }

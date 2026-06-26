@@ -19,7 +19,16 @@ public static class ApiEndpoints
     public const string SocialLinks = "api/social-links";
     public const string Certificates = "api/profile/certificates";
     public const string AdminUsers = "api/identity/admin/users";
+    public const string CommunityAdminUsers = "api/community/admin/users";
     public const string Comments = "api/comments";
+    public const string Categories = "api/categories";
+    public const string Tags = "api/tags";
+    public const string Stats = "api/stats";
+    public const string AdminBase = "api/community/admin";
+    public const string AdminCertificates = "api/community/admin/certificates";
+    public const string AdminPosts = "api/community/admin/posts";
+    public const string AdminComments = "api/community/admin/comments";
+    public const string AdminSettings = "api/community/admin/settings";
 
     public static class Auth
     {

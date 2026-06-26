@@ -13,9 +13,11 @@ public interface IUserService
     Task<List<UserDto>> GetUsersByRoleAsync(string role);
     Task<int> GetUsersCountAsync();
     Task<int> GetActiveUsersCountAsync();
-    Task<UserDto> CreateUserAsync(CreateUserRequest user);
+    Task<UserDto?> CreateUserAsync(CreateUserRequest user);
     Task<UserDto?> UpdateUserAsync(UserDto user);
     Task<bool> DeleteUserAsync(Guid userId);
     Task<bool> ApproveUserAsync(Guid userId);
     Task<bool> RejectUserAsync(Guid userId);
+    Task<bool> UpdateTeamInfoAsync(Guid userId, UpdateTeamRequest request);
+    Task<List<UserDto>> GetTeamMembersAsync();
 }

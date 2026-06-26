@@ -17,25 +17,20 @@ public class ApiCommentService : ApiServiceBase, ICommentService
         _authProvider = authProvider;
     }
 
-    public Guid CurrentUserId
+    public async Task<Guid> GetCurrentUserIdAsync()
     {
-        get
-        {
-            if (_currentUserId.HasValue)
-                return _currentUserId.Value;
-
-            var tokenTask = _authProvider.GetAccessTokenAsync();
-            tokenTask.Wait();
-            var token = tokenTask.Result;
-
-            if (string.IsNullOrWhiteSpace(token))
-                return Guid.Empty;
-
-            var claims = JwtParser.ParseClaimsFromJwt(token);
-            var userIdClaim = claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier || c.Type == "sub");
-            _currentUserId = userIdClaim is not null && Guid.TryParse(userIdClaim.Value, out var uid) ? uid : Guid.Empty;
+        if (_currentUserId.HasValue)
             return _currentUserId.Value;
-        }
+
+        var token = await _authProvider.GetAccessTokenAsync();
+
+        if (string.IsNullOrWhiteSpace(token))
+            return Guid.Empty;
+
+        var claims = JwtParser.ParseClaimsFromJwt(token);
+        var userIdClaim = claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier || c.Type == "sub");
+        _currentUserId = userIdClaim is not null && Guid.TryParse(userIdClaim.Value, out var uid) ? uid : Guid.Empty;
+        return _currentUserId.Value;
     }
 
     public async Task<List<CommentResponse>> GetCommentsByPostIdAsync(Guid postId)
@@ -81,6 +76,15 @@ public class ApiCommentService : ApiServiceBase, ICommentService
             return null;
 
         return await ApiResponseReader.ReadAsync<CommentResponse>(response);
+    }
+
+    public async Task<List<CommentResponse>> GetAllCommentsAsync()
+    {
+        var response = await Http.GetAsync(ApiEndpoints.AdminComments);
+        if (!response.IsSuccessStatusCode)
+            return [];
+
+        return await ApiResponseReader.ReadCollectionAsync<CommentResponse>(response);
     }
 
     public async Task<bool> DeleteCommentAsync(DeleteCommentRequest request)

@@ -202,6 +202,46 @@ else
                 sp,
                 sp.GetRequiredService<ILogger<ClientIdHeaderHandler>>()),
             sp.GetRequiredService<ILogger<ApiUploadService>>()));
+
+    builder.Services.AddScoped<ICategoryService>(sp =>
+        new ApiCategoryService(CreateGatewayHttpClient(
+            apiBaseUrl,
+            sp.GetRequiredService<ClientIdentifierProvider>(),
+            sp.GetRequiredService<CustomAuthStateProvider>(),
+            sp,
+            sp.GetRequiredService<ILogger<ClientIdHeaderHandler>>())));
+
+    builder.Services.AddScoped<ITagService>(sp =>
+        new ApiTagService(CreateGatewayHttpClient(
+            apiBaseUrl,
+            sp.GetRequiredService<ClientIdentifierProvider>(),
+            sp.GetRequiredService<CustomAuthStateProvider>(),
+            sp,
+            sp.GetRequiredService<ILogger<ClientIdHeaderHandler>>())));
+
+    builder.Services.AddScoped<IStatsService>(sp =>
+        new ApiStatsService(CreateGatewayHttpClient(
+            apiBaseUrl,
+            sp.GetRequiredService<ClientIdentifierProvider>(),
+            sp.GetRequiredService<CustomAuthStateProvider>(),
+            sp,
+            sp.GetRequiredService<ILogger<ClientIdHeaderHandler>>())));
+
+    builder.Services.AddScoped<ISettingsService>(sp =>
+        new ApiSettingsService(CreateGatewayHttpClient(
+            apiBaseUrl,
+            sp.GetRequiredService<ClientIdentifierProvider>(),
+            sp.GetRequiredService<CustomAuthStateProvider>(),
+            sp,
+            sp.GetRequiredService<ILogger<ClientIdHeaderHandler>>())));
+
+    builder.Services.AddScoped<ICertificateAdminService>(sp =>
+        new ApiCertificateAdminService(CreateGatewayHttpClient(
+            apiBaseUrl,
+            sp.GetRequiredService<ClientIdentifierProvider>(),
+            sp.GetRequiredService<CustomAuthStateProvider>(),
+            sp,
+            sp.GetRequiredService<ILogger<ClientIdHeaderHandler>>())));
 }
 
 await builder.Build().RunAsync();

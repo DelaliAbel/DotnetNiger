@@ -91,12 +91,12 @@
         @if (currentStep == 2)
         {
             <RegistrationStep3
-                Model="step3Model"
-                ErrorMessage="step3ErrorMessage"
-                IsLoading="isStep3Loading"
-                IsSubmitted="isStep3Submitted"
-                Status="step3Status"
-                OnSubmit="HandleStep3Submit"
+                Model="certifModel"
+                ErrorMessage="certifErrorMessage"
+                IsLoading="isCertifLoading"
+                IsSubmitted="isCertifSubmitted"
+                Status="certifStatus"
+                OnSubmit="HandleCertifSubmit"
                 OnBack="GoToStep1"
                 OnContinue="NavigateToLogin" />
         }
@@ -107,8 +107,8 @@
 @code {
     private Uri IdentityRegisterUri => new($"{Config["ApiBaseUrl"] ?? Navigation.BaseUri.TrimEnd('/')}{Config["IdentityEndpoints:Register"] ?? "/Account/Register"}");
 
-    private readonly CertificateSubmissionDto step3Model = new();
-    private CertificateStatusDto? step3Status;
+    private readonly CertificateSubmissionDto certifModel = new();
+    private CertificateStatusDto? certifStatus;
 
     private int currentStep = 1;
     private Guid tempUserId;
@@ -116,11 +116,11 @@
     private string registeredEmail = string.Empty;
 
     private bool isReturnedFromIdentity;
-    private bool isStep3Submitted;
+    private bool isCertifSubmitted;
 
-    private string? step3ErrorMessage;
+    private string? certifErrorMessage;
 
-    private bool isStep3Loading;
+    private bool isCertifLoading;
 
     protected override void OnInitialized()
     {
@@ -137,7 +137,7 @@
             tempUserId = uid;
             registeredEmail = email;
             registeredName = fullName ?? email;
-            step3Model.UserId = uid;
+            certifModel.UserId = uid;
             isReturnedFromIdentity = true;
         }
     }
@@ -149,23 +149,23 @@
         Navigation.NavigateTo(redirectUrl);
     }
 
-    private async Task HandleStep3Submit(CertificateSubmissionDto request)
+    private async Task HandleCertifSubmit(CertificateSubmissionDto request)
     {
-        isStep3Loading = true;
-        step3ErrorMessage = null;
+        isCertifLoading = true;
+        certifErrorMessage = null;
 
         request.UserId = tempUserId;
         var result = await RegistrationService.SubmitStep2Async(request);
-        isStep3Loading = false;
+        isCertifLoading = false;
 
         if (result.Success && result.Data is not null)
         {
-            step3Status = result.Data;
-            isStep3Submitted = true;
+            certifStatus = result.Data;
+            isCertifSubmitted = true;
         }
         else
         {
-            step3ErrorMessage = result.Message ?? "Erreur lors de la soumission de la certification.";
+            certifErrorMessage = result.Message ?? "Erreur lors de la soumission de la certification. Vérifiez que le lien est valide et réessayez.";
         }
     }
 

@@ -118,4 +118,13 @@ public class ApiPostService : ApiServiceBase, IPostService
     {
         await Http.PostAsync($"{ApiEndpoints.Posts}/{id}/views", null);
     }
+
+    public async Task<List<PostDto>> GetAdminPostsAsync(string? status = null)
+    {
+        var query = new Dictionary<string, string?>();
+        if (!string.IsNullOrWhiteSpace(status))
+            query["status"] = status;
+
+        return await GetCollectionAsync<PostDto>(ApiEndpoints.AdminPosts, query);
+    }
 }

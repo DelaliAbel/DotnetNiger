@@ -78,7 +78,7 @@ public class MockUserService : IUserService
         return Users.Count(user => user.IsActive);
     }
 
-    public Task<UserDto> CreateUserAsync(CreateUserRequest user)
+    public Task<UserDto?> CreateUserAsync(CreateUserRequest user)
     {
         var newUser = new UserDto
         {
@@ -102,7 +102,7 @@ public class MockUserService : IUserService
         };
 
         Users.Add(newUser);
-        return Task.FromResult(newUser);
+        return Task.FromResult<UserDto?>(newUser);
     }
 
     public Task<UserDto?> UpdateUserAsync(UserDto user)
@@ -154,5 +154,24 @@ public class MockUserService : IUserService
     {
         var removed = Users.RemoveAll(user => user.Id == userId && !user.IsActive) > 0;
         return Task.FromResult(removed);
+    }
+
+    public Task<bool> UpdateTeamInfoAsync(Guid userId, UpdateTeamRequest request)
+    {
+        var user = Users.FirstOrDefault(u => u.Id == userId);
+        if (user is null) return Task.FromResult(false);
+
+        user.IsTeamMember = request.IsTeamMember;
+        user.Position = request.Position;
+        return Task.FromResult(true);
+    }
+
+    public Task<List<UserDto>> GetTeamMembersAsync()
+    {
+        return Task.FromResult(Users.Where(u =>
+            u.Roles.Any(r => r.Equals("Collaborator", StringComparison.OrdinalIgnoreCase) ||
+                             r.Equals("Admin", StringComparison.OrdinalIgnoreCase) ||
+                             r.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase))
+        ).ToList());
     }
 }

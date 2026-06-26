@@ -83,36 +83,45 @@ public class ApiUserService : ApiServiceBase, IUserService
         return users.Count(u => u.IsActive);
     }
 
-    public Task<UserDto> CreateUserAsync(CreateUserRequest user)
+    public async Task<UserDto?> CreateUserAsync(CreateUserRequest user)
     {
-        throw new NotSupportedException("La création d'utilisateur via l'API Community n'est pas implémentée. Utilisez le flux d'inscription (Register).");
+        var content = JsonContent.Create(user);
+        var response = await Http.PostAsync(ApiEndpoints.CommunityAdminUsers, content);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await ApiResponseReader.ReadAsync<UserDto>(response);
     }
 
     public async Task<UserDto?> UpdateUserAsync(UserDto user)
     {
-        var statusContent = JsonContent.Create(new UpdateUserStatusRequest { IsActive = user.IsActive });
-        var statusResponse = await Http.PatchAsync($"{ApiEndpoints.AdminUsers}/{user.Id}/status", statusContent);
-        if (!statusResponse.IsSuccessStatusCode)
-            return null;
-
         var existing = await GetUserByIdAsync(user.Id);
         if (existing is null) return null;
 
-        foreach (var role in user.Roles)
+        var statusChanged = existing.IsActive != user.IsActive;
+        if (statusChanged)
         {
-            if (!existing.Roles.Contains(role, StringComparer.OrdinalIgnoreCase))
-            {
-                var roleContent = JsonContent.Create(new { roleName = role });
-                await Http.PostAsync($"{ApiEndpoints.AdminUsers}/{user.Id}/roles", roleContent);
-            }
+            var statusContent = JsonContent.Create(new UpdateUserStatusRequest { IsActive = user.IsActive });
+            var statusResponse = await Http.PatchAsync($"{ApiEndpoints.AdminUsers}/{user.Id}/status", statusContent);
+            if (!statusResponse.IsSuccessStatusCode)
+                return null;
+        }
+
+        if (user.Roles.Count != 0)
+        {
+            var rolesContent = JsonContent.Create(new UpdateUserRolesRequest { RoleName = user.Roles[0] });
+            var rolesResponse = await Http.PutAsync($"{ApiEndpoints.CommunityAdminUsers}/{user.Id}/roles", rolesContent);
+            if (!rolesResponse.IsSuccessStatusCode)
+                return null;
         }
 
         return await GetUserByIdAsync(user.Id);
     }
 
-    public Task<bool> DeleteUserAsync(Guid userId)
+    public async Task<bool> DeleteUserAsync(Guid userId)
     {
-        throw new NotSupportedException("La suppression d'utilisateur via l'API Community n'est pas implémentée.");
+        var response = await Http.DeleteAsync($"{ApiEndpoints.CommunityAdminUsers}/{userId}");
+        return response.IsSuccessStatusCode;
     }
 
     public async Task<bool> ApproveUserAsync(Guid userId)
@@ -122,8 +131,8 @@ public class ApiUserService : ApiServiceBase, IUserService
         if (!response.IsSuccessStatusCode)
             return false;
 
-        var roleContent = JsonContent.Create(new { roleName = RoleConstants.Member });
-        await Http.PostAsync($"{ApiEndpoints.AdminUsers}/{userId}/roles", roleContent);
+        var roleContent = JsonContent.Create(new UpdateUserRolesRequest { RoleName = "Collaborator" });
+        await Http.PutAsync($"{ApiEndpoints.CommunityAdminUsers}/{userId}/roles", roleContent);
 
         return true;
     }
@@ -133,5 +142,22 @@ public class ApiUserService : ApiServiceBase, IUserService
         var content = JsonContent.Create(new UpdateUserStatusRequest { IsActive = false });
         var response = await Http.PatchAsync($"{ApiEndpoints.AdminUsers}/{userId}/status", content);
         return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> UpdateTeamInfoAsync(Guid userId, UpdateTeamRequest request)
+    {
+        var content = JsonContent.Create(request);
+        var response = await Http.PatchAsync($"{ApiEndpoints.CommunityAdminUsers}/{userId}/team", content);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<List<UserDto>> GetTeamMembersAsync()
+    {
+        var users = await GetUsersAsync();
+        return users.Where(u => u.Roles.Any(r =>
+            r.Equals("Collaborator", StringComparison.OrdinalIgnoreCase) ||
+            r.Equals("Admin", StringComparison.OrdinalIgnoreCase) ||
+            r.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase))
+        ).ToList();
     }
 }
