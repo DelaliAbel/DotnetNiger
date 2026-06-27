@@ -39,12 +39,7 @@
       private async Task HandleLogout()
       {
             await AuthService.LogoutAsync();
-            var returnUrl = $"{NavigationManager.BaseUri.TrimEnd('/')}/auth/external-callback";
-            var apiBase = Config["ApiBaseUrl"];
-            if (string.IsNullOrWhiteSpace(apiBase)) return;
-            var path = Config["IdentityEndpoints:Login"] ?? "/Account/Login";
-            var loginUrl = $"{apiBase}{path}?returnUrl={Uri.EscapeDataString(returnUrl)}";
-            NavigationManager.NavigateTo(loginUrl, forceLoad: true);
+            NavigationManager.NavigateTo("/", forceLoad: true);
       }
 
 }

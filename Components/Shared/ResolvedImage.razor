@@ -1,24 +1,37 @@
-@inject IUploadService UploadService
+@inject IConfiguration Config
 
 <img src="@(_resolvedUrl ?? Fallback)" @attributes="AdditionalAttributes" />
 
 @code {
     [Parameter] public string? Src { get; set; }
-    [Parameter] public string? Fallback { get; set; }
+    [Parameter] public string? Fallback { get; set; } = "/Images/Fond.jpeg";
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
     private string? _resolvedUrl;
     private string? _previousSrc;
 
-    protected override async Task OnParametersSetAsync()
+    protected override void OnParametersSet()
     {
         if (_previousSrc != Src)
         {
             _previousSrc = Src;
-            _resolvedUrl = !string.IsNullOrWhiteSpace(Src)
-                ? await UploadService.ResolveImageUrlAsync(Src)
-                : null;
+            _resolvedUrl = ResolveImageUrl(Src);
         }
+    }
+
+    private string? ResolveImageUrl(string? imageUrl)
+    {
+        if (string.IsNullOrWhiteSpace(imageUrl))
+            return null;
+
+        if (Uri.TryCreate(imageUrl, UriKind.Absolute, out _))
+            return imageUrl;
+
+        var baseUri = Config["ApiBaseUrl"]?.TrimEnd('/');
+        if (string.IsNullOrWhiteSpace(baseUri))
+            return imageUrl;
+
+        return $"{baseUri}{imageUrl}";
     }
 }

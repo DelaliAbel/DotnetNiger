@@ -162,6 +162,9 @@
     {
         try
         {
+            if (!(User.Identity?.IsAuthenticated ?? false))
+                return;
+
             // UserStateService en priorité, ProfileService en fallback.
             if (UserStateService.CurrentUser is null)
                 await UserStateService.LoadUserFromStorageAsync();
@@ -211,7 +214,7 @@
     {
         isMenuOpen = false;
         await Auth.LogoutAsync();
-        Navigation.NavigateTo("/");
+        Navigation.NavigateTo("/", forceLoad: true);
     }
 
     private async Task NavigateToAdminAsync()

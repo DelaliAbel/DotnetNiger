@@ -6,6 +6,7 @@
 @inject IProfileService ProfileService
 @inject INotificationService NotificationService
 @inject IConfiguration Config
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <AuthorizeView>
     <Authorized Context="authState">
@@ -177,7 +178,10 @@
     {
         try
         {
-            // Utiliser UserStateService comme source principale; ProfileService en fallback.
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (!(authState.User.Identity?.IsAuthenticated ?? false))
+                return;
+
             if (UserStateService.CurrentUser is null)
                 await UserStateService.LoadUserFromStorageAsync();
 
@@ -240,7 +244,7 @@ NotificationCount.GetValueOrDefault();
     {
         await Auth.LogoutAsync();
         await NotifyActionCompletedAsync();
-        Navigation.NavigateTo("/");
+        Navigation.NavigateTo("/", forceLoad: true);
     }
 
     private async Task NavigateToNotificationsAsync()

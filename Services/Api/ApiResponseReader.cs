@@ -16,11 +16,11 @@ internal static class ApiResponseReader
         if (string.IsNullOrWhiteSpace(json))
             return default;
 
-        var wrapped = Deserialize<ApiSuccessResponse<T>>(json);
+        var wrapped = TryDeserialize<ApiSuccessResponse<T>>(json);
         if (wrapped is not null)
             return wrapped.Data;
 
-        return Deserialize<T>(json);
+        return TryDeserialize<T>(json);
     }
 
     public static async Task<List<T>> ReadCollectionAsync<T>(HttpResponseMessage response)
@@ -29,32 +29,42 @@ internal static class ApiResponseReader
         if (string.IsNullOrWhiteSpace(json))
             return new List<T>();
 
-        var wrappedList = Deserialize<ApiSuccessResponse<List<T>>>(json);
-        if (wrappedList?.Data is not null)
-            return wrappedList.Data;
+        using var doc = JsonDocument.Parse(json);
+        var isPaginated = doc.RootElement.TryGetProperty("data", out var data)
+            && data.ValueKind == JsonValueKind.Object;
 
-        var wrappedPaginated = Deserialize<ApiSuccessResponse<PaginatedDto<T>>>(json);
-        if (wrappedPaginated?.Data?.Items is not null)
-            return wrappedPaginated.Data.Items;
+        if (isPaginated)
+        {
+            var paginated = TryDeserialize<ApiSuccessResponse<PaginatedDto<T>>>(json);
+            if (paginated?.Data?.Items is not null)
+                return paginated.Data.Items;
 
-        var directList = Deserialize<List<T>>(json);
-        if (directList is not null)
-            return directList;
+            var directPaginated = TryDeserialize<PaginatedDto<T>>(json);
+            if (directPaginated?.Items is not null)
+                return directPaginated.Items;
+        }
+        else
+        {
+            var list = TryDeserialize<ApiSuccessResponse<List<T>>>(json);
+            if (list?.Data is not null)
+                return list.Data;
 
-        var directPaginated = Deserialize<PaginatedDto<T>>(json);
-        return directPaginated?.Items ?? new List<T>();
+            var directList = TryDeserialize<List<T>>(json);
+            if (directList is not null)
+                return directList;
+        }
+
+        return new List<T>();
     }
 
-    private static T? Deserialize<T>(string json)
+    private static T? TryDeserialize<T>(string json)
     {
         try
         {
             return JsonSerializer.Deserialize<T>(json, Options);
         }
-        catch (Exception ex)
+        catch
         {
-            Console.Error.WriteLine($"[ApiResponseReader] Échec désérialisation {typeof(T).Name}: {ex.Message}");
-            Console.Error.WriteLine($"[ApiResponseReader] JSON (premiers 500 char): {(json?.Length > 500 ? json[..500] + "..." : json)}");
             return default;
         }
     }

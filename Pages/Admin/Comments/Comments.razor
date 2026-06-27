@@ -131,7 +131,7 @@ else
                                                 <div class="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full bg-gray-100">
                                                     @if (!string.IsNullOrWhiteSpace(comment.AuthorAvatar))
                                                     {
-                                                        <img src="@comment.AuthorAvatar" alt="@comment.AuthorName" class="h-full w-full object-cover" />
+                                                        <ResolvedImage Src="@comment.AuthorAvatar" alt="@comment.AuthorName" class="h-full w-full object-cover" />
                                                     }
                                                     else
                                                     {
