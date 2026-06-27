@@ -80,7 +80,7 @@
             <section class="rounded-lg border border-slate-200 bg-slate-100/80 p-6 shadow-sm md:p-8">
                 <div class="mb-5 flex items-center justify-between gap-3">
                     <h2 class="text-3xl font-semibold tracking-tight text-slate-800">Liens sociaux</h2>
-                    <span class="text-sm text-slate-500">Gestion rapide des plateformes</span>
+                    <span class="text-sm text-slate-500">Renseigne les URLs de tes reseaux</span>
                 </div>
 
                 @if (!string.IsNullOrWhiteSpace(messageSocial))
@@ -88,53 +88,25 @@
                     <p class="mb-4 rounded-lg bg-white px-4 py-2 text-sm text-slate-700">@messageSocial</p>
                 }
 
-                @if (socialLinks.Count == 0)
-                {
-                    <p class="mb-4 text-sm text-slate-600">Aucun lien social enregistre.</p>
-                }
-                else
-                {
-                    <ul class="mb-5 space-y-2">
-                        @foreach (var link in socialLinks)
-                        {
-                            <li class="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
-                                <div class="flex items-center gap-2 text-sm text-slate-700">
-                                    <i class="@link.Icone text-base"></i>
-                                    <span class="font-semibold">@link.Platform</span>
-                                    <span class="mx-1 text-slate-300">|</span>
-                                    <a href="@link.Url" target="_blank" rel="noopener noreferrer" class="text-indigo-600 hover:underline truncate max-w-[200px]">@link.Url</a>
-                                </div>
-                                <button type="button"
-                                        @onclick="() => DeleteSocialLink(link.Id)"
-                                        class="inline-flex items-center rounded-lg border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200">
-                                    Supprimer
-                                </button>
-                            </li>
-                        }
-                    </ul>
-                }
+                <div class="space-y-3">
+                    @foreach (var item in socialLinksEdit)
+                    {
+                        <div class="flex flex-wrap items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+                            <i class="@GetIconeForPlatform(item.Platform) text-xl w-8 text-center"></i>
+                            <span class="w-24 text-sm font-semibold text-slate-700">@item.Platform</span>
+                            <input @bind="item.Url"
+                                   placeholder="https://"
+                                   class="flex-1 min-w-[200px] h-10 rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none" />
+                        </div>
+                    }
+                </div>
 
-                <EditForm Model="socialModel" OnValidSubmit="HandleAddSocialLink">
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
-                        <div>
-                            <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Plateforme</label>
-                            <InputSelect @bind-Value="socialModel.Platform" class="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-base text-slate-700 focus:border-indigo-400 focus:outline-none">
-                                <option value="">Sélectionner</option>
-                                <option value="GitHub">GitHub</option>
-                                <option value="LinkedIn">LinkedIn</option>
-                                <option value="Portfolio">Portfolio</option>
-                                <option value="Facebook">Facebook</option>
-                            </InputSelect>
-                        </div>
-                        <div>
-                            <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">URL</label>
-                            <InputText @bind-Value="socialModel.Url" class="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-base text-slate-700 focus:border-indigo-400 focus:outline-none" />
-                        </div>
-                        <button type="submit" class="h-12 rounded-lg bg-indigo-600 px-6 font-semibold text-white hover:bg-indigo-500">
-                            Ajouter
-                        </button>
-                    </div>
-                </EditForm>
+                <div class="mt-5">
+                    <button type="button" @onclick="SaveSocialLinksAsync"
+                            class="inline-flex h-10 items-center rounded-lg bg-indigo-600 px-6 text-sm font-semibold text-white hover:bg-indigo-500">
+                        Enregistrer les liens
+                    </button>
+                </div>
             </section>
 
             <div class="flex flex-wrap items-center gap-3 pt-1">
@@ -190,10 +162,26 @@ else
 }
 
 @code {
+    private static readonly string[] SocialPlatforms = ["GitHub", "LinkedIn", "Portfolio", "Facebook"];
+
+    private static string GetIconeForPlatform(string platform) => platform switch
+    {
+        "GitHub"    => "fab fa-github",
+        "LinkedIn"  => "fab fa-linkedin",
+        "Portfolio" => "fas fa-briefcase",
+        "Facebook"  => "fab fa-facebook",
+        _           => "fas fa-link"
+    };
+
+    private class SocialLinkEditModel
+    {
+        public string Platform { get; set; } = "";
+        public string Url { get; set; } = "";
+    }
+
     private Editor EditorRef { get; set; } = default!;
     private UpdateProfileRequest model = new();
-    private AddSocialLinkRequest socialModel = new();
-    private List<SocialLinkDto> socialLinks = new();
+    private List<SocialLinkEditModel> socialLinksEdit = [];
     private string? messageSocial;
     private string displayEmail = string.Empty;
     private bool isLoading = true;
@@ -246,7 +234,11 @@ else
             Skills      = user.Skills?.ToList() ?? new()
         };
         displayEmail = user.Email;
-        socialLinks  = user.SocialLinks ?? new();
+        socialLinksEdit = SocialPlatforms.Select(p => new SocialLinkEditModel
+        {
+            Platform = p,
+            Url = user.SocialLinks?.FirstOrDefault(sl => sl.Platform == p)?.Url ?? ""
+        }).ToList();
     }
 
     private async Task HandleSubmit()
@@ -258,43 +250,44 @@ else
         Navigation.NavigateTo("/profile");
     }
 
-    private async Task HandleAddSocialLink()
+    private async Task SaveSocialLinksAsync()
     {
         messageSocial = null;
+        var currentLinks = await ProfileService.GetSocialLinksAsync();
 
-        if (string.IsNullOrWhiteSpace(socialModel.Platform) || string.IsNullOrWhiteSpace(socialModel.Url))
+        foreach (var edit in socialLinksEdit)
         {
-            messageSocial = "La plateforme et l'URL sont obligatoires.";
-            return;
+            var existing = currentLinks.FirstOrDefault(sl => sl.Platform == edit.Platform);
+
+            if (string.IsNullOrWhiteSpace(edit.Url))
+            {
+                if (existing is not null)
+                    await ProfileService.DeleteSocialLinkAsync(existing.Id);
+            }
+            else
+            {
+                if (existing is null || existing.Url != edit.Url)
+                {
+                    if (existing is not null)
+                        await ProfileService.DeleteSocialLinkAsync(existing.Id);
+
+                    await ProfileService.AddSocialLinkAsync(new AddSocialLinkRequest
+                    {
+                        Platform = edit.Platform,
+                        Url = edit.Url
+                    });
+                }
+            }
         }
 
-        // ProfileService ajoute le lien ET synchronise UserStateService.
-        var created = await ProfileService.AddSocialLinkAsync(socialModel);
-        if (created is null)
+        var updatedLinks = await ProfileService.GetSocialLinksAsync();
+        socialLinksEdit = SocialPlatforms.Select(p => new SocialLinkEditModel
         {
-            messageSocial = "Impossible d'ajouter le lien social.";
-            return;
-        }
+            Platform = p,
+            Url = updatedLinks.FirstOrDefault(sl => sl.Platform == p)?.Url ?? ""
+        }).ToList();
 
-        socialLinks   = await ProfileService.GetSocialLinksAsync();
-        socialModel   = new AddSocialLinkRequest();
-        messageSocial = "Lien social ajoute avec succes.";
-    }
-
-    private async Task DeleteSocialLink(Guid id)
-    {
-        messageSocial = null;
-
-        // ProfileService supprime le lien ET synchronise UserStateService.
-        var deleted = await ProfileService.DeleteSocialLinkAsync(id);
-        if (!deleted)
-        {
-            messageSocial = "Impossible de supprimer le lien social.";
-            return;
-        }
-
-        socialLinks   = await ProfileService.GetSocialLinksAsync();
-        messageSocial = "Lien social supprime avec succes.";
+        messageSocial = "Liens sociaux mis a jour avec succes.";
     }
 
     private void Annuler() => Navigation.NavigateTo("/profile");
