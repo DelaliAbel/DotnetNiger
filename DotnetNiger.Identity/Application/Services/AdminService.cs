@@ -101,20 +101,15 @@ public class AdminService
 
     public async Task<object> GetTenantLoginHistoryAsync(Guid tenantId, int page, int pageSize)
     {
-        var userIds = await _db.Users
-            .Where(u => u.TenantId == tenantId)
-            .Select(u => u.Id)
-            .ToListAsync();
-
         var query = _db.LoginHistories
-            .Where(h => userIds.Contains(h.UserId));
+            .Where(h => _db.Users.Any(u => u.Id == h.UserId && u.TenantId == tenantId));
 
         var total = await query.CountAsync();
         var items = await query
             .OrderByDescending(h => h.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Join(_db.Users,
+            .Join(_db.Users.AsNoTracking(),
                 h => h.UserId,
                 u => u.Id,
                 (h, u) => new
@@ -136,17 +131,26 @@ public class AdminService
 
     public async Task<List<UserResponse>> GetAllUsersAcrossTenantsAsync()
     {
-        var users = await _db.Users.IgnoreQueryFilters().ToListAsync();
-        var result = new List<UserResponse>();
-        foreach (var u in users)
-        {
-            var roles = await _userManager.GetRolesAsync(u);
-            result.Add(new UserResponse(
-                u.Id, u.Email!, u.FirstName, u.LastName, u.AvatarUrl,
-                u.TenantId, u.IsActive, u.EmailConfirmed, u.CreatedAt,
-                roles.ToList()));
-        }
-        return result;
+        var users = await _db.Users.IgnoreQueryFilters()
+            .OrderBy(u => u.Email)
+            .ToListAsync();
+
+        var userIds = users.Select(u => u.Id).ToList();
+        var roleMappings = userIds.Count == 0
+            ? []
+            : await _db.UserRoles
+                .Where(ur => userIds.Contains(ur.UserId))
+                .Join(_db.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => new { ur.UserId, RoleName = r.Name! })
+                .ToListAsync();
+
+        var rolesByUser = roleMappings
+            .GroupBy(x => x.UserId)
+            .ToDictionary(g => g.Key, g => g.Select(x => x.RoleName).ToList());
+
+        return users.Select(u => new UserResponse(
+            u.Id, u.Email!, u.FirstName, u.LastName, u.AvatarUrl,
+            u.TenantId, u.IsActive, u.EmailConfirmed, u.CreatedAt,
+            rolesByUser.GetValueOrDefault(u.Id, []))).ToList();
     }
 
     public async Task<bool> UpdateUserStatusAsync(Guid id, bool isActive)

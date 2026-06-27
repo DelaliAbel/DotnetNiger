@@ -55,10 +55,21 @@ public class SettingsService(AppDbContext db) : ISettingsService
 
     public async Task SetBatchAsync(Dictionary<string, string> settings)
     {
+        var keys = settings.Keys.ToList();
+        var existing = await db.SiteSettings
+            .Where(s => keys.Contains(s.Key))
+            .ToListAsync();
+
+        var existingByKey = existing.ToDictionary(s => s.Key);
+
         foreach (var (key, value) in settings)
         {
-            var existing = await db.SiteSettings.FindAsync(key);
-            if (existing is null)
+            if (existingByKey.TryGetValue(key, out var setting))
+            {
+                setting.Value = value;
+                setting.UpdatedAt = DateTime.UtcNow;
+            }
+            else
             {
                 db.SiteSettings.Add(new SiteSetting
                 {
@@ -66,11 +77,6 @@ public class SettingsService(AppDbContext db) : ISettingsService
                     Value = value,
                     UpdatedAt = DateTime.UtcNow
                 });
-            }
-            else
-            {
-                existing.Value = value;
-                existing.UpdatedAt = DateTime.UtcNow;
             }
         }
 

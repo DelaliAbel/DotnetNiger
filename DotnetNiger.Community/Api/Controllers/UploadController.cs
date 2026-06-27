@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using DotnetNiger.Community.Application.Constants;
 using Microsoft.AspNetCore.Mvc;
 using SkiaSharp;
@@ -15,6 +16,17 @@ public class UploadController(IWebHostEnvironment env) : ControllerBase
         "image/jpeg", "image/png", "image/webp", "image/gif"
     };
     private const long MaxFileSize = 3 * 1024 * 1024;
+
+    private string GetUploadsRoot()
+    {
+        var wwwroot = env.WebRootPath;
+        if (string.IsNullOrEmpty(wwwroot))
+        {
+            wwwroot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+            Directory.CreateDirectory(wwwroot);
+        }
+        return wwwroot;
+    }
 
     /// <summary>Upload un fichier image (multipart/form-data).</summary>
     /// <param name="file">Fichier image à uploader.</param>
@@ -48,10 +60,10 @@ public class UploadController(IWebHostEnvironment env) : ControllerBase
             _ => "uploads"
         };
 
-        var uploadsDir = Path.Combine(env.WebRootPath, folder);
+        var uploadsDir = Path.Combine(GetUploadsRoot(), folder);
         Directory.CreateDirectory(uploadsDir);
 
-        var fileName = $"{Guid.NewGuid()}{ext}";
+        var fileName = await BuildFileNameAsync(ext, type, uploadsDir);
         var filePath = Path.Combine(uploadsDir, fileName);
 
         ms.Position = 0;
@@ -94,10 +106,10 @@ public class UploadController(IWebHostEnvironment env) : ControllerBase
             _ => "uploads"
         };
 
-        var uploadsDir = Path.Combine(env.WebRootPath, folder);
+        var uploadsDir = Path.Combine(GetUploadsRoot(), folder);
         Directory.CreateDirectory(uploadsDir);
 
-        var fileName = $"{Guid.NewGuid()}{ext}";
+        var fileName = await BuildFileNameAsync(ext, request.Type, uploadsDir);
         var filePath = Path.Combine(uploadsDir, fileName);
 
         await System.IO.File.WriteAllBytesAsync(filePath, data);
@@ -118,12 +130,36 @@ public class UploadController(IWebHostEnvironment env) : ControllerBase
         if (string.IsNullOrWhiteSpace(path))
             return BadRequest(new { Success = false, Message = Messages.Upload.PathRequired });
 
-        var fullPath = Path.Combine(env.WebRootPath, path.TrimStart('/'));
+        var fullPath = Path.GetFullPath(Path.Combine(GetUploadsRoot(), path.TrimStart('/')));
+        var uploadsDir = Path.GetFullPath(GetUploadsRoot());
+
+        if (!fullPath.StartsWith(uploadsDir, StringComparison.OrdinalIgnoreCase))
+            return BadRequest(new { Success = false, Message = Messages.Upload.PathNotAllowed });
+
         if (!System.IO.File.Exists(fullPath))
             return NotFound(new { Success = false, Message = Messages.Upload.NotFound });
 
         System.IO.File.Delete(fullPath);
         return Ok(new { Success = true, Message = Messages.Upload.Deleted });
+    }
+
+    private Task<string> BuildFileNameAsync(string ext, string type, string uploadsDir)
+    {
+        if (type != "User")
+            return Task.FromResult($"{Guid.NewGuid()}{ext}");
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userId))
+            return Task.FromResult($"{Guid.NewGuid()}{ext}");
+
+        var name = $"{userId}{ext}";
+        var existing = Directory.GetFiles(uploadsDir, $"{userId}.*");
+        foreach (var f in existing)
+        {
+            if (!f.Equals(Path.Combine(uploadsDir, name), StringComparison.OrdinalIgnoreCase))
+                System.IO.File.Delete(f);
+        }
+        return Task.FromResult(name);
     }
 
     private static string? ValidateImageMime(Stream stream)

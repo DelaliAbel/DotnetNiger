@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.Extensions.Configuration;
 
 namespace DotnetNiger.Community.Infrastructure;
 
@@ -11,14 +12,15 @@ public class AppDbContextFactory : IDesignTimeDbContextFactory<AppDbContext>
     public AppDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<AppDbContext>();
-        var provider = Environment.GetEnvironmentVariable("DatabaseProvider") ?? "Sqlite";
-        var connStr = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection") ?? "Data Source=DotnetNigerCommunity.db";
+        var connStr = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+            ?? new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json")
+                .Build()
+                .GetConnectionString("DefaultConnection")
+            ?? "Server=localhost; Database=DotnetNiger; User Id=SA; Password=SqlServer2026!; TrustServerCertificate=True;";
 
-        if (provider == "SqlServer")
-            optionsBuilder.UseSqlServer(connStr);
-        else
-            optionsBuilder.UseSqlite(connStr);
-
+        optionsBuilder.UseSqlServer(connStr);
         return new AppDbContext(optionsBuilder.Options);
     }
 }

@@ -184,7 +184,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [{ "Host": "community-dotnetniger.runasp.net", "Port": 443 }],
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 30000 },
-      "RateLimitOptions": { "ClientWhitelist": [], "EnableRateLimiting": true, "Period": "1m", "PeriodTimespan": 60, "Limit": 10 },
+      "RateLimitOptions": { "EnableRateLimiting": false },
       "Key": "CommunityUploadRoute",
       "SwaggerKey": "community"
     },
@@ -195,7 +195,7 @@
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [{ "Host": "community-dotnetniger.runasp.net", "Port": 443 }],
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 30000 },
-      "RateLimitOptions": { "ClientWhitelist": [], "EnableRateLimiting": true, "Period": "1m", "PeriodTimespan": 60, "Limit": 10 },
+      "RateLimitOptions": { "EnableRateLimiting": false },
       "Key": "CommunityUploadBase64Route",
       "SwaggerKey": "community"
     },
@@ -205,6 +205,7 @@
       "DownstreamPathTemplate": "/uploads/{everything}",
       "DownstreamScheme": "https",
       "DownstreamHostAndPorts": [{ "Host": "community-dotnetniger.runasp.net", "Port": 443 }],
+      "RateLimitOptions": { "EnableRateLimiting": false },
       "Key": "CommunityUploadsStaticRoute",
       "SwaggerKey": "community"
     },

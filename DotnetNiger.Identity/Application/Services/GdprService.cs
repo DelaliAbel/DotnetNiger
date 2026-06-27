@@ -38,7 +38,7 @@ public class GdprService
 
     public async Task<List<ConsentResponse>> GetConsentHistoryAsync(Guid userId)
     {
-        return await _db.UserConsents
+        return await _db.UserConsents.AsNoTracking()
             .Where(c => c.UserId == userId)
             .OrderByDescending(c => c.CreatedAt)
             .Select(c => new ConsentResponse(c.ConsentType, c.ConsentVersion, c.Granted, c.CreatedAt))
@@ -47,13 +47,12 @@ public class GdprService
 
     public async Task<List<ConsentResponse>> GetLatestConsentsAsync(Guid userId)
     {
-        var all = await _db.UserConsents
+        return await _db.UserConsents.AsNoTracking()
             .Where(c => c.UserId == userId)
             .GroupBy(c => c.ConsentType)
             .Select(g => g.OrderByDescending(c => c.CreatedAt).First())
+            .Select(c => new ConsentResponse(c.ConsentType, c.ConsentVersion, c.Granted, c.CreatedAt))
             .ToListAsync();
-
-        return all.Select(c => new ConsentResponse(c.ConsentType, c.ConsentVersion, c.Granted, c.CreatedAt)).ToList();
     }
 
     public async Task<byte[]> ExportUserDataAsync(Guid userId)
@@ -62,8 +61,8 @@ public class GdprService
         if (user == null) throw new KeyNotFoundException("User not found");
 
         var roles = await _userManager.GetRolesAsync(user);
-        var consents = await _db.UserConsents.Where(c => c.UserId == userId).ToListAsync();
-        var auditLogs = await _db.AuditLogs.Where(a => a.UserId == userId).OrderByDescending(a => a.CreatedAt).Take(500).ToListAsync();
+        var consents = await _db.UserConsents.AsNoTracking().Where(c => c.UserId == userId).ToListAsync();
+        var auditLogs = await _db.AuditLogs.AsNoTracking().Where(a => a.UserId == userId).OrderByDescending(a => a.CreatedAt).Take(500).ToListAsync();
         var tenants = await _db.Tenants.Where(t => t.Id == user.TenantId).ToListAsync();
 
         using var memoryStream = new MemoryStream();
@@ -155,12 +154,11 @@ public class GdprService
         foreach (var login in logins)
             await _userManager.RemoveLoginAsync(user, login.LoginProvider, login.ProviderKey);
 
-        var auditLogs = await _db.AuditLogs.Where(a => a.UserId == userId).ToListAsync();
-        foreach (var log in auditLogs)
-        {
-            log.Description = "[anonymized]";
-            log.IpAddress = null;
-        }
+        await _db.AuditLogs
+            .Where(a => a.UserId == userId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(a => a.Description, "[anonymized]")
+                .SetProperty(a => a.IpAddress, (string?)null));
 
         var oldConsents = await _db.UserConsents
             .Where(c => c.UserId == userId && c.CreatedAt < DateTime.UtcNow.AddDays(-30))

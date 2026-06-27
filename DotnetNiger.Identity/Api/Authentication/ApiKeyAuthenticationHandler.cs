@@ -23,7 +23,8 @@ public class ApiKeyAuthenticationHandler : AuthenticationHandler<ApiKeyAuthentic
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
-        if (!Request.Headers.TryGetValue(Options.ApiKeyHeaderName, out var apiKeyValues))
+        if (!Request.Headers.TryGetValue(Options.ApiKeyHeaderName, out var apiKeyValues)
+            && !Request.Headers.TryGetValue("X-Internal-Key", out apiKeyValues))
             return AuthenticateResult.NoResult();
 
         var apiKey = apiKeyValues.FirstOrDefault();

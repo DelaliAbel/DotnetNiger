@@ -31,7 +31,7 @@ public interface IEventService
     Task<List<EventRegistrationResponse>> GetRegistrationsAsync(Guid eventId);
 
     /// <summary>Événements en attente de validation par un admin.</summary>
-    Task<List<EventResponse>> GetPendingEventsAsync(int page = 1, int pageSize = 10);
+    Task<PaginatedResponse<EventResponse>> GetPendingEventsAsync(int page = 1, int pageSize = 10);
     /// <summary>Approuve et publie un événement en attente.</summary>
     Task<EventResponse?> ApproveAsync(Guid id);
     /// <summary>Rejette un événement avec un motif.</summary>

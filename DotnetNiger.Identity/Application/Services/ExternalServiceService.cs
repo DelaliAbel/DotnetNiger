@@ -39,7 +39,7 @@ public class ExternalServiceService
 
     public async Task<PaginatedResponse<ExternalServiceResponse>> GetByTenantAsync(Guid tenantId, PaginationQuery pagination)
     {
-        var query = _db.ExternalServices.Where(s => s.TenantId == tenantId);
+        var query = _db.ExternalServices.AsNoTracking().Where(s => s.TenantId == tenantId);
 
         var totalCount = await query.CountAsync();
 
@@ -55,7 +55,7 @@ public class ExternalServiceService
 
     public async Task<ExternalServiceResponse> GetByIdAsync(Guid tenantId, Guid serviceId)
     {
-        var service = await _db.ExternalServices
+        var service = await _db.ExternalServices.AsNoTracking()
             .FirstOrDefaultAsync(s => s.Id == serviceId && s.TenantId == tenantId)
             ?? throw new KeyNotFoundException("External service not found");
 
@@ -64,7 +64,7 @@ public class ExternalServiceService
 
     public async Task<ServiceLookupResult?> ResolveSlugAsync(string slug)
     {
-        var service = await _db.ExternalServices
+        var service = await _db.ExternalServices.AsNoTracking()
             .FirstOrDefaultAsync(s => s.Slug == slug && s.IsActive && s.Status == ExternalServiceStatus.Active);
 
         return service == null ? null : new ServiceLookupResult(service.BaseUrl);
@@ -90,11 +90,13 @@ public class ExternalServiceService
         return MapToResponse(service);
     }
 
-    public async Task<List<ExternalServiceResponse>> GetAllActiveAsync()
+    public async Task<List<ExternalServiceResponse>> GetAllActiveAsync(int page = 1, int pageSize = 50)
     {
-        var services = await _db.ExternalServices
+        var services = await _db.ExternalServices.AsNoTracking()
             .Where(s => s.IsActive && s.Status == ExternalServiceStatus.Active)
             .OrderByDescending(s => s.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
         return services.Select(MapToResponse).ToList();

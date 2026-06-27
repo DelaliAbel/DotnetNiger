@@ -3,7 +3,6 @@ using System.Text.RegularExpressions;
 using System.Text.Json;
 using DotnetNiger.Gateway.Configuration;
 using Microsoft.Extensions.Caching.Memory;
-using Serilog;
 
 namespace DotnetNiger.Gateway.Middleware;
 
@@ -13,6 +12,7 @@ public partial class ExternalServiceProxyMiddleware
     private readonly RequestDelegate _next;
     private readonly IMemoryCache _cache;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<ExternalServiceProxyMiddleware> _logger;
     private readonly string _identityBaseUrl;
     private readonly TimeSpan _cacheDuration;
 
@@ -21,11 +21,13 @@ public partial class ExternalServiceProxyMiddleware
         RequestDelegate next,
         IMemoryCache cache,
         IHttpClientFactory httpClientFactory,
+        ILogger<ExternalServiceProxyMiddleware> logger,
         IConfiguration configuration)
     {
         _next = next;
         _cache = cache;
         _httpClientFactory = httpClientFactory;
+        _logger = logger;
         _identityBaseUrl = (configuration["DeveloperPortal:IdentityBaseUrl"]
             ?? "http://localhost:5075").TrimEnd('/');
         var cacheSeconds = int.TryParse(
@@ -68,9 +70,9 @@ public partial class ExternalServiceProxyMiddleware
 
                 return result?.BaseUrl;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Log.Warning(ex, "Failed to resolve external service slug: {Slug}", slug);
+                // Slug resolution failure is non-critical
                 return null;
             }
         });
@@ -81,6 +83,17 @@ public partial class ExternalServiceProxyMiddleware
             context.Response.ContentType = "application/json";
             await context.Response.WriteAsync(
                 JsonSerializer.Serialize(new { error = Messages.Proxy.ServiceNotFound }),
+                context.RequestAborted);
+            return;
+        }
+
+        if (!IsValidTargetUrl(baseUrl))
+        {
+            _logger.LogWarning("Blocked proxy request to blocked target: {BaseUrl}", baseUrl);
+            context.Response.StatusCode = 502;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsync(
+                JsonSerializer.Serialize(new { error = Messages.Proxy.TargetNotAllowed }),
                 context.RequestAborted);
             return;
         }
@@ -142,7 +155,7 @@ public partial class ExternalServiceProxyMiddleware
         }
         catch (HttpRequestException ex)
         {
-            Log.Warning(ex, "Proxy error for external service {Slug} -> {Target}", slug, targetUrl);
+            _logger.LogWarning(ex, "Proxy error for external service {Slug} -> {Target}", slug, targetUrl);
             if (!context.Response.HasStarted)
             {
                 context.Response.StatusCode = 502;
@@ -152,6 +165,33 @@ public partial class ExternalServiceProxyMiddleware
                     context.RequestAborted);
             }
         }
+    }
+
+    private static readonly HashSet<string> BlockedHosts =
+    [
+        "0.0.0.0",
+        "[::1]",
+        "169.254.169.254",
+        "metadata.google.internal",
+        "100.100.100.200"
+    ];
+
+    private static bool IsValidTargetUrl(string baseUrl)
+    {
+        if (!Uri.TryCreate(baseUrl, UriKind.Absolute, out var uri))
+            return false;
+
+        // Autorise HTTP pour les hosts locaux en dev
+        if (uri.Host is "localhost" or "127.0.0.1")
+            return true;
+
+        if (!string.Equals(uri.Scheme, "https", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (BlockedHosts.Contains(uri.Host) || uri.Host.EndsWith(".internal", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        return true;
     }
 
     [GeneratedRegex(@"^/ext/([^/]+)(/.*)?$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]

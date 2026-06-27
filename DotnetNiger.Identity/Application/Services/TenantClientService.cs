@@ -107,7 +107,7 @@ public class TenantClientService
 
     public async Task<PaginatedResponse<TenantClientResponse>> GetClientsAsync(Guid tenantId, PaginationQuery pagination)
     {
-        var query = _db.TenantClients.Where(c => c.TenantId == tenantId);
+        var query = _db.TenantClients.AsNoTracking().Where(c => c.TenantId == tenantId);
 
         var totalCount = await query.CountAsync();
 
@@ -124,6 +124,7 @@ public class TenantClientService
     public async Task<List<TenantClientResponse>> GetClientsByClientIdAsync(string clientId)
     {
         var clients = await _db.TenantClients
+            .AsNoTracking()
             .IgnoreQueryFilters()
             .Where(c => c.ClientId == clientId)
             .ToListAsync();
@@ -133,7 +134,7 @@ public class TenantClientService
 
     public async Task<TenantClientResponse> GetClientByIdAsync(Guid tenantId, Guid clientId)
     {
-        var client = await _db.TenantClients
+        var client = await _db.TenantClients.AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == clientId && c.TenantId == tenantId)
             ?? throw new KeyNotFoundException("Client OAuth non trouvé");
 

@@ -4,8 +4,6 @@ using DotnetNiger.Community.Application.Services;
 using DotnetNiger.Community.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.OpenApi.Models;
 
 namespace DotnetNiger.Community.Api;
 
@@ -19,17 +17,11 @@ public static class ServiceExtensions
     {
         services.AddDbContext<AppDbContext>(options =>
         {
-            var provider = configuration.GetValue<string>("DatabaseProvider", "Sqlite");
-            var connStr = configuration.GetConnectionString("DefaultConnection") ?? "Data Source=DotnetNigerCommunity.db";
-
-            options.ConfigureWarnings(w => w.Ignore(RelationalEventId.PendingModelChangesWarning));
-
-            if (provider == "SqlServer")
-                options.UseSqlServer(connStr, x => x.MigrationsHistoryTable("__EFMigrationsHistory_Community").MigrationsAssembly("DotnetNiger.Community").UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
-            else if (provider is "PostgreSql" or "PostgreSQL" or "Npgsql")
-                options.UseNpgsql(connStr, x => x.MigrationsAssembly("DotnetNiger.Community").UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
-            else
-                options.UseSqlite(connStr, x => x.MigrationsAssembly("DotnetNiger.Community").UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
+            var connStr = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is required");
+            options.UseSqlServer(connStr, x => x
+                .MigrationsHistoryTable("__EFMigrationsHistory_Community")
+                .MigrationsAssembly("DotnetNiger.Community")
+                .UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
         });
 
         return services;
@@ -69,17 +61,17 @@ public static class ServiceExtensions
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
-                options.Authority = configuration["Jwt:Authority"] ?? "http://localhost:5075";
+                options.Authority = configuration["Jwt:Authority"];
                 options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = configuration["Jwt:Issuer"] ?? "http://localhost:5075/",
+                    ValidIssuer = configuration["Jwt:Issuer"],
                     ValidAudience = configuration["Jwt:Audience"] ?? "DotnetNiger.Identity.Client",
                 };
-                options.MetadataAddress = configuration["Jwt:MetadataAddress"] ?? "http://localhost:5075/.well-known/openid-configuration";
+                options.MetadataAddress = configuration["Jwt:MetadataAddress"];
                 options.RequireHttpsMetadata = !environment.IsDevelopment() && !configuration.GetValue<bool>("Jwt:DisableHttpsRequirement");
             });
 
@@ -105,7 +97,7 @@ public static class ServiceExtensions
         return services;
     }
 
-    /// <summary>Configure le versioning d'API et la documentation Swagger avec support JWT.</summary>
+    /// <summary>Configure le versioning d'API (URL segment + rapport version).</summary>
     /// <param name="services">Collection de services.</param>
     public static IServiceCollection AddApiVersioningWithSwagger(
         this IServiceCollection services)
@@ -120,46 +112,6 @@ public static class ServiceExtensions
         {
             options.GroupNameFormat = "'v'VVV";
             options.SubstituteApiVersionInUrl = true;
-        });
-
-        services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen(options =>
-        {
-            options.SwaggerDoc("v1", new OpenApiInfo
-            {
-                Title = "DotnetNiger Community API",
-                Version = "v1.0",
-                Description = "API publique de la communaut\u00e9 DotnetNiger - Posts, Events, Resources, Comments, Profile, Admin"
-            });
-
-            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-            {
-                Name = "Authorization",
-                Type = SecuritySchemeType.Http,
-                Scheme = "Bearer",
-                BearerFormat = "JWT",
-                Description = "Entrez le token JWT : Bearer {votre_token}"
-            });
-
-            options.AddSecurityRequirement(new OpenApiSecurityRequirement
-            {
-                {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
-                    },
-                    Array.Empty<string>()
-                }
-            });
-
-            var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-            if (File.Exists(xmlPath))
-                options.IncludeXmlComments(xmlPath);
         });
 
         return services;

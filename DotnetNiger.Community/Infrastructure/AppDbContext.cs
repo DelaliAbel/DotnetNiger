@@ -42,6 +42,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Slug).IsUnique();
+            entity.HasIndex(e => e.AuthorId);
             entity.Property(e => e.Title).HasMaxLength(200);
             entity.Property(e => e.Slug).HasMaxLength(200);
             entity.Property(e => e.PostType).HasMaxLength(50);
@@ -81,6 +82,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Slug).IsUnique();
+            entity.HasIndex(e => e.StartDate);
+            entity.HasIndex(e => e.CreatedBy);
             entity.HasIndex(e => new { e.IsPublished, e.EndDate });
             entity.Property(e => e.Title).HasMaxLength(200);
             entity.Property(e => e.Slug).HasMaxLength(200);
@@ -111,6 +114,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Slug).IsUnique();
+            entity.HasIndex(e => e.CreatedBy);
             entity.Property(e => e.Title).HasMaxLength(200);
             entity.Property(e => e.Slug).HasMaxLength(200);
             entity.Property(e => e.ResourceType).HasMaxLength(50);
@@ -144,14 +148,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         modelBuilder.Entity<Comment>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.HasOne(e => e.Post).WithMany(e => e.Comments).HasForeignKey(e => e.PostId).OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne(e => e.Event).WithMany(e => e.Comments).HasForeignKey(e => e.EventId).OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne(e => e.ParentComment).WithMany(e => e.Replies).HasForeignKey(e => e.ParentCommentId).OnDelete(DeleteBehavior.SetNull);
+            entity.HasIndex(e => e.PostId);
+            entity.HasIndex(e => e.EventId);
+            entity.HasIndex(e => e.ParentCommentId);
+            entity.HasOne(e => e.Post).WithMany(e => e.Comments).HasForeignKey(e => e.PostId).OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(e => e.Event).WithMany(e => e.Comments).HasForeignKey(e => e.EventId).OnDelete(DeleteBehavior.NoAction);
+            entity.HasOne(e => e.ParentComment).WithMany(e => e.Replies).HasForeignKey(e => e.ParentCommentId).OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<Member>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.HasIndex(e => e.FullName);
+            entity.HasIndex(e => e.Country);
             entity.Property(e => e.FullName).HasMaxLength(100);
             entity.Property(e => e.PhoneNumber).HasMaxLength(20);
             entity.Property(e => e.Country).HasMaxLength(100);
@@ -178,6 +187,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             entity.HasKey(e => e.Id);
             entity.HasIndex(e => e.Slug).IsUnique();
+            entity.HasIndex(e => e.CreatedBy);
             entity.Property(e => e.Title).HasMaxLength(200);
             entity.Property(e => e.Slug).HasMaxLength(200);
             entity.Property(e => e.Technologies).HasMaxLength(500);
@@ -197,7 +207,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.Message).HasMaxLength(500);
-            entity.HasIndex(e => e.UserId);
+            entity.HasIndex(e => new { e.UserId, e.IsRead });
         });
 
         modelBuilder.Entity<Speaker>(entity =>

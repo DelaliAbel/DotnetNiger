@@ -91,15 +91,14 @@ public class TenantService
 
     public async Task<PaginatedResponse<TenantResponse>> GetAllAsync(PaginationQuery pagination)
     {
-        var query = _db.Tenants.OrderBy(t => t.Name);
+        var query = _db.Tenants.AsNoTracking().OrderBy(t => t.Name);
         var total = await query.CountAsync();
-        var tenants = await query
+        var items = await query
             .Skip((pagination.EnsurePage - 1) * pagination.EnsurePageSize)
             .Take(pagination.EnsurePageSize)
+            .Select(t => new TenantResponse(t.Id, t.Name, t.Slug, t.Description, t.IsActive, t.CreatedAt))
             .ToListAsync();
-        return new PaginatedResponse<TenantResponse>(
-            tenants.Select(t => new TenantResponse(t.Id, t.Name, t.Slug, t.Description, t.IsActive, t.CreatedAt)).ToList(),
-            total, pagination.EnsurePage, pagination.EnsurePageSize);
+        return new PaginatedResponse<TenantResponse>(items, total, pagination.EnsurePage, pagination.EnsurePageSize);
     }
 
     public async Task<TenantResponse?> GetByIdAsync(Guid id)
@@ -110,7 +109,7 @@ public class TenantService
 
     public async Task<TenantResponse?> GetBySlugAsync(string slug)
     {
-        var tenant = await _db.Tenants.FirstOrDefaultAsync(t => t.Slug == slug);
+        var tenant = await _db.Tenants.AsNoTracking().FirstOrDefaultAsync(t => t.Slug == slug);
         return tenant == null ? null : MapToResponse(tenant);
     }
 

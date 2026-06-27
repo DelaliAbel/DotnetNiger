@@ -1,44 +1,31 @@
-/// <summary>Point d'entrée du API Gateway DotnetNiger. Configure et lance le pipeline Ocelot avec les middlewares personnalisés.</summary>
+/// <summary>Point d'entrée du API Gateway DotnetNiger.</summary>
 using DotnetNiger.Gateway.Configuration;
 using DotnetNiger.Gateway.Extensions;
 using Microsoft.AspNetCore.HttpOverrides;
 using DotnetNiger.Gateway.Services;
-using MMLib.SwaggerForOcelot.Middleware;
 using Ocelot.Middleware;
-using Serilog;
-using Serilog.Events;
-
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-    .MinimumLevel.Override("Ocelot", LogEventLevel.Warning)
-    .Enrich.FromLogContext()
-    .Enrich.WithProperty("Service", "Gateway")
-    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
-    .WriteTo.File("logs/gateway-.log", rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7)
-    .CreateLogger();
-
-Log.Information("Démarrage du DotnetNiger API Gateway...");
 
 try
 {
     var builder = WebApplication.CreateBuilder(args);
-    builder.Host.UseSerilog();
 
-var seedServices = LoadDownstreamServices(builder.Configuration);
-var useConsul = string.Equals(
-    builder.Configuration["ServiceDiscovery:Provider"], "Consul", StringComparison.OrdinalIgnoreCase);
-var useContainerHosts = string.Equals(
-    builder.Configuration["ServiceDiscovery:UseContainerHosts"], "true", StringComparison.OrdinalIgnoreCase);
+    builder.Logging.ClearProviders();
+    builder.Logging.AddConsole();
 
-var mergedOcelotFile = useConsul
-    ? OcelotConfigurationBuilder.BuildMergedConfigWithConsul(
-        builder.Environment.ContentRootPath, seedServices)
-    : OcelotConfigurationBuilder.BuildMergedConfig(
-        builder.Environment.ContentRootPath,
-        useContainerHosts,
-        seedServices,
-        builder.Configuration);
+    var seedServices = LoadDownstreamServices(builder.Configuration);
+    var useConsul = string.Equals(
+        builder.Configuration["ServiceDiscovery:Provider"], "Consul", StringComparison.OrdinalIgnoreCase);
+    var useContainerHosts = string.Equals(
+        builder.Configuration["ServiceDiscovery:UseContainerHosts"], "true", StringComparison.OrdinalIgnoreCase);
+
+    var mergedOcelotFile = useConsul
+        ? OcelotConfigurationBuilder.BuildMergedConfigWithConsul(
+            builder.Environment.ContentRootPath, seedServices)
+        : OcelotConfigurationBuilder.BuildMergedConfig(
+            builder.Environment.ContentRootPath,
+            useContainerHosts,
+            seedServices,
+            builder.Configuration);
 
     var serviceRegistry = new ServiceRegistry(seedServices);
     builder.Services.AddSingleton<IServiceRegistry>(serviceRegistry);
@@ -50,6 +37,17 @@ var mergedOcelotFile = useConsul
     builder.Services.AddGatewayServices(builder.Configuration, builder.Environment);
 
     var app = builder.Build();
+
+    app.Use(async (ctx, next) =>
+    {
+        if (ctx.Request.Path == "/swagger" && ctx.Request.Method == "GET")
+        {
+            ctx.Response.ContentType = "text/html; charset=utf-8";
+            await ctx.Response.WriteAsync(SwaggerUiPage("/swagger/docs/v1/all", "DotnetNiger Gateway API"));
+            return;
+        }
+        await next();
+    });
 
     app.UseForwardedHeaders(new ForwardedHeadersOptions
     {
@@ -93,34 +91,20 @@ var mergedOcelotFile = useConsul
         });
     }
 
-    app.UseSwaggerForOcelotUI(opt =>
-    {
-        opt.PathToSwaggerGenerator = "/swagger/docs";
-    }, uiOpt =>
-    {
-        uiOpt.EnableFilter();
-        uiOpt.EnableDeepLinking();
-        uiOpt.DisplayRequestDuration();
-        uiOpt.EnablePersistAuthorization();
-        uiOpt.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.None);
-    });
-
     app.UseAuthentication();
     app.UseAuthorization();
 
     await app.UseOcelot();
     await app.RunAsync();
+    return 0;
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "Application terminated unexpectedly");
-}
-finally
-{
-    await Log.CloseAndFlushAsync();
+    var logger = LoggerFactory.Create(x => x.AddConsole()).CreateLogger("Program");
+    logger.LogCritical(ex, "Application terminated unexpectedly");
+    return 1;
 }
 
-/// <summary>Charge la liste des services aval depuis la configuration.</summary>
 static List<DownstreamServiceConfig> LoadDownstreamServices(IConfiguration configuration)
 {
     var services = new List<DownstreamServiceConfig>();
@@ -151,4 +135,23 @@ static List<DownstreamServiceConfig> LoadDownstreamServices(IConfiguration confi
     }
 
     return services;
+}
+
+static string SwaggerUiPage(string specUrl, string title)
+{
+    return $$"""
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"/><title>{{title}}</title>
+<link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+<script>
+SwaggerUIBundle({ url: '{{specUrl}}', dom_id: '#swagger-ui', presets: [SwaggerUIBundle.presets.apis], layout: 'BaseLayout' });
+</script>
+</body>
+</html>
+""";
 }

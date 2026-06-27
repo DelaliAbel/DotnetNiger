@@ -45,6 +45,7 @@ public class IdentityDbContext : IdentityDbContext<
         {
             b.Property(u => u.TenantId).IsRequired();
             b.HasIndex(u => u.TenantId);
+            b.HasIndex(u => u.Email);
             b.HasQueryFilter(u => _tenant.TenantId == null || u.TenantId == _tenant.TenantId);
         });
 
@@ -84,6 +85,7 @@ builder.Entity<TenantApiKey>(b =>
         {
             b.HasIndex(s => s.Slug).IsUnique();
             b.HasIndex(s => s.TenantId);
+            b.HasIndex(s => new { s.IsActive, s.Status });
             b.Property(s => s.Name).HasMaxLength(200);
             b.Property(s => s.Slug).HasMaxLength(200);
             b.Property(s => s.BaseUrl).HasMaxLength(500);
@@ -103,8 +105,7 @@ builder.Entity<TenantApiKey>(b =>
 
         builder.Entity<UserConsent>(b =>
         {
-            b.HasIndex(c => c.UserId);
-            b.HasIndex(c => c.CreatedAt);
+            b.HasIndex(c => new { c.UserId, c.CreatedAt });
             b.Property(c => c.ConsentType).HasMaxLength(50);
             b.Property(c => c.ConsentVersion).HasMaxLength(20);
         });
@@ -112,8 +113,7 @@ builder.Entity<TenantApiKey>(b =>
         builder.Entity<LoginHistory>(b =>
         {
             b.HasKey(e => e.Id);
-            b.HasIndex(e => e.UserId);
-            b.HasIndex(e => e.CreatedAt);
+            b.HasIndex(e => new { e.UserId, e.CreatedAt });
             b.Property(e => e.IpAddress).HasMaxLength(50);
             b.Property(e => e.UserAgent).HasMaxLength(500);
             b.Property(e => e.Provider).HasMaxLength(50);

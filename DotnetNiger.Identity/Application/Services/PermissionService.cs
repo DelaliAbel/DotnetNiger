@@ -27,7 +27,7 @@ public class PermissionService
 
     public async Task<PaginatedResponse<PermissionResponse>> GetByTenantAsync(Guid tenantId, PaginationQuery pagination)
     {
-        var query = _db.Permissions.Where(p => p.TenantId == tenantId);
+        var query = _db.Permissions.AsNoTracking().Where(p => p.TenantId == tenantId);
 
         var totalCount = await query.CountAsync();
 
@@ -35,22 +35,29 @@ public class PermissionService
             .OrderBy(p => p.Category).ThenBy(p => p.Name)
             .Skip((pagination.EnsurePage - 1) * pagination.EnsurePageSize)
             .Take(pagination.EnsurePageSize)
+            .Select(p => new PermissionResponse(p.Id, p.Name, p.Category, p.TenantId))
             .ToListAsync();
 
-        return new PaginatedResponse<PermissionResponse>(
-            items.Select(MapToResponse).ToList(), totalCount, pagination.EnsurePage, pagination.EnsurePageSize);
+        return new PaginatedResponse<PermissionResponse>(items, totalCount, pagination.EnsurePage, pagination.EnsurePageSize);
     }
 
-    public async Task<List<PermissionGroupResponse>> GetGroupedByTenantAsync(Guid tenantId)
+    public async Task<List<PermissionGroupResponse>> GetGroupedByTenantAsync(Guid tenantId, int page = 1, int pageSize = 200)
     {
-        var permissions = await _db.Permissions
-            .Where(p => p.TenantId == tenantId)
+        var query = _db.Permissions.AsNoTracking()
+            .Where(p => p.TenantId == tenantId);
+
+        var totalCount = await query.CountAsync();
+
+        var permissions = await query
+            .OrderBy(p => p.Category).ThenBy(p => p.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(p => new PermissionResponse(p.Id, p.Name, p.Category, p.TenantId))
             .ToListAsync();
 
         return permissions
             .GroupBy(p => p.Category)
-            .Select(g => new PermissionGroupResponse(g.Key,
-                g.Select(MapToResponse).ToList()))
+            .Select(g => new PermissionGroupResponse(g.Key, g.ToList()))
             .ToList();
     }
 

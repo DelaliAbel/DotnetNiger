@@ -189,7 +189,7 @@ public class EventsController(IEventService eventService, IProfileService profil
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
         var events = await eventService.GetPendingEventsAsync(page, pageSize);
-        return Ok(new { Success = true, Data = new { Items = events, TotalCount = events.Count, Page = page, PageSize = pageSize } });
+        return Ok(new { Success = true, Data = events });
     }
 
     /// <summary>Approuve un événement en attente (réservé aux admins).</summary>

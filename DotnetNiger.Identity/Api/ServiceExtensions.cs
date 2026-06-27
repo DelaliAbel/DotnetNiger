@@ -2,7 +2,6 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
 using OpenIddict.EntityFrameworkCore;
 using OpenIddict.Validation.AspNetCore;
 using Asp.Versioning;
@@ -24,18 +23,9 @@ public static class ServiceExtensions
 
         services.AddDbContext<IdentityDbContext>(options =>
         {
-            var provider = config.GetValue<string>("DatabaseProvider", "Sqlite");
-            var connStr = config.GetConnectionString("DefaultConnection") ?? "Data Source=DotnetNigerIdentity.db";
-
-            if (provider == "SqlServer")
-                options.UseSqlServer(connStr, x => x.MigrationsAssembly("DotnetNiger.Identity"));
-            else if (provider is "PostgreSql" or "PostgreSQL" or "Npgsql")
-                options.UseNpgsql(connStr, x => x.MigrationsAssembly("DotnetNiger.Identity"));
-            else
-                options.UseSqlite(connStr, x => x.MigrationsAssembly("DotnetNiger.Identity"));
-
+            var connStr = config.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is required");
+            options.UseSqlServer(connStr, x => x.MigrationsAssembly("DotnetNiger.Identity"));
             options.UseOpenIddict();
-            options.ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
         });
 
         services.Configure<SmtpOptions>(config.GetSection("Smtp"));
@@ -66,8 +56,11 @@ public static class ServiceExtensions
             .AddCore(core => core.UseEntityFrameworkCore().UseDbContext<IdentityDbContext>())
             .AddServer(server =>
             {
-                var issuerUri = config.GetValue<string>("OpenIddict:Issuer") ?? "http://localhost:5075";
-                server.SetIssuer(new Uri(issuerUri))
+                var issuerUri = config.GetValue<string>("OpenIddict:Issuer");
+                if (!string.IsNullOrWhiteSpace(issuerUri))
+                    server.SetIssuer(new Uri(issuerUri));
+
+                server
                       .SetTokenEndpointUris("/connect/token")
                       .SetAuthorizationEndpointUris("/connect/authorize")
                       .SetLogoutEndpointUris("/connect/logout")
@@ -171,7 +164,8 @@ public static class ServiceExtensions
         {
             options.ForwardDefaultSelector = context =>
             {
-                if (context.Request.Headers.ContainsKey("X-API-Key"))
+                if (context.Request.Headers.ContainsKey("X-API-Key")
+                    || context.Request.Headers.ContainsKey("X-Internal-Key"))
                     return ApiKeyAuthenticationDefaults.AuthenticationScheme;
                 return OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
             };
@@ -356,57 +350,6 @@ public static class ServiceExtensions
         {
             options.GroupNameFormat = "'v'VVV";
             options.SubstituteApiVersionInUrl = true;
-        });
-
-        services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen(options =>
-        {
-            options.SwaggerDoc("v1", new OpenApiInfo
-            {
-                Title = "DotnetNiger Identity API",
-                Version = "v1.0",
-                Description = "Identity Provider multi-tenant avec OpenIddict (OAuth2/OIDC).\n\n" +
-                              "**Auth locale** : `POST /api/v1/auth/login` puis `POST /connect/token`\n" +
-                              "**Auth externe** : `GET /api/v1/auth/external-login?provider=Google|GitHub|Microsoft`\n" +
-                              "**Inscription** : `POST /api/v1/auth/register` + confirmation email\n" +
-                              "**Health** : `GET /health` ou `GET /api/v1/diagnostics/health`\n\n" +
-                              "### Obtenir un JWT\n" +
-                              "```\n" +
-                              "curl -X POST http://localhost:5075/connect/token \\\n" +
-                              "  -H \"Content-Type: application/x-www-form-urlencoded\" \\\n" +
-                              "  -d \"grant_type=password&username=admin@dotnetniger.com&password=Admin%40123456&scope=openid+profile+email+roles+offline_access&remember_me=true\"\n" +
-                              "```"
-            });
-
-            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-            {
-                Name = "Authorization",
-                Type = SecuritySchemeType.Http,
-                Scheme = "Bearer",
-                BearerFormat = "JWT",
-                Description = "Entrez le token JWT : Bearer {votre_token}"
-            });
-
-            options.AddSecurityRequirement(new OpenApiSecurityRequirement
-            {
-                {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
-                    },
-                    Array.Empty<string>()
-                }
-            });
-
-            // Active les XML comments dans Swagger
-            var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-            if (File.Exists(xmlPath))
-                options.IncludeXmlComments(xmlPath);
         });
 
         return services;

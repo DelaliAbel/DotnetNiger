@@ -52,20 +52,14 @@ public class UserNotificationService(AppDbContext db) : IUserNotificationService
         return true;
     }
 
-    /// <summary>Marque toutes les notifications non lues comme lues.</summary>
+    /// <summary>Marque toutes les notifications non lues comme lues en une seule requête.</summary>
     public async Task<bool> MarkAllAsReadAsync(Guid userId)
     {
-        var unread = await db.Notifications
+        var rows = await db.Notifications
             .Where(n => n.UserId == userId && !n.IsRead)
-            .ToListAsync();
+            .ExecuteUpdateAsync(setters => setters.SetProperty(n => n.IsRead, true));
 
-        if (unread.Count == 0) return false;
-
-        foreach (var n in unread)
-            n.IsRead = true;
-
-        await db.SaveChangesAsync();
-        return true;
+        return rows > 0;
     }
 
     private static NotificationResponse MapNotification(Notification n) => new()

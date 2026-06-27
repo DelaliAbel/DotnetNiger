@@ -3,19 +3,13 @@ using System.Text.Json.Serialization;
 using DotnetNiger.Community.Api;
 using DotnetNiger.Community.Api.Middleware;
 using Microsoft.AspNetCore.HttpOverrides;
-using Serilog;
-
-Log.Logger = new LoggerConfiguration()
-    .MinimumLevel.Information()
-    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
-    .WriteTo.Console()
-    .WriteTo.File("logs/community-.log", rollingInterval: RollingInterval.Day)
-    .CreateLogger();
 
 try
 {
     var builder = WebApplication.CreateBuilder(args);
-    builder.Host.UseSerilog();
+
+    builder.Logging.ClearProviders();
+    builder.Logging.AddConsole();
 
     builder.Services.AddControllers()
         .AddJsonOptions(options =>
@@ -32,41 +26,62 @@ try
     builder.Services.AddCommunityAuthentication(builder.Configuration, builder.Environment);
     builder.Services.AddCommunityServices();
     builder.Services.AddCommunityHttpClients(builder.Configuration);
+    builder.Services.AddOpenApi();
 
     var app = builder.Build();
 
     app.UseMiddleware<ErrorHandlingMiddleware>();
 
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "DotnetNiger Community API v1");
-        options.RoutePrefix = "swagger";
-    });
+    app.MapOpenApi();
 
     app.UseForwardedHeaders(new ForwardedHeadersOptions
     {
         ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
     });
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.MapGet("/swagger", async (HttpContext ctx) =>
+        {
+            ctx.Response.ContentType = "text/html; charset=utf-8";
+            await ctx.Response.WriteAsync(SwaggerUiPage("/openapi/v1.json", "DotnetNiger Community API v1"));
+        });
+    }
+
     app.UseStaticFiles();
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();
 
-    Log.Information("DotnetNiger.Community starting...");
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogInformation("DotnetNiger.Community starting...");
     await app.RunAsync();
     return 0;
 }
 catch (Exception ex)
 {
-    Log.Fatal(ex, "Application terminated unexpectedly");
+    var logger = LoggerFactory.Create(x => x.AddConsole()).CreateLogger("Program");
+    logger.LogCritical(ex, "Application terminated unexpectedly");
     return 1;
 }
-finally
+
+static string SwaggerUiPage(string specUrl, string title)
 {
-    await Log.CloseAndFlushAsync();
+    return $$"""
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"/><title>{{title}}</title>
+<link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+<script>
+SwaggerUIBundle({ url: '{{specUrl}}', dom_id: '#swagger-ui', presets: [SwaggerUIBundle.presets.apis], layout: 'BaseLayout' });
+</script>
+</body>
+</html>
+""";
 }
 
 public partial class Program { }
-
-

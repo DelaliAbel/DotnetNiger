@@ -321,13 +321,18 @@ public class PostService(AppDbContext db) : IPostService
 
     private async Task<string> EnsureUniqueSlugAsync(string baseSlug, Guid? excludeId = null)
     {
-        if (!await db.Posts.AnyAsync(p => p.Slug == baseSlug && (excludeId == null || p.Id != excludeId.Value)))
+        var existing = await db.Posts.AsNoTracking()
+            .Where(p => p.Slug.StartsWith(baseSlug) && (excludeId == null || p.Id != excludeId.Value))
+            .Select(p => p.Slug)
+            .ToListAsync();
+
+        if (!existing.Contains(baseSlug))
             return baseSlug;
 
         for (var i = 1; i < 100; i++)
         {
             var candidate = $"{baseSlug}-{i}";
-            if (!await db.Posts.AnyAsync(p => p.Slug == candidate && (excludeId == null || p.Id != excludeId.Value)))
+            if (!existing.Contains(candidate))
                 return candidate;
         }
 

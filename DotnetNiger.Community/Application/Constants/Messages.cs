@@ -136,6 +136,7 @@ public static class Messages
         public const string PathRequired = "Chemin requis.";
         public const string NotFound = "Fichier introuvable.";
         public const string Deleted = "Fichier supprimé.";
+        public const string PathNotAllowed = "Chemin non autorisé.";
         public const string InvalidImage = "Format d'image non valide ou corrompu.";
         public const string TypeNotAllowed = "Type d'image non autorisé.";
     }

@@ -6,7 +6,6 @@ using DotnetNiger.Gateway.Services;
 using DotnetNiger.Gateway.Middleware;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Caching.Memory;
-using Serilog;
 
 namespace DotnetNiger.Gateway.Extensions;
 
@@ -67,9 +66,10 @@ public static class ApplicationBuilderExtensions
             var requestId = context.Request.Headers["X-Request-ID"].FirstOrDefault()
                             ?? Guid.NewGuid().ToString("N");
             context.Response.Headers["X-Request-ID"] = requestId;
-            Log.Information("→ {Method} {Path}", context.Request.Method, context.Request.Path);
+            var logger = context.RequestServices.GetRequiredService<ILogger<HttpContext>>();
+            logger.LogInformation("→ {Method} {Path}", context.Request.Method, context.Request.Path);
             await next.Invoke();
-            Log.Information("← {StatusCode}", context.Response.StatusCode);
+            logger.LogInformation("← {StatusCode}", context.Response.StatusCode);
         });
 
         return app;
@@ -155,7 +155,8 @@ public static class ApplicationBuilderExtensions
 
                 if (validResults.Count == 0)
                 {
-                    Log.Warning("Swagger aggregation failed: all downstream documents unavailable");
+                    var log = context.RequestServices.GetRequiredService<ILogger<HttpContext>>();
+                    log.LogWarning("Swagger aggregation failed: all downstream documents unavailable");
                     context.Response.StatusCode = 503;
                     context.Response.ContentType = "application/json";
                     await context.Response.WriteAsync($"{{\"message\":\"{Messages.Swagger.DownstreamUnavailable}\"}}");
@@ -169,7 +170,8 @@ public static class ApplicationBuilderExtensions
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Swagger merge middleware error");
+                var log = context.RequestServices.GetRequiredService<ILogger<HttpContext>>();
+                log.LogError(ex, "Swagger merge middleware error");
                 context.Response.StatusCode = 500;
                 await context.Response.WriteAsync($"{{\"error\":\"{Messages.Swagger.MergeFailed}\"}}");
             }
@@ -307,7 +309,8 @@ public static class ApplicationBuilderExtensions
 
                 var cache = context.RequestServices.GetRequiredService<IMemoryCache>();
                 cache.Remove("swagger_merged");
-                Log.Information("Swagger cache cleared by admin request");
+                var log = context.RequestServices.GetRequiredService<ILogger<HttpContext>>();
+                log.LogInformation("Swagger cache cleared by admin request");
 
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsync(
@@ -332,9 +335,9 @@ public static class ApplicationBuilderExtensions
             var json = await client.GetStringAsync(url, ct);
             return (json, service.Id);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Log.Warning(ex, "Failed to fetch swagger from {Service}", service.Id);
+            // Swagger fetch failures are non-critical - logged at debug level
             return (null, service.Id);
         }
     }
@@ -361,19 +364,26 @@ public static class ApplicationBuilderExtensions
                 continue;
             }
 
-            var paths = merged["paths"]?.AsObject() ?? new JsonObject();
+            var existingPaths = merged["paths"]?.AsObject();
+            if (existingPaths == null)
+            {
+                existingPaths = [];
+                merged["paths"] = existingPaths;
+            }
             if (doc["paths"] is JsonObject docPaths)
                 foreach (var p in docPaths)
-                    paths[p.Key] = p.Value?.DeepClone();
-            merged["paths"] = paths;
+                    existingPaths[p.Key] = p.Value?.DeepClone();
 
-            var mergedSchemas = merged["components"]?["schemas"]?.AsObject() ?? new JsonObject();
+            var existingSchemas = merged["components"]?["schemas"]?.AsObject();
+            if (existingSchemas == null)
+            {
+                existingSchemas = [];
+                merged["components"] = new JsonObject { ["schemas"] = existingSchemas };
+            }
             if (doc["components"]?["schemas"] is JsonObject docSchemas)
                 foreach (var s in docSchemas)
-                    if (!mergedSchemas.ContainsKey(s.Key))
-                        mergedSchemas[s.Key] = s.Value?.DeepClone();
-
-            merged["components"] = new JsonObject { ["schemas"] = mergedSchemas };
+                    if (!existingSchemas.ContainsKey(s.Key))
+                        existingSchemas[s.Key] = s.Value?.DeepClone();
         }
 
         merged ??= new JsonObject();

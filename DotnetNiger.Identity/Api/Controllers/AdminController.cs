@@ -58,7 +58,7 @@ public class AdminController : ControllerBase
         [FromQuery] string? entityType = null, [FromQuery] string? action = null,
         [FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null)
     {
-        var query = _db.AuditLogs.AsQueryable();
+        var query = _db.AuditLogs.AsNoTracking();
 
         if (!string.IsNullOrEmpty(entityType))
             query = query.Where(l => l.EntityType == entityType);

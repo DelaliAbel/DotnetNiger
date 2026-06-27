@@ -130,7 +130,7 @@ public class ExternalServicesController : ControllerBase
     }
 
     /// <summary>Résout un slug en URL de base. Utilisé par le Gateway pour le proxy /ext/{slug}/**.</summary>
-    [AllowAnonymous]
+    [InternalApiKeyAuth]
     [HttpGet("by-slug/{slug}")]
     public async Task<ActionResult<ServiceLookupResult>> ResolveSlug(string slug)
     {

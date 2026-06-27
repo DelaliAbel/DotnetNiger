@@ -20,6 +20,7 @@ public static class Messages
     {
         public const string ServiceNotFound = "Service non trouvé ou inactif.";
         public const string UpstreamUnavailable = "Service amont indisponible.";
+        public const string TargetNotAllowed = "Cible non autorisée.";
     }
 
     public static class Swagger

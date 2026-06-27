@@ -9,22 +9,16 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<IdentityDb
 {
     public IdentityDbContext CreateDbContext(string[] args)
     {
-        var config = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json")
-            .Build();
-
-        var provider = config.GetValue<string>("DatabaseProvider", "Sqlite");
-        var connStr = config.GetConnectionString("DefaultConnection") ?? "Data Source=DotnetNigerIdentity.db";
+        var connStr = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+            ?? new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json")
+                .Build()
+                .GetConnectionString("DefaultConnection")
+            ?? "Server=localhost; Database=DotnetNiger; User Id=SA; Password=SqlServer2026!; TrustServerCertificate=True;";
 
         var options = new DbContextOptionsBuilder<IdentityDbContext>();
-
-        if (provider == "SqlServer")
-            options.UseSqlServer(connStr, x => x.MigrationsAssembly("DotnetNiger.Identity"));
-        else if (provider is "PostgreSql" or "PostgreSQL" or "Npgsql")
-            options.UseNpgsql(connStr, x => x.MigrationsAssembly("DotnetNiger.Identity"));
-        else
-            options.UseSqlite(connStr, x => x.MigrationsAssembly("DotnetNiger.Identity"));
+        options.UseSqlServer(connStr, x => x.MigrationsAssembly("DotnetNiger.Identity"));
 
         options.UseOpenIddict();
 

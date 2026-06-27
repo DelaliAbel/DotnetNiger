@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.Abstractions;
 using DotnetNiger.Identity.Api.Middleware;
 using DotnetNiger.Identity.Infrastructure;
-using Serilog;
 
 namespace DotnetNiger.Identity.Api;
 
@@ -15,8 +15,6 @@ public static class ApplicationSetup
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        builder.Host.UseSerilog();
-
         builder.Services.AddControllers()
             .AddApplicationPart(typeof(ApplicationSetup).Assembly);
         builder.Services.AddRazorPages();
@@ -24,6 +22,7 @@ public static class ApplicationSetup
         builder.Services.AddProblemDetails();
         builder.Services.AddHttpContextAccessor();
 
+        builder.Services.AddOpenApi();
         builder.Services.AddIdentityInfrastructure(builder.Configuration, builder.Environment);
         builder.Services.AddIdentityServices();
         builder.Services.AddRateLimitingPolicies(builder.Configuration);
@@ -41,7 +40,6 @@ public static class ApplicationSetup
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
         });
-        app.UseSerilogRequestLogging();
         app.UseMiddleware<ErrorHandlingMiddleware>();
         app.UseRouting();
         app.UseRateLimiter();
@@ -64,13 +62,14 @@ public static class ApplicationSetup
             await next();
         });
 
+        app.MapOpenApi();
+
         if (app.Environment.IsDevelopment())
         {
-            app.UseSwagger();
-            app.UseSwaggerUI(options =>
+            app.MapGet("/swagger", async (HttpContext ctx) =>
             {
-                options.SwaggerEndpoint("/swagger/v1/swagger.json", "DotnetNiger Identity v1");
-                options.RoutePrefix = "swagger";
+                ctx.Response.ContentType = "text/html; charset=utf-8";
+                await ctx.Response.WriteAsync(SwaggerUiPage("/openapi/v1.json", "DotnetNiger Identity v1"));
             });
         }
 
@@ -136,63 +135,25 @@ public static class ApplicationSetup
         app.MapControllers();
         app.MapRazorPages();
 
-        EnsureWebUiPermissions(app);
-
         return app;
     }
 
-    private static void EnsureWebUiPermissions(WebApplication app)
+    static string SwaggerUiPage(string specUrl, string title)
     {
-        try
-        {
-            using var scope = app.Services.CreateScope();
-            var appManager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
-
-            var existing = appManager.FindByClientIdAsync("web-ui").GetAwaiter().GetResult();
-            if (existing == null)
-            {
-                Log.Information("web-ui client not found, skipping permission check");
-                return;
-            }
-
-            var descriptor = new OpenIddictApplicationDescriptor();
-            appManager.PopulateAsync(descriptor, existing).GetAwaiter().GetResult();
-
-            if (descriptor.Permissions.Contains("gt:external_login"))
-            {
-                Log.Information("web-ui client already has gt:external_login permission");
-                return;
-            }
-
-            descriptor.Permissions.Add("gt:external_login");
-            appManager.UpdateAsync(existing, descriptor).GetAwaiter().GetResult();
-            Log.Information("Added gt:external_login permission to web-ui client");
-        }
-        catch (Exception ex)
-        {
-            Log.Warning(ex, "Failed to ensure web-ui client permissions");
-        }
-    }
-
-    public static async Task SeedDataAsync(WebApplication app)
-    {
-        using var scope = app.Services.CreateScope();
-        var tenantContext = scope.ServiceProvider.GetRequiredService<TenantContext>();
-        var db = scope.ServiceProvider.GetRequiredService<IdentityDbContext>();
-
-        var provider = app.Configuration.GetValue<string>("DatabaseProvider");
-        if (provider == "SqlServer")
-            await db.Database.EnsureCreatedAsync();
-        else
-            await db.Database.MigrateAsync();
-
-        var userManager = scope.ServiceProvider.GetRequiredService<
-            Microsoft.AspNetCore.Identity.UserManager<DotnetNiger.Identity.Domain.Entities.ApplicationUser>>();
-        var roleManager = scope.ServiceProvider.GetRequiredService<
-            Microsoft.AspNetCore.Identity.RoleManager<DotnetNiger.Identity.Domain.Entities.ApplicationRole>>();
-
-        var adminPassword = app.Configuration["Admin:DefaultPassword"] ?? throw new InvalidOperationException("Admin:DefaultPassword must be set via user-secrets or environment variable");
-        var appManager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
-        await DbSeeder.SeedAsync(db, userManager, roleManager, tenantContext, adminPassword, appManager);
+        return $$"""
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"/><title>{{title}}</title>
+<link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+<script>
+SwaggerUIBundle({ url: '{{specUrl}}', dom_id: '#swagger-ui', presets: [SwaggerUIBundle.presets.apis], layout: 'BaseLayout' });
+</script>
+</body>
+</html>
+""";
     }
 }

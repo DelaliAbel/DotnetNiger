@@ -212,7 +212,6 @@
       "DownstreamHostAndPorts": [{ "Host": "identity-dotnetniger.runasp.net", "Port": 443 }],
       "RateLimitOptions": { "EnableRateLimiting": false },
       "SwaggerKey": "identity"
-    },
-
+    }
   ]
 }

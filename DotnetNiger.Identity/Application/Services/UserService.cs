@@ -54,7 +54,7 @@ public class UserService
 
     public async Task<PaginatedResponse<UserResponse>> GetByTenantAsync(Guid tenantId, PaginationQuery pagination)
     {
-        var query = _db.Users.Where(u => u.TenantId == tenantId);
+        var query = _db.Users.AsNoTracking().Where(u => u.TenantId == tenantId);
         var total = await query.CountAsync();
         var users = await query
             .OrderBy(u => u.Email)

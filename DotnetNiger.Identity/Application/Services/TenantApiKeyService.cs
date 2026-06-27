@@ -46,7 +46,7 @@ public class TenantApiKeyService
 
     public async Task<PaginatedResponse<TenantApiKeyResponse>> GetApiKeysAsync(Guid tenantId, PaginationQuery pagination)
     {
-        var query = _db.TenantApiKeys.Where(k => k.TenantId == tenantId);
+        var query = _db.TenantApiKeys.AsNoTracking().Where(k => k.TenantId == tenantId);
 
         var totalCount = await query.CountAsync();
 
@@ -62,7 +62,7 @@ public class TenantApiKeyService
 
     public async Task<TenantApiKeyResponse> GetApiKeyByIdAsync(Guid tenantId, Guid keyId)
     {
-        var key = await _db.TenantApiKeys
+        var key = await _db.TenantApiKeys.AsNoTracking()
             .FirstOrDefaultAsync(k => k.Id == keyId && k.TenantId == tenantId)
             ?? throw new KeyNotFoundException("Clé API non trouvée");
 

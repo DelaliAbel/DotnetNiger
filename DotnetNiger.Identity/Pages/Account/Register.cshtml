@@ -59,14 +59,30 @@
 
         <div class="form-group">
             <label for="password">Mot de passe</label>
-            <input type="password" id="password" name="password" required
-                   placeholder="Minimum 8 caractères" minlength="8" />
+            <div class="password-wrapper">
+                <input type="password" id="password" name="password" required
+                       placeholder="Minimum 8 caractères" minlength="8" />
+                <button type="button" class="toggle-password" tabindex="-1" aria-label="Afficher/masquer le mot de passe">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <div class="form-group">
             <label for="confirmPassword">Confirmer le mot de passe</label>
-            <input type="password" id="confirmPassword" name="confirmPassword" required
-                   placeholder="Répétez le mot de passe" minlength="8" />
+            <div class="password-wrapper">
+                <input type="password" id="confirmPassword" name="confirmPassword" required
+                       placeholder="Répétez le mot de passe" minlength="8" />
+                <button type="button" class="toggle-password" tabindex="-1" aria-label="Afficher/masquer le mot de passe">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <button type="submit" style="margin-bottom:12px">Créer mon compte</button>

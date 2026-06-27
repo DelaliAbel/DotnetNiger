@@ -6,7 +6,6 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Microsoft.IdentityModel.Tokens;
-using MMLib.SwaggerForOcelot.DependencyInjection;
 using Ocelot.Cache.CacheManager;
 using Ocelot.DependencyInjection;
 using Ocelot.Provider.Polly;
@@ -41,8 +40,6 @@ public static class ServiceCollectionExtensions
 
         services.AddSingleton<IOpenGraphService, OpenGraphService>();
         services.AddSingleton<OpenGraphHtmlBuilder>();
-        services.AddEndpointsApiExplorer();
-        services.AddSwaggerForOcelot(configuration);
 
         services.AddHealthChecks()
             .AddCheck<SmtpHealthCheck>("smtp", HealthStatus.Degraded, ["infrastructure", "email"])

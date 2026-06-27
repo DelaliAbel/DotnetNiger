@@ -35,7 +35,7 @@ public class RoleService
 
     public async Task<PaginatedResponse<RoleResponse>> GetByTenantAsync(Guid tenantId, PaginationQuery pagination)
     {
-        var query = _db.Roles.Where(r => r.TenantId == tenantId);
+        var query = _db.Roles.AsNoTracking().Where(r => r.TenantId == tenantId);
 
         var totalCount = await query.CountAsync();
 
@@ -113,7 +113,7 @@ public class RoleService
         if (user == null) throw new KeyNotFoundException();
 
         var roleNames = await _userManager.GetRolesAsync(user);
-        var roles = await _db.Roles
+        var roles = await _db.Roles.AsNoTracking()
             .Where(r => roleNames.Contains(r.Name!))
             .ToListAsync();
 

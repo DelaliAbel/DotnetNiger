@@ -409,15 +409,15 @@ public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, IL
     }
 
     /// <summary>Événements soumis en attente de publication (non publiés et non supprimés).</summary>
-    public async Task<List<EventResponse>> GetPendingEventsAsync(int page = 1, int pageSize = 10)
+    public async Task<PaginatedResponse<EventResponse>> GetPendingEventsAsync(int page = 1, int pageSize = 10)
     {
-        return await db.Events
+        var query = db.Events
             .AsNoTracking()
-            .Include(e => e.Medias)
-            .Include(e => e.EventTags).ThenInclude(et => et.Tag)
-            .Include(e => e.Speakers)
-            .AsSplitQuery()
-            .Where(e => !e.IsPublished && !e.IsDeleted)
+            .Where(e => !e.IsPublished && !e.IsDeleted);
+
+        var total = await query.CountAsync();
+
+        var items = await query
             .OrderByDescending(e => e.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -460,6 +460,8 @@ public class EventService(AppDbContext db, IServiceScopeFactory scopeFactory, IL
                 }).ToList()
             })
             .ToListAsync();
+
+        return new PaginatedResponse<EventResponse> { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }
 
     /// <summary>Approuve et publie un événement en attente (délègue à PublishAsync).</summary>

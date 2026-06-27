@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Caching.Memory;
-using Serilog;
 
 namespace DotnetNiger.Gateway.Services;
 
@@ -9,6 +8,7 @@ namespace DotnetNiger.Gateway.Services;
 public class ExternalServiceHealthService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<ExternalServiceHealthService> _logger;
     private readonly string _identityBaseUrl;
     private readonly int _intervalSeconds;
     private readonly int _maxFailures;
@@ -21,9 +21,11 @@ public class ExternalServiceHealthService : BackgroundService
         IServiceScopeFactory scopeFactory,
         IConfiguration configuration,
         IHttpClientFactory httpClientFactory,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        ILogger<ExternalServiceHealthService> logger)
     {
         _scopeFactory = scopeFactory;
+        _logger = logger;
         _identityBaseUrl = (configuration["DeveloperPortal:IdentityBaseUrl"]
             ?? "http://localhost:5075").TrimEnd('/');
         _intervalSeconds = int.TryParse(
@@ -38,7 +40,7 @@ public class ExternalServiceHealthService : BackgroundService
     /// <summary>Boucle principale du service : vérifie tous les services à intervalle régulier.</summary>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        Log.Information("ExternalServiceHealthService started (interval: {Interval}s)", _intervalSeconds);
+        _logger.LogInformation("ExternalServiceHealthService started (interval: {Interval}s)", _intervalSeconds);
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -48,7 +50,7 @@ public class ExternalServiceHealthService : BackgroundService
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error in external service health check cycle");
+                _logger.LogError(ex, "Error in external service health check cycle");
             }
 
             try
@@ -76,7 +78,7 @@ public class ExternalServiceHealthService : BackgroundService
 
             if (!response.IsSuccessStatusCode)
             {
-                Log.Warning("Failed to fetch active external services (status {Status})",
+                _logger.LogWarning("Failed to fetch active external services (status {Status})",
                     response.StatusCode);
                 return;
             }
@@ -88,7 +90,7 @@ public class ExternalServiceHealthService : BackgroundService
         }
         catch (Exception ex)
         {
-            Log.Warning("Failed to fetch active external services list from {Url}: {Message}",
+            _logger.LogWarning("Failed to fetch active external services list from {Url}: {Message}",
                 $"{_identityBaseUrl}/api/v1/external-services/_internal/active",
                 ex.InnerException?.Message ?? ex.Message);
             return;
@@ -115,14 +117,14 @@ public class ExternalServiceHealthService : BackgroundService
             var healthy = response.IsSuccessStatusCode;
 
             if (!healthy)
-                Log.Warning("Health check failed for {Slug} ({Name}): {Status}",
+                _logger.LogWarning("Health check failed for {Slug} ({Name}): {Status}",
                     service.Slug, service.Name, response.StatusCode);
 
             return healthy;
         }
         catch (Exception ex)
         {
-            Log.Warning("Health check failed for {Slug} ({Name}): {Message}",
+            _logger.LogWarning("Health check failed for {Slug} ({Name}): {Message}",
                 service.Slug, service.Name,
                 ex.InnerException?.Message ?? ex.Message);
             return false;
@@ -149,7 +151,7 @@ public class ExternalServiceHealthService : BackgroundService
                 ct);
 
             if (!response.IsSuccessStatusCode)
-                Log.Warning("Failed to report health result for service {Id}: {Status}",
+                _logger.LogWarning("Failed to report health result for service {Id}: {Status}",
                     service.Id, response.StatusCode);
 
             if (!isHealthy)
@@ -159,7 +161,7 @@ public class ExternalServiceHealthService : BackgroundService
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "Failed to report health result for service {Id}", service.Id);
+            _logger.LogWarning(ex, "Failed to report health result for service {Id}", service.Id);
         }
     }
 

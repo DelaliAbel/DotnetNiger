@@ -57,8 +57,6 @@ public class RolesController : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid tenantId, Guid id)
     {
-        var role = await _roleService.GetByIdAsync(id);
-        if (role == null || role.TenantId != tenantId) return NotFound();
         await _roleService.DeleteAsync(id);
         return NoContent();
     }
@@ -67,10 +65,6 @@ public class RolesController : ControllerBase
     [HttpPost("{roleId:guid}/users/{userId:guid}")]
     public async Task<IActionResult> AssignUser(Guid tenantId, Guid roleId, Guid userId)
     {
-        var role = await _roleService.GetByIdAsync(roleId);
-        if (role == null || role.TenantId != tenantId) return NotFound();
-        var user = await _userService.GetByIdAsync(tenantId, userId);
-        if (user == null) return NotFound();
         await _roleService.AssignToUserAsync(userId, roleId);
         return NoContent();
     }

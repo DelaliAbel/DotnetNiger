@@ -146,3 +146,6 @@ prod-configs/
 
 # .NET fake build
 .fake
+
+# Local database manager (seed/migrations) - never pushed
+DotnetNiger.DbManager/

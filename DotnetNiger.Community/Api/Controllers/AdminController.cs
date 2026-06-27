@@ -37,12 +37,12 @@ public class AdminController(
     {
         if (status == "pending")
         {
-            var events = await eventService.GetPendingEventsAsync(page, pageSize);
-            return Ok(new { Success = true, Data = events });
+            var result = await eventService.GetPendingEventsAsync(page, pageSize);
+            return Ok(new { Success = true, Data = result });
         }
 
-        var paginated = await eventService.GetAllAsync(null, null, null, null, null, null, null, null, page, pageSize);
-        return Ok(new { Success = true, Data = paginated });
+        var all = await eventService.GetAllAsync(null, null, null, null, null, null, null, null, page, pageSize);
+        return Ok(new { Success = true, Data = all });
     }
 
     /// <summary>Publie un événement sur la plateforme.</summary>

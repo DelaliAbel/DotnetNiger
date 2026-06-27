@@ -1,6 +1,5 @@
 using System.Text.Json;
 using DotnetNiger.Gateway.Configuration;
-using Serilog;
 
 namespace DotnetNiger.Gateway.Services;
 
@@ -14,6 +13,8 @@ public static class ServiceRegistrationEndpoint
         {
             registryApp.Run(async context =>
             {
+                var regLog = context.RequestServices.GetRequiredService<ILogger<HttpContext>>();
+
                 if (!context.Request.Path.Equals("/register", StringComparison.OrdinalIgnoreCase)
                     || !string.Equals(context.Request.Method, "POST", StringComparison.OrdinalIgnoreCase))
                 {
@@ -29,7 +30,7 @@ public static class ServiceRegistrationEndpoint
                     var providedKey = context.Request.Headers["X-Registration-Key"].FirstOrDefault();
                     if (string.IsNullOrEmpty(providedKey) || providedKey != key)
                     {
-                        Log.Warning("Service registration rejected: invalid or missing X-Registration-Key");
+                        regLog.LogWarning("Service registration rejected: invalid or missing X-Registration-Key");
                         context.Response.StatusCode = 401;
                         return;
                     }
@@ -70,7 +71,7 @@ public static class ServiceRegistrationEndpoint
 
                 registry.RegisterOrUpdate(registration);
 
-                Log.Information("Service registered: {Id} @ {Url}", registration.Id, registration.Url);
+                regLog.LogInformation("Service registered: {Id} @ {Url}", registration.Id, registration.Url);
 
                 context.Response.ContentType = "application/json";
                 await context.Response.WriteAsync(

@@ -6,9 +6,10 @@
       "launchBrowser": true,
       "launchUrl": "swagger",
       "applicationUrl": "https://localhost:7075;http://localhost:5075",
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+"environmentVariables": {
+    "ASPNETCORE_ENVIRONMENT": "Development",
+    "InternalApiKey": "dev-internal-api-key-2024"
+  }
     }
   }
 }
