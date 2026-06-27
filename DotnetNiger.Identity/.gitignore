@@ -9,4 +9,3 @@ logs/
 *.db-wal
 appsettings.Development.json
 appsettings.Production.json
-wwwroot/uploads/*

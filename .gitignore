@@ -18,10 +18,18 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
-# Visual Studio cache/options
+# Visual Studio
 .vs/
+*.sln.docstates
+*.suo
+*.user
+*.userosscache
+*.rsuser
+
+# VS Code
 .vscode/
 *.code-workspace
+.history/
 
 # Rider
 .idea/
@@ -37,91 +45,65 @@ packages/
 TestResults/
 *.trx
 
-# Coverage reports
+# Coverage
 coverage/
 *.coverage
 *.coveragexml
 
-# User-specific files
-*.rsuser
-*.user
-*.userosscache
-
-# Development & production settings (contient potentiellement des secrets)
+# Config files with secrets
 **/appsettings.Local.json
+**/appsettings.Development.json
 **/appsettings.Production.json
+local.settings.json
 
-# Environment example files (seulement les templates, pas les vrais .env)
-**/.env.example
-DotnetNiger.Identity/appsettings.Development.json
-*.sln.docstates
-
-# Local History for Visual Studio Code
-.history/
-.vscode-database/
-
-# Environment variables
+# Environment files
 .env
 .env.local
 .env.*.local
+.env.example
 
 # Database files
 *.mdf
 *.ldf
 *.ndf
 *.db
-*.db-*
+*.db-shm
+*.db-wal
 DotnetNiger.db
-DotnetNiger.db-shm
-DotnetNiger.db-wal
-
 DotnetNigerCommunity.db
-DotnetNigerCommunity.db-shm
-DotnetNigerCommunity.db-wal
 
 # Uploads
 uploads/
 
 # OS files
 .DS_Store
+.AppleDouble
+.LSOverride
 Thumbs.db
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
+$RECYCLE.BIN/
 
 # Logs
 *.log
-logs/
 
 # Temporary files
 tmp/
 temp/
 *.tmp
+*.bak
+*.backup
+*.orig
 
-# Node (for any frontend if needed)
+# Node
 node_modules/
 npm-debug.log
 yarn-error.log
 
-# Python (si quelconque)
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Package manager locks (optionnel)
-package-lock.json
-yarn.lock
-
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-
 # Windows
-$RECYCLE.BIN/
 *.cab
 *.msi
 *.msix
@@ -129,14 +111,13 @@ $RECYCLE.BIN/
 *.msp
 *.lnk
 
-# Azure
-local.settings.json
-.azure/
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
 
-# Backup files
-*.bak
-*.backup
-*.orig
+# Azure
+.azure/
 
 # Certificates and keys
 *.pem
@@ -148,25 +129,20 @@ local.settings.json
 # Generated Ocelot merged config
 ocelot.json
 
-# Folder
-DotnetNiger/
-
-# Health report (contient des infos sensibles sur l'architecture)
+# Health report (infos sensibles)
 docs/HEALTH_REPORT.md
 
-# Guide de déploiement (contient des infos sensibles : URLs, comptes)
+# Guide de déploiement (infos sensibles)
 docs/DEPLOY_GUIDE.md
 
 # Présentations
 docs/DotnetNiger_Presentation*.pptx
 
-DotnetNiger
-
-.fake
-
-# User secrets export (contient des clés API, mots de passe)
+# User secrets export
 user-secrets-dotnetniger.txt
 
-# Production configs (contient des mots de passe, clés API)
-appsettings.Identity.Production.json
+# Production configs
 prod-configs/
+
+# .NET fake build
+.fake
