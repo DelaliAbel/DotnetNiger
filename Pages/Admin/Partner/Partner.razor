@@ -91,7 +91,7 @@ else
                                                 <div class="h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 flex items-center justify-center">
                                                     @if (!string.IsNullOrWhiteSpace(partner.LogoUrl))
                                                     {
-                                                        <img src="@partner.LogoUrl" alt="@partner.Name" class="h-full w-full object-cover" />
+                                                        <ResolvedImage Src="@partner.LogoUrl" alt="@partner.Name" class="h-full w-full object-cover" />
                                                     }
                                                     else
                                                     {

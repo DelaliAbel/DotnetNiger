@@ -20,6 +20,7 @@ builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? builder.HostEnvironment.BaseAddress;
 var clientId = builder.Configuration["ClientId"] ?? "web-ui";
 builder.Services.AddScoped<ClientIdentifierProvider>();
+builder.Services.AddSingleton(new ApiBaseUrlProvider(apiBaseUrl));
 
 builder.Services.AddScoped<AuthService>(sp => new AuthService(
     CreateGatewayHttpClient(

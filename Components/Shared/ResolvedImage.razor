@@ -1,4 +1,4 @@
-@inject IConfiguration Config
+@inject ApiBaseUrlProvider BaseUrlProvider
 
 <img src="@(_resolvedUrl ?? Fallback)" @attributes="AdditionalAttributes" />
 
@@ -28,10 +28,6 @@
         if (Uri.TryCreate(imageUrl, UriKind.Absolute, out _))
             return imageUrl;
 
-        var baseUri = Config["ApiBaseUrl"]?.TrimEnd('/');
-        if (string.IsNullOrWhiteSpace(baseUri))
-            return imageUrl;
-
-        return $"{baseUri}{imageUrl}";
+        return $"{BaseUrlProvider.BaseUrl}{imageUrl}";
     }
 }
