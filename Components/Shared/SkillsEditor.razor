@@ -1,0 +1,83 @@
+@* Tag input pour éditer les skills (compétences). *@
+
+<div class="space-y-3">
+    @if (Skills.Any())
+    {
+        <div class="flex flex-wrap gap-2">
+            @for (int i = 0; i < Skills.Count; i++)
+            {
+                var index = i;
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-indigo-100 px-3 py-1.5 text-sm font-medium text-indigo-700">
+                    @Skills[index]
+                    <button type="button"
+                            @onclick="() => RemoveSkill(index)"
+                            class="inline-flex h-4 w-4 items-center justify-center rounded-full text-indigo-400 hover:bg-indigo-200 hover:text-indigo-700 transition"
+                            aria-label="Supprimer @Skills[index]">
+                        <i class="fas fa-xmark text-xs"></i>
+                    </button>
+                </span>
+            }
+        </div>
+    }
+    else
+    {
+        <p class="text-sm text-gray-500">Aucune compétence ajoutée.</p>
+    }
+
+    <div class="flex gap-2">
+        <input type="text"
+               @bind="newSkill"
+               @bind:event="oninput"
+               @onkeydown="HandleKeyDown"
+               placeholder="Ajouter une compétence..."
+               class="h-10 flex-1 rounded-lg border border-gray-200 bg-white px-3 text-sm text-title outline-none focus:border-indigo-400" />
+        <button type="button"
+                @onclick="AddSkill"
+                class="inline-flex h-10 items-center rounded-lg bg-indigo-600 px-4 text-sm font-semibold text-white transition hover:bg-indigo-500">
+            Ajouter
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public List<string> Skills { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<List<string>> SkillsChanged { get; set; }
+
+    private string newSkill = string.Empty;
+
+    private async Task AddSkill()
+    {
+        var skill = newSkill?.Trim();
+        if (string.IsNullOrWhiteSpace(skill)) return;
+
+        if (!Skills.Contains(skill, StringComparer.OrdinalIgnoreCase))
+        {
+            var list = new List<string>(Skills) { skill };
+            Skills = list;
+            await SkillsChanged.InvokeAsync(list);
+        }
+
+        newSkill = string.Empty;
+    }
+
+    private async Task RemoveSkill(int index)
+    {
+        if (index < 0 || index >= Skills.Count) return;
+
+        var list = new List<string>(Skills);
+        list.RemoveAt(index);
+        Skills = list;
+        await SkillsChanged.InvokeAsync(list);
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await AddSkill();
+        }
+    }
+}

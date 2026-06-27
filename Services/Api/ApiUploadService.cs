@@ -43,58 +43,8 @@ public class ApiUploadService : ApiServiceBase, IUploadService
 
     public async Task<UploadResponse> UploadImageAsync(IBrowserFile file, UploadType type)
     {
-        var extension = Path.GetExtension(file.Name);
-
-        if (!AllowedExtensions.Contains(extension))
-        {
-            return new UploadResponse
-            {
-                Success = false,
-                Message = $"Format non autorisé. Formats acceptés : {string.Join(", ", AllowedExtensions)}"
-            };
-        }
-
-        if (file.Size > MaxFileSize)
-        {
-            return new UploadResponse
-            {
-                Success = false,
-                Message = "Le fichier dépasse la taille maximale de 3 Mo."
-            };
-        }
-
-        var fileBytes = await ReadFileBytesAsync(file);
-
-        using var content = new MultipartFormDataContent();
-        var fileContent = new ByteArrayContent(fileBytes);
-        fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
-        content.Add(fileContent, "file", file.Name);
-
-        _logger.LogInformation("Upload {Type} : {Name} ({Size} octets)", type, file.Name, file.Size);
-
-        var response = await Http.PostAsync(BuildUrl(ApiEndpoints.Upload, new Dictionary<string, string?> { ["type"] = type.ToString() }), content);
-
-        if (!response.IsSuccessStatusCode)
-        {
-            var body = await ReadErrorBodyAsync(response);
-            _logger.LogWarning("Upload échoué {StatusCode} : {Body}", response.StatusCode, body);
-            return new UploadResponse
-            {
-                Success = false,
-                Message = body ?? $"Erreur lors de l'upload : {response.StatusCode}"
-            };
-        }
-
-        var result = await response.Content.ReadFromJsonAsync<UploadResponse>(new JsonSerializerOptions
-        {
-            PropertyNameCaseInsensitive = true
-        });
-
-        return result ?? new UploadResponse
-        {
-            Success = false,
-            Message = "Réponse inattendue du serveur."
-        };
+        var bytes = await ReadFileBytesAsync(file);
+        return await UploadImageBase64Async(Convert.ToBase64String(bytes), file.Name, type);
     }
 
     public async Task<UploadResponse> UploadImageBase64Async(string base64Content, string fileName, UploadType type)

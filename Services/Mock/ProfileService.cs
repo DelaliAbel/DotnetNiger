@@ -35,6 +35,7 @@ public class ProfileService : IProfileService
         if (request.AvatarUrl is not null)   user.AvatarUrl   = request.AvatarUrl;
         if (request.Country is not null)     user.Country     = request.Country;
         if (request.City is not null)        user.City        = request.City;
+        if (request.Skills is not null)      user.Skills      = request.Skills;
 
         await _userStateService.UpdateUserAsync(user);
         await _userService.UpdateUserAsync(user);

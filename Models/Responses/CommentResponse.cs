@@ -12,5 +12,8 @@ public class CommentResponse
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
     public Guid? ParentCommentId { get; set; }
+    public string Status { get; set; } = "pending";
+    public string? PostTitle { get; set; }
+    public string? EventTitle { get; set; }
     public List<CommentResponse> Replies { get; set; } = new();
 }

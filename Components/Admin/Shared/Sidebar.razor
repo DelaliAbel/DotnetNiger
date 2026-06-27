@@ -90,6 +90,30 @@
                                     <span class="Link">Équipe</span>
                               }
                         </NavLink>
+
+                        <NavLink href="/admin/comments" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active">
+                              <i class="fas fa-comments w-8 text-2xl"></i>
+                              @if (!IsCollapsed)
+                              {
+                                    <span class="Link">Commentaires</span>
+                              }
+                        </NavLink>
+
+                        <NavLink href="/admin/newsletter" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active">
+                              <i class="fas fa-envelope w-8 text-2xl"></i>
+                              @if (!IsCollapsed)
+                              {
+                                    <span class="Link">Newsletter</span>
+                              }
+                        </NavLink>
+
+                        <NavLink href="/admin/settings" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active">
+                              <i class="fas fa-gear w-8 text-2xl"></i>
+                              @if (!IsCollapsed)
+                              {
+                                    <span class="Link">Paramètres</span>
+                              }
+                        </NavLink>
                   </nav>
             </div>
 
@@ -172,6 +196,21 @@
                         <NavLink href="/admin/team" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
                               <i class="fas fa-users w-8 text-2xl"></i>
                               <span class="Link">Équipe</span>
+                        </NavLink>
+
+                        <NavLink href="/admin/comments" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
+                              <i class="fas fa-comments w-8 text-2xl"></i>
+                              <span class="Link">Commentaires</span>
+                        </NavLink>
+
+                        <NavLink href="/admin/newsletter" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
+                              <i class="fas fa-envelope w-8 text-2xl"></i>
+                              <span class="Link">Newsletter</span>
+                        </NavLink>
+
+                        <NavLink href="/admin/settings" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
+                              <i class="fas fa-gear w-8 text-2xl"></i>
+                              <span class="Link">Paramètres</span>
                         </NavLink>
                   </nav>
             </div>

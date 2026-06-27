@@ -55,6 +55,8 @@ public class CommentService : ICommentService
                 CreatedAt = DateTime.Now.AddDays(-2),
                 UpdatedAt = null,
                 ParentCommentId = null,
+                Status = "pending",
+                EventTitle = "Conférence Cloud 2026",
                 Replies = new List<CommentResponse>()
             },
             new CommentResponse
@@ -69,6 +71,8 @@ public class CommentService : ICommentService
                 CreatedAt = DateTime.Now.AddDays(-3),
                 UpdatedAt = null,
                 ParentCommentId = null,
+                Status = "approved",
+                EventTitle = "Conférence Cloud 2026",
                 Replies = new List<CommentResponse>
                 {
                     new CommentResponse
@@ -83,6 +87,8 @@ public class CommentService : ICommentService
                         CreatedAt = DateTime.Now.AddDays(-2),
                         UpdatedAt = null,
                         ParentCommentId = Guid.Empty,
+                        Status = "approved",
+                        EventTitle = "Conférence Cloud 2026",
                         Replies = new List<CommentResponse>()
                     }
                 }
@@ -99,6 +105,8 @@ public class CommentService : ICommentService
                 CreatedAt = DateTime.Now.AddDays(-1),
                 UpdatedAt = null,
                 ParentCommentId = null,
+                Status = "pending",
+                EventTitle = "Atelier Blazor .NET 8",
                 Replies = new List<CommentResponse>()
             },
             new CommentResponse
@@ -113,6 +121,8 @@ public class CommentService : ICommentService
                 CreatedAt = DateTime.Now.AddHours(-8),
                 UpdatedAt = null,
                 ParentCommentId = null,
+                Status = "approved",
+                EventTitle = "Conférence Cloud 2026",
                 Replies = new List<CommentResponse>()
             },
             
@@ -129,6 +139,8 @@ public class CommentService : ICommentService
                 CreatedAt = DateTime.Now.AddDays(-2),
                 UpdatedAt = null,
                 ParentCommentId = null,
+                Status = "approved",
+                PostTitle = "Les nouveautés de C# 13",
                 Replies = new List<CommentResponse>
                 {
                     new CommentResponse
@@ -143,6 +155,8 @@ public class CommentService : ICommentService
                         CreatedAt = DateTime.Now.AddDays(-1),
                         UpdatedAt = null,
                         ParentCommentId = Guid.Empty,
+                        Status = "approved",
+                        PostTitle = "Les nouveautés de C# 13",
                         Replies = new List<CommentResponse>()
                     }
                 }
@@ -159,6 +173,8 @@ public class CommentService : ICommentService
                 CreatedAt = DateTime.Now.AddDays(-1),
                 UpdatedAt = null,
                 ParentCommentId = null,
+                Status = "rejected",
+                PostTitle = "Les nouveautés de C# 13",
                 Replies = new List<CommentResponse>()
             },
             new CommentResponse
@@ -173,6 +189,8 @@ public class CommentService : ICommentService
                 CreatedAt = DateTime.Now.AddHours(-12),
                 UpdatedAt = null,
                 ParentCommentId = null,
+                Status = "pending",
+                PostTitle = "Guide complet ASP.NET Core 8",
                 Replies = new List<CommentResponse>()
             }
         };
@@ -292,6 +310,21 @@ public class CommentService : ICommentService
 
     public Task<List<CommentResponse>> GetAllCommentsAsync()
     {
-        return Task.FromResult(_comments.ToList());
+        var flat = new List<CommentResponse>();
+        foreach (var c in _comments)
+        {
+            flat.Add(c);
+            FlattenReplies(c, flat);
+        }
+        return Task.FromResult(flat);
+    }
+
+    private static void FlattenReplies(CommentResponse comment, List<CommentResponse> flat)
+    {
+        foreach (var reply in comment.Replies)
+        {
+            flat.Add(reply);
+            FlattenReplies(reply, flat);
+        }
     }
 }

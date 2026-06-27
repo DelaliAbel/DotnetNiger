@@ -7,4 +7,5 @@ public interface INewsletterService
 {
     Task<bool> SubscribeAsync(SubscribeRequest request);
     Task<bool> UnsubscribeAsync(UnsubscribeRequest request);
+    Task<List<NewsletterSubscriberDto>> GetAllSubscribersAsync();
 }
