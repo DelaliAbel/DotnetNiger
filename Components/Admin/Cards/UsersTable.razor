@@ -29,7 +29,7 @@
                               {
                               <tr @key="user.Id" class="transition hover:bg-gray-50">
                                     <td class="px-6 py-4 text-sm font-medium text-text">
-                                          <ResolvedImage Src="@user.AvatarUrl" Fallback="/Images/user.png" class="h-10 w-10 rounded-full object-cover" />
+                                          <ResolvedImage Src="@user.AvatarUrl" Icon="fa-user" class="h-10 w-10 rounded-full" />
                                     </td>
                                     <td class="px-6 py-4 text-sm text-text">@user.Id.ToString()[..8]</td>
                                     <td class="px-6 py-4 text-sm text-text">@user.FullName</td>

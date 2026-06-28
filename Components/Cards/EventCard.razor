@@ -1,7 +1,7 @@
 ﻿
 <article class="group bg-white rounded-lg shadow-sm overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-2" @onclick="NavigateToEventDetails">
     <div class="bg-gray-900 flex items-center justify-center aspect-video">
-        <ResolvedImage Src="@Event?.CoverImageUrl" Fallback="/Images/ImageBlog.jpg" class="h-full w-full object-cover transition group-hover:scale-105" alt="@Event?.Title" />
+        <ResolvedImage Src="@Event?.CoverImageUrl" Icon="fa-calendar" class="h-full w-full" alt="@Event?.Title" />
     </div>
     <div class="p-3 sm:p-4 md:p-6">
         <div class="flex items-start justify-between gap-2">

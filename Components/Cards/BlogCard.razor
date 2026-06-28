@@ -5,9 +5,9 @@
 
 <a href="@GetPostUrl()" class="group block overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-2">
       <div class="block overflow-hidden bg-secondary relative aspect-video">
-                 <ResolvedImage Src="@post?.CoverImageUrl" Fallback="/Images/ImageBlog.jpg"
+                 <ResolvedImage Src="@post?.CoverImageUrl" Icon="fa-newspaper"
                     alt="@post?.Title"
-                    class="h-full w-full object-cover transition group-hover:scale-105" />
+                    class="h-full w-full" />
 
             @* Overlay compteur oeil en haut à droite *@
             <span class="absolute top-2 right-2 sm:top-3 sm:right-3 inline-flex items-center gap-2 rounded-full bg-white/90 px-2 sm:px-3 py-1 text-[10px] sm:text-xs font-medium text-gray-800">

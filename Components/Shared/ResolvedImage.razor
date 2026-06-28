@@ -1,10 +1,31 @@
 @inject ApiBaseUrlProvider BaseUrlProvider
 
-<img src="@(_resolvedUrl ?? Fallback)" @attributes="AdditionalAttributes" />
+@{
+    var containerClass = "overflow-hidden ";
+    if (AdditionalAttributes?.TryGetValue("class", out var userClass) == true)
+    {
+        containerClass += userClass;
+        AdditionalAttributes.Remove("class");
+    }
+    AdditionalAttributes?.Remove("alt");
+}
+
+<div class="@containerClass">
+    @if (_resolvedUrl is not null)
+    {
+        <img src="@_resolvedUrl" class="h-full w-full object-cover" alt="" @attributes="AdditionalAttributes" />
+    }
+    else
+    {
+        <div class="h-full w-full flex items-center justify-center bg-gray-100">
+            <i class="fa-solid @Icon fa-2x text-gray-400"></i>
+        </div>
+    }
+</div>
 
 @code {
     [Parameter] public string? Src { get; set; }
-    [Parameter] public string? Fallback { get; set; } = "/Images/Fond.jpeg";
+    [Parameter] public string Icon { get; set; } = "fa-image";
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
