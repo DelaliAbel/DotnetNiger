@@ -61,17 +61,17 @@ public static class ServiceExtensions
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
-                options.Authority = configuration["Jwt:Authority"];
+                options.Authority = configuration["Jwt:Authority"]!;
                 options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                 {
                     ValidateIssuer = true,
                     ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = configuration["Jwt:Issuer"],
+                    ValidIssuer = configuration["Jwt:Issuer"]!,
                     ValidAudience = configuration["Jwt:Audience"] ?? "DotnetNiger.Identity.Client",
                 };
-                options.MetadataAddress = configuration["Jwt:MetadataAddress"];
+                options.MetadataAddress = configuration["Jwt:MetadataAddress"]!;
                 options.RequireHttpsMetadata = !environment.IsDevelopment() && !configuration.GetValue<bool>("Jwt:DisableHttpsRequirement");
             });
 
