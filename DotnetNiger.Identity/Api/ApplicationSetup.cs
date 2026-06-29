@@ -43,6 +43,14 @@ public static class ApplicationSetup
             KnownProxies = { },
             KnownNetworks = { }
         });
+
+        app.Use((context, next) =>
+        {
+            if (!app.Environment.IsDevelopment())
+                context.Request.Scheme = "https";
+            return next();
+        });
+
         app.UseMiddleware<ErrorHandlingMiddleware>();
         app.UseRouting();
         app.UseCors("AllowFrontendOrigins");
