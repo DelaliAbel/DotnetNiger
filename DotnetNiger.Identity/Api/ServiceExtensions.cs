@@ -269,6 +269,27 @@ public static class ServiceExtensions
             });
         }
 
+        var allowedOrigins = config["Cors:AllowedOrigins"] ?? "";
+        var origins = allowedOrigins
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(o => !string.IsNullOrWhiteSpace(o))
+            .ToArray();
+
+        services.AddCors(options =>
+        {
+            options.AddPolicy("AllowFrontendOrigins", policy =>
+            {
+                if (origins.Length > 0)
+                    policy.WithOrigins(origins)
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+                else
+                    policy.AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+            });
+        });
+
         return services;
     }
 

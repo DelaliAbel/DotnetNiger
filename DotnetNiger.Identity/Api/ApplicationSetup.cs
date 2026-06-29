@@ -42,6 +42,7 @@ public static class ApplicationSetup
         });
         app.UseMiddleware<ErrorHandlingMiddleware>();
         app.UseRouting();
+        app.UseCors("AllowFrontendOrigins");
         app.UseRateLimiter();
         app.UseAuthentication();
         app.UseAuthorization();

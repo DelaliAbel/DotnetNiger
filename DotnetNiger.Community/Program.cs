@@ -26,6 +26,7 @@ try
     builder.Services.AddCommunityAuthentication(builder.Configuration, builder.Environment);
     builder.Services.AddCommunityServices();
     builder.Services.AddCommunityHttpClients(builder.Configuration);
+    builder.Services.AddCommunityCors(builder.Configuration);
     builder.Services.AddOpenApi();
 
     var app = builder.Build();
@@ -49,6 +50,7 @@ try
     }
 
     app.UseStaticFiles();
+    app.UseCors("AllowFrontendOrigins");
     app.UseAuthentication();
     app.UseAuthorization();
     app.MapControllers();

@@ -97,6 +97,35 @@ public static class ServiceExtensions
         return services;
     }
 
+    /// <summary>Configure CORS pour les origines autorisées (frontend Blazor WASM, etc.).</summary>
+    /// <param name="services">Collection de services.</param>
+    /// <param name="configuration">Configuration de l'application.</param>
+    public static IServiceCollection AddCommunityCors(this IServiceCollection services, IConfiguration configuration)
+    {
+        var allowedOrigins = configuration["Cors:AllowedOrigins"] ?? "";
+        var origins = allowedOrigins
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(o => !string.IsNullOrWhiteSpace(o))
+            .ToArray();
+
+        services.AddCors(options =>
+        {
+            options.AddPolicy("AllowFrontendOrigins", policy =>
+            {
+                if (origins.Length > 0)
+                    policy.WithOrigins(origins)
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+                else
+                    policy.AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+            });
+        });
+
+        return services;
+    }
+
     /// <summary>Configure le versioning d'API (URL segment + rapport version).</summary>
     /// <param name="services">Collection de services.</param>
     public static IServiceCollection AddApiVersioningWithSwagger(
