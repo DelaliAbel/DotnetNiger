@@ -169,7 +169,11 @@
       "DownstreamHostAndPorts": [{ "Host": "identity-dotnetniger.runasp.net", "Port": 80 }],
       "RateLimitOptions": { "EnableRateLimiting": false },
       "Key": "IdentitySignInGoogleRoute",
-      "SwaggerKey": "identity"
+      "SwaggerKey": "identity",
+      "UpstreamHeaderTransform": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "dotnetniger.runasp.net"
+      }
     },
     {
       "UpstreamPathTemplate": "/signin-github",
@@ -179,7 +183,11 @@
       "DownstreamHostAndPorts": [{ "Host": "identity-dotnetniger.runasp.net", "Port": 80 }],
       "RateLimitOptions": { "EnableRateLimiting": false },
       "Key": "IdentitySignInGitHubRoute",
-      "SwaggerKey": "identity"
+      "SwaggerKey": "identity",
+      "UpstreamHeaderTransform": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "dotnetniger.runasp.net"
+      }
     },
     {
       "UpstreamPathTemplate": "/api/auth/refresh",
