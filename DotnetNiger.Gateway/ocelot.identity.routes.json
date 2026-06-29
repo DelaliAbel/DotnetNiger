@@ -162,6 +162,26 @@
       "SwaggerKey": "identity"
     },
     {
+      "UpstreamPathTemplate": "/signin-google",
+      "UpstreamHttpMethod": ["GET", "POST"],
+      "DownstreamPathTemplate": "/signin-google",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "identity-dotnetniger.runasp.net", "Port": 80 }],
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "Key": "IdentitySignInGoogleRoute",
+      "SwaggerKey": "identity"
+    },
+    {
+      "UpstreamPathTemplate": "/signin-github",
+      "UpstreamHttpMethod": ["GET", "POST"],
+      "DownstreamPathTemplate": "/signin-github",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "identity-dotnetniger.runasp.net", "Port": 80 }],
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "Key": "IdentitySignInGitHubRoute",
+      "SwaggerKey": "identity"
+    },
+    {
       "UpstreamPathTemplate": "/api/auth/refresh",
       "UpstreamHttpMethod": ["POST"],
       "DownstreamPathTemplate": "/connect/token",

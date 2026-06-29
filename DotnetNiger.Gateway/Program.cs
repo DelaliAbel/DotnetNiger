@@ -51,7 +51,7 @@ try
 
     app.UseForwardedHeaders(new ForwardedHeadersOptions
     {
-        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+        ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
     });
     app.UseCors("AllowAll");
     app.UseSecurityHeadersMiddleware();
@@ -90,6 +90,13 @@ try
             });
         });
     }
+
+    app.Use(async (context, next) =>
+    {
+        context.Request.Headers["X-Forwarded-Proto"] = context.Request.Scheme;
+        context.Request.Headers["X-Forwarded-Host"] = context.Request.Host.Host;
+        await next();
+    });
 
     app.UseAuthentication();
     app.UseAuthorization();

@@ -38,7 +38,7 @@ public static class ApplicationSetup
 
         app.UseForwardedHeaders(new ForwardedHeadersOptions
         {
-            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost
         });
         app.UseMiddleware<ErrorHandlingMiddleware>();
         app.UseRouting();
