@@ -39,7 +39,7 @@ public static class ApplicationSetup
         app.UseForwardedHeaders(new ForwardedHeadersOptions
         {
             ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto | ForwardedHeaders.XForwardedHost,
-            ForwardedLimit = null,
+            ForwardLimit = null,
             KnownProxies = { },
             KnownNetworks = { }
         });
