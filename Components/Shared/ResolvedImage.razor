@@ -1,4 +1,4 @@
-@inject ApiBaseUrlProvider BaseUrlProvider
+@inject IUploadService UploadService
 
 @{
     var containerClass = "overflow-hidden ";
@@ -32,23 +32,20 @@
     private string? _resolvedUrl;
     private string? _previousSrc;
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
         if (_previousSrc != Src)
         {
             _previousSrc = Src;
-            _resolvedUrl = ResolveImageUrl(Src);
+            _resolvedUrl = await ResolveImageUrlAsync(Src);
         }
     }
 
-    private string? ResolveImageUrl(string? imageUrl)
+    private async Task<string?> ResolveImageUrlAsync(string? imageUrl)
     {
         if (string.IsNullOrWhiteSpace(imageUrl))
             return null;
 
-        if (Uri.TryCreate(imageUrl, UriKind.Absolute, out _))
-            return imageUrl;
-
-        return $"{BaseUrlProvider.BaseUrl}{imageUrl}";
+        return await UploadService.ResolveImageUrlAsync(imageUrl) ?? imageUrl;
     }
 }

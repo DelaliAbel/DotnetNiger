@@ -1,5 +1,6 @@
 @page "/admin/partners"
 @using DotnetNiger.UI.Models.Responses
+@using DotnetNiger.UI.Components.Admin.Cards
 @inject NavigationManager Navigation
 @inject IPartnerService PartnerService
 @inject IToastService ToastService
@@ -61,85 +62,43 @@ else
                 </button>
             </div>
 
-            <div class="overflow-hidden rounded-lg bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="border-b border-gray-100 bg-gray-50">
-                            <tr>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Nom</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Type</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Site web</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Ordre</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Statut</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                            @if (partners.Count == 0)
-                            {
-                                <tr>
-                                    <td colspan="6" class="px-6 py-10 text-center text-sm text-gray-500">Aucun partenaire disponible.</td>
-                                </tr>
-                            }
-                            else
-                            {
-                                @foreach (var partner in partners)
-                                {
-                                    <tr @key="partner.Id" class="transition hover:bg-gray-50/80">
-                                        <td class="px-6 py-4">
-                                            <div class="flex items-center gap-3">
-                                                <div class="h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100 flex items-center justify-center">
-                                                    @if (!string.IsNullOrWhiteSpace(partner.LogoUrl))
-                                                    {
-                                                        <ResolvedImage Src="@partner.LogoUrl" alt="@partner.Name" class="h-full w-full object-cover" />
-                                                    }
-                                                    else
-                                                    {
-                                                        <i class="fas fa-handshake text-sm text-gray-400"></i>
-                                                    }
-                                                </div>
-                                                <div class="min-w-0">
-                                                    <p class="truncate text-sm font-semibold text-title">@partner.Name</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4 text-sm">
-                                            <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @(partner.PartnerType == "education" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700")">
-                                                @GetPartnerTypeLabel(partner.PartnerType)
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 text-sm text-body">
-                                            @if (!string.IsNullOrWhiteSpace(partner.WebsiteUrl))
-                                            {
-                                                <a href="@partner.WebsiteUrl" target="_blank" rel="noopener noreferrer" class="text-secondary hover:underline">@partner.WebsiteUrl</a>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-gray-400">—</span>
-                                            }
-                                        </td>
-                                        <td class="px-6 py-4 text-sm text-body">@partner.SortOrder</td>
-                                        <td class="px-6 py-4 text-sm">
-                                            <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @(partner.IsActive ? "bg-success-bg text-success" : "bg-gray-100 text-gray-700")">
-                                                @(partner.IsActive ? "Actif" : "Inactif")
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 text-sm">
-                                            <AdminActionDropdown ItemId="partner.Id"
-                                                                  Status="@(partner.IsActive ? "Published" : "Pending")"
-                                                                  ViewLabel="Modifier"
-                                                                  EditLabel="Modifier"
-                                                                  DeleteLabel="Supprimer"
-                                                                  OnView="HandleEdit"
-                                                                  OnEdit="HandleEdit"
-                                                                  OnDelete="HandleDelete" />
-                                        </td>
-                                    </tr>
-                                }
-                            }
-                        </tbody>
-                    </table>
+            <section class="mb-6 flex flex-col gap-4 md:flex-row md:items-center">
+                <div class="flex-1 rounded-lg bg-white px-4 py-3 shadow-sm ring-1 ring-black/5">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-0 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" placeholder="Rechercher un partenaire..."
+                               @bind="searchQuery" @bind:event="oninput"
+                               class="w-full border-0 bg-transparent pl-7 text-sm text-gray-900 outline-none placeholder:text-gray-400" />
+                    </div>
                 </div>
+
+                <select @bind="selectedStatus" class="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition hover:border-gray-300">
+                    <option value="">Tous les statuts</option>
+                    <option value="true">Actif</option>
+                    <option value="false">Inactif</option>
+                </select>
+            </section>
+
+            <div class="mb-6">
+                <ViewToggle @bind-IsListView="isListView" />
+            </div>
+
+            @if (isListView)
+            {
+                <PartnerTable Partners="pagedPartners" OnChanged="LoadPartnersAsync" />
+            }
+            else
+            {
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-5 lg:gap-6">
+                    @foreach (var partner in pagedPartners)
+                    {
+                        <AdminPartnerCard @key="partner.Id" Partner="partner" OnChanged="LoadPartnersAsync" />
+                    }
+                </div>
+            }
+
+            <div class="mt-6">
+                <Paginated @bind-CurrentPage="currentPage" TotalPages="@totalPages" />
             </div>
         </div>
     </div>
@@ -147,7 +106,51 @@ else
 
 @code {
     private bool isLoading = true;
-    private List<PartnerResponse> partners = new();
+    private bool isListView = true;
+    private string searchQueryValue = string.Empty;
+    private string selectedStatusValue = string.Empty;
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private List<PartnerResponse> allPartners = new();
+
+    private string searchQuery
+    {
+        get => searchQueryValue;
+        set
+        {
+            if (searchQueryValue == value) return;
+            searchQueryValue = value;
+            currentPage = 1;
+        }
+    }
+
+    private string selectedStatus
+    {
+        get => selectedStatusValue;
+        set
+        {
+            if (selectedStatusValue == value) return;
+            selectedStatusValue = value;
+            currentPage = 1;
+        }
+    }
+
+    private List<PartnerResponse> filteredPartners => allPartners
+        .Where(p => string.IsNullOrEmpty(searchQuery) ||
+                    p.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    p.Description.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .Where(p => string.IsNullOrEmpty(selectedStatus) ||
+                    p.IsActive.ToString() == selectedStatus)
+        .ToList();
+
+    private int totalPages => Math.Max(1, (int)Math.Ceiling((double)filteredPartners.Count / pageSize));
+
+    private List<PartnerResponse> pagedPartners => filteredPartners
+        .Skip((SafeCurrentPage - 1) * pageSize)
+        .Take(pageSize)
+        .ToList();
+
+    private int SafeCurrentPage => Math.Clamp(currentPage, 1, totalPages);
 
     protected override async Task OnInitializedAsync()
     {
@@ -159,41 +162,11 @@ else
         isLoading = true;
         try
         {
-            partners = await PartnerService.GetAllAsync();
+            allPartners = await PartnerService.GetAllAsync();
         }
         finally
         {
             isLoading = false;
         }
-    }
-
-    private Task HandleEdit(Guid id)
-    {
-        Navigation.NavigateTo($"/admin/partners/edit/{id}");
-        return Task.CompletedTask;
-    }
-
-    private async Task HandleDelete(Guid id)
-    {
-        var deleted = await PartnerService.DeleteAsync(id);
-        if (deleted)
-        {
-            ToastService.ShowToast("Partenaire supprimé avec succès.", ToastLevel.Success);
-            await LoadPartnersAsync();
-        }
-        else
-        {
-            ToastService.ShowToast("Erreur lors de la suppression.", ToastLevel.Error);
-        }
-    }
-
-    private static string GetPartnerTypeLabel(string type)
-    {
-        return type.ToLowerInvariant() switch
-        {
-            "education" => "Éducation",
-            "sponsor" => "Sponsor",
-            _ => type
-        };
     }
 }

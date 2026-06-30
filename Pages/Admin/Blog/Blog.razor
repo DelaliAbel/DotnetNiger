@@ -48,7 +48,7 @@
             <ViewToggle @bind-IsListView="isListView" />
         </section>
 
-        <div class="overflow-y-hidden">
+        <div class="">
             @if (isListView)
             {
                 <BlogTable Posts="@pagedPosts" OnChanged="LoadPostsAsync" />

@@ -6,16 +6,15 @@
 @inject IPostService PostService
 @inject NavigationManager NavigationManager
 
-<div class="overflow-hidden rounded-lg bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
-    <div class="overflow-x-auto">
+<div class="bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
         <table class="w-full">
             <thead class="border-b border-gray-100 bg-gray-50">
                 <tr>
                     <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Titre</th>
                     <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Auteur</th>
                     <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Type</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Aperçu</th>
                     <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Statut</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Vues</th>
                     <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
                     <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
                 </tr>
@@ -45,14 +44,12 @@
                             </td>
                             <td class="px-6 py-4 text-sm text-body">@post.AuthorName</td>
                             <td class="px-6 py-4 text-sm text-body">@GetPostTypeLabel(post.PostType)</td>
-                            <td class="px-6 py-4 text-sm text-body">
-                                <p class="max-w-md truncate">@GetPreviewText(post)</p>
-                            </td>
                             <td class="px-6 py-4 text-sm">
                                 <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @(IsPublished(post) ? "bg-success-bg text-success" : "bg-amber-100 text-amber-700")">
                                     @(IsPublished(post) ? "Publié" : "Brouillon")
                                 </span>
                             </td>
+                            <td class="px-6 py-4 text-sm text-body">@post.ViewCount</td>
                             <td class="px-6 py-4 text-sm text-body">@GetDateLabel(post)</td>
                             <td class="px-6 py-4 text-sm">
                                 <AdminActionDropdown ItemId="post.Id"
@@ -71,7 +68,6 @@
                 }
             </tbody>
         </table>
-    </div>
 </div>
 
 @code {
@@ -83,21 +79,6 @@
     private static string GetPostTypeLabel(string? postType)
     {
         return string.IsNullOrWhiteSpace(postType) ? "Sans catégorie" : postType;
-    }
-
-    private static string GetPreviewText(PostDto post)
-    {
-        var source = !string.IsNullOrWhiteSpace(post.Excerpt) ? post.Excerpt : post.Content;
-
-        if (string.IsNullOrWhiteSpace(source))
-        {
-            return "Aucun aperçu";
-        }
-
-        var plainText = Regex.Replace(source, "<.*?>", string.Empty);
-        plainText = WebUtility.HtmlDecode(plainText).Trim();
-
-        return plainText.Length <= 90 ? plainText : $"{plainText[..90].Trim()}...";
     }
 
     private static string GetDateLabel(PostDto post)

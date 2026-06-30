@@ -69,13 +69,24 @@ else
                 </div>
             </div>
 
+            <section class="mb-6 flex flex-col gap-4 md:flex-row md:items-center">
+                <div class="flex-1 rounded-lg bg-white px-4 py-3 shadow-sm ring-1 ring-black/5">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-0 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" placeholder="Rechercher un membre..."
+                               @bind="searchQuery" @bind:event="oninput"
+                               class="w-full border-0 bg-transparent pl-7 text-sm text-gray-900 outline-none placeholder:text-gray-400" />
+                    </div>
+                </div>
+            </section>
+
             <div class="mb-6">
                 <ViewToggle @bind-IsListView="isListView" />
             </div>
 
             @if (isListView)
             {
-                <TeamTable Members="teamMembers"
+                <TeamTable Members="pagedMembers"
                            OnView="HandleView"
                            OnEdit="HandleEdit"
                            OnRemoveFromTeam="HandleRemoveFromTeam"
@@ -83,7 +94,7 @@ else
             }
             else
             {
-                @if (teamMembers.Count == 0)
+                @if (pagedMembers.Count == 0)
                 {
                     <div class="rounded-lg bg-white p-10 text-center text-sm text-gray-500 shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
                         Aucun membre dans l'équipe.
@@ -92,7 +103,7 @@ else
                 else
                 {
                     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        @foreach (var member in teamMembers)
+                        @foreach (var member in pagedMembers)
                         {
                             <AdminTeamCard User="member"
                                            OnView="HandleView"
@@ -103,6 +114,10 @@ else
                     </div>
                 }
             }
+
+            <div class="mt-6">
+                <Paginated @bind-CurrentPage="currentPage" TotalPages="@totalPages" />
+            </div>
         </div>
     </div>
 }
@@ -110,7 +125,37 @@ else
 @code {
     private bool isLoading = true;
     private bool isListView = true;
+    private string searchQueryValue = string.Empty;
+    private int currentPage = 1;
+    private int pageSize = 10;
     private List<UserDto> teamMembers = [];
+
+    private string searchQuery
+    {
+        get => searchQueryValue;
+        set
+        {
+            if (searchQueryValue == value) return;
+            searchQueryValue = value;
+            currentPage = 1;
+        }
+    }
+
+    private List<UserDto> filteredMembers => teamMembers
+        .Where(m => string.IsNullOrEmpty(searchQuery) ||
+                    m.FullName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    m.Email.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    (m.Position ?? "").Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+    private int totalPages => Math.Max(1, (int)Math.Ceiling((double)filteredMembers.Count / pageSize));
+
+    private List<UserDto> pagedMembers => filteredMembers
+        .Skip((SafeCurrentPage - 1) * pageSize)
+        .Take(pageSize)
+        .ToList();
+
+    private int SafeCurrentPage => Math.Clamp(currentPage, 1, totalPages);
 
     protected override async Task OnInitializedAsync()
     {

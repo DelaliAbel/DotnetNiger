@@ -178,45 +178,7 @@
 
         @if (isListView)
         {
-            <div class="bg-white rounded-lg shadow overflow-hidden">
-                <table class="w-full">
-                    <thead class="bg-gray-50 border-b">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Titre</th>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Type</th>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Niveau</th>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">URL</th>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Vues</th>
-                            <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var resource in pagedResources)
-                        {
-                            <tr class="border-b hover:bg-gray-50">
-                                <td class="px-6 py-4 text-sm font-medium">@resource.Title</td>
-                                <td class="px-6 py-4 text-sm">
-                                    <span class="rounded-full bg-blue-100 text-blue-800 px-2 py-1 text-xs">@resource.ResourceType</span>
-                                </td>
-                                <td class="px-6 py-4 text-sm">@resource.Level</td>
-                                <td class="px-6 py-4 text-sm">
-                                    <a href="@resource.Url" target="_blank" class="text-blue-600 hover:underline truncate max-w-[160px] block">
-                                        @(resource.Url.Length > 40 ? resource.Url[..40] + "..." : resource.Url)
-                                    </a>
-                                </td>
-                                <td class="px-6 py-4 text-sm">@resource.ViewCount</td>
-                                <td class="px-6 py-4 text-sm">
-                                    <AdminActionDropdown ItemId="resource.Id"
-                                                         EditLabel="Modifier"
-                                                         DeleteLabel="Supprimer"
-                                                         OnEdit="EditResourceById"
-                                                         OnDelete="DeleteResource" />
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
+            <RessourceTable Resources="pagedResources" OnEdit="EditResourceById" OnDelete="DeleteResource" />
         }
         else
         {
