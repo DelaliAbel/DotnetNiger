@@ -293,8 +293,8 @@ public class TokenCookieMiddleware
         context.Response.Cookies.Append(name, value, new CookieOptions
         {
             HttpOnly = true,
-            Secure = context.Request.IsHttps,
-            SameSite = SameSiteMode.Lax,
+            Secure = true,
+            SameSite = SameSiteMode.None,
             Path = "/",
             MaxAge = TimeSpan.FromDays(14),
         });
@@ -305,8 +305,8 @@ public class TokenCookieMiddleware
         context.Response.Cookies.Append(name, "", new CookieOptions
         {
             HttpOnly = true,
-            Secure = context.Request.IsHttps,
-            SameSite = SameSiteMode.Lax,
+            Secure = true,
+            SameSite = SameSiteMode.None,
             Path = "/",
             Expires = DateTimeOffset.UnixEpoch,
         });
