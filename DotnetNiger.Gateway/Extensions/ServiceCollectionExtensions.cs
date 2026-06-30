@@ -2,6 +2,7 @@ using DotnetNiger.Gateway.Configuration;
 using DotnetNiger.Gateway.HealthChecks;
 using DotnetNiger.Gateway.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Protocols;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
@@ -22,7 +23,10 @@ public static class ServiceCollectionExtensions
         IConfiguration configuration,
         IWebHostEnvironment environment)
     {
+        services.AddHttpContextAccessor();
+
         services.AddOcelot(configuration)
+            .AddDelegatingHandler<ForwardedHeadersHandler>(global: true)
             .AddCacheManager(x => x.WithDictionaryHandle())
             .AddPolly()
             .AddConsul();
