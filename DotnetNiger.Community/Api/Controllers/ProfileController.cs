@@ -85,7 +85,19 @@ public class ProfileController(IProfileService profileService) : BaseController
     {
         try
         {
-            var userId = GetUserId();
+            Guid userId;
+            try
+            {
+                userId = GetUserId();
+            }
+            catch (UnauthorizedAccessException)
+            {
+                userId = request.UserId;
+            }
+
+            if (userId == Guid.Empty)
+                return Unauthorized(new { Success = false, Message = Messages.User.InvalidIdentity });
+
             var cert = await profileService.SubmitCertificateAsync(userId, request);
             return Ok(new { Success = true, Data = cert });
         }
