@@ -2,13 +2,8 @@ using DotnetNiger.Identity.Api;
 
 try
 {
-    var builder = WebApplication.CreateBuilder(args);
-
-    builder.Logging.ClearProviders();
-    builder.Logging.AddConsole();
-
-    var app = ApplicationSetup.ConfigureApp(ApplicationSetup.CreateBuilder(args));
-
+    var builder = ApplicationSetup.CreateBuilder(args);
+    var app = ApplicationSetup.ConfigureApp(builder);
     await app.RunAsync();
     return 0;
 }
