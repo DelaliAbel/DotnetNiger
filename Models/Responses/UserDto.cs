@@ -6,7 +6,14 @@ public class UserDto
     public Guid Id { get; set; }
     public string Username { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
-    public string FullName { get; set; } = string.Empty;
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    private string _fullName = string.Empty;
+    public string FullName
+    {
+        get => !string.IsNullOrWhiteSpace(_fullName) ? _fullName : $"{FirstName} {LastName}".Trim();
+        set => _fullName = value;
+    }
     public string PhoneNumber { get; set; } = string.Empty;
     public string Bio { get; set; } = string.Empty;
     public string AvatarUrl { get; set; } = string.Empty;

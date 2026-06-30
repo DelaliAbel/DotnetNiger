@@ -14,7 +14,7 @@ public class ApiUserService : ApiServiceBase, IUserService
 
     public async Task<List<UserDto>> GetUsersAsync()
     {
-        var response = await Http.GetAsync(ApiEndpoints.AdminUsers);
+        var response = await Http.GetAsync(ApiEndpoints.CommunityAdminUsers);
         if (!response.IsSuccessStatusCode)
             return [];
 
