@@ -27,6 +27,7 @@ public static class ServiceCollectionExtensions
 
         services.AddOcelot(configuration)
             .AddDelegatingHandler<ForwardedHeadersHandler>(global: true)
+            .AddDelegatingHandler<ImageUrlRewriteHandler>(global: true)
             .AddCacheManager(x => x.WithDictionaryHandle())
             .AddPolly()
             .AddConsul();
