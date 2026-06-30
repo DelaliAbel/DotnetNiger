@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using DotnetNiger.Community.Api;
 using DotnetNiger.Community.Api.Middleware;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.FileProviders;
 
 try
 {
@@ -49,7 +50,15 @@ try
         });
     }
 
-    app.UseStaticFiles();
+    var webRoot = app.Environment.WebRootPath;
+    if (string.IsNullOrEmpty(webRoot))
+        webRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+    if (!Directory.Exists(webRoot))
+        Directory.CreateDirectory(webRoot);
+    app.UseStaticFiles(new StaticFileOptions
+    {
+        FileProvider = new PhysicalFileProvider(webRoot)
+    });
     app.UseCors("AllowFrontendOrigins");
     app.UseAuthentication();
     app.UseAuthorization();
