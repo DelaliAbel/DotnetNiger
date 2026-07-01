@@ -1,4 +1,5 @@
 ﻿@page "/admin/blog/create"
+@attribute [Authorize(Roles = "Admin,SuperAdmin,Moderator")]
 @* Page admin : création d'article avec éditeur riche. *@
 @using DotnetNiger.UI.Models
 @using DotnetNiger.UI.Components.Admin
@@ -9,6 +10,7 @@
 @inject IProfileService ProfileService
 @inject IToastService ToastService
 @inject PreviewStateService PreviewState
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <div class="min-h-screen bg-primary p-6">
     <div class="mb-6 flex items-center justify-between">
@@ -117,6 +119,10 @@
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        if (!(authState.User.Identity?.IsAuthenticated ?? false))
+            return;
+
         // Restaurer le formulaire si on revient d'un aperçu
         if (PreviewState.PendingPostRequest is not null && PreviewState.ReturnUrl == "/admin/blog/create")
         {

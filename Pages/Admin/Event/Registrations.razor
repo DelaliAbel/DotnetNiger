@@ -1,4 +1,5 @@
 @page "/admin/events/{EventId:guid}/inscriptions"
+@attribute [Authorize(Roles = "Admin,SuperAdmin,Moderator")]
 @using System.Globalization
 @inject IEventService EventService
 @inject NavigationManager NavigationManager

@@ -1,4 +1,5 @@
 ﻿@page "/admin/projects/edit/{Id:guid}"
+@attribute [Authorize(Roles = "Admin,SuperAdmin,Moderator")]
 @* Page admin : édition d'un projet existant. *@
 @using DotnetNiger.UI.Models.Requests
 @using DotnetNiger.UI.Models.Responses

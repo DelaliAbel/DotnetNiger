@@ -1,4 +1,5 @@
 @page "/admin/profile/informations"
+@attribute [Authorize(Roles = "Admin,SuperAdmin,Moderator")]
 @* Page admin : formulaire de mise à jour du profil utilisateur. *@
 @using DotnetNiger.UI.Models
 @using DotnetNiger.UI.Components.Shared
@@ -8,6 +9,8 @@
 @inject IProfileService ProfileService
 @inject NavigationManager Navigation
 @inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IToastService ToastService
 
 @if (!isLoading)
 {
@@ -48,6 +51,9 @@
                             <InputText @bind-Value="model.Country" class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none sm:h-12 sm:px-4 sm:text-base" />
                         </div>
                     </div>
+                    <button type="button" @onclick="SavePersonalInfoAsync" class="mt-5 inline-flex h-8 items-center rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white hover:bg-emerald-500 sm:h-10 sm:px-6 sm:text-sm">
+                        <i class="fa-solid fa-floppy-disk mr-2"></i>Sauvegarder les informations
+                    </button>
                 </div>
             </section>
 
@@ -63,6 +69,9 @@
                             <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Biographie</label>
                             <Editor @ref="EditorRef" EditorId="bioEditor" InitialContent="@(model.Bio ?? string.Empty)" />
                         </div>
+                        <button type="button" @onclick="SaveBioAsync" class="inline-flex h-8 items-center rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white hover:bg-emerald-500 sm:h-10 sm:px-6 sm:text-sm">
+                            <i class="fa-solid fa-floppy-disk mr-2"></i>Sauvegarder la bio
+                        </button>
                     </div>
                 </div>
             </section>
@@ -75,6 +84,9 @@
                     </div>
                     <div>
                         <SkillsEditor @bind-Skills="model.Skills" />
+                        <button type="button" @onclick="SaveSkillsAsync" class="mt-5 inline-flex h-8 items-center rounded-lg bg-emerald-600 px-4 text-xs font-semibold text-white hover:bg-emerald-500 sm:h-10 sm:px-6 sm:text-sm">
+                            <i class="fa-solid fa-floppy-disk mr-2"></i>Sauvegarder les compétences
+                        </button>
                     </div>
                 </div>
             </section>
@@ -114,12 +126,9 @@
             </section>
 
             <div class="flex flex-wrap items-center gap-2 pt-1 sm:gap-3">
-                <button type="button" @onclick="HandleSubmit" class="inline-flex h-10 items-center rounded-lg bg-indigo-600 px-5 text-sm font-semibold text-white transition hover:bg-indigo-500 sm:h-12 sm:px-8 sm:text-base">
-                    Enregistrer
-                </button>
-                <button type="button" @onclick="Annuler" class="inline-flex h-10 items-center rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:h-12 sm:px-8 sm:text-base">
-                    Annuler
-                </button>
+                <a href="/admin/profile" class="inline-flex h-10 items-center rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:h-12 sm:px-8 sm:text-base">
+                    <i class="fa-solid fa-arrow-left mr-2"></i>Retour
+                </a>
             </div>
         </div>
     </div>
@@ -181,6 +190,10 @@ else
 
         try
         {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (!(authState.User.Identity?.IsAuthenticated ?? false))
+                return;
+
             if (UserStateService.CurrentUser is null)
                 await UserStateService.LoadUserFromStorageAsync();
 
@@ -232,13 +245,56 @@ else
         }).ToList();
     }
 
-    private async Task HandleSubmit()
+    private async Task SaveBioAsync()
     {
-        model.Bio = await EditorRef.GetContentAsync();
-        var updated = await ProfileService.UpdateProfileAsync(model);
+        var bioContent = await EditorRef.GetContentAsync();
+        var updated = await ProfileService.UpdateProfileAsync(new UpdateProfileRequest { Bio = bioContent });
         if (updated.Id != Guid.Empty)
+        {
             await UserStateService.UpdateUserAsync(updated);
-        Navigation.NavigateTo("/admin/profile");
+            ToastService.ShowToast("Bio sauvegardée avec succès.", ToastLevel.Success);
+        }
+        else
+        {
+            ToastService.ShowToast("Erreur lors de la sauvegarde de la bio.", ToastLevel.Error);
+        }
+    }
+
+    private async Task SavePersonalInfoAsync()
+    {
+        var updated = await ProfileService.UpdateProfileAsync(new UpdateProfileRequest
+        {
+            FullName = model.FullName,
+            PhoneNumber = model.PhoneNumber,
+            Country = model.Country,
+            City = model.City
+        });
+        if (updated.Id != Guid.Empty)
+        {
+            await UserStateService.UpdateUserAsync(updated);
+            ToastService.ShowToast("Informations personnelles sauvegardées avec succès.", ToastLevel.Success);
+        }
+        else
+        {
+            ToastService.ShowToast("Erreur lors de la sauvegarde des informations.", ToastLevel.Error);
+        }
+    }
+
+    private async Task SaveSkillsAsync()
+    {
+        var updated = await ProfileService.UpdateProfileAsync(new UpdateProfileRequest
+        {
+            Skills = model.Skills
+        });
+        if (updated.Id != Guid.Empty)
+        {
+            await UserStateService.UpdateUserAsync(updated);
+            ToastService.ShowToast("Compétences sauvegardées avec succès.", ToastLevel.Success);
+        }
+        else
+        {
+            ToastService.ShowToast("Erreur lors de la sauvegarde des compétences.", ToastLevel.Error);
+        }
     }
 
     private async Task SaveSocialLinksAsync()
@@ -281,6 +337,6 @@ else
         messageSocial = "Liens sociaux mis a jour avec succes.";
     }
 
-    private void Annuler() => Navigation.NavigateTo("/admin/profile");
+
 
 }

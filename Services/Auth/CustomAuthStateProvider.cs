@@ -12,8 +12,6 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
     private static readonly AuthenticationState Anonymous =
         new(new ClaimsPrincipal(new ClaimsIdentity()));
 
-    private bool _isRefreshing;
-
     public CustomAuthStateProvider(IJSRuntime js, IServiceProvider serviceProvider)
     {
         _js = js;
@@ -23,6 +21,14 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
     public override async Task<AuthenticationState> GetAuthenticationStateAsync()
     {
         var token = await GetAccessTokenAsync();
+        var refreshToken = await GetRefreshTokenAsync();
+
+        if (!string.IsNullOrWhiteSpace(token) && string.IsNullOrWhiteSpace(refreshToken))
+        {
+            await ClearTokensAsync();
+            return Anonymous;
+        }
+
         if (string.IsNullOrWhiteSpace(token))
             return Anonymous;
 
@@ -32,9 +38,8 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         if (expClaim != null && long.TryParse(expClaim, out var expUnix))
         {
             var expDate = DateTimeOffset.FromUnixTimeSeconds(expUnix);
-            if (expDate <= DateTimeOffset.UtcNow && !_isRefreshing)
+            if (expDate <= DateTimeOffset.UtcNow)
             {
-                _isRefreshing = true;
                 try
                 {
                     var authService = _serviceProvider.GetRequiredService<IAuthService>();
@@ -54,10 +59,6 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
                 {
                     await ClearTokensAsync();
                     return Anonymous;
-                }
-                finally
-                {
-                    _isRefreshing = false;
                 }
             }
         }

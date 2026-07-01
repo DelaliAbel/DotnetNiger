@@ -258,7 +258,7 @@ public class AuthService : IAuthService
     /// </summary>
     public async Task<AuthDto?> RefreshTokenAsync()
     {
-        if (!await _refreshLock.WaitAsync(0))
+        if (!await _refreshLock.WaitAsync(TimeSpan.FromSeconds(5)))
             return null;
 
         try

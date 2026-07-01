@@ -60,6 +60,17 @@ public class ClientIdHeaderHandler : DelegatingHandler
                     response = await base.SendAsync(clone, cancellationToken);
                     _logger.LogInformation("Requete reessayee avec succes apres rafraichissement du token");
                 }
+                else
+                {
+                    var newToken = await _authStateProvider.GetAccessTokenAsync();
+                    if (!string.IsNullOrWhiteSpace(newToken))
+                    {
+                        var clone = await CloneRequestAsync(request, cancellationToken);
+                        clone.Headers.Authorization = new AuthenticationHeaderValue("Bearer", newToken);
+                        response = await base.SendAsync(clone, cancellationToken);
+                        _logger.LogInformation("Requete reessayee avec le token stocke apres rafraichissement concurrent");
+                    }
+                }
             }
             catch (Exception ex)
             {

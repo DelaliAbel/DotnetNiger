@@ -1,4 +1,5 @@
 ﻿@page "/admin/events/nouveau"
+@attribute [Authorize(Roles = "Admin,SuperAdmin,Moderator")]
 @* Page admin : création d'un nouvel événement. *@
 @using DotnetNiger.UI.Models
 @using DotnetNiger.UI.Models.Requests
@@ -12,6 +13,7 @@
 @inject IToastService ToastService
 @inject IUserService UserService
 @inject IUploadService UploadService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JS
 @inject PreviewStateService PreviewState
 
@@ -529,6 +531,10 @@
         isLoading = true;
         try
         {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (!(authState.User.Identity?.IsAuthenticated ?? false))
+                return;
+
             // Charger depuis UserStateService ; fallback sur ProfileService puis synchroniser.
             if (UserStateService.CurrentUser is null)
                 await UserStateService.LoadUserFromStorageAsync();

@@ -1,4 +1,5 @@
 @page "/admin/partners"
+@attribute [Authorize(Roles = "Admin,SuperAdmin,Moderator")]
 @using DotnetNiger.UI.Models.Responses
 @using DotnetNiger.UI.Components.Admin.Cards
 @inject NavigationManager Navigation

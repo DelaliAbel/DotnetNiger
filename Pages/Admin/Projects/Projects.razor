@@ -1,4 +1,5 @@
 @page "/admin/projects"
+@attribute [Authorize(Roles = "Admin,SuperAdmin,Moderator")]
 @* Page admin : gestion des projets (liste/grille + filtres + pagination). *@
 @using DotnetNiger.UI.Models.Responses
 @using DotnetNiger.UI.Components.Admin.Cards

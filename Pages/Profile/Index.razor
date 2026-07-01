@@ -1,10 +1,12 @@
 @page "/profile"
+@attribute [Authorize]
 @implements IDisposable
 @inject IUserStateService UserStateService
 @inject IProfileService ProfileService
 @inject NavigationManager Navigation
 @inject IUploadService UploadService
 @inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 @if (!isLoading)
 {
@@ -229,12 +231,19 @@ else
 
         try
         {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (!(authState.User.Identity?.IsAuthenticated ?? false))
+                return;
+
             if (UserStateService.CurrentUser is null)
                 await UserStateService.LoadUserFromStorageAsync();
 
-            var profil = await ProfileService.GetProfileAsync();
-            if (profil.Id != Guid.Empty)
-                await UserStateService.SetUserAsync(profil);
+            if (UserStateService.CurrentUser is null)
+            {
+                var profil = await ProfileService.GetProfileAsync();
+                if (profil.Id != Guid.Empty)
+                    await UserStateService.SetUserAsync(profil);
+            }
         }
         finally
         {

@@ -23,15 +23,19 @@ public class ApiProfileService : ApiServiceBase, IProfileService
 
     public async Task<UserDto> UpdateProfileAsync(UpdateProfileRequest request)
     {
-        var response = await Http.PutAsJsonAsync(ApiEndpoints.Profile, request);
-        if (!response.IsSuccessStatusCode)
-            return await GetProfileAsync();
+        try
+        {
+            var response = await Http.PutAsJsonAsync(ApiEndpoints.Profile, request);
+            if (!response.IsSuccessStatusCode)
+                return new UserDto();
 
-        if (response.Content.Headers.ContentLength is null or 0)
-            return await GetProfileAsync();
-
-        var updated = await ApiResponseReader.ReadAsync<UserDto>(response);
-        return updated ?? await GetProfileAsync();
+            var updated = await ApiResponseReader.ReadAsync<UserDto>(response);
+            return updated ?? new UserDto();
+        }
+        catch (HttpRequestException)
+        {
+            return new UserDto();
+        }
     }
 
     public async Task<List<SocialLinkDto>> GetSocialLinksAsync()

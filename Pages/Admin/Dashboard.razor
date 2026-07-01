@@ -1,4 +1,5 @@
 @page "/admin"
+@attribute [Authorize(Roles = "Admin,SuperAdmin,Moderator")]
 @* Page admin : tableau de bord (KPI + listes récentes) alimenté par services. *@
 @inject IPostService PostService
 @inject IEventService EventService
