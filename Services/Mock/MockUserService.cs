@@ -97,7 +97,7 @@ public class MockUserService : IUserService
             CreatedAt = DateTime.Now ,
             LastLoginAt = DateTime.Now,
             Skills = new List<string>(),
-            Roles = new List<string> { "Member" },
+            Roles = new List<string> { "User" },
             SocialLinks = new List<SocialLinkDto>()
         };
 
@@ -142,9 +142,9 @@ public class MockUserService : IUserService
             return Task.FromResult(false);
 
         user.IsActive = true;
-        if (!user.Roles.Any(role => role.Equals("Member", StringComparison.OrdinalIgnoreCase)))
+        if (!user.Roles.Any(role => role.Equals("User", StringComparison.OrdinalIgnoreCase)))
         {
-            user.Roles.Add("Member");
+            user.Roles.Add("User");
         }
 
         return Task.FromResult(true);

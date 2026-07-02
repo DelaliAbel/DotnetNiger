@@ -1,4 +1,5 @@
 ﻿@page "/admin/events/nouveau"
+@attribute [Authorize(Roles = "Admin,SuperAdmin")]
 @* Page admin : création d'un nouvel événement. *@
 @using DotnetNiger.UI.Models
 @using DotnetNiger.UI.Models.Requests

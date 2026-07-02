@@ -15,14 +15,16 @@ public class MockAuthService : IAuthService
 
     private readonly CustomAuthStateProvider _authProvider;
     private readonly IUserStateService _userStateService;
+    private readonly IPermissionService _permissionService;
     private UserDto? _currentUser;
     private TokenDto? _currentToken;
     private DateTime? _tokenExpiry;
 
-    public MockAuthService(CustomAuthStateProvider authProvider, IUserStateService userStateService)
+    public MockAuthService(CustomAuthStateProvider authProvider, IUserStateService userStateService, IPermissionService permissionService)
     {
         _authProvider = authProvider;
         _userStateService = userStateService;
+        _permissionService = permissionService;
     }
 
     #region Authentification
@@ -62,6 +64,7 @@ public class MockAuthService : IAuthService
         _refreshTokens[user.Id.ToString()] = _currentToken.RefreshToken;
 
         await _authProvider.SaveTokensAsync(_currentToken.AccessToken, _currentToken.RefreshToken);
+        await _permissionService.LoadPermissionsAsync();
 
         return new ApiSuccessResponse<AuthDto>
         {
@@ -108,7 +111,7 @@ public class MockAuthService : IAuthService
             FullName = request.FullName,
             IsActive = true,
             CreatedAt = DateTime.Now,
-            Roles = new List<string> { RoleConstants.Member },
+            Roles = new List<string> { RoleConstants.User },
             Skills = new List<string>()
         };
 

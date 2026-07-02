@@ -31,6 +31,7 @@ builder.Services.AddScoped<AuthService>(sp => new AuthService(
         sp.GetRequiredService<ILogger<ClientIdHeaderHandler>>()),
     sp.GetRequiredService<CustomAuthStateProvider>(),
     sp.GetRequiredService<IUserStateService>(),
+    sp.GetRequiredService<IPermissionService>(),
     clientId
 ));
 
@@ -39,8 +40,6 @@ builder.Services.AddAuthorizationCore(options =>
 {
     options.AddPolicy("AdminOnly", policy =>
         policy.RequireRole("Admin", "SuperAdmin"));
-    options.AddPolicy("ModeratorOrAbove", policy =>
-        policy.RequireRole("Admin", "SuperAdmin", "Moderator"));
 });
 builder.Services.AddScoped<CustomAuthStateProvider>();
 builder.Services.AddScoped<AuthenticationStateProvider>(
@@ -58,6 +57,7 @@ var useMock = builder.Configuration.GetValue<bool>("UseMockServices");
 
 if (useMock)
 {
+    builder.Services.AddScoped<IPermissionService, MockPermissionService>();
     builder.Services.AddScoped<IToastService, ToastService>();
     builder.Services.AddScoped<IUploadService, MockUploadService>();
     builder.Services.AddScoped<IAuthService, MockAuthService>();
@@ -238,6 +238,14 @@ else
 
     builder.Services.AddScoped<ICertificateAdminService>(sp =>
         new ApiCertificateAdminService(CreateGatewayHttpClient(
+            apiBaseUrl,
+            sp.GetRequiredService<ClientIdentifierProvider>(),
+            sp.GetRequiredService<CustomAuthStateProvider>(),
+            sp,
+            sp.GetRequiredService<ILogger<ClientIdHeaderHandler>>())));
+
+    builder.Services.AddScoped<IPermissionService>(sp =>
+        new PermissionService(CreateGatewayHttpClient(
             apiBaseUrl,
             sp.GetRequiredService<ClientIdentifierProvider>(),
             sp.GetRequiredService<CustomAuthStateProvider>(),
