@@ -107,6 +107,15 @@ public class ApiUserService : ApiServiceBase, IUserService
                 return null;
         }
 
+        var teamChanged = existing.IsTeamMember != user.IsTeamMember || existing.Position != user.Position;
+        if (teamChanged)
+        {
+            var teamContent = JsonContent.Create(new UpdateTeamRequest { IsTeamMember = user.IsTeamMember, Position = user.Position });
+            var teamResponse = await Http.PatchAsync($"{ApiEndpoints.CommunityAdminUsers}/{user.Id}/team", teamContent);
+            if (!teamResponse.IsSuccessStatusCode)
+                return null;
+        }
+
         if (user.Roles.Count != 0)
         {
             var rolesContent = JsonContent.Create(new UpdateUserRolesRequest { RoleName = user.Roles[0] });

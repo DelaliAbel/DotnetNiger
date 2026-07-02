@@ -30,8 +30,31 @@ internal static class ApiResponseReader
             return new List<T>();
 
         using var doc = JsonDocument.Parse(json);
-        var isPaginated = doc.RootElement.TryGetProperty("data", out var data)
-            && data.ValueKind == JsonValueKind.Object;
+
+        if (doc.RootElement.ValueKind == JsonValueKind.Array)
+        {
+            return JsonSerializer.Deserialize<List<T>>(json, Options) ?? new List<T>();
+        }
+
+        if (doc.RootElement.ValueKind != JsonValueKind.Object)
+            return new List<T>();
+
+        var hasDataProperty = doc.RootElement.TryGetProperty("data", out var data);
+
+        if (!hasDataProperty)
+        {
+            foreach (var prop in doc.RootElement.EnumerateObject())
+            {
+                if (string.Equals(prop.Name, "data", StringComparison.OrdinalIgnoreCase))
+                {
+                    data = prop.Value;
+                    hasDataProperty = true;
+                    break;
+                }
+            }
+        }
+
+        var isPaginated = hasDataProperty && data.ValueKind == JsonValueKind.Object;
 
         if (isPaginated)
         {

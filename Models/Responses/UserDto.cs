@@ -27,4 +27,14 @@ public class UserDto
     public List<string> Skills { get; set; } = new();
     public List<string> Roles { get; set; } = new();
     public List<SocialLinkDto> SocialLinks { get; set; } = new();
+    public CertificateInfoDto? Certificate { get; set; }
+}
+
+public class CertificateInfoDto
+{
+    public string Status { get; set; } = string.Empty;
+    public string CertificateType { get; set; } = string.Empty;
+    public DateTime SubmissionDate { get; set; }
+    public string? ReviewedNotes { get; set; }
+    public DateTime? ReviewedAt { get; set; }
 }
