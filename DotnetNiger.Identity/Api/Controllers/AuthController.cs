@@ -38,6 +38,7 @@ public class AuthController : ControllerBase
     private readonly IEmailSender<ApplicationUser> _emailSender;
     private readonly SmtpOptions _smtp;
     private readonly IMemoryCache _cache;
+    private readonly PermissionService _permissionService;
 
     public AuthController(AuthService authService,
         UserManager<ApplicationUser> userManager,
@@ -46,7 +47,8 @@ public class AuthController : ControllerBase
         TenantClientService tenantClientService,
         IEmailSender<ApplicationUser> emailSender,
         IOptions<SmtpOptions> smtp,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        PermissionService permissionService)
     {
         _authService = authService;
         _userManager = userManager;
@@ -56,6 +58,7 @@ public class AuthController : ControllerBase
         _emailSender = emailSender;
         _smtp = smtp.Value;
         _cache = cache;
+        _permissionService = permissionService;
     }
 
     /// <summary>Point d'entrée OIDC Authorize. Gère le flux authorization_code.</summary>
@@ -336,9 +339,10 @@ public class AuthController : ControllerBase
             var ua = Request.Headers.UserAgent.FirstOrDefault() ?? "unknown";
             await _authService.RecordLoginAsync(user.Id, ip, ua, true);
 
+            var permissions = await _permissionService.GetUserPermissionsAsync(user.Id);
             return Ok(new UserInfoResponse(
                 user.Id, user.Email!, user.FirstName, user.LastName, user.AvatarUrl,
-                user.TenantId, user.IsActive, roles, new List<string>(), request.RememberMe));
+                user.TenantId, user.IsActive, roles, permissions, request.RememberMe));
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -611,10 +615,11 @@ public class AuthController : ControllerBase
         [FromQuery] string? returnUrl = null, [FromQuery] bool rememberMe = false)
     {
         var result = await _authService.HandleExternalLoginAsync("external");
+        var permissions = await _permissionService.GetUserPermissionsAsync(result.user.Id);
         return Ok(new UserInfoResponse(
             result.user.Id, result.user.Email!, result.user.FirstName, result.user.LastName,
             result.user.AvatarUrl, result.user.TenantId, result.user.IsActive,
-            result.roles, new List<string>(), rememberMe));
+            result.roles, permissions, rememberMe));
     }
 
     /// <summary>
@@ -681,9 +686,10 @@ public class AuthController : ControllerBase
             return Unauthorized();
 
         var roles = await _userManager.GetRolesAsync(user);
+        var permissions = await _permissionService.GetUserPermissionsAsync(user.Id);
         return Ok(new UserInfoResponse(
             user.Id, user.Email!, user.FirstName, user.LastName, user.AvatarUrl,
-            user.TenantId, user.IsActive, roles, new List<string>()));
+            user.TenantId, user.IsActive, roles, permissions));
     }
 
     /// <summary>Bootstrap du client OIDC "web-ui" (création ou mise à jour des permissions/URIs).</summary>

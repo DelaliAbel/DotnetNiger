@@ -90,10 +90,11 @@ public class AuthService
         await _userManager.AddToRoleAsync(user, User);
 
         var code = GenerateCode();
+        
         user.EmailConfirmationCode = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(code)));
         user.EmailConfirmationCodeExpiry = DateTime.UtcNow.AddMinutes(15);
         await _userManager.UpdateAsync(user);
-
+       
         await SendConfirmationEmailAsync(user, code);
 
         _tenantContext.TenantId = user.TenantId;
@@ -134,7 +135,7 @@ public class AuthService
         if (user.EmailConfirmed)
             throw new InvalidOperationException("Email déjà confirmé");
 
-        var code = GenerateCode();
+        var code = GenerateCode(); 
         user.EmailConfirmationCode = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(code)));
         user.EmailConfirmationCodeExpiry = DateTime.UtcNow.AddMinutes(15);
         await _userManager.UpdateAsync(user);

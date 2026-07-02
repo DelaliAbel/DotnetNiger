@@ -17,7 +17,26 @@ public class ProfileService(AppDbContext db) : IProfileService
             .Include(m => m.SocialLinks)
             .Include(m => m.Skills)
             .FirstOrDefaultAsync(m => m.Id == userId);
-        return member is null ? null : MapProfile(member);
+
+        if (member is null) return null;
+
+        var profile = MapProfile(member);
+
+        var cert = await db.Certificates
+            .Where(c => c.UserId == userId)
+            .OrderByDescending(c => c.SubmissionDate)
+            .Select(c => new CertificateInfo
+            {
+                Status = c.Status,
+                CertificateType = c.CertificateType,
+                SubmissionDate = c.SubmissionDate,
+                ReviewedNotes = c.ReviewedNotes,
+                ReviewedAt = c.ReviewedAt,
+            })
+            .FirstOrDefaultAsync();
+
+        profile.Certificate = cert;
+        return profile;
     }
 
     /// <summary>Met à jour le profil (le crée s'il n'existe pas). Gère un conflit d'insertion concurrent.</summary>
@@ -46,6 +65,8 @@ public class ProfileService(AppDbContext db) : IProfileService
         if (request.AvatarUrl is not null) member.AvatarUrl = request.AvatarUrl;
         if (request.Country is not null) member.Country = request.Country;
         if (request.City is not null) member.City = request.City;
+        if (request.IsTeamMember is not null) member.IsTeamMember = request.IsTeamMember.Value;
+        if (request.Position is not null) member.Position = request.Position;
         if (request.Skills is not null)
         {
             db.MemberSkills.RemoveRange(member.Skills);
@@ -73,6 +94,8 @@ public class ProfileService(AppDbContext db) : IProfileService
             if (request.AvatarUrl is not null) member.AvatarUrl = request.AvatarUrl;
             if (request.Country is not null) member.Country = request.Country;
             if (request.City is not null) member.City = request.City;
+            if (request.IsTeamMember is not null) member.IsTeamMember = request.IsTeamMember.Value;
+            if (request.Position is not null) member.Position = request.Position;
             if (request.Skills is not null)
             {
                 db.MemberSkills.RemoveRange(member.Skills);
@@ -273,6 +296,8 @@ public class ProfileService(AppDbContext db) : IProfileService
         PhoneNumber = m.PhoneNumber,
         Country = m.Country,
         City = m.City,
+        IsTeamMember = m.IsTeamMember,
+        Position = m.Position,
         CreatedAt = m.CreatedAt,
         SocialLinks = m.SocialLinks.Select(s => new SocialLinkResponse
         {

@@ -15,7 +15,7 @@ public class UploadController(IWebHostEnvironment env) : ControllerBase
     {
         "image/jpeg", "image/png", "image/webp", "image/gif"
     };
-    private const long MaxFileSize = 3 * 1024 * 1024;
+    private const long MaxFileSize = 4 * 1024 * 1024;
 
     private string GetUploadsRoot()
     {

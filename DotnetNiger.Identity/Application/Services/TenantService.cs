@@ -69,7 +69,6 @@ public class TenantService
             Description = $"Contributeur de {tenant.Name}"
         };
         await _roleManager.CreateAsync(collaboratorRole);
-
         var adminUser = new ApplicationUser
         {
             UserName = $"admin@{tenant.Slug}.dotnetniger.com",
