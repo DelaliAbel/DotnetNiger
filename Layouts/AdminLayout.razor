@@ -1,5 +1,6 @@
 ﻿@using DotnetNiger.UI.Components.Admin.Shared
 @using System.Security.Claims
+@using DotnetNiger.UI.Helpers
 @inherits LayoutComponentBase
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthStateProvider
@@ -40,10 +41,7 @@ else
           return;
       }
 
-      var roles = state.User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
-      var isAdmin = roles.Any(r => r.Equals("Admin", StringComparison.OrdinalIgnoreCase)
-                                || r.Equals("SuperAdmin", StringComparison.OrdinalIgnoreCase)
-                                || r.Equals("Moderator", StringComparison.OrdinalIgnoreCase));
+      var isAdmin = state.User.FindAll(ClaimTypes.Role).Any(r => RoleConstants.IsAdminRole(r.Value));
 
       if (!isAdmin)
       {
