@@ -1,0 +1,47 @@
+name: Build and deploy to vercel-prod
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore DotnetNiger.UI.csproj
+
+      - name: Publish application
+        run: dotnet publish DotnetNiger.UI.csproj -c Release -o ./artifacts/publish
+
+      - name: Deploy to vercel-prod
+        if: github.ref == 'refs/heads/develop' || github.event_name == 'workflow_dispatch'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: vercel-prod
+          publish_dir: ./artifacts/publish/wwwroot
+          force_orphan: true
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
+          commit_message: "Deploy from develop ${{ github.sha }}"
