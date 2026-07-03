@@ -45,5 +45,5 @@
     [Parameter] public EventCallback<Guid> OnAddToTeam { get; set; }
     [Parameter] public EventCallback<ChangeRoleRequest> OnChangeRole { get; set; }
 
-    private string GetPrimaryRole() => User.Roles.FirstOrDefault() ?? "Member";
+    private string GetPrimaryRole() => User.Roles.FirstOrDefault() ?? "User";
 }

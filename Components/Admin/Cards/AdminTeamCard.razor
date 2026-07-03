@@ -53,7 +53,7 @@
     [Parameter] public EventCallback<Guid> OnRemoveFromTeam { get; set; }
     [Parameter] public EventCallback<ChangeRoleRequest> OnChangeRole { get; set; }
 
-    private string GetPrimaryRole() => User.Roles.FirstOrDefault() ?? "Member";
+    private string GetPrimaryRole() => User.Roles.FirstOrDefault() ?? "User";
 
     private string GetInitial()
     {

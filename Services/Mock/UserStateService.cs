@@ -1,3 +1,4 @@
+using DotnetNiger.UI.Helpers;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 
@@ -22,7 +23,7 @@ public class UserStateService : IUserStateService
     public bool IsAuthenticated => _currentUser != null && _currentUser.IsActive;
     public Guid UserId => _currentUser?.Id ?? Guid.Empty;
     public string UserName => _currentUser?.FullName ?? string.Empty;
-    public bool IsAdmin => _currentUser?.Roles.Contains("Admin") ?? false;
+    public bool IsAdmin => _currentUser?.Roles.Any(r => RoleConstants.IsAdminRole(r)) ?? false;
     public string? UserRole => _currentUser?.Roles.FirstOrDefault();
     
     // Méthodes

@@ -73,5 +73,5 @@
       [Parameter] public EventCallback<ChangeRoleRequest> OnChangeRole { get; set; }
 
       private static string GetPrimaryRole(UserDto user)
-            => user.Roles.FirstOrDefault() ?? "Member";
+            => user.Roles.FirstOrDefault() ?? "User";
 }

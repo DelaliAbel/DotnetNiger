@@ -48,18 +48,18 @@
 
                     <button type="button"
                             class="flex w-full items-center gap-3 px-4 py-3 text-left text-gray-700 transition hover:bg-gray-50"
-                            @onclick="() => SelectRoleAsync(RoleConstants.Member)"
+                            @onclick="() => SelectRoleAsync(RoleConstants.User)"
                             @onclick:stopPropagation="true">
                         <i class="fas fa-user text-base text-gray-500"></i>
-                        <span class="text-sm font-medium">Membre</span>
+                        <span class="text-sm font-medium">Utilisateur</span>
                     </button>
 
                     <button type="button"
                             class="flex w-full items-center gap-3 px-4 py-3 text-left text-gray-700 transition hover:bg-gray-50"
-                            @onclick="() => SelectRoleAsync(RoleConstants.Moderator)"
+                            @onclick="() => SelectRoleAsync(RoleConstants.Collaborator)"
                             @onclick:stopPropagation="true">
                         <i class="fas fa-user-tie text-base text-gray-500"></i>
-                        <span class="text-sm font-medium">Modérateur</span>
+                        <span class="text-sm font-medium">Collaborateur</span>
                     </button>
 
                     <button type="button"

@@ -15,13 +15,15 @@ public class AuthService : IAuthService
     private readonly HttpClient _http;
     private readonly CustomAuthStateProvider _authProvider;
     private readonly IUserStateService _userStateService;
+    private readonly IPermissionService _permissionService;
     private readonly string _clientId;
 
-    public AuthService(HttpClient http, CustomAuthStateProvider authProvider, IUserStateService userStateService, string clientId = "web-ui")
+    public AuthService(HttpClient http, CustomAuthStateProvider authProvider, IUserStateService userStateService, IPermissionService permissionService, string clientId = "web-ui")
     {
         _http = http;
         _authProvider = authProvider;
         _userStateService = userStateService;
+        _permissionService = permissionService;
         _clientId = clientId;
     }
 
@@ -59,6 +61,7 @@ public class AuthService : IAuthService
                     await _authProvider.SaveTokensAsync(authDto.Token.AccessToken, authDto.Token.RefreshToken);
                 if (authDto.User is not null)
                     await _userStateService.SetUserAsync(authDto.User);
+                await _permissionService.LoadPermissionsAsync();
                 return new ApiSuccessResponse<AuthDto> { Success = true, Data = authDto };
             }
 
@@ -146,6 +149,7 @@ public class AuthService : IAuthService
                     await _authProvider.SaveTokensAsync(authDto.Token.AccessToken, authDto.Token.RefreshToken);
                 if (authDto.User is not null)
                     await _userStateService.SetUserAsync(authDto.User);
+                await _permissionService.LoadPermissionsAsync();
                 return new ApiSuccessResponse<AuthDto> { Success = true, Data = authDto };
             }
 
@@ -285,7 +289,10 @@ public class AuthService : IAuthService
 
             var (authDto, _) = await ParseTokenResponseAsync(response);
             if (authDto?.Token is not null)
+            {
                 await _authProvider.SaveTokensAsync(authDto.Token.AccessToken, authDto.Token.RefreshToken);
+                await _permissionService.LoadPermissionsAsync();
+            }
 
             return authDto;
         }
@@ -334,9 +341,14 @@ public class AuthService : IAuthService
     public async Task<bool> IsAdminAsync()
     {
         var token = await _authProvider.GetAccessTokenAsync();
-        var role = GetRoleFromAccessToken(token);
+        if (string.IsNullOrWhiteSpace(token))
+            return false;
 
-        return RoleConstants.IsAdminRole(role);
+        var roles = JwtParser.ParseClaimsFromJwt(token)
+            .Where(c => c.Type == ClaimTypes.Role)
+            .Select(c => c.Value);
+
+        return roles.Any(r => RoleConstants.IsAdminRole(r));
     }
 
     public Task<string?> GetAccessTokenAsync()

@@ -6,6 +6,16 @@ namespace DotnetNiger.UI.Services.Auth;
 
 public static class JwtParser
 {
+    private static readonly Dictionary<string, string> JwtToClaimTypeMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["sub"] = ClaimTypes.NameIdentifier,
+        ["email"] = ClaimTypes.Email,
+        ["name"] = ClaimTypes.Name,
+        ["given_name"] = ClaimTypes.GivenName,
+        ["family_name"] = ClaimTypes.Surname,
+        ["picture"] = "avatar_url",
+    };
+
     public static IEnumerable<Claim> ParseClaimsFromJwt(string jwt)
     {
         var parts = jwt.Split('.');
@@ -25,7 +35,8 @@ public static class JwtParser
                 return new[] { new Claim(ClaimTypes.Role, kv.Value.GetString()!) };
             }
 
-            return new[] { new Claim(kv.Key, kv.Value.ToString()) };
+            var claimType = JwtToClaimTypeMap.GetValueOrDefault(kv.Key, kv.Key);
+            return new[] { new Claim(claimType, kv.Value.ToString()) };
         });
     }
 

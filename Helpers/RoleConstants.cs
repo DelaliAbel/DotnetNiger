@@ -2,12 +2,12 @@ namespace DotnetNiger.UI.Helpers;
 
 public static class RoleConstants
 {
-    public const string Admin = "admin";
-    public const string SuperAdmin = "superadmin";
-    public const string Moderator = "moderator";
-    public const string Member = "member";
+    public const string SuperAdmin = "SuperAdmin";
+    public const string Admin = "Admin";
+    public const string Collaborator = "Collaborator";
+    public const string User = "User";
 
-    public static readonly string[] AdminRoles = [Admin, SuperAdmin, Moderator];
+    public static readonly string[] AdminRoles = [Admin, SuperAdmin];
 
     public static bool IsAdminRole(string? role) =>
         !string.IsNullOrWhiteSpace(role) && AdminRoles.Contains(role, StringComparer.OrdinalIgnoreCase);

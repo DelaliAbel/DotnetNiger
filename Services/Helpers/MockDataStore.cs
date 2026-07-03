@@ -20,7 +20,7 @@ public static class MockDataStore
             Position = "Lead Organisateur",
             CreatedAt = DateTime.Now.AddMonths(-6),
             LastLoginAt = DateTime.Now.AddDays(-1),
-            Roles = new List<string> { "Admin", "Member" },
+            Roles = new List<string> { "Admin", "User" },
             Skills = new List<string> { "C#", "ASP.NET Core", "Blazor", "Azure" }
         },
         new UserDto
@@ -37,7 +37,7 @@ public static class MockDataStore
             Position = "Community Manager",
             CreatedAt = DateTime.Now.AddMonths(-3),
             LastLoginAt = DateTime.Now.AddDays(-5),
-            Roles = new List<string> { "Member" },
+            Roles = new List<string> { "User" },
             Skills = new List<string> { "C#", "ASP.NET Core", "Entity Framework" }
         },
         new UserDto
@@ -53,7 +53,7 @@ public static class MockDataStore
             IsTeamMember = true,
             Position = "Développeur Full-Stack",
             CreatedAt = DateTime.Now.AddMonths(-1),
-            Roles = new List<string> { "Member" },
+            Roles = new List<string> { "User" },
             Skills = new List<string> { "C#", "Blazor" }
         }
     };
