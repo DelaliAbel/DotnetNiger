@@ -7,6 +7,7 @@
 @inject IUploadService UploadService
 @inject IJSRuntime JS
 @inject IRegistrationService RegistrationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 @if (!isLoading)
 {
@@ -249,7 +250,7 @@
                     </div>
                     @if (!string.IsNullOrWhiteSpace(CurrentUser?.Bio))
                     {
-                        <div class="text-lg leading-relaxed text-slate-600 prose prose-slate max-w-none break-words">@((MarkupString)CurrentUser.Bio)</div>
+                        <div class="text-lg leading-relaxed text-slate-600 prose prose-slate max-w-none break-words">@(new MarkupString(CurrentUser?.Bio ?? string.Empty))</div>
                     }
                     else
                     {
