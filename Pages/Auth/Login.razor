@@ -90,7 +90,7 @@
     private bool isLoading;
     private string? errorMessage;
 
-    protected override async Task OnInitializedAsync()
+    protected override Task OnInitializedAsync()
     {
         if (!Config.GetValue<bool>("UseMockServices"))
         {
@@ -99,6 +99,8 @@
             var loginUrl = $"{apiBase}/Account/Login?returnUrl={Uri.EscapeDataString(returnUrl)}";
             Navigation.NavigateTo(loginUrl, forceLoad: true);
         }
+
+        return Task.CompletedTask;
     }
 
     private async Task LoginAs(string email)

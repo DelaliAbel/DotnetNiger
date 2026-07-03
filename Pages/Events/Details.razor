@@ -104,7 +104,7 @@
                     @* --- Hero card --- *@
                     <article class="overflow-hidden rounded-lg bg-white shadow-sm">
                         <div class="overflow-hidden rounded-md bg-[#0b1220] shadow-[0_18px_40px_rgba(15,23,42,0.16)] mx-4 sm:mx-8 mt-4 sm:mt-8 aspect-video">
-                            <ResolvedImage Src="@CurrentEvent?.CoverImageUrl" Icon="fa-calendar" alt="@CurrentEvent.Title" class="h-full w-full" />
+                            <ResolvedImage Src="@CurrentEvent?.CoverImageUrl" Icon="fa-calendar" alt="@(CurrentEvent?.Title ?? "Événement")" class="h-full w-full" />
                         </div>
                         <div class="space-y-4 p-4 sm:space-y-5 sm:p-8">
                             <div class="flex justify-between items-center">
@@ -268,7 +268,7 @@
                             À propos de l'événement
                         </h2>
                         <p class="prose prose-sm max-w-none break-words mt-3">
-                                    @((MarkupString)CurrentEvent.Description)
+                                    @(new MarkupString(CurrentEvent.Description ?? string.Empty))
                         </p>
                     </article>
 

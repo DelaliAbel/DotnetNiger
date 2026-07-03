@@ -177,7 +177,7 @@
 				<hr class="border-gray-200" />
 
 				<div class="overflow-hidden rounded-md bg-[#0b1220] shadow-[0_18px_40px_rgba(15,23,42,0.16)]">
-					<ResolvedImage Src="@post?.CoverImageUrl" Icon="fa-newspaper" alt="@post.Title" class="h-56 w-full sm:h-[330px]" />
+					<ResolvedImage Src="@post?.CoverImageUrl" Icon="fa-newspaper" alt="@(post?.Title ?? "Article")" class="h-56 w-full sm:h-[330px]" />
 				</div>
 
 				<div class="space-y-8 sm:space-y-10 pt-1">
@@ -186,7 +186,7 @@
 						@if (!string.IsNullOrWhiteSpace(post.Content))
 						{
 							<div class="prose prose-sm max-w-none break-words">
-								@((MarkupString)post.Content)
+								@(new MarkupString(post.Content ?? string.Empty))
 							</div>
 						}
 						else
