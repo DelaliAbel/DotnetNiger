@@ -138,7 +138,7 @@
 
 					<div class="space-y-8 sm:space-y-10 pt-1">
 						<div class="space-y-5 sm:space-y-6 text-sm sm:text-[15px] leading-7 text-gray-600">
-							@if (!string.IsNullOrWhiteSpace(post.Content))
+							@if (!string.IsNullOrWhiteSpace(post?.Content))
 							{
 								<div class="prose prose-sm max-w-none break-words">
 									@(new MarkupString(post.Content ?? string.Empty))
