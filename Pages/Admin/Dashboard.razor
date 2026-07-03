@@ -1,6 +1,7 @@
 @page "/admin"
 @attribute [Authorize(Roles = "Admin,SuperAdmin,Moderator")]
 @* Page admin : tableau de bord (KPI + listes récentes) alimenté par services. *@
+@inject IStatsService StatsService
 @inject IPostService PostService
 @inject IEventService EventService
 @inject IResourceService ResourceService
@@ -58,7 +59,7 @@
 			</div>
 		</section>
 
-		<section class="mt-6 sm:mt-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-5">
+		<section class="mt-6 sm:mt-8 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-5">
 			@foreach (var metric in Metrics)
 			{
 				<article class="overflow-hidden rounded-lg bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
@@ -426,6 +427,7 @@
 	private List<DashboardItem> PendingPosts { get; set; } = [];
 	private List<DashboardItem> PendingUsers { get; set; } = [];
 	private List<EventDto> PendingEvents { get; set; } = [];
+
 	private List<DashboardItem> RecentResources { get; set; } = [];
 	private List<DashboardItem> RecentProjects { get; set; } = [];
 	private List<DashboardItem> RecentEvents { get; set; } = [];
@@ -463,25 +465,23 @@
 	{
 		try
 		{
-			// Chargement via services (mock ou API selon Program.cs / appsettings.json).
-			var posts = await PostService.GetAllPostsAsync();
+			var stats = await StatsService.GetDashboardAsync();
+
 			var events = await EventService.GetAllEventsAsync();
 			var resources = await ResourceService.GetAllResourcesAsync();
-			var allUsers = await UserService.GetUsersAsync();
 			var users = await UserService.GetPendingUsersAsync();
 			var projects = await ProjectService.GetAllAsync(null, null);
-			// UserStateService est la source unique de vérité pour le profil courant.
 			CurrentProfile = UserStateService.CurrentUser;
 			IsCurrentUserLoaded = UserStateService.CurrentUser is not null;
 
-			// Mise à jour des compteurs KPI.
 			Metrics =
 			[
-				new() { IconClass = "fas fa-users", Value = allUsers.Count, Label = "Utilisateurs", Url = "/admin/Users" },
-				new() { IconClass = "fas fa-calendar-alt", Value = events.Count, Label = "Événements", Url = "/admin/events" },
-				new() { IconClass = "fas fa-newspaper", Value = posts.Count, Label = "Blogs", Url = "/admin/blog" },
-				new() { IconClass = "fas fa-folder-open", Value = resources.Count, Label = "Ressources", Url = "/admin/ressources" },
-				new() { IconClass = "fas fa-code-branch", Value = projects.Items.Count, Label = "Projets", Url = "/admin/projects" }
+				new() { IconClass = "fas fa-users", Value = stats?.MembersCount ?? 0, Label = "Membres", Url = "/admin/Users" },
+				new() { IconClass = "fas fa-calendar-alt", Value = stats?.EventsCount ?? 0, Label = "Événements", Url = "/admin/events" },
+				new() { IconClass = "fas fa-newspaper", Value = stats?.PublishedPostsCount ?? 0, Label = "Articles", Url = "/admin/blog" },
+				new() { IconClass = "fas fa-folder-open", Value = stats?.ResourcesCount ?? 0, Label = "Ressources", Url = "/admin/ressources" },
+				new() { IconClass = "fas fa-code-branch", Value = stats?.ProjectsCount ?? 0, Label = "Projets", Url = "/admin/projects" },
+			new() { IconClass = "fas fa-certificate", Value = stats?.PendingCertificatesCount ?? 0, Label = "Certificats", Url = "/admin/certificates" }
 			];
 
 			PendingUsers = users
@@ -495,7 +495,7 @@
 						DisplayName = user.FullName,
 						Email = user.Email,
 						PrimaryRole = user.Roles.Count == 0 ? "Membre" : user.Roles.First(),
-					Subtitle = string.IsNullOrWhiteSpace(user.Email) ? "Demande d’intégration" : user.Email,
+					Subtitle = string.IsNullOrWhiteSpace(user.Email) ? "Demande d'intégration" : user.Email,
 					AvatarUrl = user.AvatarUrl ?? string.Empty,
 					ViewRoute = "/admin/Users",
 					EditRoute = "/admin/Users",
@@ -503,7 +503,7 @@
 					IsPublished = user.IsActive
 				}).ToList();
 
-			PendingEvents = await EventService.GetPendingEventsAsync(); 
+			PendingEvents = await EventService.GetPendingEventsAsync();
 			RecentResources = resources
 				.OrderByDescending(r => r.ViewCount)
 				.Take(4)
