@@ -4,6 +4,7 @@
 @inject NavigationManager Navigation
 @inject IResourceService ResourceService
 @inject IToastService ToastService
+@inject IJSRuntime JS
 @using DotnetNiger.UI.Components.Admin.Cards
 @using DotnetNiger.UI.Components.Admin.Shared
 @using DotnetNiger.UI.Components.Cards
@@ -173,7 +174,7 @@
                 <option value="Tous niveaux">Tous niveaux</option>
             </select>
         </div>
-        <div class="mb-6">
+        <div class="mb-6 hidden md:block">
             <ViewToggle @bind-IsListView="isListView" />
         </div>
 
@@ -202,7 +203,8 @@
 
 @code {
     private bool isLoading = true;
-    private bool isListView = true;
+    private bool isListView = false;
+    private bool responsiveViewApplied;
     private bool isDrawerOpen;
     private string searchQueryValue = string.Empty;
     private string selectedTypeValue = string.Empty;
@@ -351,6 +353,24 @@
         catch
         {
             ToastService.ShowToast("Erreur lors de la suppression.", ToastLevel.Error);
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || responsiveViewApplied)
+        {
+            return;
+        }
+
+        responsiveViewApplied = true;
+        var isMobile = await JS.InvokeAsync<bool>("dotnetNigerIsMobile");
+        var shouldShowListView = !isMobile;
+
+        if (isListView != shouldShowListView)
+        {
+            isListView = shouldShowListView;
+            StateHasChanged();
         }
     }
 }

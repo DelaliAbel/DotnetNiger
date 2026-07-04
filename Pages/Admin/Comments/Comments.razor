@@ -3,6 +3,7 @@
 @using DotnetNiger.UI.Components.Admin.Cards
 @inject ICommentService CommentService
 @inject IToastService ToastService
+@inject IJSRuntime JS
 
 @if (isLoading)
 {
@@ -100,7 +101,7 @@ else
                 </select>
             </section>
 
-            <div class="mb-6">
+            <div class="mb-6 hidden md:block">
                 <ViewToggle @bind-IsListView="isListView" />
             </div>
 
@@ -127,7 +128,8 @@ else
 
 @code {
     private bool isLoading = true;
-    private bool isListView = true;
+    private bool isListView = false;
+    private bool responsiveViewApplied;
     private List<CommentResponse> allComments = new();
     private string statusFilter = "all";
     private string typeFilter = "";
@@ -191,5 +193,23 @@ else
     {
         statusFilter = filter;
         currentPage = 1;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || responsiveViewApplied)
+        {
+            return;
+        }
+
+        responsiveViewApplied = true;
+        var isMobile = await JS.InvokeAsync<bool>("dotnetNigerIsMobile");
+        var shouldShowListView = !isMobile;
+
+        if (isListView != shouldShowListView)
+        {
+            isListView = shouldShowListView;
+            StateHasChanged();
+        }
     }
 }

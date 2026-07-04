@@ -5,6 +5,7 @@
 @inject NavigationManager Navigation
 @inject IPartnerService PartnerService
 @inject IToastService ToastService
+@inject IJSRuntime JS
 
 @if (isLoading)
 {
@@ -80,7 +81,7 @@ else
                 </select>
             </section>
 
-            <div class="mb-6">
+            <div class="mb-6 hidden md:block">
                 <ViewToggle @bind-IsListView="isListView" />
             </div>
 
@@ -107,7 +108,8 @@ else
 
 @code {
     private bool isLoading = true;
-    private bool isListView = true;
+    private bool isListView = false;
+    private bool responsiveViewApplied;
     private string searchQueryValue = string.Empty;
     private string selectedStatusValue = string.Empty;
     private int currentPage = 1;
@@ -168,6 +170,24 @@ else
         finally
         {
             isLoading = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || responsiveViewApplied)
+        {
+            return;
+        }
+
+        responsiveViewApplied = true;
+        var isMobile = await JS.InvokeAsync<bool>("dotnetNigerIsMobile");
+        var shouldShowListView = !isMobile;
+
+        if (isListView != shouldShowListView)
+        {
+            isListView = shouldShowListView;
+            StateHasChanged();
         }
     }
 }
