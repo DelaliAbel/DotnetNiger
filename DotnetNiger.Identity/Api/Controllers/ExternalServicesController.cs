@@ -1,11 +1,12 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using DotnetNiger.Common.DTOs.Requests;
+using DotnetNiger.Common.DTOs.Responses;
 using DotnetNiger.Identity.Application.Services;
-using DotnetNiger.Identity.Application.DTOs;
+using DotnetNiger.Identity.Application.DTOs.Requests;
+using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Api.Authentication;
-using DotnetNiger.Identity.Infrastructure;
 using OpenIddict.Validation.AspNetCore;
 
 namespace DotnetNiger.Identity.Api.Controllers;
@@ -16,31 +17,16 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [Route("api/v{version:apiVersion}/external-services")]
 public class ExternalServicesController : ControllerBase
 {
-    private readonly ExternalServiceService _service;
-    private readonly IdentityDbContext _db;
+    private readonly IExternalServiceService _service;
 
-    public ExternalServicesController(ExternalServiceService service, IdentityDbContext db)
+    public ExternalServicesController(IExternalServiceService service)
     {
         _service = service;
-        _db = db;
     }
 
     private async Task<(Guid tenantId, Guid? apiKeyId)> GetAuthInfoAsync()
     {
-        var tenantId = Guid.Parse(User.FindFirstValue("tenant_id")!);
-        Guid? apiKeyId = null;
-        var keyClaim = User.FindFirstValue("api_key_id");
-        if (!string.IsNullOrEmpty(keyClaim))
-            apiKeyId = Guid.Parse(keyClaim);
-        else
-        {
-            var key = await _db.TenantApiKeys
-                .Where(k => k.TenantId == tenantId && k.IsActive)
-                .OrderBy(k => k.CreatedAt)
-                .FirstOrDefaultAsync();
-            apiKeyId = key?.Id;
-        }
-        return (tenantId, apiKeyId);
+        return await _service.GetAuthInfoAsync(User);
     }
 
     private const string BothSchemes = "ApiKey," + OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;

@@ -1,8 +1,13 @@
+using DotnetNiger.Common.Constants;
+using DotnetNiger.Common.DTOs.Requests;
+using DotnetNiger.Common.DTOs.Responses;
 using DotnetNiger.Identity.Application;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using DotnetNiger.Identity.Application.DTOs;
+using DotnetNiger.Identity.Application.DTOs.Requests;
+using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Services;
+using ErrorResponse = DotnetNiger.Identity.Application.DTOs.Responses.ErrorResponse;
 
 namespace DotnetNiger.Identity.Api.Controllers;
 
@@ -10,12 +15,12 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/{tenantId:guid}/permissions")]
-[Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.SuperAdmin)]
+[Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
 public class PermissionsController : ControllerBase
 {
-    private readonly PermissionService _permissionService;
+    private readonly IPermissionService _permissionService;
 
-    public PermissionsController(PermissionService permissionService) => _permissionService = permissionService;
+    public PermissionsController(IPermissionService permissionService) => _permissionService = permissionService;
 
     /// <summary>Crée une nouvelle permission dans le tenant.</summary>
     [HttpPost]

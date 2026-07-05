@@ -1,4 +1,4 @@
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.DTOs.Responses;
 
 namespace DotnetNiger.Community.Application.Services;
 

@@ -1,83 +1,57 @@
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using static OpenIddict.Abstractions.OpenIddictConstants;
-using DotnetNiger.Identity.Domain.Entities;
-using DotnetNiger.Identity.Application.DTOs;
+using DotnetNiger.Common.DTOs.Responses;
+using DotnetNiger.Common.Auth.Requests;
+using DotnetNiger.Common.Auth.Responses;
+using DotnetNiger.Identity.Application.DTOs.Requests;
+using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Services;
 
 namespace DotnetNiger.Identity.Api.Controllers;
 
 [ApiController]
 [ApiVersion("1.0")]
-
 [Route("api/v{version:apiVersion}/profile")]
 [Authorize]
 public class ProfileController : ControllerBase
 {
-    private readonly UserManager<ApplicationUser> _userManager;
     private readonly AuthService _authService;
-    private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly TwoFactorService _twoFactorService;
+    private readonly AccountService _accountService;
 
     public ProfileController(
-        UserManager<ApplicationUser> userManager,
         AuthService authService,
-        SignInManager<ApplicationUser> signInManager)
+        TwoFactorService twoFactorService,
+        AccountService accountService)
     {
-        _userManager = userManager;
         _authService = authService;
-        _signInManager = signInManager;
+        _twoFactorService = twoFactorService;
+        _accountService = accountService;
     }
 
-    /// <summary>Retourne le profil de l'utilisateur connecté.</summary>
     [HttpGet]
     public async Task<ActionResult<UserProfileResponse>> GetProfile()
     {
         var userId = User.FindFirst(Claims.Subject)?.Value;
         if (userId == null) return Unauthorized();
-
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user == null) return Unauthorized();
-
-        var roles = await _userManager.GetRolesAsync(user);
-        return Ok(new UserProfileResponse(
-            user.Id, user.Email!, user.FirstName, user.LastName, user.AvatarUrl,
-            user.TenantId, roles));
+        return Ok(await _accountService.GetProfileAsync(Guid.Parse(userId)));
     }
 
-    /// <summary>Met à jour le profil de l'utilisateur connecté (prénom, nom, avatar).</summary>
     [HttpPut]
-    public async Task<ActionResult<UserProfileResponse>> UpdateProfile(
-        [FromBody] UpdateUserRequest request)
+    public async Task<ActionResult<UserProfileResponse>> UpdateProfile([FromBody] UpdateUserRequest request)
     {
         var userId = User.FindFirst(Claims.Subject)?.Value;
         if (userId == null) return Unauthorized();
-
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user == null) return Unauthorized();
-
-        if (request.FirstName != null) user.FirstName = request.FirstName;
-        if (request.LastName != null) user.LastName = request.LastName;
-        if (request.AvatarUrl != null) user.AvatarUrl = request.AvatarUrl;
-        await _userManager.UpdateAsync(user);
-
-        var roles = await _userManager.GetRolesAsync(user);
-        return Ok(new UserProfileResponse(
-            user.Id, user.Email!, user.FirstName, user.LastName, user.AvatarUrl,
-            user.TenantId, roles));
+        return Ok(await _accountService.UpdateProfileAsync(Guid.Parse(userId), request));
     }
 
-    /// <summary>Supprime le compte de l'utilisateur connecté.</summary>
     [HttpDelete]
     public async Task<IActionResult> DeleteProfile()
     {
         var userId = User.FindFirst(Claims.Subject)?.Value;
         if (userId == null) return Unauthorized();
-
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user == null) return Unauthorized();
-
-        await _userManager.DeleteAsync(user);
+        await _accountService.DeleteProfileAsync(Guid.Parse(userId));
         return NoContent();
     }
 
@@ -86,8 +60,7 @@ public class ProfileController : ControllerBase
     {
         var userId = User.FindFirst(Claims.Subject)?.Value;
         if (userId == null) return Unauthorized();
-        var status = await _authService.GetTwoFactorStatusAsync(Guid.Parse(userId));
-        return Ok(status);
+        return Ok(await _twoFactorService.GetStatusAsync(Guid.Parse(userId)));
     }
 
     [HttpPost("two-factor/setup")]
@@ -95,7 +68,7 @@ public class ProfileController : ControllerBase
     {
         var userId = User.FindFirst(Claims.Subject)?.Value;
         if (userId == null) return Unauthorized();
-        var (sharedKey, authenticatorUri) = await _authService.GetTwoFactorSetupAsync(Guid.Parse(userId));
+        var (sharedKey, authenticatorUri) = await _twoFactorService.GetSetupAsync(Guid.Parse(userId));
         return Ok(new TwoFactorSetupResponse(sharedKey, authenticatorUri, false));
     }
 
@@ -104,9 +77,16 @@ public class ProfileController : ControllerBase
     {
         var userId = User.FindFirst(Claims.Subject)?.Value;
         if (userId == null) return Unauthorized();
-        var (success, recoveryCodes) = await _authService.EnableTwoFactorAsync(Guid.Parse(userId), request.Code);
-        if (!success) return BadRequest(new ErrorResponse("Impossible d'activer la double authentification"));
-        return Ok(new RecoveryCodesResponse(recoveryCodes, recoveryCodes.Length));
+        try
+        {
+            var (success, recoveryCodes) = await _twoFactorService.EnableAsync(Guid.Parse(userId), request.Code);
+            if (!success) return BadRequest(new ErrorResponse("Impossible d'activer la double authentification"));
+            return Ok(new RecoveryCodesResponse(recoveryCodes, recoveryCodes.Length));
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new ErrorResponse(ex.Message));
+        }
     }
 
     [HttpPost("two-factor/disable")]
@@ -114,15 +94,8 @@ public class ProfileController : ControllerBase
     {
         var userId = User.FindFirst(Claims.Subject)?.Value;
         if (userId == null) return Unauthorized();
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user == null) return Unauthorized();
-
-        var isValid = await _userManager.VerifyTwoFactorTokenAsync(
-            user, _userManager.Options.Tokens.AuthenticatorTokenProvider, request.Code);
-        if (!isValid)
-            return BadRequest(new ErrorResponse("Code de vérification invalide"));
-
-        await _userManager.SetTwoFactorEnabledAsync(user, false);
+        var (success, error) = await _twoFactorService.DisableAsync(Guid.Parse(userId), request.Code);
+        if (!success) return BadRequest(new ErrorResponse(error ?? "Impossible de désactiver la double authentification"));
         return Ok(new { message = "Double authentification désactivée" });
     }
 
@@ -131,7 +104,7 @@ public class ProfileController : ControllerBase
     {
         var userId = User.FindFirst(Claims.Subject)?.Value;
         if (userId == null) return Unauthorized();
-        var codes = await _authService.GenerateRecoveryCodesAsync(Guid.Parse(userId));
+        var codes = await _twoFactorService.GenerateRecoveryCodesAsync(Guid.Parse(userId));
         return Ok(new RecoveryCodesResponse(codes, codes.Length));
     }
 
@@ -149,7 +122,7 @@ public class ProfileController : ControllerBase
     {
         var userId = User.FindFirst(Claims.Subject)?.Value;
         if (userId == null) return Unauthorized();
-        await _authService.ChangeEmailAsync(Guid.Parse(userId), request.NewEmail);
+        await _accountService.ChangeEmailAsync(Guid.Parse(userId), request.NewEmail);
         return Ok(new { message = "Un code de confirmation a été envoyé à votre nouvelle adresse email." });
     }
 
@@ -158,7 +131,7 @@ public class ProfileController : ControllerBase
     {
         var userId = User.FindFirst(Claims.Subject)?.Value;
         if (userId == null) return Unauthorized();
-        await _authService.ConfirmChangeEmailAsync(Guid.Parse(userId), request.Code);
+        await _accountService.ConfirmChangeEmailAsync(Guid.Parse(userId), request.Code);
         return Ok(new { message = "Adresse email modifiée avec succès." });
     }
 
@@ -167,14 +140,14 @@ public class ProfileController : ControllerBase
     {
         var userId = User.FindFirst(Claims.Subject)?.Value;
         if (userId == null) return Unauthorized();
-
-        var user = await _userManager.FindByIdAsync(userId);
-        if (user == null) return Unauthorized();
-
-        var result = await _userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
-        if (!result.Succeeded)
-            return BadRequest(new ErrorResponse(string.Join("; ", result.Errors.Select(e => e.Description))));
-
-        return Ok(new { message = "Mot de passe changé avec succès." });
+        try
+        {
+            await _accountService.ChangePasswordAsync(Guid.Parse(userId), request.CurrentPassword, request.NewPassword);
+            return Ok(new { message = "Mot de passe changé avec succès." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new ErrorResponse(ex.Message));
+        }
     }
 }

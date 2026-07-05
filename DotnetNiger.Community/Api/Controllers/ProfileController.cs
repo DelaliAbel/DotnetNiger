@@ -1,7 +1,7 @@
 using Asp.Versioning;
 using System.Security.Claims;
 using DotnetNiger.Community.Application.Constants;
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.DTOs.Requests;
 using DotnetNiger.Community.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +14,7 @@ namespace DotnetNiger.Community.Api.Controllers;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
 [Authorize]
-public class ProfileController(IProfileService profileService) : BaseController
+public class ProfileController(IProfileService profileService, ICertificateService certificateService, IIdentityApiClient identityApi) : BaseController
 {
     /// <summary>Récupère le profil complet de l'utilisateur connecté.</summary>
     [HttpGet("me")]
@@ -27,6 +27,9 @@ public class ProfileController(IProfileService profileService) : BaseController
         profile.Email = User.FindFirstValue(ClaimTypes.Email) ?? "";
         profile.Username = User.FindFirstValue(ClaimTypes.Name) ?? profile.Email;
         profile.Roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).Distinct().ToList();
+
+        var identityUser = await identityApi.GetUserAsync(userId);
+        if (identityUser is not null) profile.IsActive = identityUser.IsActive;
 
         return Ok(new { Success = true, Data = profile });
     }
@@ -43,6 +46,9 @@ public class ProfileController(IProfileService profileService) : BaseController
         profile.Email = User.FindFirstValue(ClaimTypes.Email) ?? "";
         profile.Username = User.FindFirstValue(ClaimTypes.Name) ?? profile.Email;
         profile.Roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).Distinct().ToList();
+
+        var identityUser = await identityApi.GetUserAsync(userId);
+        if (identityUser is not null) profile.IsActive = identityUser.IsActive;
 
         return Ok(new { Success = true, Data = profile });
     }
@@ -98,7 +104,7 @@ public class ProfileController(IProfileService profileService) : BaseController
             if (userId == Guid.Empty)
                 return Unauthorized(new { Success = false, Message = Messages.User.InvalidIdentity });
 
-            var cert = await profileService.SubmitCertificateAsync(userId, request);
+            var cert = await certificateService.SubmitCertificateAsync(userId, request);
             return Ok(new { Success = true, Data = cert });
         }
         catch (ValidationException ex)
@@ -107,5 +113,3 @@ public class ProfileController(IProfileService profileService) : BaseController
         }
     }
 }
-
-

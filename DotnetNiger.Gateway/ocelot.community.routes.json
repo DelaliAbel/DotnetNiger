@@ -183,7 +183,6 @@
       "DownstreamPathTemplate": "/api/v1/upload",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "community-dotnetniger.runasp.net", "Port": 80 }],
-      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer", "AllowedScopes": [] },
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 30000 },
       "RateLimitOptions": { "EnableRateLimiting": false },
       "Key": "CommunityUploadRoute",
@@ -195,7 +194,6 @@
       "DownstreamPathTemplate": "/api/v1/upload/base64",
       "DownstreamScheme": "http",
       "DownstreamHostAndPorts": [{ "Host": "community-dotnetniger.runasp.net", "Port": 80 }],
-      "AuthenticationOptions": { "AuthenticationProviderKey": "Bearer", "AllowedScopes": [] },
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 30000 },
       "RateLimitOptions": { "EnableRateLimiting": false },
       "Key": "CommunityUploadBase64Route",
@@ -499,7 +497,7 @@
       "SwaggerKey": "community"
     },
     {
-      "UpstreamPathTemplate": "/api/me",
+      "UpstreamPathTemplate": "/api/profile/me",
       "UpstreamHttpMethod": ["GET", "PUT"],
       "DownstreamPathTemplate": "/api/v1/profile/me",
       "DownstreamScheme": "http",
@@ -507,6 +505,17 @@
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 10000 },
       "RateLimitOptions": { "EnableRateLimiting": false },
       "Key": "CommunityProfileMeRoute",
+      "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/me",
+      "UpstreamHttpMethod": ["GET", "PUT"],
+      "DownstreamPathTemplate": "/api/v1/profile/me",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "community-dotnetniger.runasp.net", "Port": 80 }],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 10000 },
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "Key": "CommunityLegacyMeRoute",
       "SwaggerKey": "community"
     },
     {
@@ -584,6 +593,28 @@
       "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 10000 },
       "RateLimitOptions": { "EnableRateLimiting": false },
       "Key": "CommunityResourcesBySlugRoute",
+      "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/newsletter",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/api/v1/newsletter",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "community-dotnetniger.runasp.net", "Port": 80 }],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 7000 },
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "Key": "CommunityNewsletterAdminListRoute",
+      "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/newsletter/count",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/api/v1/newsletter/count",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "community-dotnetniger.runasp.net", "Port": 80 }],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 5000, "TimeoutValue": 7000 },
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "Key": "CommunityNewsletterCountRoute",
       "SwaggerKey": "community"
     }
   ]

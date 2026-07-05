@@ -1,4 +1,4 @@
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.DTOs.Responses;
 
 namespace DotnetNiger.Community.Application.Services;
 
@@ -16,4 +16,7 @@ public interface IIdentityApiClient
     Task<bool> AssignRoleToUserAsync(Guid userId, string roleName);
     /// <summary>Remplace tous les rôles d'un utilisateur par un seul (supprime les anciens, ajoute le nouveau).</summary>
     Task<bool> ReplaceUserRolesAsync(Guid userId, string newRole);
+
+    /// <summary>Met à jour le profil d'un utilisateur (prénom, nom, avatar).</summary>
+    Task<bool> UpdateUserProfileAsync(Guid id, string? firstName, string? lastName, string? avatarUrl);
 }

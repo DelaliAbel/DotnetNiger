@@ -1,6 +1,6 @@
+using DotnetNiger.Common.Extensions;
 using DotnetNiger.Community.Infrastructure;
-using DotnetNiger.Community.Application.DTOs;
-using DotnetNiger.Community.Domain;
+using DotnetNiger.Community.Application.DTOs.Responses;
 using DotnetNiger.Community.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,7 +39,7 @@ public class TagService(AppDbContext db) : ITagService
         {
             Id = Guid.NewGuid(),
             Name = name,
-            Slug = SlugGenerator.Generate(name)
+            Slug = SlugGenerator.GenerateSlug(name)
         };
 
         db.Tags.Add(tag);
@@ -54,7 +54,7 @@ public class TagService(AppDbContext db) : ITagService
         if (t is null) return null;
 
         t.Name = name;
-        t.Slug = SlugGenerator.Generate(name);
+        t.Slug = SlugGenerator.GenerateSlug(name);
         await db.SaveChangesAsync();
         return MapTag(t);
     }

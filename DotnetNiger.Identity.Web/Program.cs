@@ -1,112 +1,26 @@
-using System.Net.Http.Headers;
-using System.Security.Claims;
-using System.Threading.RateLimiting;
-using Microsoft.AspNetCore.RateLimiting;
-
 var builder = WebApplication.CreateBuilder(args);
 
-var identityUrl = (builder.Configuration["DeveloperPortal:IdentityBaseUrl"] ?? builder.Configuration["Identity:BaseUrl"] ?? "https://localhost:7075").TrimEnd('/');
-var clientId = builder.Configuration["Identity:ClientId"] ?? "web-ui";
-var clientSecret = builder.Configuration["Identity:ClientSecret"] ?? "";
-
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultScheme = "Cookies";
-    options.DefaultChallengeScheme = "OpenIdConnect";
-})
-.AddCookie("Cookies", options =>
-{
-    options.LoginPath = "/Account/Login";
-    options.AccessDeniedPath = "/Account/AccessDenied";
-    options.ExpireTimeSpan = TimeSpan.FromHours(8);
-    options.SlidingExpiration = true;
-    options.Cookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
-})
-.AddOpenIdConnect("OpenIdConnect", options =>
-{
-    options.Authority = identityUrl;
-    options.ClientId = clientId;
-    options.ClientSecret = clientSecret;
-    options.ResponseType = "code";
-    options.ResponseMode = "query";
-    options.Scope.Add("openid");
-    options.Scope.Add("profile");
-    options.Scope.Add("email");
-    options.Scope.Add("roles");
-    options.Scope.Add("offline_access");
-    options.SaveTokens = true;
-    options.GetClaimsFromUserInfoEndpoint = true;
-    options.MapInboundClaims = false;
-    options.TokenValidationParameters.NameClaimType = "name";
-    options.TokenValidationParameters.RoleClaimType = "role";
-    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment()
-        && !builder.Configuration.GetValue<bool>("DisableHttpsRequirement");
-
-    options.NonceCookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
-    options.NonceCookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Unspecified;
-    options.CorrelationCookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
-    options.CorrelationCookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Unspecified;
-
-    options.Events.OnRedirectToIdentityProvider = context =>
-    {
-        context.ProtocolMessage.IssuerAddress = $"{identityUrl}/connect/authorize";
-        context.ProtocolMessage.Prompt = "select_account";
-        return Task.CompletedTask;
-    };
-    options.Events.OnRedirectToIdentityProviderForSignOut = context =>
-    {
-        context.ProtocolMessage.IssuerAddress = $"{identityUrl}/connect/logout";
-        return Task.CompletedTask;
-    };
-});
-
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin", "SuperAdmin"));
-});
-
-builder.Services.AddRazorPages(options =>
-{
-    options.Conventions.AddFolderApplicationModelConvention(
-        "/Developer/Admin/Tenants",
-        model => model.Filters.Add(new DotnetNiger.Identity.Web.Infrastructure.TenantPageFilter()));
-});
-builder.Services.AddHttpContextAccessor();
-
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
-        RateLimitPartition.GetFixedWindowLimiter(
-            context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new FixedWindowRateLimiterOptions
-            {
-                PermitLimit = 500,
-                Window = TimeSpan.FromSeconds(60),
-                QueueLimit = 0
-            }));
-});
-
-builder.Services.AddHttpClient("IdentityApi", client =>
-{
-    client.BaseAddress = new Uri(identityUrl + "/");
-    client.DefaultRequestHeaders.Accept.Add(
-        new MediaTypeWithQualityHeaderValue("application/json"));
-});
+// Add services to the container.
+builder.Services.AddRazorPages();
 
 var app = builder.Build();
 
+// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error");
+    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
-app.UseStaticFiles();
+app.UseHttpsRedirection();
+
 app.UseRouting();
-app.UseRateLimiter();
-app.UseAuthentication();
+
 app.UseAuthorization();
-app.MapRazorPages().RequireAuthorization();
+
+app.MapStaticAssets();
+app.MapRazorPages()
+   .WithStaticAssets();
 
 app.Run();

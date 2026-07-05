@@ -1,71 +1,41 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
+using DotnetNiger.Common.Constants;
+using DotnetNiger.Common.DTOs.Responses;
+using DotnetNiger.Common.Email;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure;
-using DotnetNiger.Identity.Application.DTOs;
+using DotnetNiger.Identity.Application.DTOs.Requests;
+using DotnetNiger.Identity.Application.DTOs.Responses;
 
 namespace DotnetNiger.Identity.Application.Services;
 
-public class AdminService
+public class AdminService : IAdminService
 {
     private readonly IdentityDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IEmailSender<ApplicationUser> _emailSender;
     private readonly SmtpOptions _smtp;
-    private readonly IMemoryCache _cache;
-    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
 
     public AdminService(IdentityDbContext db, UserManager<ApplicationUser> userManager,
-        IEmailSender<ApplicationUser> emailSender, IOptions<SmtpOptions> smtp,
-        IMemoryCache cache)
+        IEmailSender<ApplicationUser> emailSender, IOptions<SmtpOptions> smtp)
     {
         _db = db;
         _userManager = userManager;
         _emailSender = emailSender;
         _smtp = smtp.Value;
-        _cache = cache;
-    }
-
-    public async Task<object> GetSystemStatsAsync()
-    {
-        var stats = await _cache.GetOrCreateAsync("SystemStats", async entry =>
-        {
-            entry.AbsoluteExpirationRelativeToNow = CacheDuration;
-
-            var totalTenants = await _db.Tenants.CountAsync();
-            var totalUsers = await _db.Users.IgnoreQueryFilters().CountAsync();
-            var totalRoles = await _db.Roles.IgnoreQueryFilters().CountAsync();
-            var totalPermissions = await _db.Permissions.IgnoreQueryFilters().CountAsync();
-            var totalApiKeys = await _db.TenantApiKeys.IgnoreQueryFilters().CountAsync();
-            var totalServices = await _db.ExternalServices.IgnoreQueryFilters().CountAsync();
-            var totalClients = await _db.TenantClients.IgnoreQueryFilters().CountAsync();
-
-            return new
-            {
-                totalTenants,
-                totalUsers,
-                totalRoles,
-                totalPermissions,
-                totalApiKeys,
-                totalServices,
-                totalClients,
-                activeTenants = await _db.Tenants.CountAsync(t => t.IsActive)
-            };
-        });
-        return stats!;
     }
 
     public async Task InviteAsync(string email, string role)
     {
         var existing = await _userManager.FindByEmailAsync(email);
         if (existing != null)
-            throw new InvalidOperationException("Un utilisateur avec cet email existe déjà");
+            throw new InvalidOperationException(ErrorMessages.UserAlreadyExists);
 
         var tenant = await _db.Tenants.FirstOrDefaultAsync();
         if (tenant == null)
-            throw new InvalidOperationException("Aucun tenant trouvé");
+            throw new InvalidOperationException(ErrorMessages.TenantNotFound);
 
         var user = new ApplicationUser
         {
@@ -86,8 +56,6 @@ public class AdminService
         var inviteUrl = $"{_smtp.AppBaseUrl.TrimEnd('/')}/Account/Register?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(token)}";
         if (_emailSender is EmailSender typed)
             await typed.SendInviteEmailAsync(email, inviteUrl, role);
-
-        _cache.Remove("SystemStats");
     }
 
     private static string GenerateTemporaryPassword()
@@ -97,36 +65,6 @@ public class AdminService
         using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
         rng.GetBytes(data);
         return new string(data.Select(b => chars[b % chars.Length]).ToArray()) + "Aa1!";
-    }
-
-    public async Task<object> GetTenantLoginHistoryAsync(Guid tenantId, int page, int pageSize)
-    {
-        var query = _db.LoginHistories
-            .Where(h => _db.Users.Any(u => u.Id == h.UserId && u.TenantId == tenantId));
-
-        var total = await query.CountAsync();
-        var items = await query
-            .OrderByDescending(h => h.CreatedAt)
-            .Skip((page - 1) * pageSize)
-            .Take(pageSize)
-            .Join(_db.Users.AsNoTracking(),
-                h => h.UserId,
-                u => u.Id,
-                (h, u) => new
-                {
-                    h.Id,
-                    h.UserId,
-                    Email = u.Email,
-                    h.IpAddress,
-                    h.UserAgent,
-                    h.Provider,
-                    h.Success,
-                    h.FailureReason,
-                    h.CreatedAt
-                })
-            .ToListAsync();
-
-        return new { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }
 
     public async Task<List<UserResponse>> GetAllUsersAcrossTenantsAsync()
@@ -184,5 +122,65 @@ public class AdminService
         if (user is null) return false;
         var result = await _userManager.DeleteAsync(user);
         return result.Succeeded;
+    }
+
+    /// <summary>Retourne un utilisateur avec ses rôles.</summary>
+    public async Task<UserResponse?> GetUserByIdAsync(Guid id)
+    {
+        var user = await _userManager.FindByIdAsync(id.ToString());
+        if (user == null) return null;
+
+        var roles = await _userManager.GetRolesAsync(user);
+        return new UserResponse(
+            user.Id, user.Email!, user.FirstName, user.LastName,
+            user.AvatarUrl, user.TenantId, user.IsActive,
+            user.EmailConfirmed, user.CreatedAt, roles.ToList());
+    }
+
+    /// <summary>Met à jour le profil d'un utilisateur (nom, avatar).</summary>
+    public async Task<UserResponse?> UpdateUserProfileAsync(Guid id, UpdateUserRequest request)
+    {
+        var user = await _userManager.FindByIdAsync(id.ToString());
+        if (user == null) return null;
+
+        if (request.FirstName != null) user.FirstName = request.FirstName;
+        if (request.LastName != null) user.LastName = request.LastName;
+        if (request.AvatarUrl != null) user.AvatarUrl = request.AvatarUrl;
+        await _userManager.UpdateAsync(user);
+
+        var roles = await _userManager.GetRolesAsync(user);
+        return new UserResponse(user.Id, user.Email!, user.FirstName, user.LastName,
+            user.AvatarUrl, user.TenantId, user.IsActive, user.EmailConfirmed,
+            user.CreatedAt, roles.ToList());
+    }
+
+    /// <summary>Crée un utilisateur (admin).</summary>
+    public async Task<UserResponse?> CreateUserAsync(AdminCreateUserRequest request)
+    {
+        var tenant = await _db.Tenants.FirstOrDefaultAsync();
+        if (tenant == null) return null;
+
+        var user = new ApplicationUser
+        {
+            UserName = request.Email,
+            Email = request.Email,
+            FirstName = request.FirstName,
+            LastName = request.LastName ?? ".",
+            TenantId = tenant.Id,
+            IsActive = true,
+            EmailConfirmed = true
+        };
+
+        var result = await _userManager.CreateAsync(user, request.Password);
+        if (!result.Succeeded)
+            throw new InvalidOperationException(
+                string.Join(", ", result.Errors.Select(e => e.Description)));
+
+        await _userManager.AddToRoleAsync(user, request.Role ?? RoleConstants.User);
+
+        var roles = await _userManager.GetRolesAsync(user);
+        return new UserResponse(user.Id, user.Email!, user.FirstName, user.LastName,
+            user.AvatarUrl, user.TenantId, user.IsActive, user.EmailConfirmed,
+            user.CreatedAt, roles.ToList());
     }
 }

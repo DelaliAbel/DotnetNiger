@@ -1,7 +1,9 @@
 using System.Security.Cryptography;
 using DotnetNiger.Community.Application.Constants;
 using DotnetNiger.Community.Infrastructure;
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.DTOs.Responses;
+using DotnetNiger.Common.DTOs.Responses;
 using DotnetNiger.Community.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 

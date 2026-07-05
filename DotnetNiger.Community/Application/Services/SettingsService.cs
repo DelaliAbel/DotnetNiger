@@ -1,4 +1,4 @@
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.DTOs.Responses;
 using DotnetNiger.Community.Domain.Entities;
 using DotnetNiger.Community.Infrastructure;
 using Microsoft.EntityFrameworkCore;

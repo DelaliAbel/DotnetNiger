@@ -1,6 +1,7 @@
 using DotnetNiger.Community.Domain.Entities;
 using DotnetNiger.Community.Infrastructure;
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.DTOs.Responses;
 using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Application.Services;
@@ -126,7 +127,13 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
         var member = await db.Members.FindAsync(id);
         if (member is null)
         {
-            member = new Member { Id = id, CreatedAt = DateTime.UtcNow };
+            var identityUser = await identity.GetUserAsync(id);
+            member = new Member
+            {
+                Id = id,
+                Email = identityUser?.Email ?? string.Empty,
+                CreatedAt = DateTime.UtcNow
+            };
             db.Members.Add(member);
         }
         member.IsTeamMember = isTeamMember;
@@ -145,6 +152,7 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
         var member = new Member
         {
             Id = parsedId,
+            Email = request.Email,
             FullName = request.FullName,
             IsTeamMember = request.IsTeamMember,
             Position = request.Position,
@@ -157,16 +165,19 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
         return await GetUserAsync(parsedId);
     }
 
-    /// <summary>Supprime le profil membre puis le compte Identity.</summary>
+    /// <summary>Supprime d'abord le compte Identity, puis le profil membre.</summary>
     public async Task<bool> DeleteUserAsync(Guid id)
     {
+        var identityDeleted = await identity.DeleteUserAsync(id);
+        if (!identityDeleted) return false;
+
         var member = await db.Members.FindAsync(id);
         if (member is not null)
         {
             db.Members.Remove(member);
             await db.SaveChangesAsync();
         }
-        return await identity.DeleteUserAsync(id);
+        return true;
     }
 
     /// <summary>Assigne un rôle à un utilisateur via l'API Identity.</summary>

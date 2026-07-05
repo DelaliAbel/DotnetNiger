@@ -1,7 +1,9 @@
 using Asp.Versioning;
 using DotnetNiger.Community.Application;
 using DotnetNiger.Community.Application.Constants;
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Common.Constants;
+using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.DTOs.Responses;
 using DotnetNiger.Community.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,7 +13,7 @@ namespace DotnetNiger.Community.Api.Controllers;
 /// <summary>Gestion des ressources pédagogiques (vidéos, documents, templates, ebooks...).</summary>
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
-public class ResourcesController(IResourceService resourceService, IProfileService profileService) : BaseController
+public class ResourcesController(IResourceQueryService resourceQuery, IResourceCommandService resourceCommand, ICertificateService certificateService) : BaseController
 {
     /// <summary>Recherche et filtre les ressources avec pagination.</summary>
     /// <param name="resourceType">Type de ressource.</param>
@@ -31,7 +33,7 @@ public class ResourcesController(IResourceService resourceService, IProfileServi
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
-        var result = await resourceService.GetAllAsync(resourceType, level, query, tag, categoryId, page, pageSize, after);
+        var result = await resourceQuery.GetAllAsync(resourceType, level, query, tag, categoryId, page, pageSize, after);
         return Ok(new { Success = true, Data = result });
     }
 
@@ -40,7 +42,7 @@ public class ResourcesController(IResourceService resourceService, IProfileServi
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var resource = await resourceService.GetByIdAsync(id);
+        var resource = await resourceQuery.GetByIdAsync(id);
         if (resource is null) return NotFound(new { Success = false, Message = Messages.Resource.NotFound });
         return Ok(new { Success = true, Data = resource });
     }
@@ -50,7 +52,7 @@ public class ResourcesController(IResourceService resourceService, IProfileServi
     [HttpGet("{slug}")]
     public async Task<IActionResult> GetBySlug(string slug)
     {
-        var resource = await resourceService.GetBySlugAsync(slug);
+        var resource = await resourceQuery.GetBySlugAsync(slug);
         if (resource is null) return NotFound(new { Success = false, Message = Messages.Resource.NotFound });
         return Ok(new { Success = true, Data = resource });
     }
@@ -60,7 +62,7 @@ public class ResourcesController(IResourceService resourceService, IProfileServi
     [HttpGet("by-slug/{slug}")]
     public async Task<ActionResult<OGMetadata>> GetOGBySlug(string slug)
     {
-        var resource = await resourceService.GetBySlugAsync(slug);
+        var resource = await resourceQuery.GetBySlugAsync(slug);
         if (resource is null) return NotFound(new { Success = false, Message = Messages.Resource.NotFound });
 
         return Ok(new ApiSuccessResponse<OGMetadata>
@@ -79,7 +81,7 @@ public class ResourcesController(IResourceService resourceService, IProfileServi
     [HttpGet("types")]
     public async Task<IActionResult> GetTypes()
     {
-        var types = await resourceService.GetResourceTypesAsync();
+        var types = await resourceQuery.GetResourceTypesAsync();
         return Ok(new { Success = true, Data = types });
     }
 
@@ -87,7 +89,7 @@ public class ResourcesController(IResourceService resourceService, IProfileServi
     [HttpGet("levels")]
     public async Task<IActionResult> GetLevels()
     {
-        var levels = await resourceService.GetLevelsAsync();
+        var levels = await resourceQuery.GetLevelsAsync();
         return Ok(new { Success = true, Data = levels });
     }
 
@@ -98,18 +100,11 @@ public class ResourcesController(IResourceService resourceService, IProfileServi
     public async Task<IActionResult> Create([FromBody] CreateResourceRequest request)
     {
         var userId = GetUserId();
+        var (canCreate, _, error) = await certificateService.CanCreateContentAsync(userId, User);
+        if (!canCreate)
+            return error != null ? BadRequest(new { Success = false, Message = error }) : Forbid();
 
-        if (!IsAdmin())
-        {
-            if (!IsCollaborator())
-                return Forbid();
-
-            var hasCert = await profileService.HasApprovedCertificateAsync(userId);
-            if (!hasCert)
-                return BadRequest(new { Success = false, Message = Messages.Certificate.NeedValidCertificate });
-        }
-
-        var resource = await resourceService.CreateAsync(request, userId);
+        var resource = await resourceCommand.CreateAsync(request, userId);
         return CreatedAtAction(nameof(GetById), new { id = resource.Id }, new { Success = true, Data = resource });
     }
 
@@ -121,7 +116,7 @@ public class ResourcesController(IResourceService resourceService, IProfileServi
     public async Task<IActionResult> Update(Guid id, [FromBody] CreateResourceRequest request)
     {
         var userId = GetUserId();
-        var resource = await resourceService.UpdateAsync(id, request, userId, IsAdmin());
+        var resource = await resourceCommand.UpdateAsync(id, request, userId, IsAdmin());
         if (resource is null) return NotFound(new { Success = false, Message = Messages.Resource.NotFound });
         return Ok(new { Success = true, Data = resource });
     }
@@ -133,7 +128,7 @@ public class ResourcesController(IResourceService resourceService, IProfileServi
     public async Task<IActionResult> Delete(Guid id)
     {
         var userId = GetUserId();
-        var deleted = await resourceService.DeleteAsync(id, userId, IsAdmin());
+        var deleted = await resourceCommand.DeleteAsync(id, userId, IsAdmin());
         if (!deleted) return NotFound(new { Success = false, Message = Messages.Resource.NotFound });
         return Ok(new { Success = true, Message = Messages.Resource.Deleted });
     }
@@ -143,7 +138,7 @@ public class ResourcesController(IResourceService resourceService, IProfileServi
     [HttpPost("{id:guid}/views")]
     public async Task<IActionResult> IncrementViewCount(Guid id)
     {
-        var resource = await resourceService.IncrementViewCountAsync(id);
+        var resource = await resourceCommand.IncrementViewCountAsync(id);
         if (resource is null) return NotFound(new { Success = false, Message = Messages.Resource.NotFound });
         return Ok(new { Success = true, Data = resource });
     }

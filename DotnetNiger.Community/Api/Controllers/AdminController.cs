@@ -1,6 +1,7 @@
 using Asp.Versioning;
-using DotnetNiger.Community.Application;
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Common.Constants;
+using DotnetNiger.Community.Application.DTOs.Requests;
+using AssignRoleRequest = DotnetNiger.Common.DTOs.Requests.AssignRoleRequest;
 using DotnetNiger.Community.Application.Services;
 using DotnetNiger.Community.Application.Constants;
 using Microsoft.AspNetCore.Authorization;
@@ -8,19 +9,19 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
-/// <summary>Points d'accès pour l'administration de la plateforme : utilisateurs, événements, posts, commentaires et certificats.</summary>
+/// <summary>Points d'accès pour l'administration de la plateforme.</summary>
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/admin")]
 [Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
 public class AdminController(
     IAdminService adminService,
-    IEventService eventService,
-    IProfileService profileService,
-    IPostService postService,
+    IEventQueryService eventQuery,
+    IEventModerationService eventModeration,
+    ICertificateService certificateService,
+    IPostQueryService postQuery,
     ICommentService commentService) : ControllerBase
 {
-    /// <summary>Retourne les statistiques du tableau de bord d'administration.</summary>
     [HttpGet("dashboard")]
     public async Task<IActionResult> GetDashboard()
     {
@@ -28,74 +29,58 @@ public class AdminController(
         return Ok(new { Success = true, Data = stats });
     }
 
-    /// <summary>Récupère la liste des événements, avec un filtre optionnel sur le statut.</summary>
-    /// <param name="status">Filtre par statut (ex: "pending").</param>
-    /// <param name="page">Numéro de la page (défaut: 1).</param>
-    /// <param name="pageSize">Nombre d'éléments par page (défaut: 10).</param>
     [HttpGet("events")]
     public async Task<IActionResult> GetEvents([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        if (status == "pending")
+        return Ok(new
         {
-            var result = await eventService.GetPendingEventsAsync(page, pageSize);
-            return Ok(new { Success = true, Data = result });
-        }
-
-        var all = await eventService.GetAllAsync(null, null, null, null, null, null, null, null, page, pageSize);
-        return Ok(new { Success = true, Data = all });
+            Success = true,
+            Data = status == "pending"
+                ? await eventQuery.GetPendingEventsAsync(page, pageSize)
+                : await eventQuery.GetAllAsync(null, null, null, null, null, null, null, null, page, pageSize)
+        });
     }
 
-    /// <summary>Publie un événement sur la plateforme.</summary>
-    /// <param name="id">Identifiant de l'événement.</param>
     [HttpPatch("events/{id:guid}/publish")]
     public async Task<IActionResult> PublishEvent(Guid id)
     {
-        var ev = await eventService.PublishAsync(id);
+        var ev = await eventModeration.PublishAsync(id);
         if (ev is null) return NotFound(new { Success = false, Message = Messages.Event.NotFound });
         return Ok(new { Success = true, Data = ev });
     }
 
-    /// <summary>Dépublie un événement.</summary>
-    /// <param name="id">Identifiant de l'événement.</param>
     [HttpPatch("events/{id:guid}/unpublish")]
     public async Task<IActionResult> UnpublishEvent(Guid id)
     {
-        var ev = await eventService.UnpublishAsync(id);
+        var ev = await eventModeration.UnpublishAsync(id);
         if (ev is null) return NotFound(new { Success = false, Message = Messages.Event.NotFound });
         return Ok(new { Success = true, Data = ev });
     }
 
-    /// <summary>Approuve un événement en attente de validation.</summary>
-    /// <param name="id">Identifiant de l'événement.</param>
     [HttpPatch("events/{id:guid}/approve")]
     public async Task<IActionResult> ApproveEvent(Guid id)
     {
-        var ev = await eventService.ApproveAsync(id);
+        var ev = await eventModeration.ApproveAsync(id);
         if (ev is null) return NotFound(new { Success = false, Message = Messages.Event.NotFound });
         return Ok(new { Success = true, Data = ev });
     }
 
-    /// <summary>Rejette un événement avec un motif.</summary>
-    /// <param name="id">Identifiant de l'événement.</param>
-    /// <param name="reason">Raison du rejet.</param>
     [HttpPatch("events/{id:guid}/reject")]
     public async Task<IActionResult> RejectEvent(Guid id, [FromQuery] string reason)
     {
-        var ev = await eventService.RejectAsync(id, reason);
+        if (string.IsNullOrWhiteSpace(reason))
+            return BadRequest(new { Success = false, Message = Messages.Certificate.RejectReasonRequired });
+        var ev = await eventModeration.RejectAsync(id, reason);
         if (ev is null) return NotFound(new { Success = false, Message = Messages.Event.NotFound });
         return Ok(new { Success = true, Message = Messages.Event.Rejected, Data = ev });
     }
 
-    /// <summary>Récupère la liste de tous les utilisateurs inscrits.</summary>
     [HttpGet("users")]
     public async Task<IActionResult> GetUsers()
     {
-        var users = await adminService.GetUsersAsync();
-        return Ok(new { Success = true, Data = users });
+        return Ok(new { Success = true, Data = await adminService.GetUsersAsync() });
     }
 
-    /// <summary>Recherche un utilisateur par son identifiant.</summary>
-    /// <param name="id">Identifiant de l'utilisateur.</param>
     [HttpGet("users/{id:guid}")]
     public async Task<IActionResult> GetUser(Guid id)
     {
@@ -104,9 +89,6 @@ public class AdminController(
         return Ok(new { Success = true, Data = user });
     }
 
-    /// <summary>Active ou désactive un utilisateur.</summary>
-    /// <param name="id">Identifiant de l'utilisateur.</param>
-    /// <param name="request">Nouveau statut d'activation.</param>
     [HttpPatch("users/{id:guid}/status")]
     public async Task<IActionResult> UpdateUserStatus(Guid id, [FromBody] UpdateUserStatusRequest request)
     {
@@ -115,9 +97,6 @@ public class AdminController(
         return Ok(new { Success = true, Message = Messages.User.StatusUpdated });
     }
 
-    /// <summary>Ajoute ou retire un utilisateur de l'équipe et définit son poste.</summary>
-    /// <param name="id">Identifiant de l'utilisateur.</param>
-    /// <param name="request">Informations d'appartenance à l'équipe.</param>
     [HttpPatch("users/{id:guid}/team")]
     public async Task<IActionResult> UpdateUserTeam(Guid id, [FromBody] UpdateUserTeamRequest request)
     {
@@ -126,8 +105,6 @@ public class AdminController(
         return Ok(new { Success = true, Message = Messages.User.TeamUpdated });
     }
 
-    /// <summary>Crée un nouvel utilisateur (admin, collaborateur).</summary>
-    /// <param name="request">Informations du nouvel utilisateur.</param>
     [HttpPost("users")]
     public async Task<IActionResult> CreateUser([FromBody] CreateAdminUserRequest request)
     {
@@ -136,8 +113,6 @@ public class AdminController(
         return Ok(new { Success = true, Data = user });
     }
 
-    /// <summary>Supprime définitivement un utilisateur.</summary>
-    /// <param name="id">Identifiant de l'utilisateur.</param>
     [HttpDelete("users/{id:guid}")]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
@@ -146,9 +121,6 @@ public class AdminController(
         return Ok(new { Success = true, Message = Messages.User.Deleted });
     }
 
-    /// <summary>Assigne un rôle à un utilisateur.</summary>
-    /// <param name="userId">Identifiant de l'utilisateur.</param>
-    /// <param name="request">Nom du rôle à assigner.</param>
     [HttpPost("users/{userId:guid}/roles")]
     public async Task<IActionResult> AssignRoleToUser(Guid userId, [FromBody] AssignRoleRequest request)
     {
@@ -157,8 +129,6 @@ public class AdminController(
         return Ok(new { Success = true, Message = Messages.User.RoleAssigned });
     }
 
-    /// <summary>Promet un utilisateur au rôle d'administrateur (réservé SuperAdmin).</summary>
-    /// <param name="userId">Identifiant de l'utilisateur à promouvoir.</param>
     [HttpPost("users/{userId:guid}/promote-to-admin")]
     [Authorize(Roles = RoleConstants.SuperAdmin)]
     public async Task<IActionResult> PromoteToAdmin(Guid userId)
@@ -168,61 +138,42 @@ public class AdminController(
         return Ok(new { Success = true, Message = Messages.User.Promoted });
     }
 
-    /// <summary>Approuve un certificat soumis par un membre.</summary>
-    /// <param name="id">Identifiant du certificat.</param>
     [HttpPatch("certificates/{id:guid}/approve")]
     public async Task<IActionResult> ApproveCertificate(Guid id)
     {
-        var cert = await profileService.ApproveCertificateAsync(id);
+        var cert = await certificateService.ApproveCertificateAsync(id);
         if (cert is null) return NotFound(new { Success = false, Message = Messages.Certificate.NotFound });
         return Ok(new { Success = true, Data = cert });
     }
 
-    /// <summary>Rejette un certificat avec un motif.</summary>
-    /// <param name="id">Identifiant du certificat.</param>
-    /// <param name="reason">Raison du rejet.</param>
     [HttpPatch("certificates/{id:guid}/reject")]
     public async Task<IActionResult> RejectCertificate(Guid id, [FromQuery] string reason)
     {
         if (string.IsNullOrWhiteSpace(reason))
             return BadRequest(new { Success = false, Message = Messages.Certificate.RejectReasonRequired });
-
-        var cert = await profileService.RejectCertificateAsync(id, reason);
+        var cert = await certificateService.RejectCertificateAsync(id, reason);
         if (cert is null) return NotFound(new { Success = false, Message = Messages.Certificate.NotFound });
         return Ok(new { Success = true, Data = cert });
     }
 
-    /// <summary>Liste les certificats avec filtre optionnel par statut ("Pending", "Approved", "Rejected").</summary>
-    /// <param name="status">Filtre par statut (optionnel).</param>
     [HttpGet("certificates")]
     public async Task<IActionResult> GetCertificates([FromQuery] string? status)
     {
-        var certs = await profileService.GetCertificatesAsync(status);
-        return Ok(new { Success = true, Data = certs });
+        return Ok(new { Success = true, Data = await certificateService.GetCertificatesAsync(status) });
     }
 
-    /// <summary>Liste les articles avec filtre par statut ("published", "draft", "pending").</summary>
-    /// <param name="status">Filtre par statut.</param>
-    /// <param name="page">Page demandée.</param>
-    /// <param name="pageSize">Taille de la page.</param>
     [HttpGet("posts")]
     public async Task<IActionResult> GetPosts([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var paginated = await postService.GetAllAsync(status, null, null, null, page, pageSize);
-        return Ok(new { Success = true, Data = paginated });
+        return Ok(new { Success = true, Data = await postQuery.GetAllAsync(status, null, null, null, page, pageSize) });
     }
 
-    /// <summary>Liste tous les commentaires pour la modération.</summary>
     [HttpGet("comments")]
     public async Task<IActionResult> GetComments()
     {
-        var comments = await commentService.GetAllAsync();
-        return Ok(new { Success = true, Data = comments });
+        return Ok(new { Success = true, Data = await commentService.GetAllAsync() });
     }
 
-    /// <summary>Remplace tous les rôles d'un utilisateur par un seul nouveau rôle.</summary>
-    /// <param name="userId">Identifiant de l'utilisateur.</param>
-    /// <param name="request">Nouveau rôle à assigner.</param>
     [HttpPut("users/{userId:guid}/roles")]
     public async Task<IActionResult> ReplaceUserRoles(Guid userId, [FromBody] AssignRoleRequest request)
     {

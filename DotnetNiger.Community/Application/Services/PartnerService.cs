@@ -1,7 +1,8 @@
-using DotnetNiger.Community.Domain;
+using DotnetNiger.Common.Extensions;
 using DotnetNiger.Community.Domain.Entities;
 using DotnetNiger.Community.Infrastructure;
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.DTOs.Responses;
 using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Application.Services;
@@ -38,7 +39,7 @@ public class PartnerService(AppDbContext db) : IPartnerService
         {
             Id = Guid.NewGuid(),
             Name = request.Name,
-            Slug = GenerateSlug(request.Name),
+            Slug = SlugGenerator.GenerateSlug(request.Name),
             Description = request.Description,
             LogoUrl = request.LogoUrl,
             WebsiteUrl = request.WebsiteUrl,
@@ -59,7 +60,7 @@ public class PartnerService(AppDbContext db) : IPartnerService
         if (p is null) return null;
 
         p.Name = request.Name;
-        p.Slug = GenerateSlug(request.Name);
+        p.Slug = SlugGenerator.GenerateSlug(request.Name);
         p.Description = request.Description;
         p.LogoUrl = request.LogoUrl;
         p.WebsiteUrl = request.WebsiteUrl;
@@ -95,6 +96,4 @@ public class PartnerService(AppDbContext db) : IPartnerService
         IsActive = p.IsActive,
         CreatedAt = p.CreatedAt
     };
-
-    private static string GenerateSlug(string text) => SlugGenerator.Generate(text);
 }

@@ -240,6 +240,61 @@
       "DownstreamHostAndPorts": [{ "Host": "identity-dotnetniger.runasp.net", "Port": 80 }],
       "RateLimitOptions": { "EnableRateLimiting": false },
       "SwaggerKey": "identity"
+    },
+    {
+      "UpstreamPathTemplate": "/api/support/report",
+      "UpstreamHttpMethod": ["POST"],
+      "DownstreamPathTemplate": "/api/v1/support/report",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "identity-dotnetniger.runasp.net", "Port": 80 }],
+      "RateLimitOptions": { "ClientWhitelist": [], "EnableRateLimiting": true, "Period": "1m", "PeriodTimespan": 60, "Limit": 10 },
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 10000, "TimeoutValue": 15000 },
+      "Key": "IdentitySupportRoute",
+      "SwaggerKey": "identity"
+    },
+    {
+      "UpstreamPathTemplate": "/api/account/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST"],
+      "DownstreamPathTemplate": "/api/v1/account/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "identity-dotnetniger.runasp.net", "Port": 80 }],
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 10000, "TimeoutValue": 15000 },
+      "Key": "IdentityAccountGdprRoute",
+      "SwaggerKey": "identity"
+    },
+    {
+      "UpstreamPathTemplate": "/api/{tenantId}/permissions/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+      "DownstreamPathTemplate": "/api/v1/{tenantId}/permissions/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "identity-dotnetniger.runasp.net", "Port": 80 }],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 10000, "TimeoutValue": 20000 },
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "Key": "IdentityPermissionsRoute",
+      "SwaggerKey": "identity"
+    },
+    {
+      "UpstreamPathTemplate": "/api/{tenantId}/roles/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+      "DownstreamPathTemplate": "/api/v1/{tenantId}/roles/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "identity-dotnetniger.runasp.net", "Port": 80 }],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 10000, "TimeoutValue": 20000 },
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "Key": "IdentityRolesRoute",
+      "SwaggerKey": "identity"
+    },
+    {
+      "UpstreamPathTemplate": "/api/{tenantId}/users/{everything}",
+      "UpstreamHttpMethod": ["GET", "POST", "PUT", "DELETE", "PATCH"],
+      "DownstreamPathTemplate": "/api/v1/{tenantId}/users/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "identity-dotnetniger.runasp.net", "Port": 80 }],
+      "QoSOptions": { "ExceptionsAllowedBeforeBreaking": 3, "DurationOfBreak": 10000, "TimeoutValue": 20000 },
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "Key": "IdentityUsersRoute",
+      "SwaggerKey": "identity"
     }
   ]
 }

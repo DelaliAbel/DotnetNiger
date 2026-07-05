@@ -1,8 +1,10 @@
+using DotnetNiger.Common.Extensions;
 using DotnetNiger.Community.Application.Constants;
 using DotnetNiger.Community.Application.Notifications;
 using DotnetNiger.Community.Infrastructure;
-using DotnetNiger.Community.Application.DTOs;
-using DotnetNiger.Community.Domain;
+using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.DTOs.Responses;
+using DotnetNiger.Common.DTOs.Responses;
 using DotnetNiger.Community.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -66,7 +68,7 @@ public class ProjectService(AppDbContext db, IServiceScopeFactory scopeFactory, 
         {
             Id = Guid.NewGuid(),
             Title = request.Title,
-            Slug = GenerateSlug(request.Title),
+            Slug = SlugGenerator.GenerateSlug(request.Title),
             Description = request.Description,
             Url = request.Url,
             GithubUrl = request.GithubUrl,
@@ -100,7 +102,7 @@ public class ProjectService(AppDbContext db, IServiceScopeFactory scopeFactory, 
             throw new UnauthorizedAccessException(Messages.Project.NotAuthorizedModify);
 
         p.Title = request.Title;
-        p.Slug = GenerateSlug(request.Title);
+        p.Slug = SlugGenerator.GenerateSlug(request.Title);
         p.Description = request.Description;
         p.Url = request.Url;
         p.GithubUrl = request.GithubUrl;
@@ -146,6 +148,4 @@ public class ProjectService(AppDbContext db, IServiceScopeFactory scopeFactory, 
         CreatedAt = p.CreatedAt,
         UpdatedAt = p.UpdatedAt
     };
-
-    private static string GenerateSlug(string text) => SlugGenerator.Generate(text);
 }

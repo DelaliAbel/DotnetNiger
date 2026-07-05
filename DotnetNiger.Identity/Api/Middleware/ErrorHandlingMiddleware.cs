@@ -1,7 +1,7 @@
 using System.Net;
 using System.Text.Json;
-using DotnetNiger.Identity.Application.DTOs;
-using DotnetNiger.Identity.Application.Exceptions;
+using DotnetNiger.Identity.Application.DTOs.Responses;
+using DotnetNiger.Common.Exceptions;
 
 namespace DotnetNiger.Identity.Api.Middleware;
 

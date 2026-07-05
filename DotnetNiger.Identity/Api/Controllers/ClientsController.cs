@@ -1,7 +1,11 @@
+using DotnetNiger.Common.Constants;
+using DotnetNiger.Common.DTOs.Requests;
+using DotnetNiger.Common.DTOs.Responses;
 using DotnetNiger.Identity.Application;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using DotnetNiger.Identity.Application.DTOs;
+using DotnetNiger.Identity.Application.DTOs.Requests;
+using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Services;
 
 namespace DotnetNiger.Identity.Api.Controllers;
@@ -10,12 +14,17 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/admin/tenants/{tenantId:guid}/clients")]
-[Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.SuperAdmin)]
+[Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
 public class ClientsController : ControllerBase
 {
     private readonly TenantClientService _clientService;
+    private readonly OpenIddictClientManager _clientManager;
 
-    public ClientsController(TenantClientService clientService) => _clientService = clientService;
+    public ClientsController(TenantClientService clientService, OpenIddictClientManager clientManager)
+    {
+        _clientService = clientService;
+        _clientManager = clientManager;
+    }
 
     /// <summary>Liste tous les clients OAuth2 d'un tenant.</summary>
     [HttpGet]
@@ -39,7 +48,7 @@ public class ClientsController : ControllerBase
     public async Task<ActionResult<TenantClientCreatedResponse>> Create(Guid tenantId,
         [FromBody] CreateTenantClientRequest request)
     {
-        var result = await _clientService.CreateClientAsync(tenantId, request);
+        var result = await _clientManager.CreateClientAsync(tenantId, request);
         return CreatedAtAction(nameof(GetById), new { tenantId, clientId = result.Client.Id }, result);
     }
 
@@ -48,7 +57,7 @@ public class ClientsController : ControllerBase
     public async Task<ActionResult<TenantClientResponse>> Update(Guid tenantId, Guid clientId,
         [FromBody] UpdateTenantClientRequest request)
     {
-        var client = await _clientService.UpdateClientAsync(tenantId, clientId, request);
+        var client = await _clientManager.UpdateClientAsync(tenantId, clientId, request);
         return Ok(client);
     }
 
@@ -56,7 +65,7 @@ public class ClientsController : ControllerBase
     [HttpDelete("{clientId:guid}")]
     public async Task<IActionResult> Delete(Guid tenantId, Guid clientId)
     {
-        await _clientService.DeleteClientAsync(tenantId, clientId);
+        await _clientManager.DeleteClientAsync(tenantId, clientId);
         return NoContent();
     }
 }

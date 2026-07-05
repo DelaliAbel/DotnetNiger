@@ -24,4 +24,8 @@
     <InternalsVisibleTo Include="DotnetNiger.Community.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\DotnetNiger.Common\DotnetNiger.Common.csproj" />
+  </ItemGroup>
+
 </Project>

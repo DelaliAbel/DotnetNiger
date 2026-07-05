@@ -1,9 +1,9 @@
 using Asp.Versioning;
+using DotnetNiger.Common.Constants;
 using DotnetNiger.Community.Application.Constants;
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.DTOs.Requests;
 using DotnetNiger.Community.Application.Services;
 using Microsoft.AspNetCore.Authorization;
-using DotnetNiger.Community.Application;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Community.Api.Controllers;

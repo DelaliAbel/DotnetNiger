@@ -1,8 +1,13 @@
+using DotnetNiger.Common.Constants;
+using DotnetNiger.Common.DTOs.Requests;
+using DotnetNiger.Common.DTOs.Responses;
 using DotnetNiger.Identity.Application;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using DotnetNiger.Identity.Application.DTOs;
+using DotnetNiger.Identity.Application.DTOs.Requests;
+using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Services;
+using ErrorResponse = DotnetNiger.Identity.Application.DTOs.Responses.ErrorResponse;
 
 namespace DotnetNiger.Identity.Api.Controllers;
 
@@ -10,7 +15,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiVersion("1.0")]
 
 [Route("api/v{version:apiVersion}/admin/tenants")]
-[Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.SuperAdmin)]
+[Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
 public class TenantsController : ControllerBase
 {
     private readonly TenantService _tenantService;

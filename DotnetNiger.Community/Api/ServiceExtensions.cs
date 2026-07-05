@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using DotnetNiger.Common.Email;
 using DotnetNiger.Community.Application.Notifications;
 using DotnetNiger.Community.Application.Services;
 using DotnetNiger.Community.Infrastructure;
@@ -11,8 +12,6 @@ namespace DotnetNiger.Community.Api;
 public static class ServiceExtensions
 {
     /// <summary>Configure le DbContext avec le fournisseur de base de données (Sqlite, SqlServer ou PostgreSQL).</summary>
-    /// <param name="services">Collection de services.</param>
-    /// <param name="configuration">Configuration de l'application.</param>
     public static IServiceCollection AddCommunityInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<AppDbContext>(options =>
@@ -24,18 +23,28 @@ public static class ServiceExtensions
                 .UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
         });
 
+        services.AddHttpContextAccessor();
+        services.Configure<SmtpOptions>(configuration.GetSection("Smtp"));
+        services.AddScoped<IEmailService, CommunityEmailSender>();
+
         return services;
     }
 
     /// <summary>Enregistre tous les services métier (posts, événements, ressources, etc.) en tant que services Scoped.</summary>
-    /// <param name="services">Collection de services.</param>
     public static IServiceCollection AddCommunityServices(this IServiceCollection services)
     {
-        services.AddScoped<IPostService, PostService>();
-        services.AddScoped<IEventService, EventService>();
-        services.AddScoped<IResourceService, ResourceService>();
+        services.AddScoped<IPostQueryService, PostQueryService>();
+        services.AddScoped<IPostCommandService, PostCommandService>();
+        services.AddScoped<IPostModerationService, PostModerationService>();
+        services.AddScoped<IEventQueryService, EventQueryService>();
+        services.AddScoped<IEventCommandService, EventCommandService>();
+        services.AddScoped<IEventModerationService, EventModerationService>();
+        services.AddScoped<IEventRegistrationService, EventRegistrationService>();
+        services.AddScoped<IResourceQueryService, ResourceQueryService>();
+        services.AddScoped<IResourceCommandService, ResourceCommandService>();
         services.AddScoped<ICommentService, CommentService>();
         services.AddScoped<IProfileService, ProfileService>();
+        services.AddScoped<ICertificateService, CertificateService>();
         services.AddScoped<ISearchService, SearchService>();
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<INewsletterService, NewsletterService>();
@@ -48,14 +57,13 @@ public static class ServiceExtensions
         services.AddScoped<ITagService, TagService>();
         services.AddScoped<IContactService, ContactService>();
         services.AddScoped<ISettingsService, SettingsService>();
+        services.AddScoped<IImageProcessingService, ImageProcessingService>();
+        services.AddMemoryCache();
 
         return services;
     }
 
     /// <summary>Configure l'authentification JWT avec Authority et les paramètres de validation.</summary>
-    /// <param name="services">Collection de services.</param>
-    /// <param name="configuration">Configuration de l'application.</param>
-    /// <param name="environment">Environnement d'hébergement.</param>
     public static IServiceCollection AddCommunityAuthentication(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -81,8 +89,6 @@ public static class ServiceExtensions
     }
 
     /// <summary>Configure le client HTTP pour l'API d'identité (Identity API).</summary>
-    /// <param name="services">Collection de services.</param>
-    /// <param name="configuration">Configuration de l'application.</param>
     public static IServiceCollection AddCommunityHttpClients(this IServiceCollection services, IConfiguration configuration)
     {
         var apiKey = configuration["Identity:ApiKey"] ?? configuration["Integration:ProvisioningApiKey"] ?? "";
@@ -98,8 +104,6 @@ public static class ServiceExtensions
     }
 
     /// <summary>Configure CORS pour les origines autorisées (frontend Blazor WASM, etc.).</summary>
-    /// <param name="services">Collection de services.</param>
-    /// <param name="configuration">Configuration de l'application.</param>
     public static IServiceCollection AddCommunityCors(this IServiceCollection services, IConfiguration configuration)
     {
         var allowedOrigins = configuration["Cors:AllowedOrigins"] ?? "";
@@ -127,7 +131,6 @@ public static class ServiceExtensions
     }
 
     /// <summary>Configure le versioning d'API (URL segment + rapport version).</summary>
-    /// <param name="services">Collection de services.</param>
     public static IServiceCollection AddApiVersioningWithSwagger(
         this IServiceCollection services)
     {

@@ -3,7 +3,7 @@ using DotnetNiger.Identity.Api;
 try
 {
     var builder = ApplicationSetup.CreateBuilder(args);
-    var app = ApplicationSetup.ConfigureApp(builder);
+    var app = PipelineSetup.ConfigureApp(builder);
     await app.RunAsync();
     return 0;
 }

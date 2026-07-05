@@ -147,5 +147,12 @@ prod-configs/
 # .NET fake build
 .fake
 
+# Endpoint documentation
+**/endpoints.txt
+**/endpoints.md
+
 # Local database manager (seed/migrations) - never pushed
 DotnetNiger.DbManager/
+
+TODO.md
+Explication.md

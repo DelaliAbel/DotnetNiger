@@ -23,15 +23,12 @@ public static class Messages
         public const string NotFound = "Utilisateur introuvable.";
         public const string StatusUpdated = "Statut de l'utilisateur mis à jour.";
         public const string TeamUpdated = "Statut d'équipe mis à jour.";
-        public const string Created = "Utilisateur créé avec succès.";
         public const string CreateFailed = "Échec de la création de l'utilisateur";
         public const string Deleted = "Utilisateur supprimé.";
         public const string PromoteFailed = "Échec de la promotion de l'utilisateur.";
         public const string Promoted = "Utilisateur promu Admin avec succès.";
         public const string RoleAssigned = "Rôle assigné avec succès.";
         public const string RoleFailed = "Échec de l'assignation du rôle.";
-        public const string PermissionAssigned = "Permission assignée avec succès.";
-        public const string PermissionFailed = "Échec de l'assignation de la permission.";
     }
 
     public static class Post
@@ -42,7 +39,6 @@ public static class Messages
         public const string NotAuthorizedPublish = "Vous n'êtes pas autorisé à publier cette publication.";
         public const string NotAuthorizedUnpublish = "Vous n'êtes pas autorisé à dépublier cette publication.";
         public const string NotAuthorizedDelete = "Vous n'êtes pas autorisé à supprimer cette publication.";
-        public const string NotAuthorizedCreate = "Vous n'êtes pas autorisé à créer une publication.";
     }
 
     public static class Event
@@ -77,7 +73,6 @@ public static class Messages
     {
         public const string NotFound = "Commentaire introuvable.";
         public const string Deleted = "Commentaire supprimé.";
-        public const string DeletedPlaceholder = "[Supprimé]";
     }
 
     public static class Category
@@ -130,13 +125,11 @@ public static class Messages
     {
         public const string NoFile = "Aucun fichier fourni.";
         public const string ExtensionNotAllowed = "Extension non autorisée : ";
-        public const string MimeNotAllowed = "Type MIME non autorisé : ";
         public const string TooLarge = "Fichier trop volumineux (max 3 Mo).";
         public const string Uploaded = "Image uploadée avec succès.";
         public const string PathRequired = "Chemin requis.";
         public const string NotFound = "Fichier introuvable.";
         public const string Deleted = "Fichier supprimé.";
-        public const string PathNotAllowed = "Chemin non autorisé.";
         public const string InvalidImage = "Format d'image non valide ou corrompu.";
         public const string TypeNotAllowed = "Type d'image non autorisé.";
     }
@@ -146,26 +139,6 @@ public static class Messages
         public const string AllFieldsRequired = "Tous les champs sont requis.";
         public const string Sent = "Message envoyé avec succès.";
         public const string Error = "Erreur lors de l'envoi.";
-    }
-
-    public static class Error
-    {
-        public const string InternalError = "Une erreur interne est survenue.";
-        public const string NotFound = "Ressource non trouvée.";
-        public const string BadRequest = "Requête invalide.";
-        public const string Forbidden = "Accès refusé.";
-    }
-
-    public static class Content
-    {
-        public const string NotAuthorized = "Vous n'avez pas les permissions nécessaires.";
-    }
-
-    public static class Validation
-    {
-        public const string TitleRequired = "Le titre est requis.";
-        public const string TitleTooLong = "Le titre est trop long.";
-        public const string ContentRequired = "Le contenu est requis.";
     }
 
     /// <summary>Messages liés aux paramètres du site (settings).</summary>

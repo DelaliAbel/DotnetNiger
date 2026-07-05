@@ -1,4 +1,5 @@
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.DTOs.Responses;
+using DotnetNiger.Common.DTOs.Responses;
 
 namespace DotnetNiger.Community.Application.Services;
 

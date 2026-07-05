@@ -1,5 +1,5 @@
 using DotnetNiger.Community.Domain.Entities;
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.DTOs.Requests;
 using DotnetNiger.Community.Infrastructure;
 
 namespace DotnetNiger.Community.Application.Services;

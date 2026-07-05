@@ -1,8 +1,14 @@
+using DotnetNiger.Common.Constants;
+using DotnetNiger.Common.DTOs.Requests;
+using DotnetNiger.Common.DTOs.Responses;
 using DotnetNiger.Identity.Application;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using DotnetNiger.Identity.Application.DTOs;
+using DotnetNiger.Common.Auth.Requests;
+using DotnetNiger.Identity.Application.DTOs.Requests;
+using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Services;
+using ErrorResponse = DotnetNiger.Identity.Application.DTOs.Responses.ErrorResponse;
 
 namespace DotnetNiger.Identity.Api.Controllers;
 
@@ -10,12 +16,12 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiVersion("1.0")]
 
 [Route("api/v{version:apiVersion}/{tenantId:guid}/users")]
-[Authorize(Roles = RoleConstants.Admin + "," + RoleConstants.SuperAdmin)]
+[Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
 public class UsersController : ControllerBase
 {
-    private readonly UserService _userService;
+    private readonly IUserService _userService;
 
-    public UsersController(UserService userService) => _userService = userService;
+    public UsersController(IUserService userService) => _userService = userService;
 
     /// <summary>Crée un nouvel utilisateur dans le tenant spécifié.</summary>
     [HttpPost]

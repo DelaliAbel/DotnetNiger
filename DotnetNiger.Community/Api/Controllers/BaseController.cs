@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using DotnetNiger.Community.Application;
+using DotnetNiger.Common.Constants;
 using DotnetNiger.Community.Application.Constants;
 using Microsoft.AspNetCore.Mvc;
 

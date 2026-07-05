@@ -1,11 +1,15 @@
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using DotnetNiger.Common.DTOs.Requests;
+using DotnetNiger.Common.DTOs.Responses;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure;
-using DotnetNiger.Identity.Application.DTOs;
+using DotnetNiger.Identity.Application.DTOs.Requests;
+using DotnetNiger.Identity.Application.DTOs.Responses;
 
 namespace DotnetNiger.Identity.Application.Services;
 
-public class ExternalServiceService
+public class ExternalServiceService : IExternalServiceService
 {
     private readonly IdentityDbContext _db;
 
@@ -132,6 +136,24 @@ public class ExternalServiceService
 
         _db.ExternalServices.Remove(service);
         await _db.SaveChangesAsync();
+    }
+
+    public async Task<(Guid tenantId, Guid? apiKeyId)> GetAuthInfoAsync(ClaimsPrincipal user)
+    {
+        var tenantId = Guid.Parse(user.FindFirstValue("tenant_id")!);
+        Guid? apiKeyId = null;
+        var keyClaim = user.FindFirstValue("api_key_id");
+        if (!string.IsNullOrEmpty(keyClaim))
+            apiKeyId = Guid.Parse(keyClaim);
+        else
+        {
+            var key = await _db.TenantApiKeys
+                .Where(k => k.TenantId == tenantId && k.IsActive)
+                .OrderBy(k => k.CreatedAt)
+                .FirstOrDefaultAsync();
+            apiKeyId = key?.Id;
+        }
+        return (tenantId, apiKeyId);
     }
 
     private static ExternalServiceResponse MapToResponse(ExternalService s)

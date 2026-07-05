@@ -1,6 +1,6 @@
+using DotnetNiger.Common.Extensions;
 using DotnetNiger.Community.Infrastructure;
-using DotnetNiger.Community.Application.DTOs;
-using DotnetNiger.Community.Domain;
+using DotnetNiger.Community.Application.DTOs.Responses;
 using DotnetNiger.Community.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
@@ -39,7 +39,7 @@ public class CategoryService(AppDbContext db) : ICategoryService
         {
             Id = Guid.NewGuid(),
             Name = name,
-            Slug = SlugGenerator.Generate(name),
+            Slug = SlugGenerator.GenerateSlug(name),
             Description = description
         };
 
@@ -55,7 +55,7 @@ public class CategoryService(AppDbContext db) : ICategoryService
         if (c is null) return null;
 
         c.Name = name;
-        c.Slug = SlugGenerator.Generate(name);
+        c.Slug = SlugGenerator.GenerateSlug(name);
         c.Description = description;
         await db.SaveChangesAsync();
         return MapCategory(c);
