@@ -129,8 +129,5 @@ user-secrets-dotnetniger.txt
 # Production configs
 prod-configs/
 
-# Local DB manager
-DotnetNiger.DbManager/
-
 # Docker
 .docker/
