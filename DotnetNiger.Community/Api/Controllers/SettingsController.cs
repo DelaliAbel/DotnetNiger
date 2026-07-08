@@ -12,7 +12,7 @@ namespace DotnetNiger.Community.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/admin/settings")]
-[Authorize(Roles = RoleConstants.SuperAdmin)]
+[Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
 public class SettingsController(ISettingsService settingsService) : ControllerBase
 {
     /// <summary>Retourne tous les paramètres du site.</summary>

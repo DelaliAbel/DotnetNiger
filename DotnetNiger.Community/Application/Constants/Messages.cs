@@ -11,7 +11,7 @@ public static class Messages
         public const string NotFound = "Certificat introuvable.";
         public const string RejectReasonRequired = "La raison du rejet est requise.";
         public const string EstimatedWait = "24-48 heures";
-        public const string SupportEmail = "support@dotnetniger.org";
+        public const string SupportEmail = "koffilevis21@gmail.com";
         public const string StatusPending = "Pending";
         public const string StatusApproved = "Approved";
         public const string StatusRejected = "Rejected";

@@ -1,0 +1,71 @@
+# OS
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+$RECYCLE.BIN/
+
+# Build
+[Dd]ebug/
+[Rr]elease/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+.history/
+
+# NuGet
+packages/
+.nuget/
+
+# Config with secrets
+**/appsettings.Local.json
+**/appsettings.Development.json
+**/appsettings.Production.json
+local.settings.json
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+
+# Git
+.git/
+.gitattributes
+.gitignore
+.github/
+
+# Docker
+.docker/
+.dockerignore
+
+# Temp
+tmp/
+temp/
+
+# Uploads
+uploads/
+
+# Docs
+TODO.md
+Explication.md
+CHANGELOG.md
+CONTRIBUTING.md
+SECURITY.md
+LICENSE.md
+
+# Dotnet
+.fake
+*.user
+*.suo

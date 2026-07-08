@@ -11,6 +11,8 @@ public interface INewsletterService
     Task<NewsletterSubscriptionResponse> SubscribeAsync(SubscribeRequest request);
     /// <summary>Désabonnement via token de sécurité.</summary>
     Task<bool> UnsubscribeAsync(UnsubscribeRequest request);
+    /// <summary>Suppression d'un abonné par email (réservé admin).</summary>
+    Task<bool> DeleteByEmailAsync(string email);
     /// <summary>Liste paginée des abonnés.</summary>
     Task<PaginatedResponse<NewsletterSubscriptionResponse>> GetAllAsync(int page = 1, int pageSize = 10);
     /// <summary>Nombre d'abonnés actifs.</summary>

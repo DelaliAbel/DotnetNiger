@@ -75,7 +75,7 @@ public class IdentityApiClient(HttpClient http, IMemoryCache cache, ILogger<Iden
     }
 
     /// <summary>Crée un utilisateur distant et retourne son identifiant.</summary>
-    public async Task<string?> RegisterUserAsync(string email, string password, string fullName)
+    public async Task<string?> RegisterUserAsync(string email, string password, string fullName, string? role = null)
     {
         var (firstName, lastName) = SplitFullName(fullName);
 
@@ -83,7 +83,7 @@ public class IdentityApiClient(HttpClient http, IMemoryCache cache, ILogger<Iden
         {
             var response = await http.PostAsJsonAsync("api/v1/admin/users", new
             {
-                email, password, firstName, lastName, role = ""
+                email, password, firstName, lastName, role = role ?? ""
             });
             if (!response.IsSuccessStatusCode) return null;
 

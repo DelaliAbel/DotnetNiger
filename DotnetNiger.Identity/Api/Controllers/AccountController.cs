@@ -1,11 +1,13 @@
 using Asp.Versioning;
 using DotnetNiger.Common.Auth.Requests;
 using DotnetNiger.Common.Auth.Responses;
+using DotnetNiger.Common.Email;
 using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 
 namespace DotnetNiger.Identity.Api.Controllers;
 
@@ -17,11 +19,13 @@ public class AccountController : ControllerBase
 {
     private readonly AuthService _authService;
     private readonly AccountService _accountService;
+    private readonly SmtpOptions _smtp;
 
-    public AccountController(AuthService authService, AccountService accountService)
+    public AccountController(AuthService authService, AccountService accountService, IOptions<SmtpOptions> smtp)
     {
         _authService = authService;
         _accountService = accountService;
+        _smtp = smtp.Value;
     }
 
     [HttpPost("login")]
@@ -58,12 +62,7 @@ public class AccountController : ControllerBase
     public async Task<IActionResult> ConfirmEmailGet([FromQuery] string email, [FromQuery] string code)
     {
         await _accountService.ConfirmEmailAsync(email, code);
-        return Content("<html><body style='font-family:Segoe UI;text-align:center;padding:60px;background:#f2f2f2'>"
-            + "<div style='max-width:480px;margin:auto;background:white;border-radius:8px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,0.08)'>"
-            + "<h1 style='color:#512BD4'>DotnetNiger</h1>"
-            + "<p style='font-size:18px;color:#333'>Votre email a été confirmé avec succès !</p>"
-            + "<p style='color:#666'>Vous pouvez fermer cette fenêtre et vous connecter.</p>"
-            + "</div></body></html>", "text/html");
+        return Redirect($"{_smtp.FrontendBaseUrl.TrimEnd('/')}/auth/login?emailConfirmed=true");
     }
 
     [HttpPost("resend-code")]

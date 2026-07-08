@@ -5,6 +5,24 @@
 ### Added
 - Comprehensive README with full API documentation
 - CI workflow for BackEnd branch
+- Dockerfiles for all 4 projects (Identity, Identity.Web, Community, Gateway)
+- docker-compose.yml for local development with SQL Server
+- docker-compose.prod.yml for production Docker deployment
+- .dockerignore
+- `GET /api/v1/posts/mine` — retourne les articles de l'utilisateur courant
+- `GET /api/v1/events/mine` — retourne les événements de l'utilisateur courant
+- `GET /api/v1/resources/mine` — retourne les ressources de l'utilisateur courant
+- `DELETE /api/v1/newsletter/{email}` — supprime un abonné par email (Admin/SuperAdmin)
+- `INewsletterService.DeleteByEmailAsync` — méthode pour suppression admin d'un abonné
+
+### Changed
+- deploy workflow: clean wwwroot/uploads before pushing to deploy branches
+- .gitignore: cleaned up, added Docker exclusions
+- Community csproj: exclude uploads from dotnet publish
+- README: updated deploy section with production instructions
+- `SettingsController` : `[Authorize(Roles = SuperAdmin)]` → `[Authorize(Roles = AdminOrSuperAdmin)]`
+- `PostQueryService.GetAllAsync` : ajout du paramètre `authorId` pour filtrer par auteur
+- `ResourceQueryService.GetAllAsync` : ajout du paramètre `createdBy` pour filtrer par créateur
 
 ### Fixed
 - OpenIddict endpoint permission prefix (`ep:` → `ept:`)
@@ -17,7 +35,7 @@
 ### Removed
 - Test projects and architecture guards
 - All sub-READMEs and integration guides
-- Docs folder, Dockerfiles, favicons, .gitkeep files
+- Docs folder, Dockerfiles (old), favicons, .gitkeep files
 - SQL creation scripts (superseded by EF Core seeding)
 
 ## [2026-06-25]

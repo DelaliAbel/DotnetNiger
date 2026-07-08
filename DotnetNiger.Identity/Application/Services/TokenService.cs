@@ -47,6 +47,18 @@ public class TokenService
         _cache = cache;
     }
 
+    public void SetupRefreshTokenContext(HttpContext context, string refreshToken)
+    {
+        context.Request.ContentType = "application/x-www-form-urlencoded";
+        context.Request.Form = new FormCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
+        {
+            ["grant_type"] = "refresh_token",
+            ["refresh_token"] = refreshToken,
+            ["client_id"] = "web-ui",
+            ["scope"] = "openid profile email roles offline_access"
+        });
+    }
+
     public async Task<TokenExchangeResult> HandleTokenExchangeAsync(HttpRequest request)
     {
         var grantType = request.Form["grant_type"].FirstOrDefault();

@@ -43,6 +43,17 @@ public class NewsletterController(INewsletterService newsletterService) : Contro
         return Ok(new { Success = true, Message = Messages.Newsletter.Unsubscribed });
     }
 
+    /// <summary>Supprime un abonné par email (réservé aux admins).</summary>
+    [HttpDelete("{email}")]
+    [Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
+    public async Task<IActionResult> DeleteByEmail(string email)
+    {
+        var result = await newsletterService.DeleteByEmailAsync(email);
+        if (!result)
+            return NotFound(new { Success = false, Message = Messages.Newsletter.NotFoundOrUnsubscribed });
+        return Ok(new { Success = true, Message = Messages.Newsletter.Unsubscribed });
+    }
+
     /// <summary>Récupère la liste des abonnés (réservé aux admins).</summary>
     /// <param name="page">Page demandée.</param>
     /// <param name="pageSize">Taille de la page.</param>

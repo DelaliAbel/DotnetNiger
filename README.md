@@ -253,6 +253,7 @@ Base: `https://community-dotnetniger.runasp.net/api/v{version}` (via Gateway: `h
 | GET | `{id}` | Article par ID |
 | GET | `{slug}` | Article par slug (regex) |
 | GET | `by-slug/{slug}` | OG meta pour article |
+| GET | `mine` | Mes articles (authentifié) |
 | POST | `/` | Créer article |
 | PUT | `{id}` | Modifier article |
 | PATCH | `{id}/publish` | Publier article |
@@ -265,6 +266,7 @@ Base: `https://community-dotnetniger.runasp.net/api/v{version}` (via Gateway: `h
 | Méthode | Route | Description |
 |---|---|---|
 | GET | `/` | Lister événements (filtres: published, past, eventType, query, tag, dates) |
+| GET | `mine` | Mes événements (authentifié) |
 | GET | `upcoming` | Événements à venir |
 | GET | `{id}` | Événement par ID |
 | GET | `{slug}` | Événement par slug |
@@ -305,7 +307,8 @@ Base: `https://community-dotnetniger.runasp.net/api/v{version}` (via Gateway: `h
 
 | Méthode | Route | Description |
 |---|---|---|
-| GET | `/` | Lister ressources (filtres: resourceType, level, query, tag, categoryId) |
+| GET | `/` | Lister ressources (filtres: resourceType, level, query, tag, categoryId, createdBy) |
+| GET | `mine` | Mes ressources (authentifié) |
 | GET | `{id}` | Ressource par ID |
 | GET | `{slug}` | Ressource par slug |
 | GET | `by-slug/{slug}` | OG meta pour ressource |
@@ -406,6 +409,7 @@ Base: `https://community-dotnetniger.runasp.net/api/v{version}` (via Gateway: `h
 | POST | `unsubscribe` | Se désabonner |
 | GET | `/` | Abonnements (Admin) |
 | GET | `count` | Nombre d'abonnés actifs |
+| DELETE | `{email}` | Supprimer un abonné par email (Admin) |
 
 ### Contact — `/api/v{version}/contact`
 
@@ -497,14 +501,14 @@ La Gateway écoute sur `https://dotnetniger.runasp.net` et proxyfie vers Identit
 
 ### Configurer les bases de données
 
-Chaque projet a son propre appsettings.Development.json :
+Chaque projet a son propre `appsettings.Development.json` :
 
-- `DotnetNeger.Identity` → base Identity
+- `DotnetNiger.Identity` → base Identity
 - `DotnetNiger.Community` → base Community
 - `DotnetNiger.Gateway` → pas de base directe
 - `DotnetNiger.Identity.Web` → pas de base directe
 
-Modifier les chaînes de connexion pour pointer vers votre SQL Server local.
+Les fichiers `appsettings.Development.json` sont gitignorés. Copier depuis `appsettings.json` et adapter les chaînes de connexion.
 
 ### Lancer les projets
 
@@ -526,15 +530,34 @@ cd DotnetNiger.Identity.Web
 dotnet run
 ```
 
+### Docker (alternative)
+
+```bash
+docker compose up -d
+```
+
+Lance SQL Server + les 4 services avec une config dev automatique.
+
 ---
 
-## CI/CD
+## Déploiement production
 
-La branche `BackEnd` est la branche de production. Les push déclenchent :
-1. **CI** (`.github/workflows/ci.yml`) : Restore + Build avec warnings en erreur
-2. **Deploy** (`.github/workflows/deploy.yml`) : Publish + push vers `deploy/identity`, `deploy/identity-web`, `deploy/community`, `deploy/gateway`
+Le déploiement utilise le workflow GitHub Actions **deploy.yml** sur la branche `BackEnd` :
 
-Les branches de déploiement sont configurées sur Hostinger pour un déploiement automatique.
+1. **CI** (`.github/workflows/ci.yml`) : Restore + Build Release, warnings bloquants
+2. **Deploy** (`.github/workflows/deploy.yml`) : `dotnet publish` chaque projet → push vers les branches `deploy/identity`, `deploy/identity-web`, `deploy/community`, `deploy/gateway`
+
+Chaque branche `deploy/*` contient les binaires pré-compilés. Le serveur (Hostinger) est configuré pour déployer automatiquement depuis ces branches.
+
+### wwwroot/uploads
+
+Les fichiers uploadés par les utilisateurs (`wwwroot/uploads/`) sont exclus du publish et stockés uniquement sur le serveur. Ne pas les supprimer lors des déploiements.
+
+### Configuration production
+
+Les `appsettings.Production.json` sont gitignorés. Configurer le serveur avec :
+- Variables d'environnement pour les secrets (JWT, SMTP, OAuth, connexions DB)
+- Ou déposer un `appsettings.Production.json` sur le serveur après le premier déploiement
 
 ---
 

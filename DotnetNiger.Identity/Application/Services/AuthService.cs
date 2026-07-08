@@ -1,11 +1,13 @@
 using DotnetNiger.Common.Auth;
+using DotnetNiger.Common.Email;
+using DotnetNiger.Common.Auth.Responses;
+using DotnetNiger.Identity.Api.Models;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure;
-using DotnetNiger.Common.Auth.Responses;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
-using DotnetNiger.Common.Email;
 
 namespace DotnetNiger.Identity.Application.Services;
 
@@ -33,6 +35,7 @@ public partial class AuthService : IAuthService
     private readonly SmtpOptions _smtp;
     private readonly IPermissionService _permissionService;
     private readonly AccountService _accountService;
+    private readonly IMemoryCache _cache;
 
     public AuthService(UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager,
@@ -40,7 +43,8 @@ public partial class AuthService : IAuthService
         IEmailSender<ApplicationUser> emailSender,
         IOptions<SmtpOptions> smtp,
         IPermissionService permissionService,
-        AccountService accountService)
+        AccountService accountService,
+        IMemoryCache cache)
     {
         _userManager = userManager;
         _signInManager = signInManager;
@@ -50,6 +54,7 @@ public partial class AuthService : IAuthService
         _smtp = smtp.Value;
         _permissionService = permissionService;
         _accountService = accountService;
+        _cache = cache;
     }
 
     public async Task<(ApplicationUser user, IList<string> roles)> ValidateCredentialsAsync(
@@ -160,6 +165,26 @@ public partial class AuthService : IAuthService
         await _userManager.AddToRoleAsync(newUser, "User");
         _tenantContext.TenantId = newUser.TenantId;
         return (newUser, new List<string> { "User" });
+    }
+
+    public async Task<string> HandleExternalCallbackFrontendAsync(string returnUrl)
+    {
+        var (user, roles) = await HandleExternalLoginAsync("external");
+        var ticket = Guid.NewGuid().ToString("N");
+        var cacheEntry = new ExternalLoginTicket
+        {
+            UserId = user.Id,
+            Email = user.Email!,
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            AvatarUrl = user.AvatarUrl,
+            TenantId = user.TenantId,
+            Roles = roles.ToList(),
+            IsActive = user.IsActive
+        };
+        _cache.Set($"external_login_{ticket}", cacheEntry, TimeSpan.FromMinutes(5));
+        var separator = returnUrl.Contains('?') ? '&' : '?';
+        return $"{returnUrl}{separator}ticket={ticket}";
     }
 
     public async Task RecordLoginAsync(Guid userId, string ipAddress, string userAgent, bool success, string? failureReason = null)

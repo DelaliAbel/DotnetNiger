@@ -16,4 +16,8 @@ public class CreateAdminUserRequest
 
     public bool IsTeamMember { get; set; }
     public string Position { get; set; } = string.Empty;
+
+    public bool IsCollaborator { get; set; }
+    public bool IsAdmin { get; set; }
+    public bool HasApprovedCertificate { get; set; }
 }

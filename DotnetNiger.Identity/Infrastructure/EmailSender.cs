@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Options;
 using DotnetNiger.Common.Email;
 using DotnetNiger.Identity.Domain.Entities;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 
 namespace DotnetNiger.Identity.Infrastructure;
 

@@ -7,7 +7,7 @@ namespace DotnetNiger.Community.Application.Services;
 public interface IEventCommandService
 {
     /// <summary>Crée un événement et notifie les abonnés.</summary>
-    Task<EventResponse> CreateAsync(CreateEventRequest request, Guid userId);
+    Task<EventResponse> CreateAsync(CreateEventRequest request, Guid userId, bool isAdmin, bool isCollaborator);
     /// <summary>Modifie un événement (vérifie le propriétaire ou le rôle admin).</summary>
     Task<EventResponse?> UpdateAsync(Guid id, CreateEventRequest request, Guid userId, bool isAdmin);
     /// <summary>Suppression logique d'un événement.</summary>

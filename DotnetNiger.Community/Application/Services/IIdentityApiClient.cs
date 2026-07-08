@@ -11,7 +11,7 @@ public interface IIdentityApiClient
     Task<List<UserDto>> GetUsersAsync();
     Task<UserDto?> GetUserAsync(Guid id);
     Task<bool> UpdateUserStatusAsync(Guid id, bool isActive);
-    Task<string?> RegisterUserAsync(string email, string password, string fullName);
+    Task<string?> RegisterUserAsync(string email, string password, string fullName, string? role = null);
     Task<bool> DeleteUserAsync(Guid id);
     Task<bool> AssignRoleToUserAsync(Guid userId, string roleName);
     /// <summary>Remplace tous les rôles d'un utilisateur par un seul (supprime les anciens, ajoute le nouveau).</summary>

@@ -7,7 +7,7 @@ namespace DotnetNiger.Community.Application.Services;
 public interface IResourceQueryService
 {
     /// <summary>Recherche paginée avec filtres (type, niveau, tag, catégorie, mot-clé).</summary>
-    Task<PaginatedResponse<ResourceResponse>> GetAllAsync(string? resourceType, string? level, string? query, string? tag, Guid? categoryId, int page = 1, int pageSize = 10, Guid? after = null);
+    Task<PaginatedResponse<ResourceResponse>> GetAllAsync(string? resourceType, string? level, string? query, string? tag, Guid? categoryId, int page = 1, int pageSize = 10, Guid? after = null, Guid? createdBy = null);
     /// <summary>Détail d'une ressource avec ses tags.</summary>
     Task<ResourceResponse?> GetByIdAsync(Guid id);
     /// <summary>Détail d'une ressource par son slug.</summary>

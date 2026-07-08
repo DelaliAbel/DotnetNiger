@@ -16,8 +16,7 @@ namespace DotnetNiger.Community.Api.Controllers;
 public class PostsController(
     IPostQueryService postQuery,
     IPostCommandService postCommand,
-    IPostModerationService postModeration,
-    ICertificateService certificateService) : BaseController
+    IPostModerationService postModeration) : BaseController
 {
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] string? published, [FromQuery] string? category, [FromQuery] string? tag, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 6, [FromQuery] Guid? after = null)
@@ -25,6 +24,16 @@ public class PostsController(
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
         return Ok(new { Success = true, Data = await postQuery.GetAllAsync(published, category, tag, query, page, pageSize, after) });
+    }
+
+    [HttpGet("mine")]
+    [Authorize]
+    public async Task<IActionResult> GetMine([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
+        var userId = GetUserId();
+        return Ok(new { Success = true, Data = await postQuery.GetAllAsync(null, null, null, null, page, pageSize, null, userId) });
     }
 
     [HttpGet("{id:guid}", Order = 1)]
@@ -59,12 +68,15 @@ public class PostsController(
     public async Task<IActionResult> Create([FromBody] CreatePostRequest request)
     {
         var userId = GetUserId();
-        var (canCreate, forceUnpublished, error) = await certificateService.CanCreateContentAsync(userId, User);
-        if (!canCreate)
-            return error != null ? BadRequest(new { Success = false, Message = error }) : Forbid();
-        if (forceUnpublished) request.IsPublished = false;
-        var post = await postCommand.CreateAsync(request, userId, GetUserName());
-        return CreatedAtAction(nameof(GetById), new { id = post.Id }, new { Success = true, Data = post });
+        try
+        {
+            var post = await postCommand.CreateAsync(request, userId, GetUserName(), IsAdmin(), IsCollaborator());
+            return CreatedAtAction(nameof(GetById), new { id = post.Id }, new { Success = true, Data = post });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Success = false, Message = ex.Message });
+        }
     }
 
     [HttpPut("{id:guid}")]

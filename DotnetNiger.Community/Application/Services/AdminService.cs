@@ -146,7 +146,8 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
     /// <summary>Crée un utilisateur via Identity, puis son profil membre en base.</summary>
     public async Task<UserDto?> CreateUserAsync(CreateAdminUserRequest request)
     {
-        var userId = await identity.RegisterUserAsync(request.Email, request.Password, request.FullName);
+        var role = request.IsAdmin ? "Admin" : request.IsCollaborator ? "Collaborator" : null;
+        var userId = await identity.RegisterUserAsync(request.Email, request.Password, request.FullName, role);
         if (userId is null || !Guid.TryParse(userId, out var parsedId)) return null;
 
         var member = new Member
@@ -160,6 +161,22 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
             UpdatedAt = DateTime.UtcNow
         };
         db.Members.Add(member);
+
+        if (request.HasApprovedCertificate)
+        {
+            db.Certificates.Add(new Certificate
+            {
+                Id = Guid.NewGuid(),
+                UserId = parsedId,
+                CertificateUrl = "",
+                CertificateType = "Automatic",
+                Status = "Approved",
+                SubmissionDate = DateTime.UtcNow,
+                ReviewedAt = DateTime.UtcNow,
+                ReviewedNotes = "Certificat approuvé automatiquement à la création du compte"
+            });
+        }
+
         await db.SaveChangesAsync();
 
         return await GetUserAsync(parsedId);

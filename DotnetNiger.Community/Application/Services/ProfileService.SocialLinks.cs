@@ -18,6 +18,12 @@ public partial class ProfileService
             {
                 Id = userId,
                 Email = identityUser?.Email ?? string.Empty,
+                FullName = identityUser?.FullName ?? string.Empty,
+                Bio = identityUser?.Bio ?? string.Empty,
+                AvatarUrl = identityUser?.AvatarUrl ?? string.Empty,
+                Country = identityUser?.Country ?? string.Empty,
+                City = identityUser?.City ?? string.Empty,
+                PhoneNumber = identityUser?.PhoneNumber ?? string.Empty,
                 SocialLinks = new List<SocialLink>(),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow

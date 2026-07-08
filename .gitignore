@@ -1,8 +1,14 @@
+# OS
 *.swp
 *.swo
 *~
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+$RECYCLE.BIN/
 
-# Build results
+# Build
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
@@ -18,21 +24,17 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
-# Visual Studio
+# IDE
 .vs/
+.vscode/
+.idea/
 *.sln.docstates
 *.suo
 *.user
 *.userosscache
 *.rsuser
-
-# VS Code
-.vscode/
 *.code-workspace
 .history/
-
-# Rider
-.idea/
 *.sln.iml
 
 # NuGet
@@ -41,51 +43,42 @@ bld/
 packages/
 .nuget/
 
-# Test Results
+# Test
 TestResults/
 *.trx
-
-# Coverage
 coverage/
 *.coverage
 *.coveragexml
 
-# Config files with secrets
+# Config with secrets
 **/appsettings.Local.json
 **/appsettings.Development.json
 **/appsettings.Production.json
 local.settings.json
 
-# Environment files
+# Environment
 .env
 .env.local
 .env.*.local
-.env.example
 
-# Database files
+# Database
 *.mdf
 *.ldf
 *.ndf
 *.db
 *.db-shm
 *.db-wal
-DotnetNiger.db
-DotnetNigerCommunity.db
 
 # Uploads
 uploads/
-
-# OS files
-.DS_Store
-.AppleDouble
-.LSOverride
-Thumbs.db
-$RECYCLE.BIN/
+wwwroot/uploads/*
 
 # Logs
 *.log
+npm-debug.log
+yarn-error.log
 
-# Temporary files
+# Temp
 tmp/
 temp/
 *.tmp
@@ -95,8 +88,6 @@ temp/
 
 # Node
 node_modules/
-npm-debug.log
-yarn-error.log
 
 # Python
 __pycache__/
@@ -111,48 +102,35 @@ __pycache__/
 *.msp
 *.lnk
 
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-
 # Azure
 .azure/
 
-# Certificates and keys
+# Certificates
 *.pem
 *.key
 *.crt
 *.pfx
 !.gitkeep
 
-# Generated Ocelot merged config
+# .NET
+.fake
+
+# Generated Ocelot
 ocelot.json
 
-# Health report (infos sensibles)
+# Docs with sensitive info
 docs/HEALTH_REPORT.md
-
-# Guide de déploiement (infos sensibles)
 docs/DEPLOY_GUIDE.md
-
-# Présentations
 docs/DotnetNiger_Presentation*.pptx
 
-# User secrets export
+# User secrets
 user-secrets-dotnetniger.txt
 
 # Production configs
 prod-configs/
 
-# .NET fake build
-.fake
-
-# Endpoint documentation
-**/endpoints.txt
-**/endpoints.md
-
-# Local database manager (seed/migrations) - never pushed
+# Local DB manager
 DotnetNiger.DbManager/
 
-TODO.md
-Explication.md
+# Docker
+.docker/

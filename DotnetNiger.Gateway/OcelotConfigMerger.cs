@@ -50,15 +50,15 @@ public static class OcelotConfigMerger
         if (!Uri.TryCreate(devUrl, UriKind.Absolute, out var uri))
             return route;
 
-        if (obj["DownstreamHostAndPorts"] is JsonArray hosts && hosts.Count > 0 && hosts[0] is JsonObject hostObj)
-        {
-            hostObj["Host"] = JsonValue.Create(uri.Host);
-            hostObj["Port"] = JsonValue.Create(uri.Port);
+        obj["DownstreamHostAndPorts"] = new JsonArray(
+            new JsonObject
+            {
+                ["Host"] = JsonValue.Create(uri.Host),
+                ["Port"] = JsonValue.Create(uri.Port)
+            }
+        );
 
-            var scheme = obj["DownstreamScheme"]?.GetValue<string>();
-            if (scheme != "https" && uri.Scheme == "https")
-                obj["DownstreamScheme"] = JsonValue.Create("https");
-        }
+        obj["DownstreamScheme"] = JsonValue.Create(uri.Scheme);
 
         return route;
     }

@@ -1,0 +1,79 @@
+services:
+  identity:
+    build:
+      context: .
+      dockerfile: DotnetNiger.Identity/Dockerfile
+    container_name: dotnetniger-identity
+    restart: unless-stopped
+    ports:
+      - "5075:5075"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "${IDENTITY_DB_CONNECTION}"
+      Smtp__Host: "${SMTP_HOST}"
+      Smtp__Port: "${SMTP_PORT}"
+      Smtp__Username: "${SMTP_USERNAME}"
+      Smtp__Password: "${SMTP_PASSWORD}"
+      Smtp__FromEmail: "${SMTP_FROM_EMAIL}"
+      Smtp__SupportEmail: "${SMTP_SUPPORT_EMAIL}"
+      Authentication__Google__ClientId: "${GOOGLE_CLIENT_ID}"
+      Authentication__Google__ClientSecret: "${GOOGLE_CLIENT_SECRET}"
+      Authentication__GitHub__ClientId: "${GITHUB_CLIENT_ID}"
+      Authentication__GitHub__ClientSecret: "${GITHUB_CLIENT_SECRET}"
+      Jwt__Key: "${JWT_KEY}"
+      InternalApiKey: "${INTERNAL_API_KEY}"
+      FrontendBaseUrl: "${FRONTEND_BASE_URL}"
+      Cors__AllowedOrigins: "${CORS_ORIGINS}"
+
+  community:
+    build:
+      context: .
+      dockerfile: DotnetNiger.Community/Dockerfile
+    container_name: dotnetniger-community
+    restart: unless-stopped
+    ports:
+      - "5050:5050"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__DefaultConnection: "${COMMUNITY_DB_CONNECTION}"
+      Identity__BaseUrl: "http://identity:5075"
+      Identity__ApiKey: "${INTERNAL_API_KEY}"
+      Jwt__Authority: "http://identity:5075"
+      FrontendBaseUrl: "${FRONTEND_BASE_URL}"
+      PublicBaseUrl: "${PUBLIC_BASE_URL}"
+      Cors__AllowedOrigins: "${CORS_ORIGINS}"
+    depends_on:
+      - identity
+
+  gateway:
+    build:
+      context: .
+      dockerfile: DotnetNiger.Gateway/Dockerfile
+    container_name: dotnetniger-gateway
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      DownstreamServices__Identity__DevUrl: "http://identity:5075"
+      DownstreamServices__Community__DevUrl: "http://community:5050"
+      Gateway__BaseUrl: "${GATEWAY_BASE_URL}"
+      InternalApiKey: "${INTERNAL_API_KEY}"
+      Cors__AllowedOrigins: "${CORS_ORIGINS}"
+      Jwt__Key: "${JWT_KEY}"
+    depends_on:
+      - identity
+      - community
+
+  identity-web:
+    build:
+      context: .
+      dockerfile: DotnetNiger.Identity.Web/Dockerfile
+    container_name: dotnetniger-identity-web
+    restart: unless-stopped
+    ports:
+      - "5100:5100"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+    depends_on:
+      - identity

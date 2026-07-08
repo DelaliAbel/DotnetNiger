@@ -3,6 +3,7 @@ using DotnetNiger.Community.Application.Constants;
 using DotnetNiger.Community.Application.DTOs.Requests;
 using DotnetNiger.Community.Application.Services;
 using Microsoft.AspNetCore.Mvc;
+using SkiaSharp;
 
 namespace DotnetNiger.Community.Api.Controllers;
 

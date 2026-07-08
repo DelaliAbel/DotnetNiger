@@ -17,6 +17,7 @@ public class LoginModel : PageModel
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly AuthService _authService;
+    private readonly AccountService _accountService;
     private readonly ILogger<LoginModel> _logger;
     private readonly IMemoryCache _cache;
 
@@ -24,12 +25,14 @@ public class LoginModel : PageModel
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
         AuthService authService,
+        AccountService accountService,
         ILogger<LoginModel> logger,
         IMemoryCache cache)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _authService = authService;
+        _accountService = accountService;
         _logger = logger;
         _cache = cache;
     }
@@ -48,6 +51,8 @@ public class LoginModel : PageModel
 
     public string? ErrorMessage { get; set; }
 
+    public string? EmailConfirmMessage { get; set; }
+
     public IList<AuthenticationScheme> ExternalProviders { get; set; } = new List<AuthenticationScheme>();
 
     public async Task OnGetAsync()
@@ -63,6 +68,10 @@ public class LoginModel : PageModel
     public async Task<IActionResult> OnPostAsync()
     {
         ReturnUrl ??= "/";
+
+        ExternalProviders = (await _signInManager.GetExternalAuthenticationSchemesAsync())
+            .Where(s => !string.IsNullOrEmpty(s.DisplayName) && s.Name != "SmartScheme")
+            .ToList();
 
         var user = await _userManager.FindByEmailAsync(Email);
         if (user == null || !user.IsActive)
@@ -93,6 +102,32 @@ public class LoginModel : PageModel
         }
 
         ErrorMessage = ErrorMessages.InvalidCredentials;
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostResendConfirmationAsync(string confirmEmail, string? returnUrl)
+    {
+        ReturnUrl = returnUrl ?? "/";
+        ExternalProviders = (await _signInManager.GetExternalAuthenticationSchemesAsync())
+            .Where(s => !string.IsNullOrEmpty(s.DisplayName) && s.Name != "SmartScheme")
+            .ToList();
+
+        if (string.IsNullOrWhiteSpace(confirmEmail))
+        {
+            ErrorMessage = "Veuillez saisir votre adresse email.";
+            return Page();
+        }
+
+        try
+        {
+            await _accountService.ResendConfirmationCodeAsync(confirmEmail);
+            EmailConfirmMessage = $"Un nouveau code de confirmation a été envoyé à {confirmEmail}.";
+        }
+        catch (InvalidOperationException ex)
+        {
+            ErrorMessage = ex.Message;
+        }
+
         return Page();
     }
 

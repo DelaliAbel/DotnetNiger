@@ -2,14 +2,12 @@ using Asp.Versioning;
 using DotnetNiger.Common.Email;
 using DotnetNiger.Common.Auth.Responses;
 using DotnetNiger.Identity.Application.Services;
-using DotnetNiger.Identity.Api.Models;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
 namespace DotnetNiger.Identity.Api.Controllers;
@@ -22,20 +20,17 @@ public class ExternalAuthController : ControllerBase
 {
     private readonly AuthService _authService;
     private readonly SignInManager<ApplicationUser> _signInManager;
-    private readonly IMemoryCache _cache;
     private readonly IPermissionService _permissionService;
     private readonly SmtpOptions _smtp;
 
     public ExternalAuthController(
         AuthService authService,
         SignInManager<ApplicationUser> signInManager,
-        IMemoryCache cache,
         IPermissionService permissionService,
         IOptions<SmtpOptions> smtp)
     {
         _authService = authService;
         _signInManager = signInManager;
-        _cache = cache;
         _permissionService = permissionService;
         _smtp = smtp.Value;
     }
@@ -67,22 +62,8 @@ public class ExternalAuthController : ControllerBase
         returnUrl ??= $"{_smtp.FrontendBaseUrl.TrimEnd('/')}/auth/external-callback";
         try
         {
-            var (user, roles) = await _authService.HandleExternalLoginAsync("external");
-            var ticket = Guid.NewGuid().ToString("N");
-            var cacheEntry = new ExternalLoginTicket
-            {
-                UserId = user.Id,
-                Email = user.Email!,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                AvatarUrl = user.AvatarUrl,
-                TenantId = user.TenantId,
-                Roles = roles.ToList(),
-                IsActive = user.IsActive
-            };
-            _cache.Set($"external_login_{ticket}", cacheEntry, TimeSpan.FromMinutes(5));
-            var separator = returnUrl.Contains('?') ? '&' : '?';
-            return Redirect($"{returnUrl}{separator}ticket={ticket}");
+            var redirectUrl = await _authService.HandleExternalCallbackFrontendAsync(returnUrl);
+            return Redirect(redirectUrl);
         }
         catch (InvalidOperationException ex)
         {

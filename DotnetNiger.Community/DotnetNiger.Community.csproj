@@ -28,4 +28,9 @@
     <ProjectReference Include="..\DotnetNiger.Common\DotnetNiger.Common.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Remove="wwwroot\uploads\**" />
+    <Content Include="wwwroot\uploads\.gitkeep" />
+  </ItemGroup>
+
 </Project>

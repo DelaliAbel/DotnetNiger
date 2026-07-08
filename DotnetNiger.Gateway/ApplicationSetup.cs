@@ -34,6 +34,9 @@ public static class ApplicationSetup
                 });
         }
 
+        builder.Services.AddHttpClient();
+        builder.Services.AddHealthChecks();
+
         var allowedOrigins = builder.Configuration["Cors:AllowedOrigins"];
         builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
         {

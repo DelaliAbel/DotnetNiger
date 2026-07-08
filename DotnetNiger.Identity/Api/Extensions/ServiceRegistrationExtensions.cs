@@ -36,6 +36,8 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<IExternalServiceService, ExternalServiceService>();
         services.AddScoped<GdprService>();
         services.AddScoped<GdprExportService>();
+        services.AddScoped<ISupportService, SupportService>();
+        services.AddScoped<IAuditLogService, AuditLogService>();
 
         return services;
     }

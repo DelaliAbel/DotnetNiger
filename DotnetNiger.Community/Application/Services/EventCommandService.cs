@@ -12,11 +12,19 @@ using Microsoft.Extensions.Logging;
 namespace DotnetNiger.Community.Application.Services;
 
 /// <summary>Commandes de modification des événements.</summary>
-public class EventCommandService(AppDbContext db, IServiceScopeFactory scopeFactory, ILogger<EventCommandService> logger) : IEventCommandService
+public class EventCommandService(AppDbContext db, IServiceScopeFactory scopeFactory, ILogger<EventCommandService> logger, ICertificateService certificateService) : IEventCommandService
 {
     /// <inheritdoc/>
-    public async Task<EventResponse> CreateAsync(CreateEventRequest request, Guid userId)
+    public async Task<EventResponse> CreateAsync(CreateEventRequest request, Guid userId, bool isAdmin, bool isCollaborator)
     {
+        var (canCreate, forceUnpublished, error) = await certificateService.CanCreateContentAsync(userId, isAdmin, isCollaborator);
+        if (!canCreate)
+        {
+            if (error != null) throw new InvalidOperationException(error);
+            throw new UnauthorizedAccessException();
+        }
+        if (forceUnpublished) request.IsPublished = false;
+
         var ev = BuildEventEntity(request, userId);
 
         AddEventMedia(ev, request);

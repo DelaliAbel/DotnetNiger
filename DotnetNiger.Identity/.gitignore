@@ -9,3 +9,4 @@ logs/
 *.db-wal
 appsettings.Development.json
 appsettings.Production.json
+endpoints.md

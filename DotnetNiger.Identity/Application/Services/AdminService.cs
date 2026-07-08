@@ -17,14 +17,17 @@ public class AdminService : IAdminService
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IEmailSender<ApplicationUser> _emailSender;
     private readonly SmtpOptions _smtp;
+    private readonly IAuditLogService _auditLog;
 
     public AdminService(IdentityDbContext db, UserManager<ApplicationUser> userManager,
-        IEmailSender<ApplicationUser> emailSender, IOptions<SmtpOptions> smtp)
+        IEmailSender<ApplicationUser> emailSender, IOptions<SmtpOptions> smtp,
+        IAuditLogService auditLog)
     {
         _db = db;
         _userManager = userManager;
         _emailSender = emailSender;
         _smtp = smtp.Value;
+        _auditLog = auditLog;
     }
 
     public async Task InviteAsync(string email, string role)
@@ -51,6 +54,7 @@ public class AdminService : IAdminService
             throw new InvalidOperationException($"Erreur: {string.Join(", ", result.Errors.Select(e => e.Description))}");
 
         await _userManager.AddToRoleAsync(user, role);
+        await _auditLog.LogAsync("User", user.Id, "Invite", $"Invitation envoyée à {email} avec le rôle {role}");
 
         var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
         var inviteUrl = $"{_smtp.AppBaseUrl.TrimEnd('/')}/Account/Register?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(token)}";
@@ -98,6 +102,8 @@ public class AdminService : IAdminService
 
         user.IsActive = isActive;
         var result = await _userManager.UpdateAsync(user);
+        if (result.Succeeded)
+            await _auditLog.LogAsync("User", id, isActive ? "Activate" : "Deactivate");
         return result.Succeeded;
     }
 
@@ -113,6 +119,8 @@ public class AdminService : IAdminService
         if (currentRoles.Contains(roleName)) return true;
 
         var result = await _userManager.AddToRoleAsync(user, roleName);
+        if (result.Succeeded)
+            await _auditLog.LogAsync("User", userId, "AssignRole", $"Rôle {roleName} assigné");
         return result.Succeeded;
     }
 
@@ -120,7 +128,10 @@ public class AdminService : IAdminService
     {
         var user = await _userManager.FindByIdAsync(id.ToString());
         if (user is null) return false;
+        var email = user.Email;
         var result = await _userManager.DeleteAsync(user);
+        if (result.Succeeded)
+            await _auditLog.LogAsync("User", id, "Delete", $"Utilisateur {email} supprimé");
         return result.Succeeded;
     }
 
@@ -177,6 +188,7 @@ public class AdminService : IAdminService
                 string.Join(", ", result.Errors.Select(e => e.Description)));
 
         await _userManager.AddToRoleAsync(user, request.Role ?? RoleConstants.User);
+        await _auditLog.LogAsync("User", user.Id, "Create", $"Utilisateur {request.Email} créé par admin");
 
         var roles = await _userManager.GetRolesAsync(user);
         return new UserResponse(user.Id, user.Email!, user.FirstName, user.LastName,

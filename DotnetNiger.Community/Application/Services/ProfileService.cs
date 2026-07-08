@@ -19,6 +19,10 @@ public partial class ProfileService(AppDbContext db, IIdentityApiClient identity
         if (member is null) return null;
 
         var profile = MapProfile(member);
+        profile.Username = member.Email;
+
+        var identityUser = await identityApi.GetUserAsync(userId);
+        if (identityUser is not null) profile.IsActive = identityUser.IsActive;
 
         var cert = await db.Certificates
             .Where(c => c.UserId == userId)
@@ -44,26 +48,18 @@ public partial class ProfileService(AppDbContext db, IIdentityApiClient identity
         UpdateMemberFields(member, request);
         await SyncIdentityAsync(userId, request);
         if (request.Skills is not null)
-            UpdateSkills(member, request.Skills);
+            await UpdateSkillsAsync(member, request.Skills);
         member.UpdatedAt = DateTime.UtcNow;
 
-        try
-        {
-            await db.SaveChangesAsync();
-        }
-        catch (DbUpdateException) when (member.Id != Guid.Empty)
-        {
-            db.Entry(member).State = EntityState.Detached;
-            member = await db.Members.Include(m => m.SocialLinks).Include(m => m.Skills).FirstOrDefaultAsync(m => m.Id == userId);
-            if (member is null) throw;
-            UpdateMemberFields(member, request);
-            if (request.Skills is not null)
-                UpdateSkills(member, request.Skills);
-            member.UpdatedAt = DateTime.UtcNow;
-            await db.SaveChangesAsync();
-        }
+        await db.SaveChangesAsync();
 
-        return MapProfile(member);
+        var profile = MapProfile(member);
+        profile.Username = member.Email;
+
+        var identityUser = await identityApi.GetUserAsync(userId);
+        if (identityUser is not null) profile.IsActive = identityUser.IsActive;
+
+        return profile;
     }
 
     private async Task<Member> EnsureMemberExistsAsync(Guid userId)
@@ -80,6 +76,12 @@ public partial class ProfileService(AppDbContext db, IIdentityApiClient identity
             {
                 Id = userId,
                 Email = identityUser?.Email ?? string.Empty,
+                FullName = identityUser?.FullName ?? string.Empty,
+                Bio = identityUser?.Bio ?? string.Empty,
+                AvatarUrl = identityUser?.AvatarUrl ?? string.Empty,
+                Country = identityUser?.Country ?? string.Empty,
+                City = identityUser?.City ?? string.Empty,
+                PhoneNumber = identityUser?.PhoneNumber ?? string.Empty,
                 SocialLinks = new List<SocialLink>(),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
@@ -115,9 +117,13 @@ public partial class ProfileService(AppDbContext db, IIdentityApiClient identity
         if (request.Position is not null) member.Position = request.Position;
     }
 
-    private void UpdateSkills(Member member, List<string> skills)
+    private async Task UpdateSkillsAsync(Member member, List<string> skills)
     {
-        db.MemberSkills.RemoveRange(member.Skills);
+        var oldIds = member.Skills.Select(s => s.Id).ToList();
+        if (oldIds.Count != 0)
+        {
+            await db.MemberSkills.Where(s => oldIds.Contains(s.Id)).ExecuteDeleteAsync();
+        }
         member.Skills = skills.Select(s => new MemberSkill
         {
             Id = Guid.NewGuid(),

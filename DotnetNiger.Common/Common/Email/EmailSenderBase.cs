@@ -71,7 +71,14 @@ public class EmailSenderBase
     }
 
     using var message = BuildMessage(toEmail, subject, htmlBody, replyTo);
-    await SendViaSmtpAsync(message);
+    try
+    {
+      await SendViaSmtpAsync(message);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogWarning(ex, "SMTP indisponible, email non envoyé. To={To} | Subject={Subject} | Body={Body}", toEmail, subject, htmlBody);
+    }
   }
 
   /// <summary>Envoie un email à plusieurs destinataires (newsletter).</summary>

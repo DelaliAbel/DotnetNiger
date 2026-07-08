@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using DotnetNiger.Community.Application.DTOs.Requests;
 using DotnetNiger.Community.Application.DTOs.Responses;
 
@@ -12,5 +11,5 @@ public interface ICertificateService
     Task<CertificateResponse?> RejectCertificateAsync(Guid certificateId, string reason);
     Task<List<CertificateAdminDto>> GetCertificatesAsync(string? status = null);
     Task<bool> HasApprovedCertificateAsync(Guid userId);
-    Task<(bool allowed, bool forceUnpublished, string? error)> CanCreateContentAsync(Guid userId, ClaimsPrincipal user);
+    Task<(bool allowed, bool forceUnpublished, string? error)> CanCreateContentAsync(Guid userId, bool isAdmin, bool isCollaborator);
 }

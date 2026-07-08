@@ -34,6 +34,9 @@ jobs:
       - name: Publish Gateway
         run: dotnet publish DotnetNiger.Gateway/DotnetNiger.Gateway.csproj -c Release -o publish/gateway --no-restore
 
+      - name: Clean uploads from Community publish
+        run: rm -rf publish/community/wwwroot/uploads
+
       - name: Push to deploy/identity
         run: |
           cd publish/identity

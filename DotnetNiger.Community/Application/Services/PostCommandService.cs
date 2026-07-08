@@ -10,11 +10,19 @@ using Microsoft.EntityFrameworkCore;
 namespace DotnetNiger.Community.Application.Services;
 
 /// <summary>Commandes de modification des articles.</summary>
-public class PostCommandService(AppDbContext db, INotificationService notification, ILogger<PostCommandService> logger) : IPostCommandService
+public class PostCommandService(AppDbContext db, INotificationService notification, ILogger<PostCommandService> logger, ICertificateService certificateService) : IPostCommandService
 {
     /// <inheritdoc/>
-    public async Task<PostResponse> CreateAsync(CreatePostRequest request, Guid authorId, string authorName)
+    public async Task<PostResponse> CreateAsync(CreatePostRequest request, Guid authorId, string authorName, bool isAdmin, bool isCollaborator)
     {
+        var (canCreate, forceUnpublished, error) = await certificateService.CanCreateContentAsync(authorId, isAdmin, isCollaborator);
+        if (!canCreate)
+        {
+            if (error != null) throw new InvalidOperationException(error);
+            throw new UnauthorizedAccessException();
+        }
+        if (forceUnpublished) request.IsPublished = false;
+
         var slug = await EnsureUniqueSlugAsync(SlugGenerator.GenerateSlug(request.Title));
         var post = new Post
         {

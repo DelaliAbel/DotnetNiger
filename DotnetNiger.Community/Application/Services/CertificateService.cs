@@ -1,5 +1,3 @@
-using System.Security.Claims;
-using DotnetNiger.Common.Constants;
 using DotnetNiger.Community.Application.Constants;
 using DotnetNiger.Community.Infrastructure;
 using DotnetNiger.Community.Application.DTOs.Requests;
@@ -11,7 +9,7 @@ using System.ComponentModel.DataAnnotations;
 namespace DotnetNiger.Community.Application.Services;
 
 /// <summary>Gestion des certificats membres : soumission, approbation, rejet et consultation.</summary>
-public class CertificateService(AppDbContext db) : ICertificateService
+public class CertificateService(AppDbContext db, IIdentityApiClient identityApi) : ICertificateService
 {
     public async Task<CertificateResponse> SubmitCertificateAsync(Guid userId, CertificateSubmissionRequest request)
     {
@@ -60,7 +58,21 @@ public class CertificateService(AppDbContext db) : ICertificateService
         var member = await db.Members.FirstOrDefaultAsync(m => m.Id == userId);
         if (member is null)
         {
-            member = new Member { Id = userId, SocialLinks = new List<SocialLink>(), CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+            var identityUser = await identityApi.GetUserAsync(userId);
+            member = new Member
+            {
+                Id = userId,
+                Email = identityUser?.Email ?? string.Empty,
+                FullName = identityUser?.FullName ?? string.Empty,
+                Bio = identityUser?.Bio ?? string.Empty,
+                AvatarUrl = identityUser?.AvatarUrl ?? string.Empty,
+                Country = identityUser?.Country ?? string.Empty,
+                City = identityUser?.City ?? string.Empty,
+                PhoneNumber = identityUser?.PhoneNumber ?? string.Empty,
+                SocialLinks = new List<SocialLink>(),
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
             db.Members.Add(member);
         }
         return member;
@@ -154,12 +166,9 @@ public class CertificateService(AppDbContext db) : ICertificateService
         return await db.Certificates.AnyAsync(c => c.UserId == userId && c.Status == "Approved");
     }
 
-    public async Task<(bool allowed, bool forceUnpublished, string? error)> CanCreateContentAsync(Guid userId, ClaimsPrincipal user)
+    public async Task<(bool allowed, bool forceUnpublished, string? error)> CanCreateContentAsync(Guid userId, bool isAdmin, bool isCollaborator)
     {
-        var isAdmin = user.IsInRole(RoleConstants.Admin) || user.IsInRole(RoleConstants.SuperAdmin);
         if (isAdmin) return (true, false, null);
-
-        var isCollaborator = user.IsInRole(RoleConstants.Collaborator);
         if (!isCollaborator) return (false, false, null);
 
         var hasCert = await HasApprovedCertificateAsync(userId);

@@ -59,7 +59,13 @@ public class ImageProcessingService(IWebHostEnvironment env, IHttpContextAccesso
     {
         try
         {
-            using var codec = SKCodec.Create(stream);
+            var pos = stream.Position;
+            using var local = new MemoryStream();
+            stream.CopyTo(local);
+            local.Position = 0;
+            stream.Position = pos;
+
+            using var codec = SKCodec.Create(local);
             if (codec == null)
                 return Messages.Upload.InvalidImage;
 

@@ -13,7 +13,7 @@ namespace DotnetNiger.Community.Api.Controllers;
 /// <summary>Gestion des ressources pédagogiques (vidéos, documents, templates, ebooks...).</summary>
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
-public class ResourcesController(IResourceQueryService resourceQuery, IResourceCommandService resourceCommand, ICertificateService certificateService) : BaseController
+public class ResourcesController(IResourceQueryService resourceQuery, IResourceCommandService resourceCommand) : BaseController
 {
     /// <summary>Recherche et filtre les ressources avec pagination.</summary>
     /// <param name="resourceType">Type de ressource.</param>
@@ -34,6 +34,18 @@ public class ResourcesController(IResourceQueryService resourceQuery, IResourceC
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
         var result = await resourceQuery.GetAllAsync(resourceType, level, query, tag, categoryId, page, pageSize, after);
+        return Ok(new { Success = true, Data = result });
+    }
+
+    /// <summary>Retourne les ressources créées par l'utilisateur courant.</summary>
+    [HttpGet("mine")]
+    [Authorize]
+    public async Task<IActionResult> GetMine([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
+        var userId = GetUserId();
+        var result = await resourceQuery.GetAllAsync(null, null, null, null, null, page, pageSize, null, userId);
         return Ok(new { Success = true, Data = result });
     }
 
@@ -100,12 +112,15 @@ public class ResourcesController(IResourceQueryService resourceQuery, IResourceC
     public async Task<IActionResult> Create([FromBody] CreateResourceRequest request)
     {
         var userId = GetUserId();
-        var (canCreate, _, error) = await certificateService.CanCreateContentAsync(userId, User);
-        if (!canCreate)
-            return error != null ? BadRequest(new { Success = false, Message = error }) : Forbid();
-
-        var resource = await resourceCommand.CreateAsync(request, userId);
-        return CreatedAtAction(nameof(GetById), new { id = resource.Id }, new { Success = true, Data = resource });
+        try
+        {
+            var resource = await resourceCommand.CreateAsync(request, userId, IsAdmin(), IsCollaborator());
+            return CreatedAtAction(nameof(GetById), new { id = resource.Id }, new { Success = true, Data = resource });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Success = false, Message = ex.Message });
+        }
     }
 
     /// <summary>Modifie une ressource existante (auteur ou admin).</summary>

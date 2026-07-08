@@ -10,7 +10,7 @@ namespace DotnetNiger.Community.Application.Services;
 public class PostQueryService(AppDbContext db) : IPostQueryService
 {
     /// <inheritdoc/>
-    public async Task<PaginatedResponse<PostResponse>> GetAllAsync(string? published, string? category, string? tag, string? query, int page, int pageSize, Guid? after)
+    public async Task<PaginatedResponse<PostResponse>> GetAllAsync(string? published, string? category, string? tag, string? query, int page, int pageSize, Guid? after, Guid? authorId = null)
     {
         var q = BuildQuery();
 
@@ -22,6 +22,7 @@ public class PostQueryService(AppDbContext db) : IPostQueryService
             q = q.Where(p => p.PostTags.Any(pt => pt.Tag.Slug == tag));
         if (!string.IsNullOrWhiteSpace(query))
             q = q.Where(p => p.Title.Contains(query) || p.Content.Contains(query));
+        if (authorId.HasValue) q = q.Where(p => p.AuthorId == authorId.Value);
 
         int total = await q.CountAsync();
         List<Post> items;

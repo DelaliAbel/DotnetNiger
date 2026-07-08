@@ -10,3 +10,5 @@ logs/
 appsettings.Development.json
 appsettings.Production.json
 wwwroot/uploads/*
+!wwwroot/uploads/.gitkeep
+endpoints.md

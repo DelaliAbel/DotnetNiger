@@ -16,8 +16,7 @@ public class EventsController(
     IEventQueryService eventQuery,
     IEventCommandService eventCommand,
     IEventModerationService eventModeration,
-    IEventRegistrationService eventRegistration,
-    ICertificateService certificateService) : BaseController
+    IEventRegistrationService eventRegistration) : BaseController
 {
     [HttpGet]
     public async Task<IActionResult> GetAll(
@@ -41,6 +40,17 @@ public class EventsController(
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
         var events = await eventQuery.GetUpcomingAsync(page, pageSize);
         return Ok(new { Success = true, Data = events });
+    }
+
+    [HttpGet("mine")]
+    [Authorize]
+    public async Task<IActionResult> GetMine([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
+        var userId = GetUserId();
+        var result = await eventQuery.GetAllAsync(null, null, null, null, null, null, null, userId, page, pageSize, null);
+        return Ok(new { Success = true, Data = result });
     }
 
     [HttpGet("{id:guid}", Order = 1)]
@@ -75,12 +85,15 @@ public class EventsController(
     public async Task<IActionResult> Create([FromBody] CreateEventRequest request)
     {
         var userId = GetUserId();
-        var (canCreate, forceUnpublished, error) = await certificateService.CanCreateContentAsync(userId, User);
-        if (!canCreate)
-            return error != null ? BadRequest(new { Success = false, Message = error }) : Forbid();
-        if (forceUnpublished) request.IsPublished = false;
-        var ev = await eventCommand.CreateAsync(request, userId);
-        return CreatedAtAction(nameof(GetById), new { id = ev.Id }, new { Success = true, Data = ev });
+        try
+        {
+            var ev = await eventCommand.CreateAsync(request, userId, IsAdmin(), IsCollaborator());
+            return CreatedAtAction(nameof(GetById), new { id = ev.Id }, new { Success = true, Data = ev });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Success = false, Message = ex.Message });
+        }
     }
 
     [HttpPut("{id:guid}")]

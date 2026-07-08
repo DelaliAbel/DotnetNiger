@@ -9,11 +9,17 @@ using Microsoft.EntityFrameworkCore;
 namespace DotnetNiger.Community.Application.Services;
 
 /// <summary>Services d'écriture pour les ressources pédagogiques (création, modification, suppression).</summary>
-public class ResourceCommandService(AppDbContext db) : IResourceCommandService
+public class ResourceCommandService(AppDbContext db, ICertificateService certificateService) : IResourceCommandService
 {
     /// <summary>Crée une ressource avec ses catégories et tags associés.</summary>
-    public async Task<ResourceResponse> CreateAsync(CreateResourceRequest request, Guid userId)
+    public async Task<ResourceResponse> CreateAsync(CreateResourceRequest request, Guid userId, bool isAdmin, bool isCollaborator)
     {
+        var (canCreate, _, error) = await certificateService.CanCreateContentAsync(userId, isAdmin, isCollaborator);
+        if (!canCreate)
+        {
+            if (error != null) throw new InvalidOperationException(error);
+            throw new UnauthorizedAccessException();
+        }
         var resource = new Resource
         {
             Id = Guid.NewGuid(),

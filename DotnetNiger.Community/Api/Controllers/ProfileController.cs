@@ -1,5 +1,4 @@
 using Asp.Versioning;
-using System.Security.Claims;
 using DotnetNiger.Community.Application.Constants;
 using DotnetNiger.Community.Application.DTOs.Requests;
 using DotnetNiger.Community.Application.Services;
@@ -14,7 +13,7 @@ namespace DotnetNiger.Community.Api.Controllers;
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
 [Authorize]
-public class ProfileController(IProfileService profileService, ICertificateService certificateService, IIdentityApiClient identityApi) : BaseController
+public class ProfileController(IProfileService profileService, ICertificateService certificateService) : BaseController
 {
     /// <summary>Récupère le profil complet de l'utilisateur connecté.</summary>
     [HttpGet("me")]
@@ -23,13 +22,6 @@ public class ProfileController(IProfileService profileService, ICertificateServi
         var userId = GetUserId();
         var profile = await profileService.GetAsync(userId);
         if (profile is null) return NotFound(new { Success = false, Message = Messages.Profile.NotFound });
-
-        profile.Email = User.FindFirstValue(ClaimTypes.Email) ?? "";
-        profile.Username = User.FindFirstValue(ClaimTypes.Name) ?? profile.Email;
-        profile.Roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).Distinct().ToList();
-
-        var identityUser = await identityApi.GetUserAsync(userId);
-        if (identityUser is not null) profile.IsActive = identityUser.IsActive;
 
         return Ok(new { Success = true, Data = profile });
     }
@@ -42,13 +34,6 @@ public class ProfileController(IProfileService profileService, ICertificateServi
         var userId = GetUserId();
         var profile = await profileService.UpdateAsync(userId, request);
         if (profile is null) return NotFound(new { Success = false, Message = Messages.Profile.NotFound });
-
-        profile.Email = User.FindFirstValue(ClaimTypes.Email) ?? "";
-        profile.Username = User.FindFirstValue(ClaimTypes.Name) ?? profile.Email;
-        profile.Roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).Distinct().ToList();
-
-        var identityUser = await identityApi.GetUserAsync(userId);
-        if (identityUser is not null) profile.IsActive = identityUser.IsActive;
 
         return Ok(new { Success = true, Data = profile });
     }

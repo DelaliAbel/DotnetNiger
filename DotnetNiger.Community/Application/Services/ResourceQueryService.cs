@@ -12,9 +12,9 @@ namespace DotnetNiger.Community.Application.Services;
 public class ResourceQueryService(AppDbContext db) : IResourceQueryService
 {
     /// <summary>Recherche paginée avec filtres (type, niveau, tag, catégorie, mot-clé). Supporte le curseur (after).</summary>
-    public async Task<PaginatedResponse<ResourceResponse>> GetAllAsync(string? resourceType, string? level, string? query, string? tag, Guid? categoryId, int page = 1, int pageSize = 10, Guid? after = null)
+    public async Task<PaginatedResponse<ResourceResponse>> GetAllAsync(string? resourceType, string? level, string? query, string? tag, Guid? categoryId, int page = 1, int pageSize = 10, Guid? after = null, Guid? createdBy = null)
     {
-        var q = BuildBaseQuery(resourceType, level, query, tag, categoryId);
+        var q = BuildBaseQuery(resourceType, level, query, tag, categoryId, createdBy);
 
         List<ResourceResponse> items;
         int total;
@@ -43,7 +43,7 @@ public class ResourceQueryService(AppDbContext db) : IResourceQueryService
         return new PaginatedResponse<ResourceResponse> { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }
 
-    private IQueryable<Resource> BuildBaseQuery(string? resourceType, string? level, string? query, string? tag, Guid? categoryId)
+    private IQueryable<Resource> BuildBaseQuery(string? resourceType, string? level, string? query, string? tag, Guid? categoryId, Guid? createdBy = null)
     {
         var q = db.Resources
             .AsNoTracking()
@@ -60,6 +60,7 @@ public class ResourceQueryService(AppDbContext db) : IResourceQueryService
             q = q.Where(r => r.Title.Contains(query) || r.Description.Contains(query));
         if (categoryId.HasValue)
             q = q.Where(r => r.ResourceCategories.Any(rc => rc.CategoryId == categoryId.Value));
+        if (createdBy.HasValue) q = q.Where(r => r.CreatedBy == createdBy.Value);
 
         return q;
     }

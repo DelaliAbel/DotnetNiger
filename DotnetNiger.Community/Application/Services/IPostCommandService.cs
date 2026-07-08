@@ -7,7 +7,7 @@ namespace DotnetNiger.Community.Application.Services;
 public interface IPostCommandService
 {
     /// <summary>Crée un article.</summary>
-    Task<PostResponse> CreateAsync(CreatePostRequest request, Guid authorId, string authorName);
+    Task<PostResponse> CreateAsync(CreatePostRequest request, Guid authorId, string authorName, bool isAdmin, bool isCollaborator);
     /// <summary>Modifie un article (vérifie le propriétaire ou le rôle admin).</summary>
     Task<PostResponse?> UpdateAsync(Guid id, UpdatePostRequest request, Guid userId, bool isAdmin);
     /// <summary>Supprime définitivement un article.</summary>

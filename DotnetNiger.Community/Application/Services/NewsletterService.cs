@@ -60,6 +60,19 @@ public class NewsletterService(AppDbContext db) : INewsletterService
         return true;
     }
 
+    /// <summary>Supprime un abonné par email (réservé admin).</summary>
+    public async Task<bool> DeleteByEmailAsync(string email)
+    {
+        var sub = await db.Set<NewsletterSubscription>()
+            .FirstOrDefaultAsync(s => s.Email == email);
+
+        if (sub is null) return false;
+
+        db.Remove(sub);
+        await db.SaveChangesAsync();
+        return true;
+    }
+
     /// <summary>Liste paginée des abonnés, du plus récent au plus ancien.</summary>
     public async Task<PaginatedResponse<NewsletterSubscriptionResponse>> GetAllAsync(int page = 1, int pageSize = 10)
     {

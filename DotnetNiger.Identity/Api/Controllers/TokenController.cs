@@ -34,14 +34,7 @@ public class TokenController : ControllerBase
     [HttpPost("refresh")]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
     {
-        HttpContext.Request.ContentType = "application/x-www-form-urlencoded";
-        HttpContext.Request.Form = new FormCollection(new Dictionary<string, Microsoft.Extensions.Primitives.StringValues>
-        {
-            ["grant_type"] = "refresh_token",
-            ["refresh_token"] = request.RefreshToken,
-            ["client_id"] = "web-ui",
-            ["scope"] = "openid profile email roles offline_access"
-        });
+        _tokenService.SetupRefreshTokenContext(HttpContext, request.RefreshToken);
         return await TokenExchange();
     }
 }
