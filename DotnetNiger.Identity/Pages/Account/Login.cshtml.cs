@@ -180,13 +180,21 @@ public class LoginModel : PageModel
         }
     }
 
+    private string FrontendUrl() =>
+        HttpContext.RequestServices.GetRequiredService<Microsoft.Extensions.Configuration.IConfiguration>()
+            .GetValue<string>("FrontendBaseUrl") ?? "http://localhost:5201";
+
     private IActionResult SafeLocalRedirect(string url)
     {
-        return Url.IsLocalUrl(url) ? LocalRedirect(url) : RedirectToPage("/Index");
+        if (url == "/" || string.IsNullOrEmpty(url))
+            return Redirect(FrontendUrl());
+        return Url.IsLocalUrl(url) ? LocalRedirect(url) : Redirect(FrontendUrl());
     }
 
     private IActionResult SafeOrTicketRedirect(ApplicationUser user, string returnUrl, List<string> roles)
     {
+        if (returnUrl == "/" || string.IsNullOrEmpty(returnUrl))
+            return RedirectToFrontendWithTicket(user, FrontendUrl());
         if (Url.IsLocalUrl(returnUrl))
             return LocalRedirect(returnUrl);
         return RedirectToFrontendWithTicket(user, returnUrl);
