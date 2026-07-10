@@ -17,7 +17,6 @@ public class LoginModel : PageModel
     private readonly SignInManager<ApplicationUser> _signInManager;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly AuthService _authService;
-    private readonly AccountService _accountService;
     private readonly ILogger<LoginModel> _logger;
     private readonly IMemoryCache _cache;
 
@@ -25,14 +24,12 @@ public class LoginModel : PageModel
         SignInManager<ApplicationUser> signInManager,
         UserManager<ApplicationUser> userManager,
         AuthService authService,
-        AccountService accountService,
         ILogger<LoginModel> logger,
         IMemoryCache cache)
     {
         _signInManager = signInManager;
         _userManager = userManager;
         _authService = authService;
-        _accountService = accountService;
         _logger = logger;
         _cache = cache;
     }
@@ -58,8 +55,13 @@ public class LoginModel : PageModel
     public async Task OnGetAsync()
     {
         ReturnUrl ??= "/";
+
         if (Request.Query.TryGetValue("error", out var errorVal) && !string.IsNullOrEmpty(errorVal))
             ErrorMessage = Uri.UnescapeDataString(errorVal!);
+
+        if (Request.Query.TryGetValue("emailConfirmed", out var confirmed) && confirmed == "true")
+            EmailConfirmMessage = "Votre email a ete confirme avec succes. Vous pouvez maintenant vous connecter.";
+
         ExternalProviders = (await _signInManager.GetExternalAuthenticationSchemesAsync())
             .Where(s => !string.IsNullOrEmpty(s.DisplayName) && s.Name != "SmartScheme")
             .ToList();
@@ -118,10 +120,11 @@ public class LoginModel : PageModel
             return Page();
         }
 
+        var accountService = HttpContext.RequestServices.GetRequiredService<AccountService>();
         try
         {
-            await _accountService.ResendConfirmationCodeAsync(confirmEmail);
-            EmailConfirmMessage = $"Un nouveau code de confirmation a été envoyé à {confirmEmail}.";
+            await accountService.ResendConfirmationCodeAsync(confirmEmail);
+            EmailConfirmMessage = $"Un nouveau code de confirmation a ete envoye a {confirmEmail}.";
         }
         catch (InvalidOperationException ex)
         {
