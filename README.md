@@ -50,7 +50,8 @@ Base: `https://identity-dotnetniger.runasp.net/api/v{version}` (via Gateway: `ht
 | POST | `login` | Connexion email/mot de passe |
 | POST | `register` | Inscription utilisateur (envoi code confirmation) |
 | POST | `confirm-email` | Confirmation email par code |
-| GET | `confirm-email` | Confirmation email par lien |
+| GET | `confirm-email` | Confirmation email par lien (API) |
+| GET | `/Account/ConfirmEmail` | Page dediee de confirmation email (Razor Pages) |
 | POST | `resend-code` | Renvoyer code confirmation |
 | POST | `verify-2fa` | Vérification 2FA |
 | POST | `verify-2fa-recovery` | Vérification 2FA (code récupération) |
@@ -491,43 +492,42 @@ La Gateway écoute sur `https://dotnetniger.runasp.net` et proxyfie vers Identit
 
 ---
 
-## Développement local
+## Base de donnees
 
-### Prérequis
+La base de donnees est hebergee sur **databaseasp.net** (`db57026`). Les connexions sont configurees dans chaque `appsettings.json` (developpement) et `appsettings.Production.json` (production, gitignore).
+
+Les migrations EF Core sont appliquees via le projet **DotnetNiger.DbManager** :
+```bash
+dotnet run --project DotnetNiger.DbManager
+```
+Ce projet applique les migrations Identity + Community sur la meme base, puis seed le tenant, les roles, les permissions et le compte super admin.
+
+## Developpement local
+
+### Prerequis
 
 - .NET 9 SDK
 - SQL Server (LocalDB, Docker, ou instance distante)
 - Visual Studio 2022 / Rider / VS Code
 
-### Configurer les bases de données
-
-Chaque projet a son propre `appsettings.Development.json` :
-
-- `DotnetNiger.Identity` → base Identity
-- `DotnetNiger.Community` → base Community
-- `DotnetNiger.Gateway` → pas de base directe
-- `DotnetNiger.Identity.Web` → pas de base directe
-
-Les fichiers `appsettings.Development.json` sont gitignorés. Copier depuis `appsettings.json` et adapter les chaînes de connexion.
-
 ### Lancer les projets
 
 ```bash
-# Démarrer Identity (port 5075)
+# Demarrer Identity (port 5075)
 cd DotnetNiger.Identity
-dotnet run
+dotnet run --urls http://localhost:5075
 
-# Démarrer Community (port 5050)
+# Demarrer Community (port 5050)
 cd DotnetNiger.Community
-dotnet run
+dotnet run --urls http://localhost:5050
 
-# Démarrer Gateway (port 5000)
+# Demarrer Gateway (port 5000)
 cd DotnetNiger.Gateway
-dotnet run
+dotnet run --urls http://localhost:5000
 
-# Démarrer Identity.Web (port 5100)
+# Demarrer Identity.Web (port 5100)
 cd DotnetNiger.Identity.Web
-dotnet run
+dotnet run --urls http://localhost:5100
 ```
 
 ### Docker (alternative)

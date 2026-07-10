@@ -71,40 +71,49 @@ public class LoginModel : PageModel
     {
         ReturnUrl ??= "/";
 
-        ExternalProviders = (await _signInManager.GetExternalAuthenticationSchemesAsync())
-            .Where(s => !string.IsNullOrEmpty(s.DisplayName) && s.Name != "SmartScheme")
-            .ToList();
-
-        var user = await _userManager.FindByEmailAsync(Email);
-        if (user == null || !user.IsActive)
+        try
         {
+            ExternalProviders = (await _signInManager.GetExternalAuthenticationSchemesAsync())
+                .Where(s => !string.IsNullOrEmpty(s.DisplayName) && s.Name != "SmartScheme")
+                .ToList();
+
+            var user = await _userManager.FindByEmailAsync(Email);
+            if (user == null || !user.IsActive)
+            {
+                ErrorMessage = ErrorMessages.InvalidCredentials;
+                return Page();
+            }
+
+            var result = await _signInManager.PasswordSignInAsync(user, Password, RememberMe, lockoutOnFailure: true);
+            if (result.Succeeded)
+            {
+                var decoded = System.Net.WebUtility.HtmlDecode(ReturnUrl);
+                if (Url.IsLocalUrl(decoded))
+                    return LocalRedirect(decoded);
+                return RedirectToFrontendWithTicket(user, decoded);
+            }
+
+            if (result.IsLockedOut)
+            {
+                ErrorMessage = ErrorMessages.AccountLocked;
+                return Page();
+            }
+
+            if (result.RequiresTwoFactor)
+            {
+                ErrorMessage = ErrorMessages.TwoFactorRequired;
+                return Page();
+            }
+
             ErrorMessage = ErrorMessages.InvalidCredentials;
             return Page();
         }
-
-        var result = await _signInManager.PasswordSignInAsync(user, Password, RememberMe, lockoutOnFailure: true);
-        if (result.Succeeded)
+        catch (Exception ex)
         {
-            var decoded = System.Net.WebUtility.HtmlDecode(ReturnUrl);
-            if (Url.IsLocalUrl(decoded))
-                return LocalRedirect(decoded);
-            return RedirectToFrontendWithTicket(user, decoded);
-        }
-
-        if (result.IsLockedOut)
-        {
-            ErrorMessage = ErrorMessages.AccountLocked;
+            _logger.LogError(ex, "Login error for {Email}", Email);
+            ErrorMessage = "Une erreur est survenue lors de la connexion. Veuillez reessayer plus tard.";
             return Page();
         }
-
-        if (result.RequiresTwoFactor)
-        {
-            ErrorMessage = ErrorMessages.TwoFactorRequired;
-            return Page();
-        }
-
-        ErrorMessage = ErrorMessages.InvalidCredentials;
-        return Page();
     }
 
     public async Task<IActionResult> OnPostResendConfirmationAsync(string confirmEmail, string? returnUrl)

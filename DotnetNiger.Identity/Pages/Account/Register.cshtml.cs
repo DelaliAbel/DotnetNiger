@@ -71,30 +71,37 @@ public class RegisterModel : PageModel
     public async Task<IActionResult> OnPostAsync()
     {
         ReturnUrl ??= "/";
-        await LoadExternalProvidersAsync();
-
-        if (!string.IsNullOrWhiteSpace(ConfirmationCode))
-            return await HandleCodeConfirmationAsync();
-
-        if (Password != ConfirmPassword)
-        {
-            ErrorMessage = "Les mots de passe ne correspondent pas.";
-            return Page();
-        }
-
-        if (string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName))
-        {
-            ErrorMessage = "Le prénom et le nom sont requis.";
-            return Page();
-        }
 
         try
         {
+            await LoadExternalProvidersAsync();
+
+            if (!string.IsNullOrWhiteSpace(ConfirmationCode))
+                return await HandleCodeConfirmationAsync();
+
+            if (Password != ConfirmPassword)
+            {
+                ErrorMessage = "Les mots de passe ne correspondent pas.";
+                return Page();
+            }
+
+            if (string.IsNullOrWhiteSpace(FirstName) || string.IsNullOrWhiteSpace(LastName))
+            {
+                ErrorMessage = "Le prénom et le nom sont requis.";
+                return Page();
+            }
+
             await _accountService.RegisterAsync(Email, Password, FirstName, LastName);
         }
         catch (InvalidOperationException ex)
         {
             ErrorMessage = ex.Message;
+            return Page();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Register error for {Email}", Email);
+            ErrorMessage = "Une erreur est survenue lors de l'inscription. Veuillez reessayer plus tard.";
             return Page();
         }
 
