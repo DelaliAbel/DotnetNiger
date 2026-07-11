@@ -29,6 +29,9 @@ public static class SlugGenerator
         slug = Regex.Replace(slug, @"\s+", "-").Trim('-');
         slug = Regex.Replace(slug, @"-+", "-");
 
+        if (string.IsNullOrWhiteSpace(slug))
+            return $"slug-{Guid.NewGuid():N}";
+
         return slug;
     }
 }
