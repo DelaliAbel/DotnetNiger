@@ -11,7 +11,7 @@ public static class SlugGenerator
         if (string.IsNullOrWhiteSpace(text))
             return string.Empty;
 
-        var normalized = text.Normalize(NormalizationForm.FormD);
+        var normalized = text.Normalize(NormalizationForm.FormKD);
         var sb = new StringBuilder(capacity: normalized.Length);
 
         foreach (var c in normalized)
@@ -23,7 +23,7 @@ public static class SlugGenerator
             }
         }
 
-        var slug = sb.ToString().Normalize(NormalizationForm.FormC);
+        var slug = sb.ToString().Normalize(NormalizationForm.FormKC);
         slug = slug.ToLowerInvariant();
         slug = Regex.Replace(slug, @"[^a-z0-9\s-]", "");
         slug = Regex.Replace(slug, @"\s+", "-").Trim('-');
