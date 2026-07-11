@@ -17,6 +17,9 @@ public class ConfirmEmailModel : PageModel
         _accountService = accountService;
     }
 
+    [BindProperty(SupportsGet = true)]
+    public string? ReturnUrl { get; set; }
+
     [BindProperty]
     public string Email { get; set; } = string.Empty;
 

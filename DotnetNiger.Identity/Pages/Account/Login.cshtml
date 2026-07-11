@@ -50,7 +50,7 @@
     <button type="submit">Se connecter</button>
 
     <div style="text-align:center;margin-top:8px;font-size:12px">
-        <a href="/Account/ConfirmEmail" class="text-link">Email non confirmé ?</a>
+        <a href="/Account/ConfirmEmail@(string.IsNullOrEmpty(Model.ReturnUrl) ? "" : "?returnUrl=" + Uri.EscapeDataString(Model.ReturnUrl))" class="text-link">Email non confirmé ?</a>
     </div>
 
     <div style="text-align:center;margin-top:12px;font-size:13px">

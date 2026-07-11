@@ -7,6 +7,7 @@
 
 <form method="post">
     @Html.AntiForgeryToken()
+    <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
 
     @if (!string.IsNullOrEmpty(Model.ErrorMessage))
     {
@@ -49,6 +50,6 @@
 
     <div style="text-align:center;margin-top:12px;font-size:13px">
         Deja un compte ?
-        <a href="/Account/Login" class="text-link">Connectez-vous</a>
+        <a href="/Account/Login@(string.IsNullOrEmpty(Model.ReturnUrl) ? "" : "?returnUrl=" + Uri.EscapeDataString(Model.ReturnUrl))" class="text-link">Connectez-vous</a>
     </div>
 </form>

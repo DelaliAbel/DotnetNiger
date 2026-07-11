@@ -59,10 +59,14 @@ public class AccountController : ControllerBase
     }
 
     [HttpGet("confirm-email")]
-    public async Task<IActionResult> ConfirmEmailGet([FromQuery] string email, [FromQuery] string code)
+    public async Task<IActionResult> ConfirmEmailGet([FromQuery] string email, [FromQuery] string code,
+        [FromQuery] string? returnUrl = null)
     {
         await _accountService.ConfirmEmailAsync(email, code);
-        return Redirect($"{_smtp.FrontendBaseUrl.TrimEnd('/')}/auth/login?emailConfirmed=true");
+        var redirectUrl = $"{_smtp.FrontendBaseUrl.TrimEnd('/')}/auth/login?emailConfirmed=true";
+        if (!string.IsNullOrEmpty(returnUrl))
+            redirectUrl += "&returnUrl=" + Uri.EscapeDataString(returnUrl);
+        return Redirect(redirectUrl);
     }
 
     [HttpPost("resend-code")]

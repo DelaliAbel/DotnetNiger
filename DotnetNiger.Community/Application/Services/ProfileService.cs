@@ -119,19 +119,20 @@ public partial class ProfileService(AppDbContext db, IIdentityApiClient identity
 
     private void UpdateSkills(Member member, List<string> skills)
     {
-        if (member.Skills.Count != 0)
-            db.MemberSkills.RemoveRange(member.Skills);
+        db.MemberSkills.RemoveRange(member.Skills);
 
-        member.Skills = skills
+        foreach (var skill in skills
             .Where(s => !string.IsNullOrWhiteSpace(s))
             .Select(s => s.Trim())
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Select(s => new MemberSkill
+            .Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            db.MemberSkills.Add(new MemberSkill
             {
                 Id = Guid.NewGuid(),
                 MemberId = member.Id,
-                Name = s
-            }).ToList();
+                Name = skill
+            });
+        }
     }
 
     private static ProfileResponse MapProfile(Member m) => new()
