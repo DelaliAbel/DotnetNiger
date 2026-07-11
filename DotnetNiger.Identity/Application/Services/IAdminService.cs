@@ -10,6 +10,7 @@ public interface IAdminService
     Task<List<UserResponse>> GetAllUsersAcrossTenantsAsync();
     Task<bool> UpdateUserStatusAsync(Guid id, bool isActive);
     Task<bool> AssignRoleToUserAsync(Guid userId, string roleName);
+    Task<bool> RemoveUserRoleAsync(Guid userId, string roleName);
     Task<bool> DeleteUserAsync(Guid id);
     Task<UserResponse?> GetUserByIdAsync(Guid id);
     Task<UserResponse?> UpdateUserProfileAsync(Guid id, UpdateUserRequest request);

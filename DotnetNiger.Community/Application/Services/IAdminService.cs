@@ -22,6 +22,8 @@ public interface IAdminService
     Task<bool> DeleteUserAsync(Guid id);
     /// <summary>Assigne un rôle à un utilisateur.</summary>
     Task<bool> AssignRoleToUserAsync(Guid userId, string roleName);
+    /// <summary>Retire un rôle à un utilisateur.</summary>
+    Task<bool> RemoveUserRoleAsync(Guid userId, string roleName);
     /// <summary>Remplace tous les rôles d'un utilisateur par un seul rôle (supprime les anciens).</summary>
     Task<bool> ReplaceUserRolesAsync(Guid userId, string newRole);
 }

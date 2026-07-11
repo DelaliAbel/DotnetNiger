@@ -200,6 +200,9 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
     /// <summary>Assigne un rôle à un utilisateur via l'API Identity.</summary>
     public async Task<bool> AssignRoleToUserAsync(Guid userId, string roleName) => await identity.AssignRoleToUserAsync(userId, roleName);
 
+    /// <summary>Retire un rôle spécifique à un utilisateur via Identity.</summary>
+    public async Task<bool> RemoveUserRoleAsync(Guid userId, string roleName) => await identity.RemoveUserRoleAsync(userId, roleName);
+
     /// <summary>Remplace tous les rôles d'un utilisateur par un seul (supprime les anciens, ajoute le nouveau).</summary>
     public async Task<bool> ReplaceUserRolesAsync(Guid userId, string newRole)
     {

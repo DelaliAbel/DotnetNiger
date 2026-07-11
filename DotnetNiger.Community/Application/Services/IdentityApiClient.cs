@@ -116,6 +116,22 @@ public class IdentityApiClient(HttpClient http, IMemoryCache cache, ILogger<Iden
         }
     }
 
+    /// <summary>Retire un rôle à un utilisateur distant.</summary>
+    public async Task<bool> RemoveUserRoleAsync(Guid userId, string roleName)
+    {
+        try
+        {
+            var response = await http.DeleteAsync($"api/v1/admin/users/{userId}/roles/{roleName}");
+            InvalidateUserCache(userId);
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Identity API injoignable pour RemoveUserRoleAsync({UserId})", userId);
+            return false;
+        }
+    }
+
     /// <summary>Assigne un rôle à un utilisateur distant.</summary>
     public async Task<bool> AssignRoleToUserAsync(Guid userId, string roleName)
     {

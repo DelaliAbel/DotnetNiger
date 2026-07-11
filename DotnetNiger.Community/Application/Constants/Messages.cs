@@ -28,6 +28,7 @@ public static class Messages
         public const string PromoteFailed = "Échec de la promotion de l'utilisateur.";
         public const string Promoted = "Utilisateur promu Admin avec succès.";
         public const string RoleAssigned = "Rôle assigné avec succès.";
+        public const string RoleRemoved = "Rôle retiré avec succès.";
         public const string RoleFailed = "Échec de l'assignation du rôle.";
     }
 

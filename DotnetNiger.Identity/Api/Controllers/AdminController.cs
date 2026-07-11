@@ -116,6 +116,16 @@ public class AdminController : ControllerBase
         return Ok(new { message = SuccessMessages.RoleAssigned });
     }
 
+    /// <summary>Retire un rôle à un utilisateur.</summary>
+    [HttpDelete("users/{id:guid}/roles/{roleName}")]
+    public async Task<ActionResult> RemoveUserRole(Guid id, string roleName)
+    {
+        var removed = await _adminService.RemoveUserRoleAsync(id, roleName);
+        if (!removed)
+            return BadRequest(new ErrorResponse(ErrorMessages.UnableToAssignRole));
+        return Ok(new { message = SuccessMessages.RoleRemoved });
+    }
+
     /// <summary>Supprime un utilisateur.</summary>
     [HttpDelete("users/{id:guid}")]
     public async Task<ActionResult> DeleteUser(Guid id)

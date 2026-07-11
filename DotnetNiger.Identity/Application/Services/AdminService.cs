@@ -124,6 +124,20 @@ public class AdminService : IAdminService
         return result.Succeeded;
     }
 
+    public async Task<bool> RemoveUserRoleAsync(Guid userId, string roleName)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null) return false;
+
+        var roleExists = await _db.Roles.AnyAsync(r => r.Name == roleName);
+        if (!roleExists) return false;
+
+        var result = await _userManager.RemoveFromRoleAsync(user, roleName);
+        if (result.Succeeded)
+            await _auditLog.LogAsync("User", userId, "RemoveRole", $"Rôle {roleName} retiré");
+        return result.Succeeded;
+    }
+
     public async Task<bool> DeleteUserAsync(Guid id)
     {
         var user = await _userManager.FindByIdAsync(id.ToString());

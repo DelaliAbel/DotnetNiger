@@ -48,7 +48,7 @@ public partial class ProfileService(AppDbContext db, IIdentityApiClient identity
         UpdateMemberFields(member, request);
         await SyncIdentityAsync(userId, request);
         if (request.Skills is not null)
-            await UpdateSkillsAsync(member, request.Skills);
+            UpdateSkills(member, request.Skills);
         member.UpdatedAt = DateTime.UtcNow;
 
         await db.SaveChangesAsync();
@@ -117,19 +117,21 @@ public partial class ProfileService(AppDbContext db, IIdentityApiClient identity
         if (request.Position is not null) member.Position = request.Position;
     }
 
-    private async Task UpdateSkillsAsync(Member member, List<string> skills)
+    private void UpdateSkills(Member member, List<string> skills)
     {
-        var oldIds = member.Skills.Select(s => s.Id).ToList();
-        if (oldIds.Count != 0)
-        {
-            await db.MemberSkills.Where(s => oldIds.Contains(s.Id)).ExecuteDeleteAsync();
-        }
-        member.Skills = skills.Select(s => new MemberSkill
-        {
-            Id = Guid.NewGuid(),
-            MemberId = member.Id,
-            Name = s
-        }).ToList();
+        if (member.Skills.Count != 0)
+            db.MemberSkills.RemoveRange(member.Skills);
+
+        member.Skills = skills
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(s => new MemberSkill
+            {
+                Id = Guid.NewGuid(),
+                MemberId = member.Id,
+                Name = s
+            }).ToList();
     }
 
     private static ProfileResponse MapProfile(Member m) => new()

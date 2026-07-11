@@ -58,6 +58,9 @@ public static class SuccessMessages
     /// <summary>Rôle assigné avec succès.</summary>
     public const string RoleAssigned = "Rôle assigné avec succès";
 
+    /// <summary>Rôle retiré avec succès.</summary>
+    public const string RoleRemoved = "Rôle retiré avec succès";
+
     /// <summary>Utilisateur supprimé avec succès.</summary>
     public const string UserDeleted = "Utilisateur supprimé avec succès";
 }

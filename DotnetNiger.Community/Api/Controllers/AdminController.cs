@@ -129,6 +129,14 @@ public class AdminController(
         return Ok(new { Success = true, Message = Messages.User.RoleAssigned });
     }
 
+    [HttpDelete("users/{userId:guid}/roles/{roleName}")]
+    public async Task<IActionResult> RemoveUserRole(Guid userId, string roleName)
+    {
+        var removed = await adminService.RemoveUserRoleAsync(userId, roleName);
+        if (!removed) return BadRequest(new { Success = false, Message = Messages.User.RoleFailed });
+        return Ok(new { Success = true, Message = Messages.User.RoleRemoved });
+    }
+
     [HttpPost("users/{userId:guid}/promote-to-admin")]
     [Authorize(Roles = RoleConstants.SuperAdmin)]
     public async Task<IActionResult> PromoteToAdmin(Guid userId)
