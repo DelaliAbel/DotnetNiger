@@ -59,7 +59,8 @@ public class ExternalAuthController : ControllerBase
     [HttpGet("external-callback-frontend")]
     public async Task<IActionResult> ExternalCallbackFrontend([FromQuery] string? returnUrl = null)
     {
-        returnUrl ??= $"{_smtp.FrontendBaseUrl.TrimEnd('/')}/auth/external-callback";
+        var frontendBaseUrl = _smtp.FrontendBaseUrl.TrimEnd('/');
+        returnUrl = $"{frontendBaseUrl}/auth/external-callback";
         try
         {
             var redirectUrl = await _authService.HandleExternalCallbackFrontendAsync(returnUrl);
