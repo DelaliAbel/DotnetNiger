@@ -22,6 +22,7 @@ public class AdminController(
     IPostQueryService postQuery,
     ICommentService commentService) : ControllerBase
 {
+    /// <summary>Retourne les statistiques du tableau de bord administration.</summary>
     [HttpGet("dashboard")]
     public async Task<IActionResult> GetDashboard()
     {
@@ -29,6 +30,7 @@ public class AdminController(
         return Ok(new { Success = true, Data = stats });
     }
 
+    /// <summary>Retourne la liste des événements avec filtrage par statut et pagination.</summary>
     [HttpGet("events")]
     public async Task<IActionResult> GetEvents([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
@@ -41,6 +43,7 @@ public class AdminController(
         });
     }
 
+    /// <summary>Publie un événement par son identifiant.</summary>
     [HttpPatch("events/{id:guid}/publish")]
     public async Task<IActionResult> PublishEvent(Guid id)
     {
@@ -49,6 +52,7 @@ public class AdminController(
         return Ok(new { Success = true, Data = ev });
     }
 
+    /// <summary>Dépublie un événement par son identifiant.</summary>
     [HttpPatch("events/{id:guid}/unpublish")]
     public async Task<IActionResult> UnpublishEvent(Guid id)
     {
@@ -57,6 +61,7 @@ public class AdminController(
         return Ok(new { Success = true, Data = ev });
     }
 
+    /// <summary>Approuve un événement en attente de modération.</summary>
     [HttpPatch("events/{id:guid}/approve")]
     public async Task<IActionResult> ApproveEvent(Guid id)
     {
@@ -65,6 +70,7 @@ public class AdminController(
         return Ok(new { Success = true, Data = ev });
     }
 
+    /// <summary>Rejette un événement avec une raison donnée.</summary>
     [HttpPatch("events/{id:guid}/reject")]
     public async Task<IActionResult> RejectEvent(Guid id, [FromQuery] string reason)
     {
@@ -75,12 +81,14 @@ public class AdminController(
         return Ok(new { Success = true, Message = Messages.Event.Rejected, Data = ev });
     }
 
+    /// <summary>Retourne la liste de tous les utilisateurs.</summary>
     [HttpGet("users")]
     public async Task<IActionResult> GetUsers()
     {
         return Ok(new { Success = true, Data = await adminService.GetUsersAsync() });
     }
 
+    /// <summary>Retourne un utilisateur par son identifiant.</summary>
     [HttpGet("users/{id:guid}")]
     public async Task<IActionResult> GetUser(Guid id)
     {
@@ -89,6 +97,7 @@ public class AdminController(
         return Ok(new { Success = true, Data = user });
     }
 
+    /// <summary>Met à jour le statut actif/inactif d'un utilisateur.</summary>
     [HttpPatch("users/{id:guid}/status")]
     public async Task<IActionResult> UpdateUserStatus(Guid id, [FromBody] UpdateUserStatusRequest request)
     {
@@ -97,6 +106,7 @@ public class AdminController(
         return Ok(new { Success = true, Message = Messages.User.StatusUpdated });
     }
 
+    /// <summary>Met à jour l'appartenance à l'équipe et la position d'un utilisateur.</summary>
     [HttpPatch("users/{id:guid}/team")]
     public async Task<IActionResult> UpdateUserTeam(Guid id, [FromBody] UpdateUserTeamRequest request)
     {
@@ -105,6 +115,7 @@ public class AdminController(
         return Ok(new { Success = true, Message = Messages.User.TeamUpdated });
     }
 
+    /// <summary>Crée un nouvel utilisateur administrateur.</summary>
     [HttpPost("users")]
     public async Task<IActionResult> CreateUser([FromBody] CreateAdminUserRequest request)
     {
@@ -113,6 +124,7 @@ public class AdminController(
         return Ok(new { Success = true, Data = user });
     }
 
+    /// <summary>Supprime un utilisateur par son identifiant.</summary>
     [HttpDelete("users/{id:guid}")]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
@@ -121,6 +133,7 @@ public class AdminController(
         return Ok(new { Success = true, Message = Messages.User.Deleted });
     }
 
+    /// <summary>Assigne un rôle à un utilisateur.</summary>
     [HttpPost("users/{userId:guid}/roles")]
     public async Task<IActionResult> AssignRoleToUser(Guid userId, [FromBody] AssignRoleRequest request)
     {
@@ -129,6 +142,7 @@ public class AdminController(
         return Ok(new { Success = true, Message = Messages.User.RoleAssigned });
     }
 
+    /// <summary>Supprime un rôle d'un utilisateur.</summary>
     [HttpDelete("users/{userId:guid}/roles/{roleName}")]
     public async Task<IActionResult> RemoveUserRole(Guid userId, string roleName)
     {
@@ -137,6 +151,7 @@ public class AdminController(
         return Ok(new { Success = true, Message = Messages.User.RoleRemoved });
     }
 
+    /// <summary>Promouvoir un utilisateur au rôle d'administrateur.</summary>
     [HttpPost("users/{userId:guid}/promote-to-admin")]
     [Authorize(Roles = RoleConstants.SuperAdmin)]
     public async Task<IActionResult> PromoteToAdmin(Guid userId)
@@ -146,6 +161,7 @@ public class AdminController(
         return Ok(new { Success = true, Message = Messages.User.Promoted });
     }
 
+    /// <summary>Approuve un certificat par son identifiant.</summary>
     [HttpPatch("certificates/{id:guid}/approve")]
     public async Task<IActionResult> ApproveCertificate(Guid id)
     {
@@ -154,6 +170,7 @@ public class AdminController(
         return Ok(new { Success = true, Data = cert });
     }
 
+    /// <summary>Rejette un certificat avec une raison donnée.</summary>
     [HttpPatch("certificates/{id:guid}/reject")]
     public async Task<IActionResult> RejectCertificate(Guid id, [FromQuery] string reason)
     {
@@ -164,24 +181,28 @@ public class AdminController(
         return Ok(new { Success = true, Data = cert });
     }
 
+    /// <summary>Retourne la liste des certificats avec filtrage par statut.</summary>
     [HttpGet("certificates")]
     public async Task<IActionResult> GetCertificates([FromQuery] string? status)
     {
         return Ok(new { Success = true, Data = await certificateService.GetCertificatesAsync(status) });
     }
 
+    /// <summary>Retourne la liste des articles avec filtrage par statut et pagination.</summary>
     [HttpGet("posts")]
     public async Task<IActionResult> GetPosts([FromQuery] string? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         return Ok(new { Success = true, Data = await postQuery.GetAllAsync(status, null, null, null, page, pageSize) });
     }
 
+    /// <summary>Retourne la liste de tous les commentaires.</summary>
     [HttpGet("comments")]
     public async Task<IActionResult> GetComments()
     {
         return Ok(new { Success = true, Data = await commentService.GetAllAsync() });
     }
 
+    /// <summary>Remplace tous les rôles d'un utilisateur par un nouveau rôle.</summary>
     [HttpPut("users/{userId:guid}/roles")]
     public async Task<IActionResult> ReplaceUserRoles(Guid userId, [FromBody] AssignRoleRequest request)
     {

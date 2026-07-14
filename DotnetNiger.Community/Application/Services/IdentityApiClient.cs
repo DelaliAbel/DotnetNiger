@@ -123,6 +123,7 @@ public class IdentityApiClient(HttpClient http, IMemoryCache cache, ILogger<Iden
         {
             var response = await http.DeleteAsync($"api/v1/admin/users/{userId}/roles/{roleName}");
             InvalidateUserCache(userId);
+            InvalidateUsersCache();
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)
@@ -139,6 +140,7 @@ public class IdentityApiClient(HttpClient http, IMemoryCache cache, ILogger<Iden
         {
             var response = await http.PostAsJsonAsync($"api/v1/admin/users/{userId}/roles", new { roleName });
             InvalidateUserCache(userId);
+            InvalidateUsersCache();
             return response.IsSuccessStatusCode;
         }
         catch (Exception ex)

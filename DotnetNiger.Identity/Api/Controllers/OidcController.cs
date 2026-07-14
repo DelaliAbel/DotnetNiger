@@ -20,6 +20,7 @@ public class OidcController : ControllerBase
 
     public OidcController(OidcService oidcService) => _oidcService = oidcService;
 
+    /// <summary>Gère la demande d'autorisation OIDC (flux authorize).</summary>
     [HttpGet("~/connect/authorize")]
     [HttpPost("~/connect/authorize")]
     [IgnoreAntiforgeryToken]
@@ -32,6 +33,7 @@ public class OidcController : ControllerBase
         return SignIn(result.Principal!, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
+    /// <summary>Déconnecte l'utilisateur et détruit sa session.</summary>
     [HttpPost("logout")]
     [Authorize]
     public async Task<IActionResult> Logout()
@@ -40,6 +42,7 @@ public class OidcController : ControllerBase
         return Ok(new { message = "Déconnecté" });
     }
 
+    /// <summary>Retourne les informations de l'utilisateur connecté (endpoint userinfo OIDC).</summary>
     [HttpGet("userinfo")]
     [Authorize]
     public async Task<IActionResult> UserInfo()

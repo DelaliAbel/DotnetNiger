@@ -18,6 +18,7 @@ public class PostsController(
     IPostCommandService postCommand,
     IPostModerationService postModeration) : BaseController
 {
+    /// <summary>Retourne la liste des articles avec filtres et pagination.</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] string? published, [FromQuery] string? category, [FromQuery] string? tag, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 6, [FromQuery] Guid? after = null)
     {
@@ -26,6 +27,7 @@ public class PostsController(
         return Ok(new { Success = true, Data = await postQuery.GetAllAsync(published, category, tag, query, page, pageSize, after) });
     }
 
+    /// <summary>Retourne les articles publiés par l'utilisateur connecté.</summary>
     [HttpGet("mine")]
     [Authorize]
     public async Task<IActionResult> GetMine([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -36,6 +38,7 @@ public class PostsController(
         return Ok(new { Success = true, Data = await postQuery.GetAllAsync(null, null, null, null, page, pageSize, null, userId) });
     }
 
+    /// <summary>Retourne un article par son identifiant.</summary>
     [HttpGet("{id:guid}", Order = 1)]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -44,6 +47,7 @@ public class PostsController(
         return Ok(new { Success = true, Data = post });
     }
 
+    /// <summary>Retourne un article par son slug.</summary>
     [HttpGet("{slug:regex(^[[a-z0-9]]+(?:-[[a-z0-9]]+)*$)}", Order = 2)]
     public async Task<IActionResult> GetBySlug(string slug)
     {
@@ -52,6 +56,7 @@ public class PostsController(
         return Ok(new { Success = true, Data = post });
     }
 
+    /// <summary>Retourne les métadonnées Open Graph d'un article par son slug.</summary>
     [HttpGet("by-slug/{slug}")]
     public async Task<ActionResult<OGMetadata>> GetOGBySlug(string slug)
     {
@@ -63,6 +68,7 @@ public class PostsController(
         });
     }
 
+    /// <summary>Crée un nouvel article pour l'utilisateur connecté.</summary>
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> Create([FromBody] CreatePostRequest request)
@@ -79,6 +85,7 @@ public class PostsController(
         }
     }
 
+    /// <summary>Met à jour un article existant.</summary>
     [HttpPut("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePostRequest request)
@@ -88,6 +95,7 @@ public class PostsController(
         return Ok(new { Success = true, Data = post });
     }
 
+    /// <summary>Publie un article.</summary>
     [HttpPatch("{id:guid}/publish")]
     [Authorize]
     public async Task<IActionResult> Publish(Guid id)
@@ -97,6 +105,7 @@ public class PostsController(
         return Ok(new { Success = true, Data = post });
     }
 
+    /// <summary>Dépublie un article.</summary>
     [HttpPatch("{id:guid}/unpublish")]
     [Authorize]
     public async Task<IActionResult> Unpublish(Guid id)
@@ -106,6 +115,7 @@ public class PostsController(
         return Ok(new { Success = true, Data = post });
     }
 
+    /// <summary>Incrémente le compteur de vues d'un article.</summary>
     [HttpPost("{id:guid}/views")]
     public async Task<IActionResult> IncrementViewCount(Guid id)
     {
@@ -114,6 +124,7 @@ public class PostsController(
         return Ok(new { Success = true, Data = post });
     }
 
+    /// <summary>Supprime un article par son identifiant.</summary>
     [HttpDelete("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Delete(Guid id)

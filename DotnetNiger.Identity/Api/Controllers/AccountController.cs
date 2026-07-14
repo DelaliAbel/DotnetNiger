@@ -28,6 +28,8 @@ public class AccountController : ControllerBase
         _smtp = smtp.Value;
     }
 
+    /// <summary>Authentifie un utilisateur avec ses identifiants.</summary>
+    /// <param name="request">Requête contenant email, mot de passe et tenant.</param>
     [HttpPost("login")]
     public async Task<ActionResult<UserInfoResponse>> Login([FromBody] LoginRequest request)
     {
@@ -44,6 +46,8 @@ public class AccountController : ControllerBase
         }
     }
 
+    /// <summary>Crée un nouveau compte utilisateur.</summary>
+    /// <param name="request">Requête contenant les informations d'inscription.</param>
     [HttpPost("register")]
     public async Task<ActionResult<object>> Register([FromBody] RegisterRequest request)
     {
@@ -51,6 +55,8 @@ public class AccountController : ControllerBase
         return Ok(new { message = "Compte créé. Un code de confirmation vous a été envoyé par email.", userId = user.Id, email = user.Email });
     }
 
+    /// <summary>Confirme l'adresse email avec un code de vérification.</summary>
+    /// <param name="request">Requête contenant l'email et le code.</param>
     [HttpPost("confirm-email")]
     public async Task<ActionResult<object>> ConfirmEmail([FromBody] ConfirmEmailRequest request)
     {
@@ -58,6 +64,10 @@ public class AccountController : ControllerBase
         return Ok(new { message = "Email confirmé avec succès. Vous pouvez maintenant vous connecter." });
     }
 
+    /// <summary>Confirme l'adresse email via des paramètres d'URL (lien direct).</summary>
+    /// <param name="email">Adresse email à confirmer.</param>
+    /// <param name="code">Code de confirmation.</param>
+    /// <param name="returnUrl">URL de redirection après confirmation.</param>
     [HttpGet("confirm-email")]
     public async Task<IActionResult> ConfirmEmailGet([FromQuery] string email, [FromQuery] string code,
         [FromQuery] string? returnUrl = null)
@@ -69,6 +79,8 @@ public class AccountController : ControllerBase
         return Redirect(redirectUrl);
     }
 
+    /// <summary>Renvoie un nouveau code de confirmation par email.</summary>
+    /// <param name="request">Requête contenant l'adresse email.</param>
     [HttpPost("resend-code")]
     public async Task<ActionResult<object>> ResendCode([FromBody] ForgotPasswordRequest request)
     {
@@ -76,6 +88,8 @@ public class AccountController : ControllerBase
         return Ok(new { message = "Un nouveau code de confirmation vous a été envoyé." });
     }
 
+    /// <summary>Envoie un email de réinitialisation de mot de passe.</summary>
+    /// <param name="request">Requête contenant l'adresse email.</param>
     [AllowAnonymous]
     [HttpPost("forgot-password")]
     public async Task<ActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
@@ -84,6 +98,8 @@ public class AccountController : ControllerBase
         return Ok(new { message = "Si le compte existe, un email de réinitialisation a été envoyé." });
     }
 
+    /// <summary>Réinitialise le mot de passe avec un jeton de réinitialisation.</summary>
+    /// <param name="request">Requête contenant email, jeton et nouveau mot de passe.</param>
     [AllowAnonymous]
     [HttpPost("reset-password")]
     public async Task<ActionResult> ResetPassword([FromBody] ResetPasswordRequest request)

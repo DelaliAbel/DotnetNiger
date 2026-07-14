@@ -34,6 +34,8 @@ public class AdminAuthController : ControllerBase
         _smtp = smtp.Value;
     }
 
+    /// <summary>Enregistre un nouveau locataire (tenant) dans le système.</summary>
+    /// <param name="request">Requête contenant les informations du tenant.</param>
     [HttpPost("register-tenant")]
     [EnableRateLimiting("TenantRegistration")]
     public async Task<ActionResult<RegisterTenantResponse>> RegisterTenant([FromBody] RegisterTenantRequest request)
@@ -42,6 +44,7 @@ public class AdminAuthController : ControllerBase
         return Ok(result);
     }
 
+    /// <summary>Initialise les applications OpenIddict pour l'interface web.</summary>
     [Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
     [HttpPost("bootstrap-web-ui")]
     public async Task<IActionResult> BootstrapWebUi([FromServices] IOpenIddictApplicationManager appManager)

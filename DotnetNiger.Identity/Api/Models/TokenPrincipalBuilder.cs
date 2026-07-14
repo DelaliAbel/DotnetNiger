@@ -11,10 +11,18 @@ public static class TokenPrincipalBuilder
     public static void SetUserClaims(ClaimsPrincipal principal, ApplicationUser user, IList<string> roles)
     {
         principal.SetClaim(OpenIddictConstants.Claims.Subject, user.Id.ToString());
-        foreach (var role in roles)
+        var identity = principal.Identities.FirstOrDefault();
+        if (identity != null)
         {
-            principal.SetClaim(ClaimTypes.Role, role);
-            principal.SetClaim("role", role);
+            foreach (var oldClaim in identity.FindAll(ClaimTypes.Role).ToList())
+                identity.RemoveClaim(oldClaim);
+            foreach (var oldClaim in identity.FindAll("role").ToList())
+                identity.RemoveClaim(oldClaim);
+            foreach (var role in roles)
+            {
+                identity.AddClaim(new Claim(ClaimTypes.Role, role));
+                identity.AddClaim(new Claim("role", role));
+            }
         }
         principal.SetClaim("tenant_id", user.TenantId.ToString());
         principal.SetClaim(OpenIddictConstants.Claims.GivenName, user.FirstName);

@@ -20,6 +20,8 @@ public class TwoFactorController : ControllerBase
 
     public TwoFactorController(TwoFactorService twoFactorService) => _twoFactorService = twoFactorService;
 
+    /// <summary>Vérifie le code de double authentification et connecte l'utilisateur.</summary>
+    /// <param name="request">Requête contenant le code et le jeton de défi.</param>
     [AllowAnonymous]
     [HttpPost("verify-2fa")]
     public async Task<IActionResult> VerifyTwoFactor([FromBody] Verify2faRequest request)
@@ -32,6 +34,8 @@ public class TwoFactorController : ControllerBase
         return BadRequest(new ErrorResponse(result.Error ?? "Vérification échouée"));
     }
 
+    /// <summary>Vérifie un code de récupération pour contourner la double authentification.</summary>
+    /// <param name="request">Requête contenant le code de récupération.</param>
     [AllowAnonymous]
     [HttpPost("verify-2fa-recovery")]
     public async Task<IActionResult> VerifyTwoFactorRecovery([FromBody] TwoFactorRecoveryCodeRequest request)

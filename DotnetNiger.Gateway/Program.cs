@@ -6,7 +6,7 @@ try
     var builder = ApplicationSetup.CreateBuilder(args);
     var app = PipelineSetup.ConfigureApp(builder);
 
-    app.UseHealthAndSwagger();
+    app.UseHealth();
 
     await app.UseOcelot();
     await app.RunAsync();

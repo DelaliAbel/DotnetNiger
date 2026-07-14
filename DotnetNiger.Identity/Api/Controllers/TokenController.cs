@@ -19,6 +19,7 @@ public class TokenController : ControllerBase
 
     public TokenController(TokenService tokenService) => _tokenService = tokenService;
 
+    /// <summary>Échange un code d'autorisation contre un jeton d'accès (flux OAuth2).</summary>
     [HttpPost("~/connect/token"), IgnoreAntiforgeryToken, Produces("application/json")]
     public async Task<IActionResult> TokenExchange()
     {
@@ -30,6 +31,8 @@ public class TokenController : ControllerBase
         return SignIn(result.Principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
+    /// <summary>Rafraîchit un jeton d'accès à l'aide d'un jeton de rafraîchissement.</summary>
+    /// <param name="request">Requête contenant le jeton de rafraîchissement.</param>
     [AllowAnonymous]
     [HttpPost("refresh")]
     public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)

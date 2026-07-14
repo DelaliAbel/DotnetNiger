@@ -1,6 +1,8 @@
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DotnetNiger.Community.Api;
+using Microsoft.OpenApi.Models;
 
 namespace DotnetNiger.Community.Api;
 
@@ -31,7 +33,46 @@ public static class ApplicationSetup
         builder.Services.AddCommunityServices();
         builder.Services.AddCommunityHttpClients(builder.Configuration);
         builder.Services.AddCommunityCors(builder.Configuration);
-        builder.Services.AddOpenApi();
+
+        builder.Services.AddSwaggerGen(options =>
+        {
+            options.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "DotnetNiger Community API",
+                Version = "v1",
+                Description = "API communautaire DotnetNiger"
+            });
+
+            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+            {
+                Name = "Authorization",
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "JWT",
+                In = ParameterLocation.Header,
+                Description = "Entrez votre token JWT"
+            });
+
+            options.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "Bearer"
+                        }
+                    },
+                    Array.Empty<string>()
+                }
+            });
+
+            var xmlFile = $"{typeof(ApplicationSetup).Assembly.GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            if (File.Exists(xmlPath))
+                options.IncludeXmlComments(xmlPath);
+        });
 
         return builder;
     }

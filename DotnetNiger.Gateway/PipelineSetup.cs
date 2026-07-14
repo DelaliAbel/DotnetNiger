@@ -21,8 +21,8 @@ public static class PipelineSetup
         return app;
     }
 
-    /// <summary>Middleware health + swagger exécuté avant Ocelot.</summary>
-    public static void UseHealthAndSwagger(this WebApplication app)
+    /// <summary>Middleware health exécuté avant Ocelot.</summary>
+    public static void UseHealth(this WebApplication app)
     {
         var identityUrl = app.Configuration["DownstreamServices:Identity:DevUrl"] ?? "http://localhost:5075";
         var communityUrl = app.Configuration["DownstreamServices:Community:DevUrl"] ?? "http://localhost:5050";
@@ -70,43 +70,7 @@ public static class PipelineSetup
                 return;
             }
 
-            if (app.Environment.IsDevelopment() && ctx.Request.Path == "/swagger")
-            {
-                ctx.Response.ContentType = "text/html; charset=utf-8";
-                await ctx.Response.WriteAsync(SwaggerAggregatedPage());
-                return;
-            }
-
             await next();
         });
-    }
-
-    static string SwaggerAggregatedPage()
-    {
-        return """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8"/>
-<title>DotnetNiger API — Swagger</title>
-<link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css" />
-</head>
-<body>
-<div id="swagger-ui"></div>
-<script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
-<script>
-const ui = SwaggerUIBundle({
-  urls: [
-    { name: 'Identity API', url: '/openapi/identity/v1.json' },
-    { name: 'Community API', url: '/openapi/community/v1.json' }
-  ],
-  dom_id: '#swagger-ui',
-  presets: [SwaggerUIBundle.presets.apis],
-  layout: 'BaseLayout'
-});
-</script>
-</body>
-</html>
-""";
     }
 }

@@ -18,6 +18,7 @@ public class EventsController(
     IEventModerationService eventModeration,
     IEventRegistrationService eventRegistration) : BaseController
 {
+    /// <summary>Retourne la liste des événements avec filtres et pagination.</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? published, [FromQuery] string? past, [FromQuery] string? eventType,
@@ -33,6 +34,7 @@ public class EventsController(
         return Ok(new { Success = true, Data = result });
     }
 
+    /// <summary>Retourne les événements à venir avec pagination.</summary>
     [HttpGet("upcoming")]
     public async Task<IActionResult> GetUpcoming([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
@@ -42,6 +44,7 @@ public class EventsController(
         return Ok(new { Success = true, Data = events });
     }
 
+    /// <summary>Retourne les événements créés par l'utilisateur connecté.</summary>
     [HttpGet("mine")]
     [Authorize]
     public async Task<IActionResult> GetMine([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -53,6 +56,7 @@ public class EventsController(
         return Ok(new { Success = true, Data = result });
     }
 
+    /// <summary>Retourne un événement par son identifiant.</summary>
     [HttpGet("{id:guid}", Order = 1)]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -61,6 +65,7 @@ public class EventsController(
         return Ok(new { Success = true, Data = ev });
     }
 
+    /// <summary>Retourne un événement par son slug.</summary>
     [HttpGet("{slug:regex(^[[a-z0-9]]+(?:-[[a-z0-9]]+)*$)}", Order = 2)]
     public async Task<IActionResult> GetBySlug(string slug)
     {
@@ -69,6 +74,7 @@ public class EventsController(
         return Ok(new { Success = true, Data = ev });
     }
 
+    /// <summary>Retourne les métadonnées Open Graph d'un événement par son slug.</summary>
     [HttpGet("by-slug/{slug}")]
     public async Task<ActionResult<OGMetadata>> GetOGBySlug(string slug)
     {
@@ -80,6 +86,7 @@ public class EventsController(
         });
     }
 
+    /// <summary>Crée un nouvel événement pour l'utilisateur connecté.</summary>
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> Create([FromBody] CreateEventRequest request)
@@ -96,6 +103,7 @@ public class EventsController(
         }
     }
 
+    /// <summary>Met à jour un événement existant.</summary>
     [HttpPut("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Update(Guid id, [FromBody] CreateEventRequest request)
@@ -105,6 +113,7 @@ public class EventsController(
         return Ok(new { Success = true, Data = ev });
     }
 
+    /// <summary>Supprime un événement par son identifiant.</summary>
     [HttpDelete("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Delete(Guid id)
@@ -114,6 +123,7 @@ public class EventsController(
         return Ok(new { Success = true, Message = Messages.Event.Deleted });
     }
 
+    /// <summary>Inscrit l'utilisateur connecté à un événement.</summary>
     [HttpPost("registrations")]
     [Authorize]
     public async Task<IActionResult> Register([FromBody] RegisterEventRequest request)
@@ -124,6 +134,7 @@ public class EventsController(
         return Ok(new { Success = true, Data = result });
     }
 
+    /// <summary>Annule l'inscription de l'utilisateur connecté à un événement.</summary>
     [HttpDelete("{eventId:guid}/registrations")]
     [Authorize]
     public async Task<IActionResult> CancelRegistration(Guid eventId)
@@ -133,6 +144,7 @@ public class EventsController(
         return Ok(new { Success = true, Message = Messages.Event.RegistrationCancelled });
     }
 
+    /// <summary>Retourne les inscriptions d'un événement.</summary>
     [HttpGet("{eventId:guid}/registrations")]
     [Authorize]
     public async Task<IActionResult> GetRegistrations(Guid eventId)
@@ -141,6 +153,7 @@ public class EventsController(
         return Ok(new { Success = true, Data = registrations });
     }
 
+    /// <summary>Retourne les événements en attente de modération.</summary>
     [HttpGet("pending")]
     [Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
     public async Task<IActionResult> GetPending([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -150,6 +163,7 @@ public class EventsController(
         return Ok(new { Success = true, Data = await eventQuery.GetPendingEventsAsync(page, pageSize) });
     }
 
+    /// <summary>Approuve un événement en attente de modération.</summary>
     [HttpPatch("{id:guid}/approve")]
     [Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
     public async Task<IActionResult> Approve(Guid id)
@@ -159,6 +173,7 @@ public class EventsController(
         return Ok(new { Success = true, Data = ev });
     }
 
+    /// <summary>Rejette un événement avec une raison donnée.</summary>
     [HttpPatch("{id:guid}/reject")]
     [Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
     public async Task<IActionResult> Reject(Guid id, [FromQuery] string reason)

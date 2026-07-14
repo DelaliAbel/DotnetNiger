@@ -12,6 +12,7 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [Authorize]
 public class SupportController(ISupportService supportService) : ControllerBase
 {
+    /// <summary>Signale un problème via le formulaire de support.</summary>
     [HttpPost("report")]
     public async Task<IActionResult> Report([FromBody] SupportReportRequest request)
     {
