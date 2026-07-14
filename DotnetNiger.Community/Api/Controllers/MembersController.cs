@@ -28,6 +28,14 @@ public class MembersController(IMemberDirectoryService memberService) : Controll
         return Ok(new { Success = true, Data = result });
     }
 
+    /// <summary>Retourne les membres de l'équipe DotnetNiger (public, sans auth).</summary>
+    [HttpGet("team")]
+    public async Task<IActionResult> GetTeam()
+    {
+        var members = await memberService.GetTeamMembersAsync();
+        return Ok(new { Success = true, Data = members });
+    }
+
     /// <summary>Recherche un membre par son identifiant.</summary>
     /// <param name="id">Identifiant du membre.</param>
     [HttpGet("{id:guid}")]

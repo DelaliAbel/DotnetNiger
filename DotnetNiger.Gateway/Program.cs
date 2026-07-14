@@ -7,6 +7,7 @@ try
     var app = PipelineSetup.ConfigureApp(builder);
 
     app.UseHealth();
+    app.UseSocialPreview();
 
     await app.UseOcelot();
     await app.RunAsync();

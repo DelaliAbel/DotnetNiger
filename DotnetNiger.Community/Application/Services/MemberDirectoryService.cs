@@ -32,6 +32,31 @@ public class MemberDirectoryService(AppDbContext db) : IMemberDirectoryService
         return new PaginatedResponse<MemberDirectoryResponse> { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }
 
+    /// <summary>Retourne les membres de l'équipe (IsTeamMember).</summary>
+    public async Task<List<TeamMemberResponse>> GetTeamMembersAsync()
+    {
+        var members = await db.Members.AsNoTracking()
+            .Include(m => m.SocialLinks)
+            .Where(m => m.IsTeamMember && !string.IsNullOrWhiteSpace(m.FullName))
+            .OrderByDescending(m => m.CreatedAt)
+            .ToListAsync();
+
+        return members.Select(m => new TeamMemberResponse
+        {
+            Id = m.Id,
+            FullName = m.FullName,
+            Bio = m.Bio,
+            AvatarUrl = m.AvatarUrl,
+            Position = m.Position,
+            SocialLinks = m.SocialLinks.Select(s => new SocialLinkResponse
+            {
+                Id = s.Id,
+                Platform = s.Platform,
+                Url = s.Url
+            }).ToList()
+        }).ToList();
+    }
+
     /// <summary>Détail d'un membre avec ses liens sociaux.</summary>
     public async Task<MemberDirectoryResponse?> GetByIdAsync(Guid id)
     {

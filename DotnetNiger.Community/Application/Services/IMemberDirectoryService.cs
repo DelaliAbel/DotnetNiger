@@ -10,4 +10,6 @@ public interface IMemberDirectoryService
     Task<PaginatedResponse<MemberDirectoryResponse>> GetAllAsync(string? query, string? country, int page = 1, int pageSize = 10);
     /// <summary>Détail d'un membre avec ses liens sociaux.</summary>
     Task<MemberDirectoryResponse?> GetByIdAsync(Guid id);
+    /// <summary>Retourne les membres marqués comme faisant partie de l'équipe DotnetNiger.</summary>
+    Task<List<TeamMemberResponse>> GetTeamMembersAsync();
 }
