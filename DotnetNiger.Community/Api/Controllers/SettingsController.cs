@@ -15,6 +15,26 @@ namespace DotnetNiger.Community.Api.Controllers;
 [Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
 public class SettingsController(ISettingsService settingsService) : ControllerBase
 {
+    /// <summary>Retourne les paramètres publics du site (sans authentification).</summary>
+    [HttpGet("~/api/v{version:apiVersion}/settings/public")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPublic()
+    {
+        var all = await settingsService.GetAllAsync();
+        var dict = all.ToDictionary(s => s.Key, s => s.Value, StringComparer.OrdinalIgnoreCase);
+
+        return Ok(new
+        {
+            Success = true,
+            Data = new
+            {
+                siteName = dict.GetValueOrDefault("site_name", ".NET Niger"),
+                defaultOgImage = dict.GetValueOrDefault("default_og_image", "/images/og-default.jpg"),
+                logoUrl = dict.GetValueOrDefault("logo_url", ""),
+            }
+        });
+    }
+
     /// <summary>Retourne tous les paramètres du site.</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll()

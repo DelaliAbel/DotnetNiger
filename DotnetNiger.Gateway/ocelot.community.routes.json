@@ -653,6 +653,17 @@
       "RateLimitOptions": { "EnableRateLimiting": false },
       "Key": "CommunityHealthRoute",
       "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/api/settings/public",
+      "UpstreamHttpMethod": ["GET"],
+      "DownstreamPathTemplate": "/api/v1/settings/public",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5050 }],
+      "FileCacheOptions": { "TtlSeconds": 300, "Region": "settings" },
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "Key": "CommunityPublicSettingsRoute",
+      "SwaggerKey": "community"
     }
   ]
 }
