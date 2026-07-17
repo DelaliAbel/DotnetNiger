@@ -181,6 +181,20 @@
       }
     },
     {
+      "UpstreamPathTemplate": "/signin-microsoft",
+      "UpstreamHttpMethod": ["GET", "POST"],
+      "DownstreamPathTemplate": "/signin-microsoft",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5075 }],
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "Key": "IdentitySignInMicrosoftRoute",
+      "SwaggerKey": "identity",
+      "UpstreamHeaderTransform": {
+        "X-Forwarded-Proto": "https",
+        "X-Forwarded-Host": "dotnetniger.runasp.net"
+      }
+    },
+    {
       "UpstreamPathTemplate": "/api/auth/refresh",
       "UpstreamHttpMethod": ["POST"],
       "DownstreamPathTemplate": "/connect/token",
