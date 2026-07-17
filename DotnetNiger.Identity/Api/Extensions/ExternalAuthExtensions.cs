@@ -32,6 +32,7 @@ public static class ExternalAuthExtensions
 
         AddGoogleIfConfigured(authBuilder, config);
         AddGitHubIfConfigured(authBuilder, config);
+        AddMicrosoftIfConfigured(authBuilder, config);
 
         return services;
     }
@@ -86,6 +87,29 @@ public static class ExternalAuthExtensions
                 return Task.CompletedTask;
             };
             github.Events.OnCreatingTicket = GitHubOnCreatingTicket;
+        });
+    }
+
+    private static void AddMicrosoftIfConfigured(AuthenticationBuilder authBuilder, IConfiguration config)
+    {
+        var msId = config["Authentication:Microsoft:ClientId"];
+        if (string.IsNullOrEmpty(msId)) return;
+
+        authBuilder.AddMicrosoftAccount(microsoft =>
+        {
+            microsoft.ClientId = msId;
+            microsoft.ClientSecret = config["Authentication:Microsoft:ClientSecret"] ?? "";
+            microsoft.SignInScheme = IdentityConstants.ExternalScheme;
+            microsoft.CorrelationCookie.SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax;
+            microsoft.CorrelationCookie.SecurePolicy = Microsoft.AspNetCore.Http.CookieSecurePolicy.SameAsRequest;
+            microsoft.Events.OnRemoteFailure = ctx =>
+            {
+                var logger = ctx.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogError(ctx.Failure, "Microsoft OAuth remote failure: {Message}", ctx.Failure?.Message);
+                ctx.Response.Redirect($"/Account/Login?error={Uri.EscapeDataString(ctx.Failure?.Message ?? "microsoft_failed")}");
+                ctx.HandleResponse();
+                return Task.CompletedTask;
+            };
         });
     }
 
