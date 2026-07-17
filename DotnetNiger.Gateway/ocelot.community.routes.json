@@ -664,6 +664,17 @@
       "RateLimitOptions": { "EnableRateLimiting": false },
       "Key": "CommunityPublicSettingsRoute",
       "SwaggerKey": "community"
+    },
+    {
+      "UpstreamPathTemplate": "/images/{everything}",
+      "UpstreamHttpMethod": ["GET", "HEAD"],
+      "DownstreamPathTemplate": "/images/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [{ "Host": "localhost", "Port": 5050 }],
+      "FileCacheOptions": { "TtlSeconds": 3600, "Region": "images" },
+      "RateLimitOptions": { "EnableRateLimiting": false },
+      "Key": "CommunityImagesRoute",
+      "SwaggerKey": "community"
     }
   ]
 }
