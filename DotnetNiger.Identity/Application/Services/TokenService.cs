@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using DotnetNiger.Common.Constants;
 using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Api.Models;
 using DotnetNiger.Identity.Domain.Entities;
@@ -9,18 +10,6 @@ using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 
 namespace DotnetNiger.Identity.Application.Services;
-
-public class TokenExchangeResult
-{
-    public ClaimsPrincipal? Principal { get; init; }
-    public string? Error { get; init; }
-    public bool RequiresTwoFactor { get; init; }
-    public string? ChallengeToken { get; init; }
-
-    public static TokenExchangeResult Success(ClaimsPrincipal principal) => new() { Principal = principal };
-    public static TokenExchangeResult Failure(string error) => new() { Error = error };
-    public static TokenExchangeResult TwoFactorRequired(string challengeToken) => new() { RequiresTwoFactor = true, ChallengeToken = challengeToken };
-}
 
 public class TokenService
 {
@@ -96,8 +85,7 @@ public class TokenService
         identity.AddClaim(OpenIddictConstants.Claims.Name, tenantClient.ClientName);
         identity.AddClaim("tenant_id", tenantClient.TenantId.ToString());
         identity.AddClaim("client_id", clientId);
-        identity.AddClaim(ClaimTypes.Role, "Client");
-        identity.AddClaim("role", "Client");
+        identity.AddClaim(ClaimTypes.Role, RoleConstants.Client);
 
         var principal = new ClaimsPrincipal(identity);
         principal.SetScopes(request.Form["scope"].SelectMany(
@@ -108,7 +96,7 @@ public class TokenService
             OpenIddictConstants.Claims.Subject => [OpenIddictConstants.Destinations.AccessToken],
             OpenIddictConstants.Claims.Name => [OpenIddictConstants.Destinations.AccessToken],
             "tenant_id" or "client_id" => [OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken],
-            ClaimTypes.Role or "role" => [OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken],
+            ClaimTypes.Role => [OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken],
             _ => [OpenIddictConstants.Destinations.AccessToken],
         });
         return TokenExchangeResult.Success(principal);

@@ -16,13 +16,8 @@ public static class TokenPrincipalBuilder
         {
             foreach (var oldClaim in identity.FindAll(ClaimTypes.Role).ToList())
                 identity.RemoveClaim(oldClaim);
-            foreach (var oldClaim in identity.FindAll("role").ToList())
-                identity.RemoveClaim(oldClaim);
             foreach (var role in roles)
-            {
                 identity.AddClaim(new Claim(ClaimTypes.Role, role));
-                identity.AddClaim(new Claim("role", role));
-            }
         }
         principal.SetClaim("tenant_id", user.TenantId.ToString());
         principal.SetClaim(OpenIddictConstants.Claims.GivenName, user.FirstName);
@@ -39,7 +34,7 @@ public static class TokenPrincipalBuilder
                 => [Destinations.AccessToken, Destinations.IdentityToken],
             Claims.Name or Claims.Email or Claims.GivenName or Claims.FamilyName
                 => [Destinations.AccessToken, Destinations.IdentityToken],
-            ClaimTypes.Role or "role"
+            ClaimTypes.Role
                 => [Destinations.AccessToken, Destinations.IdentityToken],
             "tenant_id"
                 => [Destinations.AccessToken],

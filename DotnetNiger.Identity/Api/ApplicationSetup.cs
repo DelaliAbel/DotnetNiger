@@ -1,7 +1,5 @@
 using System.Reflection;
 using DotnetNiger.Identity.Api.Extensions;
-using DotnetNiger.Identity.Infrastructure;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.OpenApi.Models;
 
 namespace DotnetNiger.Identity.Api;
@@ -70,7 +68,6 @@ public static class ApplicationSetup
         builder.Services.AddCorsPolicy(builder.Configuration);
         builder.Services.AddIdentityServices();
         builder.Services.AddRateLimitingPolicies(builder.Configuration);
-        builder.Services.AddTransient<IClaimsTransformation, RoleClaimsTransformer>();
         builder.Services.AddApiVersioningWithSwagger();
 
         return builder;

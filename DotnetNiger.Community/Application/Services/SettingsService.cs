@@ -7,11 +7,11 @@ namespace DotnetNiger.Community.Application.Services;
 
 public class SettingsService(AppDbContext db) : ISettingsService
 {
-    public async Task<List<SiteSettingDto>> GetAllAsync()
+    public async Task<List<SiteSettingResponse>> GetAllAsync()
     {
         return await db.SiteSettings
             .OrderBy(s => s.Key)
-            .Select(s => new SiteSettingDto
+            .Select(s => new SiteSettingResponse
             {
                 Key = s.Key,
                 Value = s.Value,
@@ -21,13 +21,13 @@ public class SettingsService(AppDbContext db) : ISettingsService
             .ToListAsync();
     }
 
-    public async Task<SiteSettingDto?> GetByKeyAsync(string key)
+    public async Task<SiteSettingResponse?> GetByKeyAsync(string key)
     {
         var setting = await db.SiteSettings.FindAsync(key);
         return setting is null ? null : Map(setting);
     }
 
-    public async Task<SiteSettingDto> SetAsync(string key, string value, string type = "string", string? description = null)
+    public async Task<SiteSettingResponse> SetAsync(string key, string value, string type = "string", string? description = null)
     {
         var setting = await db.SiteSettings.FindAsync(key);
         if (setting is null)
@@ -92,7 +92,7 @@ public class SettingsService(AppDbContext db) : ISettingsService
         return true;
     }
 
-    private static SiteSettingDto Map(SiteSetting s) => new()
+    private static SiteSettingResponse Map(SiteSetting s) => new()
     {
         Key = s.Key,
         Value = s.Value,

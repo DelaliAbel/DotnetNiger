@@ -28,6 +28,11 @@ public static class RoleConstants
     public const string Collaborator = "Collaborator";
 
     /// <summary>
+    /// Client OAuth2 (machine-to-machine) — utilisé pour les tokens client credentials.
+    /// </summary>
+    public const string Client = "Client";
+
+    /// <summary>
     /// Chaîne composite pour les filtres autorisant Admin ou SuperAdmin.
     /// </summary>
     public const string AdminOrSuperAdmin = "SuperAdmin,Admin";
@@ -35,7 +40,7 @@ public static class RoleConstants
     /// <summary>
     /// Retourne la liste complète des rôles.
     /// </summary>
-    public static readonly string[] All = [SuperAdmin, Admin, User, Collaborator, AdminOrSuperAdmin];
+    public static readonly string[] All = [SuperAdmin, Admin, User, Collaborator, Client, AdminOrSuperAdmin];
 
     /// <summary>
     /// Vérifie si un nom de rôle est valide.

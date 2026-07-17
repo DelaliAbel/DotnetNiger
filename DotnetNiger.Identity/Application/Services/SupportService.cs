@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using DotnetNiger.Common.Email;
 using DotnetNiger.Identity.Application.DTOs.Requests;
+using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Infrastructure;
 
 namespace DotnetNiger.Identity.Application.Services;

@@ -138,7 +138,7 @@ public class ExternalServicesController : ControllerBase
     /// <summary>Reçoit le résultat d'un health check du Gateway et met à jour le statut.</summary>
     [HttpPost("_internal/{id:guid}/health-result")]
     [InternalApiKeyAuth]
-    public async Task<IActionResult> ReportHealthResult(Guid id, [FromBody] HealthCheckResultDto result)
+    public async Task<IActionResult> ReportHealthResult(Guid id, [FromBody] HealthCheckResultResponse result)
     {
         await _service.UpdateHealthStatusAsync(id, result.IsHealthy);
         return Ok();

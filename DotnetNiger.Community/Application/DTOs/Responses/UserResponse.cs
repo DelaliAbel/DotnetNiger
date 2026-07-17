@@ -1,7 +1,7 @@
 namespace DotnetNiger.Community.Application.DTOs.Responses;
 
 /// <summary>DTO représentant un utilisateur.</summary>
-public class UserDto
+public class UserResponse
 {
     public Guid Id { get; set; }
     public string Username { get; set; } = string.Empty;

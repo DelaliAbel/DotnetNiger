@@ -50,7 +50,7 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
     }
 
     /// <summary>Liste tous les utilisateurs Identity avec leurs données de profil enrichies (compétences, liens sociaux).</summary>
-    public async Task<List<UserDto>> GetUsersAsync()
+    public async Task<List<UserResponse>> GetUsersAsync()
     {
         var identityUsers = await identity.GetUsersAsync();
         var memberIds = identityUsers.Select(u => u.Id).ToList();
@@ -86,7 +86,7 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
     }
 
     /// <summary>Détail d'un utilisateur avec son profil membre (retourne null si inconnu d'Identity).</summary>
-    public async Task<UserDto?> GetUserAsync(Guid id)
+    public async Task<UserResponse?> GetUserAsync(Guid id)
     {
         var user = await identity.GetUserAsync(id);
         if (user is null) return null;
@@ -144,7 +144,7 @@ public class AdminService(AppDbContext db, IIdentityApiClient identity) : IAdmin
     }
 
     /// <summary>Crée un utilisateur via Identity, puis son profil membre en base.</summary>
-    public async Task<UserDto?> CreateUserAsync(CreateAdminUserRequest request)
+    public async Task<UserResponse?> CreateUserAsync(CreateAdminUserRequest request)
     {
         var role = request.IsAdmin ? "Admin" : request.IsCollaborator ? "Collaborator" : null;
         var userId = await identity.RegisterUserAsync(request.Email, request.Password, request.FullName, role);

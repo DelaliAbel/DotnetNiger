@@ -8,8 +8,8 @@ namespace DotnetNiger.Community.Application.Services;
 /// </summary>
 public interface IIdentityApiClient
 {
-    Task<List<UserDto>> GetUsersAsync();
-    Task<UserDto?> GetUserAsync(Guid id);
+    Task<List<UserResponse>> GetUsersAsync();
+    Task<UserResponse?> GetUserAsync(Guid id);
     Task<bool> UpdateUserStatusAsync(Guid id, bool isActive);
     Task<string?> RegisterUserAsync(string email, string password, string fullName, string? role = null);
     Task<bool> DeleteUserAsync(Guid id);

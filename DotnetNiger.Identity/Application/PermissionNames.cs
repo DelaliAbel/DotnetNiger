@@ -10,7 +10,6 @@ public static class PermissionNames
     public const string BlogEdit = "blog.edit";
     public const string BlogDelete = "blog.delete";
     public const string BlogPublish = "blog.publish";
-    public const string BlogApprove = "blog.approve";
 
     public const string EventCreate = "event.create";
     public const string EventEdit = "event.edit";
@@ -22,7 +21,6 @@ public static class PermissionNames
     public const string ResourceEdit = "resource.edit";
     public const string ResourceDelete = "resource.delete";
     public const string ResourcePublish = "resource.publish";
-    public const string ResourceApprove = "resource.approve";
 
     public const string AdminUsersView = "admin.users.view";
     public const string AdminUsersManage = "admin.users.manage";
@@ -39,20 +37,28 @@ public static class PermissionNames
     public const string AdminBlogCreate = "admin.blog.create";
     public const string AdminEventCreate = "admin.event.create";
     public const string AdminResourceCreate = "admin.resource.create";
+    public const string AdminMyProjects = "admin.my.projects";
+
+    public const string ProjectCreate = "project.create";
+    public const string ProjectEdit = "project.edit";
+    public const string ProjectDelete = "project.delete";
+    public const string ProjectApprove = "project.approve";
 
     public static readonly string[] All =
     [
         ProfileEdit, CommentCreate, EventRegister,
 
-        BlogCreate, BlogEdit, BlogDelete, BlogPublish, BlogApprove,
+        BlogCreate, BlogEdit, BlogDelete, BlogPublish,
         EventCreate, EventEdit, EventDelete, EventPublish, EventApprove,
-        ResourceCreate, ResourceEdit, ResourceDelete, ResourcePublish, ResourceApprove,
+        ResourceCreate, ResourceEdit, ResourceDelete, ResourcePublish,
 
         AdminUsersView, AdminUsersManage, AdminRolesManage, AdminPermissionsManage,
         AdminCertificatesView, AdminCertificatesApprove,
         AdminSettingsView, AdminSettingsManage,
-        AdminProfileView, AdminMyBlogs, AdminMyEvents, AdminMyResources,
+        AdminProfileView, AdminMyBlogs, AdminMyEvents, AdminMyResources, AdminMyProjects,
         AdminBlogCreate, AdminEventCreate, AdminResourceCreate,
+
+        ProjectCreate, ProjectEdit, ProjectDelete, ProjectApprove,
     ];
 
     public static readonly HashSet<string> AllSet = [.. All];
@@ -72,8 +78,10 @@ public static class PermissionNames
         EventCreate, EventEdit, EventDelete,
         ResourceCreate, ResourceEdit, ResourceDelete,
 
-        AdminProfileView, AdminMyBlogs, AdminMyEvents, AdminMyResources,
+        AdminProfileView, AdminMyBlogs, AdminMyEvents, AdminMyResources, AdminMyProjects,
         AdminBlogCreate, AdminEventCreate, AdminResourceCreate,
+
+        ProjectCreate, ProjectEdit, ProjectDelete,
     ];
 
     public static readonly string[] UserPermissions =

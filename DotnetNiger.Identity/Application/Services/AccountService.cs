@@ -7,6 +7,7 @@ using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 
 namespace DotnetNiger.Identity.Application.Services;
@@ -17,16 +18,20 @@ public partial class AccountService
     private readonly IdentityDbContext _db;
     private readonly IEmailSender<ApplicationUser> _emailSender;
     private readonly SmtpOptions _smtp;
+    private readonly IMemoryCache _cache;
+    private static readonly TimeSpan ProfileCacheDuration = TimeSpan.FromSeconds(60);
 
     public AccountService(UserManager<ApplicationUser> userManager,
         IdentityDbContext db,
         IEmailSender<ApplicationUser> emailSender,
-        IOptions<SmtpOptions> smtp)
+        IOptions<SmtpOptions> smtp,
+        IMemoryCache cache)
     {
         _userManager = userManager;
         _db = db;
         _emailSender = emailSender;
         _smtp = smtp.Value;
+        _cache = cache;
     }
 
     public async Task<ApplicationUser> RegisterAsync(string email, string password,
@@ -125,11 +130,18 @@ public partial class AccountService
 
     public async Task<UserProfileResponse> GetProfileAsync(Guid userId)
     {
+        var cacheKey = $"profile_{userId}";
+        if (_cache.TryGetValue(cacheKey, out UserProfileResponse? cached))
+            return cached!;
+
         var user = await FindUserOrThrowAsync(userId);
         var roles = await _userManager.GetRolesAsync(user);
-        return new UserProfileResponse(
+        var profile = new UserProfileResponse(
             user.Id, user.Email!, user.FirstName, user.LastName, user.AvatarUrl,
             user.TenantId, roles);
+
+        _cache.Set(cacheKey, profile, ProfileCacheDuration);
+        return profile;
     }
 
     public async Task<UserProfileResponse> UpdateProfileAsync(Guid userId, UpdateUserRequest request)
@@ -139,6 +151,9 @@ public partial class AccountService
         if (request.LastName != null) user.LastName = request.LastName;
         if (request.AvatarUrl != null) user.AvatarUrl = request.AvatarUrl;
         await _userManager.UpdateAsync(user);
+
+        _cache.Remove($"profile_{userId}");
+
         var roles = await _userManager.GetRolesAsync(user);
         return new UserProfileResponse(
             user.Id, user.Email!, user.FirstName, user.LastName, user.AvatarUrl,

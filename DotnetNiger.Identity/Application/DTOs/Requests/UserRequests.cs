@@ -29,4 +29,4 @@ public record AdminCreateUserRequest(
     [Required] string Password,
     [Required] string FirstName,
     string? LastName,
-    string? Role);
+    [DotnetNiger.Identity.Api.Validation.ValidRole] string? Role);

@@ -1,5 +1,3 @@
-using DotnetNiger.Identity.Domain.Entities;
-
 namespace DotnetNiger.Identity.Application.DTOs.Responses;
 
 /// <summary>Réponse contenant les données d'un service externe.</summary>
@@ -12,7 +10,7 @@ public record ExternalServiceResponse(
     string BaseUrl,
     string HealthEndpoint,
     bool IsActive,
-    ExternalServiceStatus Status,
+    string Status,
     DateTime? LastHealthCheckAt,
     int HealthCheckFailures,
     DateTime CreatedAt,

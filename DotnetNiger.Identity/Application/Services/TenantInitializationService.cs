@@ -85,6 +85,11 @@ public class TenantInitializationService
     {
         await _roleManager.CreateAsync(new ApplicationRole
         {
+            Name = SuperAdmin, NormalizedName = "SUPERADMIN",
+            TenantId = tenantId, Description = $"Super-Administrateur de {tenantName}"
+        });
+        await _roleManager.CreateAsync(new ApplicationRole
+        {
             Name = Admin, NormalizedName = "ADMIN",
             TenantId = tenantId, Description = $"Administrateur de {tenantName}"
         });
@@ -108,6 +113,7 @@ public class TenantInitializationService
         if (!result.Succeeded)
             throw new InvalidOperationException(
                 $"Échec création admin : {string.Join(", ", result.Errors.Select(e => e.Description))}");
+        await _userManager.AddToRoleAsync(user, SuperAdmin);
         await _userManager.AddToRoleAsync(user, Admin);
         return user;
     }

@@ -160,7 +160,7 @@ public class ExternalServiceService : IExternalServiceService
     {
         return new ExternalServiceResponse(
             s.Id, s.TenantId, s.Name, s.Slug, s.Description,
-            s.BaseUrl, s.HealthEndpoint, s.IsActive, s.Status,
+            s.BaseUrl, s.HealthEndpoint, s.IsActive, s.Status.ToString(),
             s.LastHealthCheckAt, s.HealthCheckFailures,
             s.CreatedAt, s.UpdatedAt);
     }

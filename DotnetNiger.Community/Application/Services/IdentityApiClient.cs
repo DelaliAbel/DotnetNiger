@@ -12,9 +12,9 @@ public class IdentityApiClient(HttpClient http, IMemoryCache cache, ILogger<Iden
     private const string UsersCacheKey = "identity_users";
 
     /// <summary>Récupère la liste de tous les utilisateurs (avec cache 5 min).</summary>
-    public async Task<List<UserDto>> GetUsersAsync()
+    public async Task<List<UserResponse>> GetUsersAsync()
     {
-        if (cache.TryGetValue(UsersCacheKey, out List<UserDto>? cached))
+        if (cache.TryGetValue(UsersCacheKey, out List<UserResponse>? cached))
             return cached!;
 
         try
@@ -23,7 +23,7 @@ public class IdentityApiClient(HttpClient http, IMemoryCache cache, ILogger<Iden
             if (!response.IsSuccessStatusCode)
                 return GetCachedUsersOrEmpty();
 
-            var users = await response.Content.ReadFromJsonAsync<List<UserDto>>();
+            var users = await response.Content.ReadFromJsonAsync<List<UserResponse>>();
             if (users is not null) cache.Set(UsersCacheKey, users, CacheTtl);
             return users ?? [];
         }
@@ -35,10 +35,10 @@ public class IdentityApiClient(HttpClient http, IMemoryCache cache, ILogger<Iden
     }
 
     /// <summary>Détail d'un utilisateur distant (avec cache 5 min).</summary>
-    public async Task<UserDto?> GetUserAsync(Guid id)
+    public async Task<UserResponse?> GetUserAsync(Guid id)
     {
         var key = $"identity_user_{id}";
-        if (cache.TryGetValue(key, out UserDto? cached))
+        if (cache.TryGetValue(key, out UserResponse? cached))
             return cached;
 
         try
@@ -47,7 +47,7 @@ public class IdentityApiClient(HttpClient http, IMemoryCache cache, ILogger<Iden
             if (!response.IsSuccessStatusCode)
                 return GetCachedUserOrNull(key);
 
-            var user = await response.Content.ReadFromJsonAsync<UserDto>();
+            var user = await response.Content.ReadFromJsonAsync<UserResponse>();
             if (user is not null) cache.Set(key, user, CacheTtl);
             return user;
         }
@@ -197,11 +197,11 @@ public class IdentityApiClient(HttpClient http, IMemoryCache cache, ILogger<Iden
     private void InvalidateUserCache(Guid id) => cache.Remove($"identity_user_{id}");
     private void InvalidateUsersCache() => cache.Remove(UsersCacheKey);
 
-    private List<UserDto> GetCachedUsersOrEmpty() =>
-        cache.TryGetValue(UsersCacheKey, out List<UserDto>? cached) ? cached! : [];
+    private List<UserResponse> GetCachedUsersOrEmpty() =>
+        cache.TryGetValue(UsersCacheKey, out List<UserResponse>? cached) ? cached! : [];
 
-    private UserDto? GetCachedUserOrNull(string key) =>
-        cache.TryGetValue(key, out UserDto? cached) ? cached : null;
+    private UserResponse? GetCachedUserOrNull(string key) =>
+        cache.TryGetValue(key, out UserResponse? cached) ? cached : null;
 
     /// <summary>Sépare un nom complet en prénom et nom, gérant les noms composés.</summary>
     private static (string FirstName, string LastName) SplitFullName(string fullName)

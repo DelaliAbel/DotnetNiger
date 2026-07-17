@@ -1,4 +1,5 @@
 using DotnetNiger.Identity.Application.DTOs.Requests;
+using DotnetNiger.Identity.Application.DTOs.Responses;
 
 namespace DotnetNiger.Identity.Application.Services;
 
@@ -7,11 +8,4 @@ public interface ISupportService
 {
     /// <summary>Envoie un signalement par email à l'équipe de support.</summary>
     Task<SupportReportResult> ReportAsync(SupportReportRequest request, string userId, string userEmail, string userTenant);
-}
-
-/// <summary>Résultat de l'envoi d'un signalement.</summary>
-public class SupportReportResult
-{
-    public bool Success { get; init; }
-    public string? Error { get; init; }
 }

@@ -63,7 +63,11 @@ public partial class AccountService
 
     private async Task SendConfirmationEmailAsync(ApplicationUser user, string code)
     {
-        if (string.IsNullOrEmpty(_smtp.Host)) return;
+        if (string.IsNullOrEmpty(_smtp.Host))
+        {
+            Console.WriteLine($"[DEV] Code de confirmation pour {user.Email} : {code}");
+            return;
+        }
 
         var tenant = await _db.Tenants.FindAsync(user.TenantId);
         var confirmUrl = $"{_smtp.AppBaseUrl}/api/v1/auth/confirm-email?email={Uri.EscapeDataString(user.Email!)}&code={Uri.EscapeDataString(code)}";
