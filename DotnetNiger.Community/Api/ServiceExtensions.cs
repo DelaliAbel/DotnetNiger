@@ -119,7 +119,8 @@ public static class ServiceExtensions
                 if (origins.Length > 0)
                     policy.WithOrigins(origins)
                         .AllowAnyMethod()
-                        .AllowAnyHeader();
+                        .AllowAnyHeader()
+                        .AllowCredentials();
                 else
                     policy.AllowAnyOrigin()
                         .AllowAnyMethod()

@@ -17,9 +17,15 @@ public static class CorsExtensions
             options.AddPolicy("AllowFrontendOrigins", policy =>
             {
 
-                policy.WithOrigins(origins)
-                    .AllowAnyMethod()
-                    .AllowAnyHeader();
+                if (origins.Length > 0)
+                    policy.WithOrigins(origins)
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
+                else
+                    policy.AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
             });
         });
 
