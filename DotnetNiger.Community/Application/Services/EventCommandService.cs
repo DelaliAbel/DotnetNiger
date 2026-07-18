@@ -51,6 +51,7 @@ public class EventCommandService(AppDbContext db, IServiceScopeFactory scopeFact
         StartDate = request.StartDate,
         EndDate = request.EndDate,
         CoverImageUrl = request.CoverImageUrl,
+        OrganizerName = request.OrganizerName,
         CreatedBy = userId,
         Capacity = request.Capacity,
         MeetupLink = request.MeetupLink,
@@ -87,13 +88,20 @@ public class EventCommandService(AppDbContext db, IServiceScopeFactory scopeFact
     /// <inheritdoc/>
     public async Task<EventResponse?> UpdateAsync(Guid id, CreateEventRequest request, Guid userId, bool isAdmin)
     {
-        var ev = await db.Events.Include(e => e.Medias).Include(e => e.EventTags).Include(e => e.Speakers).FirstOrDefaultAsync(e => e.Id == id);
+        var ev = await db.Events
+            .Include(e => e.Medias)
+            .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .Include(e => e.Speakers)
+            .FirstOrDefaultAsync(e => e.Id == id);
         if (ev is null) return null;
         if (ev.CreatedBy != userId && !isAdmin)
             throw new UnauthorizedAccessException(Messages.Event.NotAuthorizedModify);
 
         ev.Title = request.Title;
-        ev.Slug = SlugGenerator.GenerateSlug(request.Title);
+        var newSlug = SlugGenerator.GenerateSlug(request.Title);
+        if (newSlug != ev.Slug)
+            newSlug = await EnsureUniqueSlugAsync(newSlug, id);
+        ev.Slug = newSlug;
         ev.Description = request.Description;
         ev.Location = request.Location;
         ev.EventType = request.EventType;
@@ -101,6 +109,7 @@ public class EventCommandService(AppDbContext db, IServiceScopeFactory scopeFact
         ev.StartDate = request.StartDate;
         ev.EndDate = request.EndDate;
         ev.CoverImageUrl = request.CoverImageUrl;
+        ev.OrganizerName = request.OrganizerName;
         ev.Capacity = request.Capacity;
         ev.MeetupLink = request.MeetupLink;
         ev.IsPublished = request.IsPublished;
@@ -133,6 +142,24 @@ public class EventCommandService(AppDbContext db, IServiceScopeFactory scopeFact
         ev.UpdatedAt = DateTime.UtcNow;
         await db.SaveChangesAsync();
         return true;
+    }
+
+    private async Task<string> EnsureUniqueSlugAsync(string baseSlug, Guid? excludeId = null)
+    {
+        var existing = await db.Events.AsNoTracking()
+            .Where(e => e.Slug.StartsWith(baseSlug) && (excludeId == null || e.Id != excludeId.Value))
+            .Select(e => e.Slug)
+            .ToListAsync();
+
+        if (!existing.Contains(baseSlug)) return baseSlug;
+
+        for (var i = 1; i < 100; i++)
+        {
+            var candidate = $"{baseSlug}-{i}";
+            if (!existing.Contains(candidate)) return candidate;
+        }
+
+        return $"{baseSlug}-{Guid.NewGuid():N}";
     }
 
     private async Task AssignTags(Event ev, List<string> tagNames)

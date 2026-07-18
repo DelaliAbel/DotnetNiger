@@ -58,7 +58,10 @@ public class PostCommandService(AppDbContext db, INotificationService notificati
     /// <inheritdoc/>
     public async Task<PostResponse?> UpdateAsync(Guid id, UpdatePostRequest request, Guid userId, bool isAdmin)
     {
-        var post = await db.Posts.Include(p => p.PostCategories).Include(p => p.PostTags).FirstOrDefaultAsync(p => p.Id == id);
+        var post = await db.Posts
+            .Include(p => p.PostCategories).ThenInclude(pc => pc.Category)
+            .Include(p => p.PostTags).ThenInclude(pt => pt.Tag)
+            .FirstOrDefaultAsync(p => p.Id == id);
         if (post is null) return null;
         if (post.AuthorId != userId && !isAdmin)
             throw new UnauthorizedAccessException(Messages.Post.NotAuthorizedModify);

@@ -90,9 +90,20 @@ public class PostsController(
     [Authorize]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePostRequest request)
     {
-        var post = await postCommand.UpdateAsync(id, request, GetUserId(), IsAdmin());
-        if (post is null) return NotFound(new { Success = false, Message = Messages.Post.NotFound });
-        return Ok(new { Success = true, Data = post });
+        try
+        {
+            var post = await postCommand.UpdateAsync(id, request, GetUserId(), IsAdmin());
+            if (post is null) return NotFound(new { Success = false, Message = Messages.Post.NotFound });
+            return Ok(new { Success = true, Data = post });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { Success = false, Message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Success = false, Message = ex.Message });
+        }
     }
 
     /// <summary>Publie un article.</summary>

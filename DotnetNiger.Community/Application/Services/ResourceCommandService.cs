@@ -53,14 +53,18 @@ public class ResourceCommandService(AppDbContext db, ICertificateService certifi
     public async Task<ResourceResponse?> UpdateAsync(Guid id, CreateResourceRequest request, Guid userId, bool isAdmin)
     {
         var r = await db.Resources
-            .Include(r => r.ResourceTags)
+            .Include(r => r.ResourceCategories)
+            .Include(r => r.ResourceTags).ThenInclude(rt => rt.Tag)
             .FirstOrDefaultAsync(r => r.Id == id);
         if (r is null) return null;
         if (r.CreatedBy != userId && !isAdmin)
             throw new UnauthorizedAccessException(Messages.Resource.NotAuthorizedModify);
 
         r.Title = request.Title;
-        r.Slug = SlugGenerator.GenerateSlug(request.Title);
+        var newSlug = SlugGenerator.GenerateSlug(request.Title);
+        if (newSlug != r.Slug)
+            newSlug = await EnsureUniqueSlugAsync(newSlug, id);
+        r.Slug = newSlug;
         r.Description = request.Description;
         r.Url = request.Url;
         r.ResourceType = request.ResourceType;
@@ -105,6 +109,24 @@ public class ResourceCommandService(AppDbContext db, ICertificateService certifi
         r.ViewCount++;
         await db.SaveChangesAsync();
         return ResourceMappers.ToResponse(r);
+    }
+
+    private async Task<string> EnsureUniqueSlugAsync(string baseSlug, Guid? excludeId = null)
+    {
+        var existing = await db.Resources.AsNoTracking()
+            .Where(r => r.Slug.StartsWith(baseSlug) && (excludeId == null || r.Id != excludeId.Value))
+            .Select(r => r.Slug)
+            .ToListAsync();
+
+        if (!existing.Contains(baseSlug)) return baseSlug;
+
+        for (var i = 1; i < 100; i++)
+        {
+            var candidate = $"{baseSlug}-{i}";
+            if (!existing.Contains(candidate)) return candidate;
+        }
+
+        return $"{baseSlug}-{Guid.NewGuid():N}";
     }
 
     private async Task AssignTags(Resource resource, List<string> tagNames)

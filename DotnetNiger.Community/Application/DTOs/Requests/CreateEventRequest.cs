@@ -25,6 +25,7 @@ public class CreateEventRequest
     public DateTime EndDate { get; set; }
 
     public string CoverImageUrl { get; set; } = string.Empty;
+    public string OrganizerName { get; set; } = string.Empty;
     public int Capacity { get; set; } = 100;
     public string MeetupLink { get; set; } = string.Empty;
     public bool IsPublished { get; set; }

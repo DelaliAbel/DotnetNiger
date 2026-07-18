@@ -130,10 +130,21 @@ public class ResourcesController(IResourceQueryService resourceQuery, IResourceC
     [Authorize]
     public async Task<IActionResult> Update(Guid id, [FromBody] CreateResourceRequest request)
     {
-        var userId = GetUserId();
-        var resource = await resourceCommand.UpdateAsync(id, request, userId, IsAdmin());
-        if (resource is null) return NotFound(new { Success = false, Message = Messages.Resource.NotFound });
-        return Ok(new { Success = true, Data = resource });
+        try
+        {
+            var userId = GetUserId();
+            var resource = await resourceCommand.UpdateAsync(id, request, userId, IsAdmin());
+            if (resource is null) return NotFound(new { Success = false, Message = Messages.Resource.NotFound });
+            return Ok(new { Success = true, Data = resource });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { Success = false, Message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Success = false, Message = ex.Message });
+        }
     }
 
     /// <summary>Supprime une ressource (auteur ou admin).</summary>

@@ -108,9 +108,20 @@ public class EventsController(
     [Authorize]
     public async Task<IActionResult> Update(Guid id, [FromBody] CreateEventRequest request)
     {
-        var ev = await eventCommand.UpdateAsync(id, request, GetUserId(), IsAdmin());
-        if (ev is null) return NotFound(new { Success = false, Message = Messages.Event.NotFound });
-        return Ok(new { Success = true, Data = ev });
+        try
+        {
+            var ev = await eventCommand.UpdateAsync(id, request, GetUserId(), IsAdmin());
+            if (ev is null) return NotFound(new { Success = false, Message = Messages.Event.NotFound });
+            return Ok(new { Success = true, Data = ev });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { Success = false, Message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Success = false, Message = ex.Message });
+        }
     }
 
     /// <summary>Supprime un événement par son identifiant.</summary>
