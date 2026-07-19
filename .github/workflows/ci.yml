@@ -1,13 +1,14 @@
-name: CI
+name: CI Build Verification
 
 on:
   push:
-    branches: ["BackEnd"]
+    branches: ["BackEnd", "main", "develop"]
   pull_request:
-    branches: ["BackEnd"]
+    branches: ["BackEnd", "main", "develop"]
 
 jobs:
-  build:
+  build-backend:
+    name: Build Backend (net9.0)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -17,8 +18,49 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
-      - name: Restore
+      - name: Restore Backend
+        run: dotnet restore DotnetNiger.Server/DotnetNiger.Server.csproj
+
+      - name: Build Backend
+        run: dotnet build DotnetNiger.Server/DotnetNiger.Server.csproj --configuration Release --no-restore /p:TreatWarningsAsErrors=true
+
+      - name: Build Infrastructure
+        run: dotnet build DotnetNiger.Infrastructure/DotnetNiger.Infrastructure.csproj --configuration Release --no-restore /p:TreatWarningsAsErrors=true
+
+      - name: Build Domain
+        run: dotnet build DotnetNiger.Domain/DotnetNiger.Domain.csproj --configuration Release --no-restore /p:TreatWarningsAsErrors=true
+
+  build-frontend:
+    name: Build Frontend (net8.0)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore Frontend
+        run: dotnet restore DotnetNiger.Client/DotnetNiger.Client.csproj
+
+      - name: Build Frontend
+        run: dotnet build DotnetNiger.Client/DotnetNiger.Client.csproj --configuration Release --no-restore /p:TreatWarningsAsErrors=true
+
+  build-solution:
+    name: Build Full Solution
+    runs-on: ubuntu-latest
+    needs: [build-backend, build-frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Restore Solution
         run: dotnet restore DotnetNiger.sln
 
-      - name: Build
+      - name: Build Solution
         run: dotnet build DotnetNiger.sln --configuration Release --no-restore /p:TreatWarningsAsErrors=true
