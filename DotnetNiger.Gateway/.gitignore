@@ -1,9 +1,0 @@
-bin/
-obj/
-logs/
-*.log
-*.user
-*.suo
-appsettings.Development.json
-appsettings.Production.json
-ocelot.json
