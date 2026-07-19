@@ -1,12 +1,14 @@
 using DotnetNiger.Community.Infrastructure;
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.DTOs.Responses;
 using DotnetNiger.Community.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Application.Services;
 
+/// <summary>Notifications personnelles des utilisateurs (lecture, marquage comme lu).</summary>
 public class UserNotificationService(AppDbContext db) : IUserNotificationService
 {
+    /// <summary>Notifications d'un utilisateur, de la plus récente à la plus ancienne.</summary>
     public async Task<List<NotificationResponse>> GetNotificationsAsync(Guid userId)
     {
         return await db.Notifications.AsNoTracking()
@@ -16,11 +18,13 @@ public class UserNotificationService(AppDbContext db) : IUserNotificationService
             .ToListAsync();
     }
 
+    /// <summary>Nombre de notifications non lues pour un utilisateur.</summary>
     public async Task<int> GetUnreadCountAsync(Guid userId)
     {
         return await db.Notifications.AsNoTracking().CountAsync(n => n.UserId == userId && !n.IsRead);
     }
 
+    /// <summary>Envoie une notification à un utilisateur.</summary>
     public async Task SendNotificationAsync(Guid userId, string message)
     {
         var notification = new Notification
@@ -36,6 +40,7 @@ public class UserNotificationService(AppDbContext db) : IUserNotificationService
         await db.SaveChangesAsync();
     }
 
+    /// <summary>Marque une notification spécifique comme lue.</summary>
     public async Task<bool> MarkAsReadAsync(Guid userId, Guid notificationId)
     {
         var notification = await db.Notifications
@@ -47,19 +52,14 @@ public class UserNotificationService(AppDbContext db) : IUserNotificationService
         return true;
     }
 
+    /// <summary>Marque toutes les notifications non lues comme lues en une seule requête.</summary>
     public async Task<bool> MarkAllAsReadAsync(Guid userId)
     {
-        var unread = await db.Notifications
+        var rows = await db.Notifications
             .Where(n => n.UserId == userId && !n.IsRead)
-            .ToListAsync();
+            .ExecuteUpdateAsync(setters => setters.SetProperty(n => n.IsRead, true));
 
-        if (unread.Count == 0) return false;
-
-        foreach (var n in unread)
-            n.IsRead = true;
-
-        await db.SaveChangesAsync();
-        return true;
+        return rows > 0;
     }
 
     private static NotificationResponse MapNotification(Notification n) => new()

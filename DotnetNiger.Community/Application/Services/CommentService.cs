@@ -1,12 +1,15 @@
 using DotnetNiger.Community.Infrastructure;
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.DTOs.Responses;
 using DotnetNiger.Community.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Application.Services;
 
+/// <summary>Gestion des commentaires avec arborescence (réponses imbriquées).</summary>
 public class CommentService(AppDbContext db) : ICommentService
 {
+    /// <summary>Commentaires d'un article, construits en arbre à partir de la liste plate.</summary>
     public async Task<List<CommentResponse>> GetByPostIdAsync(Guid postId)
     {
         var comments = await db.Comments.AsNoTracking()
@@ -16,6 +19,7 @@ public class CommentService(AppDbContext db) : ICommentService
         return BuildTree(comments);
     }
 
+    /// <summary>Commentaires d'un événement, construits en arbre.</summary>
     public async Task<List<CommentResponse>> GetByEventIdAsync(Guid eventId)
     {
         var comments = await db.Comments.AsNoTracking()
@@ -25,12 +29,23 @@ public class CommentService(AppDbContext db) : ICommentService
         return BuildTree(comments);
     }
 
+    /// <summary>Liste tous les commentaires pour l'administration (modération).</summary>
+    public async Task<List<CommentResponse>> GetAllAsync()
+    {
+        var comments = await db.Comments.AsNoTracking()
+            .OrderByDescending(c => c.CreatedAt)
+            .ToListAsync();
+        return comments.Select(MapComment).ToList();
+    }
+
+    /// <summary>Détail d'un commentaire.</summary>
     public async Task<CommentResponse?> GetByIdAsync(Guid id)
     {
         var comment = await db.Comments.FindAsync(id);
         return comment is null ? null : MapComment(comment);
     }
 
+    /// <summary>Ajoute un commentaire (réponse à un article, un événement ou un autre commentaire).</summary>
     public async Task<CommentResponse> CreateAsync(CreateCommentRequest request, Guid userId, string authorName, string authorAvatar)
     {
         var comment = new Comment
@@ -51,6 +66,7 @@ public class CommentService(AppDbContext db) : ICommentService
         return MapComment(comment);
     }
 
+    /// <summary>Modifie le contenu d'un commentaire (refusé si l'utilisateur n'est ni le propriétaire ni admin).</summary>
     public async Task<CommentResponse?> UpdateAsync(Guid id, UpdateCommentRequest request, Guid userId, bool isAdmin = false)
     {
         var comment = await db.Comments.FirstOrDefaultAsync(c => c.Id == id);
@@ -62,6 +78,10 @@ public class CommentService(AppDbContext db) : ICommentService
         return MapComment(comment);
     }
 
+    /// <summary>
+    /// Supprime un commentaire. S'il a des réponses, son contenu est masqué plutôt que supprimé,
+    /// sauf si <paramref name="deleteAllReplies"/> est vrai (supprime aussi les réponses).
+    /// </summary>
     public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin = false, bool deleteAllReplies = false)
     {
         var comment = await db.Comments.FirstOrDefaultAsync(c => c.Id == id);

@@ -1,46 +1,25 @@
 # Security Policy
 
-## Reported Security Vulnerabilities
+## Reporting a Vulnerability
 
-Si vous découvrez une vulnérabilité de sécurité, veuillez **NE PAS** l'ouvrir en public via une issue GitHub.
+If you discover a security vulnerability in DotnetNiger, please report it by emailing the maintainers. Do **not** open a public GitHub issue.
 
-À la place, veuillez envoyer un email à [Comming...](mailto:Comming...) avec :
+Please include:
 
-- Description de la vulnérabilité
-- Étapes pour reproduire
-- Impact potentiel
-- Votre suggestion de correction (si disponible)
+- Description of the vulnerability
+- Steps to reproduce
+- Affected endpoints/components
+- Potential impact
 
-### Délai de réponse
+We will acknowledge receipt within 48 hours and provide a timeline for a fix.
 
-- Nous accuserons réception dans les **24 heures**
-- Une évaluation initiale sera fournie dans les **48 heures**
-- Nous travaillerons à une correction et la fournirons dès que possible
+## Best Practices
 
-## Soutien aux versions
-
-| Version | Supported |
-| ------- | --------- |
-| 1.0.x   | ✅ Yes    |
-| < 1.0   | ❌ No     |
-
-## Dépendances de sécurité
-
-Les dépendances NuGet sont mises à jour régulièrement pour les correctifs de sécurité :
-
-```bash
-dotnet restore
-dotnet outdated --include-prerelease
-dotnet nuget locals all --clear
-```
-
-<!-- ## Scans de sécurité
-
-DotnetNiger utilise plusieurs outils de sécurité :
-
-- **Dependabot** - Scans de dépendances
-- **SonarQube** - Analyse statique
-- **OWASP** - Vulnérabilités connues
-- **CodeQL** - Analyse du code -->
-
-Merci de votre aide pour garder DotnetNiger sécurisé !
+- All API traffic must go through the Gateway
+- JWT tokens are used for authentication (not cookies)
+- CORS is restricted to known origins in production
+- Rate limiting is applied on sensitive endpoints (auth, newsletter, upload)
+- 2FA is available for all user accounts
+- GDPR compliance: data export, consent tracking, and right to be forgotten
+- Uploaded files are validated (type, size) and stored outside the app directory in production
+- Secrets (JWT keys, SMTP passwords, OAuth secrets) are never committed — use environment variables or user secrets

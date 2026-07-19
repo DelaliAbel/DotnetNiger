@@ -1,0 +1,26 @@
+using DotnetNiger.Client.Models.Requests;
+using DotnetNiger.Client.Models.Responses;
+
+namespace DotnetNiger.Client.Services.Contracts;
+
+public interface IUserService
+{
+    Task<UserDto?> GetUserByIdAsync(Guid userId);
+    Task<List<UserDto>> GetUsersAsync();
+    Task<List<UserDto>> GetPendingUsersAsync();
+    Task<UserDto?> GetUserByEmailAsync(string email);
+    Task<List<UserDto>> SearchUsersAsync(string query);
+    Task<List<UserDto>> GetUsersByRoleAsync(string role);
+    Task<int> GetUsersCountAsync();
+    Task<int> GetActiveUsersCountAsync();
+    Task<UserDto?> CreateUserAsync(CreateUserRequest user);
+    Task<UserDto?> UpdateUserAsync(UserDto user);
+    Task<bool> DeleteUserAsync(Guid userId);
+    Task<bool> ApproveUserAsync(Guid userId);
+    Task<bool> RejectUserAsync(Guid userId);
+    Task<List<UserDto>> GetTeamMembersAsync();
+    Task<bool> AssignRoleAsync(Guid userId, string roleName);
+    Task<bool> RemoveRoleAsync(Guid userId, string roleName);
+    Task<bool> AddToTeamAsync(Guid userId, string position);
+    Task<bool> RemoveFromTeamAsync(Guid userId);
+}

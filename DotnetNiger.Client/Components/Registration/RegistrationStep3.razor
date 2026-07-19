@@ -1,0 +1,152 @@
+﻿@if (!IsSubmitted)
+{
+    <EditForm Model="Model" OnValidSubmit="HandleValidSubmit">
+        <DataAnnotationsValidator />
+
+        <div>
+            <div class="text-center mb-6">
+                <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-purple-50">
+                    <i class="fas fa-certificate text-secondary text-xl"></i>
+                </div>
+                <h2 class="text-lg font-bold text-gray-900">Validez votre parcours</h2>
+                <p class="mt-1.5 text-sm text-gray-500 leading-relaxed max-w-sm mx-auto">
+                    Renseignez votre certification <strong class="text-gray-700">Foundational C# with Microsoft</strong> pour activer vos accès contributeur.
+                </p>
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+            {
+                <div class="mb-5 rounded-xl bg-red-50 border border-red-100 px-4 py-3">
+                    <div class="flex items-start gap-2.5">
+                        <i class="fas fa-circle-exclamation text-red-400 mt-0.5 text-xs"></i>
+                        <p class="text-sm text-red-700">@ErrorMessage</p>
+                    </div>
+                </div>
+            }
+
+            <div class="mb-4">
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">URL de la certification</label>
+                <InputText @bind-Value="Model.CertificateUrl"
+                           placeholder="https://www.freecodecamp.org/certification/..."
+                           class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 transition focus:bg-white focus:border-purple-300 focus:ring-2 focus:ring-purple-100 outline-none" />
+                <ValidationMessage For="@(() => Model.CertificateUrl)" class="text-xs text-red-500 mt-1.5" />
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-xs font-medium text-gray-500 mb-1.5">Type de certificat</label>
+                <InputSelect @bind-Value="Model.CertificateType"
+                             class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 transition focus:bg-white focus:border-purple-300 focus:ring-2 focus:ring-purple-100 outline-none">
+                    <option value="" disabled>Sélectionnez un type</option>
+                    <option value="Foundational C# with Microsoft">Foundational C# with Microsoft</option>
+                    <option value="C# Data and Web">C# Data and Web</option>
+                    <option value="Autre">Autre</option>
+                </InputSelect>
+                <ValidationMessage For="@(() => Model.CertificateType)" class="text-xs text-red-500 mt-1.5" />
+            </div>
+
+            <div class="flex gap-3">
+                <button type="button"
+                        class="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50 active:scale-[0.98]"
+                        @onclick="HandleBack">
+                    <i class="fas fa-arrow-left mr-1.5 text-xs"></i>Retour
+                </button>
+                <button type="submit" disabled="@IsLoading"
+                        class="flex-1 rounded-xl bg-secondary px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-blue-700 hover:shadow-md active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed">
+                    @if (IsLoading)
+                    {
+                        <span class="inline-flex items-center gap-2">
+                            <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                            Soumission...
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="inline-flex items-center gap-2">
+                            <i class="fas fa-paper-plane text-xs"></i>
+                            Soumettre
+                        </span>
+                    }
+                </button>
+            </div>
+        </div>
+    </EditForm>
+}
+else
+{
+    <div class="text-center py-4">
+        <div class="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-purple-50">
+            <i class="fas fa-check-circle text-secondary text-2xl"></i>
+        </div>
+
+        <h2 class="text-lg font-bold text-gray-900">Certification soumise</h2>
+
+        <p class="mt-2 text-sm text-gray-500 leading-relaxed max-w-sm mx-auto">
+            Votre certification a été envoyée avec succès. Vous recevrez un email dès qu'elle sera validée par notre équipe.
+        </p>
+
+        <div class="mt-5 inline-flex items-center gap-2 rounded-full bg-purple-50 px-4 py-2">
+            <span class="h-2 w-2 rounded-full bg-amber-400"></span>
+            <span class="text-xs font-medium text-purple-700">@(Status?.Status ?? "En attente")</span>
+        </div>
+
+        @if (Status is not null)
+        {
+            <div class="mt-4 space-y-1 text-xs text-gray-400">
+                <p>Soumis le <span class="text-gray-600">@Status.SubmissionDate.ToLocalTime().ToString("dd MMM yyyy 'à' HH:mm")</span></p>
+                <p>Délai estimé : <span class="text-gray-600">@Status.EstimatedWaitTime</span></p>
+            </div>
+        }
+
+        <div class="mt-6 rounded-xl bg-blue-50 border border-blue-100 p-4 text-left">
+            <div class="flex items-start gap-2.5">
+                <i class="fas fa-lightbulb text-secondary mt-0.5 text-xs"></i>
+                <div class="text-xs text-secondary leading-relaxed">
+                    Vous pouvez dès maintenant vous connecter et participer aux événements. La création de contenu (blogs, ressources) sera active après validation de votre certificat.
+                </div>
+            </div>
+        </div>
+
+        <button type="button" disabled="@IsLoading"
+                class="mt-6 inline-flex items-center gap-2 rounded-xl bg-secondary px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-blue-700 hover:shadow-md active:scale-[0.98] disabled:opacity-60"
+                @onclick="HandleContinue">
+            @if (IsLoading)
+            {
+                <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            }
+            Aller à la connexion
+            <i class="fas fa-arrow-right text-xs"></i>
+        </button>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public CertificateSubmissionDto Model { get; set; } = default!;
+
+    [Parameter]
+    public string? ErrorMessage { get; set; }
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public bool IsSubmitted { get; set; }
+
+    [Parameter]
+    public CertificateStatusDto? Status { get; set; }
+
+    [Parameter]
+    public EventCallback<CertificateSubmissionDto> OnSubmit { get; set; }
+
+    [Parameter]
+    public EventCallback OnBack { get; set; }
+
+    [Parameter]
+    public EventCallback OnContinue { get; set; }
+
+    private Task HandleValidSubmit() => OnSubmit.InvokeAsync(Model);
+
+    private Task HandleBack() => OnBack.InvokeAsync();
+
+    private Task HandleContinue() => OnContinue.InvokeAsync();
+}

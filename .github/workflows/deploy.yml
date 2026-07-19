@@ -1,0 +1,63 @@
+name: Build & Push to Deploy Branches
+
+on:
+  push:
+    branches: [BackEnd]
+
+permissions:
+  contents: write
+
+jobs:
+  build-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore
+        run: dotnet restore DotnetNiger.sln
+
+      - name: Publish Backend
+        run: dotnet publish DotnetNiger.Server/DotnetNiger.Server.csproj -c Release -o publish/backend --no-restore
+
+      - name: Push to deploy/backend
+        run: |
+          cd publish/backend
+          git init
+          git checkout -b deploy/backend
+          git add -A
+          git -c user.name=github-actions -c user.email=actions@github.com commit -m "Deploy Backend from ${GITHUB_SHA}"
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push origin deploy/backend --force
+
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore DotnetNiger.Client/DotnetNiger.Client.csproj
+
+      - name: Publish Frontend
+        run: dotnet publish DotnetNiger.Client/DotnetNiger.Client.csproj -c Release -o publish/frontend
+
+      - name: Push to deploy/frontend
+        run: |
+          cd publish/frontend
+          git init
+          git checkout -b deploy/frontend
+          git add -A
+          git -c user.name=github-actions -c user.email=actions@github.com commit -m "Deploy Frontend from ${GITHUB_SHA}"
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push origin deploy/frontend --force

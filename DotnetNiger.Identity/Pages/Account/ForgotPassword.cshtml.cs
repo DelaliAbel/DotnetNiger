@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Logging;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Application.Services;
 
@@ -12,11 +13,13 @@ public class ForgotPasswordModel : PageModel
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IEmailSender<ApplicationUser> _emailSender;
+    private readonly ILogger<ForgotPasswordModel> _logger;
 
-    public ForgotPasswordModel(UserManager<ApplicationUser> userManager, IEmailSender<ApplicationUser> emailSender)
+    public ForgotPasswordModel(UserManager<ApplicationUser> userManager, IEmailSender<ApplicationUser> emailSender, ILogger<ForgotPasswordModel> logger)
     {
         _userManager = userManager;
         _emailSender = emailSender;
+        _logger = logger;
     }
 
     [BindProperty]
@@ -27,27 +30,35 @@ public class ForgotPasswordModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (string.IsNullOrWhiteSpace(Email))
+        try
         {
-            ErrorMessage = "Veuillez saisir votre adresse email.";
+            if (string.IsNullOrWhiteSpace(Email))
+            {
+                ErrorMessage = "Veuillez saisir votre adresse email.";
+                return Page();
+            }
+
+            var user = await _userManager.FindByEmailAsync(Email);
+            if (user == null || !user.IsActive)
+            {
+                SuccessMessage = "Si cette adresse email existe, vous recevrez un lien de réinitialisation.";
+                return Page();
+            }
+
+            var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+            var resetLink = Url.Page("/Account/ResetPassword", null,
+                new { code, email = user.Email }, Request.Scheme) ?? "";
+
+            await _emailSender.SendPasswordResetLinkAsync(user, user.Email!, resetLink);
+
+            SuccessMessage = "Un lien de réinitialisation vous a été envoyé par email.";
             return Page();
         }
-
-        var user = await _userManager.FindByEmailAsync(Email);
-        if (user == null || !user.IsActive)
+        catch (Exception ex)
         {
-            // Don't reveal whether the email exists or not
-            SuccessMessage = "Si cette adresse email existe, vous recevrez un lien de réinitialisation.";
+            _logger.LogError(ex, "ForgotPassword error for {Email}", Email);
+            ErrorMessage = "Une erreur est survenue. Veuillez reessayer plus tard.";
             return Page();
         }
-
-        var code = await _userManager.GeneratePasswordResetTokenAsync(user);
-        var resetLink = Url.Page("/Account/ResetPassword", null,
-            new { code, email = user.Email }, Request.Scheme) ?? "";
-
-        await _emailSender.SendPasswordResetLinkAsync(user, user.Email!, resetLink);
-
-        SuccessMessage = "Un lien de réinitialisation vous a été envoyé par email.";
-        return Page();
     }
 }

@@ -1,13 +1,16 @@
-using DotnetNiger.Community.Domain;
+using DotnetNiger.Common.Extensions;
 using DotnetNiger.Community.Domain.Entities;
 using DotnetNiger.Community.Infrastructure;
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.DTOs.Responses;
 using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Application.Services;
 
+/// <summary>Gestion des partenaires de la communauté.</summary>
 public class PartnerService(AppDbContext db) : IPartnerService
 {
+    /// <summary>Liste des partenaires actifs, triés par ordre d'affichage puis par nom.</summary>
     public async Task<List<PartnerResponse>> GetAllActiveAsync(string? partnerType)
     {
         var q = db.Set<Partner>().AsNoTracking().Where(p => p.IsActive).AsQueryable();
@@ -15,26 +18,28 @@ public class PartnerService(AppDbContext db) : IPartnerService
         if (!string.IsNullOrWhiteSpace(partnerType))
             q = q.Where(p => p.PartnerType == partnerType);
 
-        return await q
+        var partners = await q
             .OrderBy(p => p.SortOrder)
             .ThenBy(p => p.Name)
-            .Select(p => MapPartner(p))
             .ToListAsync();
+        return partners.Select(MapPartner).ToList();
     }
 
+    /// <summary>Détail d'un partenaire.</summary>
     public async Task<PartnerResponse?> GetByIdAsync(Guid id)
     {
         var p = await db.Set<Partner>().FindAsync(id);
         return p is null ? null : MapPartner(p);
     }
 
+    /// <summary>Ajoute un partenaire avec un slug généré automatiquement.</summary>
     public async Task<PartnerResponse> CreateAsync(CreatePartnerRequest request)
     {
         var partner = new Partner
         {
             Id = Guid.NewGuid(),
             Name = request.Name,
-            Slug = GenerateSlug(request.Name),
+            Slug = SlugGenerator.GenerateSlug(request.Name),
             Description = request.Description,
             LogoUrl = request.LogoUrl,
             WebsiteUrl = request.WebsiteUrl,
@@ -48,13 +53,14 @@ public class PartnerService(AppDbContext db) : IPartnerService
         return MapPartner(partner);
     }
 
+    /// <summary>Modifie un partenaire existant.</summary>
     public async Task<PartnerResponse?> UpdateAsync(Guid id, UpdatePartnerRequest request)
     {
         var p = await db.Set<Partner>().FindAsync(id);
         if (p is null) return null;
 
         p.Name = request.Name;
-        p.Slug = GenerateSlug(request.Name);
+        p.Slug = SlugGenerator.GenerateSlug(request.Name);
         p.Description = request.Description;
         p.LogoUrl = request.LogoUrl;
         p.WebsiteUrl = request.WebsiteUrl;
@@ -67,6 +73,7 @@ public class PartnerService(AppDbContext db) : IPartnerService
         return MapPartner(p);
     }
 
+    /// <summary>Supprime un partenaire.</summary>
     public async Task<bool> DeleteAsync(Guid id)
     {
         var p = await db.Set<Partner>().FindAsync(id);
@@ -89,6 +96,4 @@ public class PartnerService(AppDbContext db) : IPartnerService
         IsActive = p.IsActive,
         CreatedAt = p.CreatedAt
     };
-
-    private static string GenerateSlug(string text) => SlugGenerator.Generate(text);
 }

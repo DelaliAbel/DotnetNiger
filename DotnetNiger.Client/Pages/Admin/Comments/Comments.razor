@@ -1,0 +1,215 @@
+@page "/admin/comments"
+@attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")]
+@using DotnetNiger.Client.Components.Admin.Cards
+@inject ICommentService CommentService
+@inject IToastService ToastService
+@inject IJSRuntime JS
+
+@if (isLoading)
+{
+    <div class="min-h-screen px-4 py-6 md:px-8 md:py-8">
+        <div class="mx-auto max-w-7xl">
+            <div class="mb-8 flex items-center justify-between gap-4">
+                <div class="space-y-2">
+                    <Skeleton Type="SkeletonType.Title" Class="w-48" />
+                    <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-64" />
+                </div>
+            </div>
+            <div class="mb-6 flex flex-wrap gap-3">
+                <Skeleton Type="SkeletonType.Button" Width="100px" />
+                <Skeleton Type="SkeletonType.Button" Width="120px" />
+                <Skeleton Type="SkeletonType.Button" Width="120px" />
+                <Skeleton Type="SkeletonType.Button" Width="100px" />
+            </div>
+            <div class="overflow-hidden rounded-lg bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="border-b border-gray-100 bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Auteur</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Contenu</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Type</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Statut</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @for (int i = 0; i < 4; i++)
+                            {
+                                <tr>
+                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Custom" Class="h-8 w-32" /></td>
+                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Text" Lines="2" Class="w-48" /></td>
+                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Badge" Width="80px" /></td>
+                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Text" Lines="1" Class="w-24" /></td>
+                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Badge" Width="80px" /></td>
+                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Button" Width="32px" Class="h-8" /></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="min-h-screen px-4 py-6 md:px-8 md:py-8">
+        <div class="mx-auto max-w-7xl">
+            <div class="mb-8 flex items-center justify-between gap-4">
+                <section>
+                    <AdminBreadcrumb />
+                    <p class="mt-2 max-w-2xl text-sm leading-6 text-body md:text-base">Modérez les commentaires des articles et événements.</p>
+                </section>
+            </div>
+
+            <section class="mb-6 flex flex-wrap items-center gap-3">
+                <div class="flex flex-wrap gap-2">
+                    <button @onclick='() => SetFilter("all")'
+                            class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "all" ? "bg-black text-white" : "bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50")">
+                        Tous (@allComments.Count)
+                    </button>
+                    <button @onclick='() => SetFilter("pending")'
+                            class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "pending" ? "bg-amber-500 text-white" : "bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50")">
+                        En attente (@pendingCount)
+                    </button>
+                    <button @onclick='() => SetFilter("approved")'
+                            class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "approved" ? "bg-green-600 text-white" : "bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50")">
+                        Approuvés (@approvedCount)
+                    </button>
+                    <button @onclick='() => SetFilter("rejected")'
+                            class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "rejected" ? "bg-red-600 text-white" : "bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50")">
+                        Rejetés (@rejectedCount)
+                    </button>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" placeholder="Rechercher un commentaire..."
+                               @bind="searchQuery" @bind:event="oninput"
+                               class="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-4 text-sm text-title outline-none placeholder:text-gray-400" />
+                    </div>
+                </div>
+
+                <select @bind="typeFilter"
+                        class="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-title shadow-sm outline-none transition hover:border-gray-300">
+                    <option value="">Type</option>
+                    <option value="post">Articles</option>
+                    <option value="event">Événements</option>
+                </select>
+            </section>
+
+            <div class="mb-6 hidden md:block">
+                <ViewToggle @bind-IsListView="isListView" />
+            </div>
+
+            @if (isListView)
+            {
+                <CommentsTable Comments="pagedComments" OnChanged="LoadCommentsAsync" />
+            }
+            else
+            {
+                <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-5 lg:gap-6">
+                    @foreach (var comment in pagedComments)
+                    {
+                        <AdminCommentCard @key="comment.Id" Comment="comment" OnChanged="LoadCommentsAsync" />
+                    }
+                </div>
+            }
+
+            <div class="mt-6">
+                <Paginated @bind-CurrentPage="currentPage" TotalPages="@totalPages" />
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private bool isListView = false;
+    private bool responsiveViewApplied;
+    private List<CommentResponse> allComments = new();
+    private string statusFilter = "all";
+    private string typeFilter = "";
+    private string searchQueryValue = "";
+    private int currentPage = 1;
+    private int pageSize = 10;
+
+    private int pendingCount => allComments.Count(c => c.Status == "pending");
+    private int approvedCount => allComments.Count(c => c.Status == "approved");
+    private int rejectedCount => allComments.Count(c => c.Status == "rejected");
+
+    private string searchQuery
+    {
+        get => searchQueryValue;
+        set
+        {
+            if (searchQueryValue == value) return;
+            searchQueryValue = value;
+            currentPage = 1;
+        }
+    }
+
+    private List<CommentResponse> filteredComments => allComments
+        .Where(c => statusFilter == "all" || c.Status == statusFilter)
+        .Where(c => string.IsNullOrEmpty(typeFilter) ||
+                    (typeFilter == "post" && c.PostId != Guid.Empty) ||
+                    (typeFilter == "event" && c.EventId != Guid.Empty))
+        .Where(c => string.IsNullOrEmpty(searchQuery) ||
+                    c.Content.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    c.AuthorName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+    private int totalPages => Math.Max(1, (int)Math.Ceiling((double)filteredComments.Count / pageSize));
+
+    private List<CommentResponse> pagedComments => filteredComments
+        .Skip((SafeCurrentPage - 1) * pageSize)
+        .Take(pageSize)
+        .ToList();
+
+    private int SafeCurrentPage => Math.Clamp(currentPage, 1, totalPages);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadCommentsAsync();
+    }
+
+    private async Task LoadCommentsAsync()
+    {
+        isLoading = true;
+        try
+        {
+            allComments = await CommentService.GetAllCommentsAsync();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void SetFilter(string filter)
+    {
+        statusFilter = filter;
+        currentPage = 1;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || responsiveViewApplied)
+        {
+            return;
+        }
+
+        responsiveViewApplied = true;
+        var isMobile = await JS.InvokeAsync<bool>("dotnetNigerIsMobile");
+        var shouldShowListView = !isMobile;
+
+        if (isListView != shouldShowListView)
+        {
+            isListView = shouldShowListView;
+            StateHasChanged();
+        }
+    }
+}

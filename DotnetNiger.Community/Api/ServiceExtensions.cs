@@ -1,40 +1,50 @@
 using Asp.Versioning;
+using DotnetNiger.Common.Email;
 using DotnetNiger.Community.Application.Notifications;
 using DotnetNiger.Community.Application.Services;
 using DotnetNiger.Community.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
 
 namespace DotnetNiger.Community.Api;
 
+/// <summary>Méthodes d'extension pour enregistrer les services de la communauté dans le conteneur DI.</summary>
 public static class ServiceExtensions
 {
+    /// <summary>Configure le DbContext avec le fournisseur de base de données (Sqlite, SqlServer ou PostgreSQL).</summary>
     public static IServiceCollection AddCommunityInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddDbContext<AppDbContext>(options =>
         {
-            var provider = configuration.GetValue<string>("DatabaseProvider", "Sqlite");
-            var connStr = configuration.GetConnectionString("DefaultConnection") ?? "Data Source=DotnetNigerCommunity.db";
-
-            if (provider == "SqlServer")
-                options.UseSqlServer(connStr, x => x.MigrationsAssembly("DotnetNiger.Community"));
-            else if (provider is "PostgreSql" or "PostgreSQL" or "Npgsql")
-                options.UseNpgsql(connStr, x => x.MigrationsAssembly("DotnetNiger.Community"));
-            else
-                options.UseSqlite(connStr, x => x.MigrationsAssembly("DotnetNiger.Community"));
+            var connStr = configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("ConnectionStrings:DefaultConnection is required");
+            options.UseSqlServer(connStr, x => x
+                .MigrationsHistoryTable("__EFMigrationsHistory_Community")
+                .MigrationsAssembly("DotnetNiger.Community")
+                .UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
         });
+
+        services.AddHttpContextAccessor();
+        services.Configure<SmtpOptions>(configuration.GetSection("Smtp"));
+        services.AddScoped<IEmailService, CommunityEmailSender>();
 
         return services;
     }
 
+    /// <summary>Enregistre tous les services métier (posts, événements, ressources, etc.) en tant que services Scoped.</summary>
     public static IServiceCollection AddCommunityServices(this IServiceCollection services)
     {
-        services.AddScoped<IPostService, PostService>();
-        services.AddScoped<IEventService, EventService>();
-        services.AddScoped<IResourceService, ResourceService>();
+        services.AddScoped<IPostQueryService, PostQueryService>();
+        services.AddScoped<IPostCommandService, PostCommandService>();
+        services.AddScoped<IPostModerationService, PostModerationService>();
+        services.AddScoped<IEventQueryService, EventQueryService>();
+        services.AddScoped<IEventCommandService, EventCommandService>();
+        services.AddScoped<IEventModerationService, EventModerationService>();
+        services.AddScoped<IEventRegistrationService, EventRegistrationService>();
+        services.AddScoped<IResourceQueryService, ResourceQueryService>();
+        services.AddScoped<IResourceCommandService, ResourceCommandService>();
         services.AddScoped<ICommentService, CommentService>();
         services.AddScoped<IProfileService, ProfileService>();
+        services.AddScoped<ICertificateService, CertificateService>();
         services.AddScoped<ISearchService, SearchService>();
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<INewsletterService, NewsletterService>();
@@ -45,26 +55,32 @@ public static class ServiceExtensions
         services.AddScoped<IUserNotificationService, UserNotificationService>();
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<ITagService, TagService>();
+        services.AddScoped<IContactService, ContactService>();
+        services.AddScoped<ISettingsService, SettingsService>();
+        services.AddScoped<IImageProcessingService, ImageProcessingService>();
+        services.AddMemoryCache();
 
         return services;
     }
 
+    /// <summary>Configure l'authentification JWT avec Authority et les paramètres de validation.</summary>
     public static IServiceCollection AddCommunityAuthentication(this IServiceCollection services, IConfiguration configuration, IHostEnvironment environment)
     {
         services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
             {
-                options.Authority = configuration["Jwt:Authority"] ?? "http://localhost:5075";
+                options.Authority = configuration["Jwt:Authority"]!;
                 options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                 {
                     ValidateIssuer = true,
-                    ValidateAudience = false,
+                    ValidateAudience = true,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    ValidIssuer = configuration["Jwt:Issuer"] ?? "http://localhost:5075/",
+                    ValidIssuer = configuration["Jwt:Issuer"]!,
+                    ValidAudience = configuration["Jwt:Audience"] ?? "DotnetNiger.Identity.Client",
                 };
-                options.MetadataAddress = configuration["Jwt:MetadataAddress"] ?? "http://localhost:5075/.well-known/openid-configuration";
-                options.RequireHttpsMetadata = !environment.IsDevelopment();
+                options.MetadataAddress = configuration["Jwt:MetadataAddress"]!;
+                options.RequireHttpsMetadata = !environment.IsDevelopment() && !configuration.GetValue<bool>("Jwt:DisableHttpsRequirement");
             });
 
         services.AddAuthorization();
@@ -72,6 +88,7 @@ public static class ServiceExtensions
         return services;
     }
 
+    /// <summary>Configure le client HTTP pour l'API d'identité (Identity API).</summary>
     public static IServiceCollection AddCommunityHttpClients(this IServiceCollection services, IConfiguration configuration)
     {
         var apiKey = configuration["Identity:ApiKey"] ?? configuration["Integration:ProvisioningApiKey"] ?? "";
@@ -86,6 +103,35 @@ public static class ServiceExtensions
         return services;
     }
 
+    /// <summary>Configure CORS pour les origines autorisées (frontend Blazor WASM, etc.).</summary>
+    public static IServiceCollection AddCommunityCors(this IServiceCollection services, IConfiguration configuration)
+    {
+        var allowedOrigins = configuration["Cors:AllowedOrigins"] ?? "";
+        var origins = allowedOrigins
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(o => !string.IsNullOrWhiteSpace(o))
+            .ToArray();
+
+        services.AddCors(options =>
+        {
+            options.AddPolicy("AllowFrontendOrigins", policy =>
+            {
+                if (origins.Length > 0)
+                    policy.WithOrigins(origins)
+                        .AllowAnyMethod()
+                        .AllowAnyHeader()
+                        .AllowCredentials();
+                else
+                    policy.AllowAnyOrigin()
+                        .AllowAnyMethod()
+                        .AllowAnyHeader();
+            });
+        });
+
+        return services;
+    }
+
+    /// <summary>Configure le versioning d'API (URL segment + rapport version).</summary>
     public static IServiceCollection AddApiVersioningWithSwagger(
         this IServiceCollection services)
     {
@@ -99,46 +145,6 @@ public static class ServiceExtensions
         {
             options.GroupNameFormat = "'v'VVV";
             options.SubstituteApiVersionInUrl = true;
-        });
-
-        services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen(options =>
-        {
-            options.SwaggerDoc("v1", new OpenApiInfo
-            {
-                Title = "DotnetNiger Community API",
-                Version = "v1.0",
-                Description = "API publique de la communaut\u00e9 DotnetNiger - Posts, Events, Resources, Comments, Profile, Admin"
-            });
-
-            options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-            {
-                Name = "Authorization",
-                Type = SecuritySchemeType.Http,
-                Scheme = "Bearer",
-                BearerFormat = "JWT",
-                Description = "Entrez le token JWT : Bearer {votre_token}"
-            });
-
-            options.AddSecurityRequirement(new OpenApiSecurityRequirement
-            {
-                {
-                    new OpenApiSecurityScheme
-                    {
-                        Reference = new OpenApiReference
-                        {
-                            Type = ReferenceType.SecurityScheme,
-                            Id = "Bearer"
-                        }
-                    },
-                    Array.Empty<string>()
-                }
-            });
-
-            var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-            if (File.Exists(xmlPath))
-                options.IncludeXmlComments(xmlPath);
         });
 
         return services;

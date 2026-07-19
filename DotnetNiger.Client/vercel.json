@@ -1,0 +1,9 @@
+{
+  "outputDirectory": "wwwroot",
+  "rewrites": [
+    {
+      "source": "/((?!_framework|_next|api|.*\\.(?:js|css|png|jpe?g|gif|svg|webp|woff2?|ttf|otf|eot|ico|wasm|dll|dat|json|txt|xml|pdf|zip|rar)).*)",
+      "destination": "/index.html"
+    }
+  ]
+}

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Infrastructure;
 
+/// <summary>Contexte Entity Framework Core pour la base de données de la communauté.</summary>
 public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
     public DbSet<Post> Posts => Set<Post>();
@@ -20,174 +21,23 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Comment> Comments => Set<Comment>();
     public DbSet<Member> Members => Set<Member>();
     public DbSet<SocialLink> SocialLinks => Set<SocialLink>();
+    public DbSet<MemberSkill> MemberSkills => Set<MemberSkill>();
     public DbSet<NewsletterSubscription> NewsletterSubscriptions => Set<NewsletterSubscription>();
     public DbSet<Project> Projects => Set<Project>();
     public DbSet<Partner> Partners => Set<Partner>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<Certificate> Certificates => Set<Certificate>();
+    public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
+    public DbSet<Speaker> Speakers => Set<Speaker>();
+    public DbSet<SiteSetting> SiteSettings => Set<SiteSetting>();
 
+    /// <summary>Applique les configurations d'entités et les filtres de requête globale.</summary>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AppDbContext).Assembly);
+
         modelBuilder.Entity<Event>().HasQueryFilter(e => !e.IsDeleted);
         modelBuilder.Entity<Resource>().HasQueryFilter(r => !r.IsDeleted);
         modelBuilder.Entity<Project>().HasQueryFilter(p => !p.IsDeleted);
-        modelBuilder.Entity<Post>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Slug).IsUnique();
-            entity.Property(e => e.Title).HasMaxLength(200);
-            entity.Property(e => e.Slug).HasMaxLength(200);
-            entity.Property(e => e.PostType).HasMaxLength(50);
-        });
-
-        modelBuilder.Entity<Category>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Slug).IsUnique();
-            entity.Property(e => e.Name).HasMaxLength(100);
-            entity.Property(e => e.Slug).HasMaxLength(100);
-        });
-
-        modelBuilder.Entity<Tag>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Slug).IsUnique();
-            entity.Property(e => e.Name).HasMaxLength(100);
-            entity.Property(e => e.Slug).HasMaxLength(100);
-        });
-
-        modelBuilder.Entity<PostCategory>(entity =>
-        {
-            entity.HasKey(e => new { e.PostId, e.CategoryId });
-            entity.HasOne(e => e.Post).WithMany(e => e.PostCategories).HasForeignKey(e => e.PostId);
-            entity.HasOne(e => e.Category).WithMany(e => e.PostCategories).HasForeignKey(e => e.CategoryId);
-        });
-
-        modelBuilder.Entity<PostTag>(entity =>
-        {
-            entity.HasKey(e => new { e.PostId, e.TagId });
-            entity.HasOne(e => e.Post).WithMany(e => e.PostTags).HasForeignKey(e => e.PostId);
-            entity.HasOne(e => e.Tag).WithMany(e => e.PostTags).HasForeignKey(e => e.TagId);
-        });
-
-        modelBuilder.Entity<Event>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Slug).IsUnique();
-            entity.HasIndex(e => new { e.IsPublished, e.EndDate });
-            entity.Property(e => e.Title).HasMaxLength(200);
-            entity.Property(e => e.Slug).HasMaxLength(200);
-            entity.Property(e => e.EventType).HasMaxLength(50);
-            entity.Property(e => e.Location).HasMaxLength(200);
-        });
-
-        modelBuilder.Entity<EventMedia>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasOne(e => e.Event).WithMany(e => e.Medias).HasForeignKey(e => e.EventId);
-            entity.Navigation(e => e.Event).IsRequired(false);
-            entity.Property(e => e.Type).HasMaxLength(50);
-        });
-
-        modelBuilder.Entity<EventRegistration>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasOne(e => e.Event).WithMany(e => e.Registrations).HasForeignKey(e => e.EventId);
-            entity.Navigation(e => e.Event).IsRequired(false);
-            entity.HasIndex(e => new { e.EventId, e.UserId }).IsUnique();
-            entity.Property(e => e.RegistrationStatus).HasMaxLength(50);
-        });
-
-        modelBuilder.Entity<Resource>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Slug).IsUnique();
-            entity.Property(e => e.Title).HasMaxLength(200);
-            entity.Property(e => e.Slug).HasMaxLength(200);
-            entity.Property(e => e.ResourceType).HasMaxLength(50);
-            entity.Property(e => e.Level).HasMaxLength(50);
-        });
-
-        modelBuilder.Entity<ResourceCategory>(entity =>
-        {
-            entity.HasKey(e => new { e.ResourceId, e.CategoryId });
-            entity.HasOne(e => e.Resource).WithMany(e => e.ResourceCategories).HasForeignKey(e => e.ResourceId);
-            entity.Navigation(e => e.Resource).IsRequired(false);
-            entity.HasOne(e => e.Category).WithMany(e => e.ResourceCategories).HasForeignKey(e => e.CategoryId);
-        });
-
-        modelBuilder.Entity<EventTag>(entity =>
-        {
-            entity.HasKey(e => new { e.EventId, e.TagId });
-            entity.HasOne(e => e.Event).WithMany(e => e.EventTags).HasForeignKey(e => e.EventId);
-            entity.Navigation(e => e.Event).IsRequired(false);
-            entity.HasOne(e => e.Tag).WithMany(e => e.EventTags).HasForeignKey(e => e.TagId);
-        });
-
-        modelBuilder.Entity<ResourceTag>(entity =>
-        {
-            entity.HasKey(e => new { e.ResourceId, e.TagId });
-            entity.HasOne(e => e.Resource).WithMany(e => e.ResourceTags).HasForeignKey(e => e.ResourceId);
-            entity.Navigation(e => e.Resource).IsRequired(false);
-            entity.HasOne(e => e.Tag).WithMany(e => e.ResourceTags).HasForeignKey(e => e.TagId);
-        });
-
-        modelBuilder.Entity<Comment>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasOne(e => e.Post).WithMany(e => e.Comments).HasForeignKey(e => e.PostId).OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne(e => e.Event).WithMany(e => e.Comments).HasForeignKey(e => e.EventId).OnDelete(DeleteBehavior.Cascade);
-            entity.HasOne(e => e.ParentComment).WithMany(e => e.Replies).HasForeignKey(e => e.ParentCommentId).OnDelete(DeleteBehavior.SetNull);
-        });
-
-        modelBuilder.Entity<Member>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.FullName).HasMaxLength(100);
-            entity.Property(e => e.PhoneNumber).HasMaxLength(20);
-            entity.Property(e => e.Country).HasMaxLength(100);
-            entity.Property(e => e.City).HasMaxLength(100);
-        });
-
-        modelBuilder.Entity<SocialLink>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasOne(e => e.Member).WithMany(e => e.SocialLinks).HasForeignKey(e => e.MemberId);
-            entity.Property(e => e.Platform).HasMaxLength(50);
-        });
-
-        modelBuilder.Entity<NewsletterSubscription>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Email).IsUnique();
-            entity.Property(e => e.Email).HasMaxLength(200);
-            entity.Property(e => e.Name).HasMaxLength(200);
-            entity.Property(e => e.UnsubscribeToken).HasMaxLength(200);
-        });
-
-        modelBuilder.Entity<Project>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Slug).IsUnique();
-            entity.Property(e => e.Title).HasMaxLength(200);
-            entity.Property(e => e.Slug).HasMaxLength(200);
-            entity.Property(e => e.Technologies).HasMaxLength(500);
-            entity.Property(e => e.Status).HasMaxLength(50);
-        });
-
-        modelBuilder.Entity<Partner>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Slug).IsUnique();
-            entity.Property(e => e.Name).HasMaxLength(200);
-            entity.Property(e => e.Slug).HasMaxLength(200);
-            entity.Property(e => e.PartnerType).HasMaxLength(50);
-        });
-
-        modelBuilder.Entity<Notification>(entity =>
-        {
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Message).HasMaxLength(500);
-            entity.HasIndex(e => e.UserId);
-        });
     }
 }

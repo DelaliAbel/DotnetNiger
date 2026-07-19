@@ -1,8 +1,14 @@
+# OS
 *.swp
 *.swo
 *~
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+$RECYCLE.BIN/
 
-# Build results
+# Build
 [Dd]ebug/
 [Dd]ebugPublic/
 [Rr]elease/
@@ -18,13 +24,17 @@ bld/
 [Ll]og/
 [Ll]ogs/
 
-# Visual Studio cache/options
+# IDE
 .vs/
 .vscode/
-*.code-workspace
-
-# Rider
 .idea/
+*.sln.docstates
+*.suo
+*.user
+*.userosscache
+*.rsuser
+*.code-workspace
+.history/
 *.sln.iml
 
 # NuGet
@@ -33,90 +43,58 @@ bld/
 packages/
 .nuget/
 
-# Test Results
+# Test
 TestResults/
 *.trx
-
-# Coverage reports
 coverage/
 *.coverage
 *.coveragexml
 
-# User-specific files
-*.rsuser
-*.user
-*.userosscache
+# Config with secrets
+**/appsettings.Local.json
+**/appsettings.Development.json
+**/appsettings.Production.json
+local.settings.json
 
-# Development settings (local secrets)
-DotnetNiger.Identity/appsettings.Development.json
-*.sln.docstates
-
-# Local History for Visual Studio Code
-.history/
-.vscode-database/
-
-# Environment variables
+# Environment
 .env
 .env.local
 .env.*.local
 
-# Database files
+# Database
 *.mdf
 *.ldf
 *.ndf
 *.db
-*.db-*
-DotnetNiger.db
-DotnetNiger.db-shm
-DotnetNiger.db-wal
-
-DotnetNigerCommunity.db
-DotnetNigerCommunity.db-shm
-DotnetNigerCommunity.db-wal
+*.db-shm
+*.db-wal
 
 # Uploads
-uploads/
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
+wwwroot/uploads/*
+!wwwroot/uploads/.gitkeep
 
 # Logs
 *.log
-logs/
-
-# Temporary files
-tmp/
-temp/
-*.tmp
-
-# Node (for any frontend if needed)
-node_modules/
 npm-debug.log
 yarn-error.log
 
-# Python (si quelconque)
+# Temp
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+*.orig
+
+# Node
+node_modules/
+
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Package manager locks (optionnel)
-package-lock.json
-yarn.lock
-
-# macOS
-.DS_Store
-.AppleDouble
-.LSOverride
-
 # Windows
-$RECYCLE.BIN/
 *.cab
 *.msi
 *.msix
@@ -125,36 +103,39 @@ $RECYCLE.BIN/
 *.lnk
 
 # Azure
-local.settings.json
 .azure/
 
-# Backup files
-*.bak
-*.backup
-*.orig
-
-# Certificates and keys
+# Certificates
 *.pem
 *.key
 *.crt
 *.pfx
 !.gitkeep
 
-# Generated Ocelot merged config
+# .NET
+.fake
+
+# Generated Ocelot
 ocelot.json
 
-# Folder
-DotnetNiger/
-
-# Health report (contient des infos sensibles sur l'architecture)
+# Docs with sensitive info
 docs/HEALTH_REPORT.md
-
-# Guide de déploiement (contient des infos sensibles : URLs, comptes)
 docs/DEPLOY_GUIDE.md
-
-# Présentations
 docs/DotnetNiger_Presentation*.pptx
+docs/OAUTH_PROVIDERS_SETUP.md
 
-DotnetNiger
+# User secrets
+user-secrets-dotnetniger.txt
 
-.fake
+# Production configs
+prod-configs/
+
+
+
+# Local DB manager
+DotnetNiger.DbManager/
+
+
+
+# Docker
+.docker/

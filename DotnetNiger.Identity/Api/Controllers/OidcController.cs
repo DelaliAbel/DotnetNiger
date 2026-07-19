@@ -1,46 +1,60 @@
+using Asp.Versioning;
+using DotnetNiger.Identity.Application.Services;
+using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using OpenIddict.Abstractions;
+using Microsoft.AspNetCore.RateLimiting;
 using OpenIddict.Server.AspNetCore;
-using static OpenIddict.Abstractions.OpenIddictConstants;
-using DotnetNiger.Identity.Domain.Entities;
 
 namespace DotnetNiger.Identity.Api.Controllers;
 
-[ApiExplorerSettings(IgnoreApi = true)]
+[ApiController]
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/auth")]
+[EnableRateLimiting("Auth")]
 public class OidcController : ControllerBase
 {
-    private readonly SignInManager<ApplicationUser> _signInManager;
-    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly OidcService _oidcService;
 
-    public OidcController(
-        SignInManager<ApplicationUser> signInManager,
-        UserManager<ApplicationUser> userManager)
+    public OidcController(OidcService oidcService) => _oidcService = oidcService;
+
+    /// <summary>Gère la demande d'autorisation OIDC (flux authorize).</summary>
+    [HttpGet("~/connect/authorize")]
+    [HttpPost("~/connect/authorize")]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> Authorize()
     {
-        _signInManager = signInManager;
-        _userManager = userManager;
+        var result = await _oidcService.AuthorizeAsync(HttpContext);
+        if (result.RequiresChallenge)
+            return Challenge(authenticationSchemes: IdentityConstants.ApplicationScheme,
+                properties: new AuthenticationProperties { RedirectUri = Request.PathBase + Request.Path + Request.QueryString });
+        return SignIn(result.Principal!, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
-    [HttpGet("~/connect/logout"), HttpPost("~/connect/logout")]
+    /// <summary>Déconnecte l'utilisateur et détruit sa session.</summary>
+    [HttpPost("logout")]
+    [Authorize]
     public async Task<IActionResult> Logout()
     {
-        var postLogoutUri = Request.HasFormContentType
-            ? Request.Form["post_logout_redirect_uri"].FirstOrDefault()
-            : Request.Query["post_logout_redirect_uri"].FirstOrDefault();
+        await HttpContext.SignOutAsync(IdentityConstants.ApplicationScheme);
+        return Ok(new { message = "Déconnecté" });
+    }
 
-        if (User.Identity?.IsAuthenticated == true)
-            await _signInManager.SignOutAsync();
-
-        return SignOut(
-            authenticationSchemes: new[]
-            {
-                OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                IdentityConstants.ApplicationScheme
-            },
-            properties: new AuthenticationProperties
-            {
-                RedirectUri = postLogoutUri
-            });
+    /// <summary>Retourne les informations de l'utilisateur connecté (endpoint userinfo OIDC).</summary>
+    [HttpGet("userinfo")]
+    [Authorize]
+    public async Task<IActionResult> UserInfo()
+    {
+        try
+        {
+            var response = await _oidcService.GetUserInfoAsync(User);
+            return Ok(response);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Unauthorized();
+        }
     }
 }

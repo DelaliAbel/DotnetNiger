@@ -6,6 +6,7 @@ public class EventRegistration
     public Guid EventId { get; set; }
     public Guid UserId { get; set; }
     public string UserName { get; set; } = string.Empty;
+    public string AvatarUrl { get; set; } = string.Empty;
     public DateTime RegisteredAt { get; set; }
     public bool IsAttended { get; set; }
     public string RegistrationStatus { get; set; } = string.Empty;

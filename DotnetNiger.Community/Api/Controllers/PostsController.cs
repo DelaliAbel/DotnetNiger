@@ -1,78 +1,147 @@
 using Asp.Versioning;
-using System.Security.Claims;
 using DotnetNiger.Community.Application;
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.Constants;
+using DotnetNiger.Common.Constants;
+using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.DTOs.Responses;
 using DotnetNiger.Community.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
-[ApiController]
+/// <summary>Gestion des articles de blog.</summary>
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
-public class PostsController(IPostService postService) : ControllerBase
+public class PostsController(
+    IPostQueryService postQuery,
+    IPostCommandService postCommand,
+    IPostModerationService postModeration) : BaseController
 {
+    /// <summary>Retourne la liste des articles avec filtres et pagination.</summary>
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? published, [FromQuery] string? category, [FromQuery] string? tag, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] Guid? after = null)
+    public async Task<IActionResult> GetAll([FromQuery] string? published, [FromQuery] string? category, [FromQuery] string? tag, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 6, [FromQuery] Guid? after = null)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
-        var result = await postService.GetAllAsync(published, category, tag, query, page, pageSize, after);
-        return Ok(new { Success = true, Data = result });
+        return Ok(new { Success = true, Data = await postQuery.GetAllAsync(published, category, tag, query, page, pageSize, after) });
     }
 
-    [HttpGet("{id:guid}")]
+    /// <summary>Retourne les articles publiés par l'utilisateur connecté.</summary>
+    [HttpGet("mine")]
+    [Authorize]
+    public async Task<IActionResult> GetMine([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
+        var userId = GetUserId();
+        return Ok(new { Success = true, Data = await postQuery.GetAllAsync(null, null, null, null, page, pageSize, null, userId) });
+    }
+
+    /// <summary>Retourne un article par son identifiant.</summary>
+    [HttpGet("{id:guid}", Order = 1)]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var post = await postService.GetByIdAsync(id);
-        if (post is null) return NotFound(new { Success = false, Message = "Post not found" });
+        var post = await postQuery.GetByIdAsync(id);
+        if (post is null) return NotFound(new { Success = false, Message = Messages.Post.NotFound });
         return Ok(new { Success = true, Data = post });
     }
 
-    [HttpGet("{slug:regex(^[[a-z0-9]]+(?:-[[a-z0-9]]+)*$)}")]
+    /// <summary>Retourne un article par son slug.</summary>
+    [HttpGet("{slug:regex(^[[a-z0-9]]+(?:-[[a-z0-9]]+)*$)}", Order = 2)]
     public async Task<IActionResult> GetBySlug(string slug)
     {
-        var post = await postService.GetBySlugAsync(slug);
-        if (post is null) return NotFound(new { Success = false, Message = "Post not found" });
+        var post = await postQuery.GetBySlugAsync(slug);
+        if (post is null) return NotFound(new { Success = false, Message = Messages.Post.NotFound });
         return Ok(new { Success = true, Data = post });
     }
 
+    /// <summary>Retourne les métadonnées Open Graph d'un article par son slug.</summary>
+    [HttpGet("by-slug/{slug}")]
+    public async Task<ActionResult<OGMetadata>> GetOGBySlug(string slug)
+    {
+        var post = await postQuery.GetBySlugAsync(slug);
+        if (post is null) return NotFound(new { Success = false, Message = Messages.Post.NotFound });
+        return Ok(new ApiSuccessResponse<OGMetadata>
+        {
+            Data = new OGMetadata { Title = post.Title, Description = post.Excerpt, ImageUrl = post.CoverImageUrl, UpdatedAt = post.UpdatedAt }
+        });
+    }
+
+    /// <summary>Crée un nouvel article pour l'utilisateur connecté.</summary>
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> Create([FromBody] CreatePostRequest request)
     {
-        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
-            return Unauthorized(new { Success = false, Message = "Invalid user identity" });
-
-        var userName = User.FindFirstValue("full_name") ?? User.FindFirstValue(ClaimTypes.Name) ?? "Unknown";
-        var post = await postService.CreateAsync(request, userId, userName);
-        return CreatedAtAction(nameof(GetById), new { id = post.Id }, new { Success = true, Data = post });
+        var userId = GetUserId();
+        try
+        {
+            var post = await postCommand.CreateAsync(request, userId, GetUserName(), IsAdmin(), IsCollaborator());
+            return CreatedAtAction(nameof(GetById), new { id = post.Id }, new { Success = true, Data = post });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Success = false, Message = ex.Message });
+        }
     }
 
+    /// <summary>Met à jour un article existant.</summary>
     [HttpPut("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePostRequest request)
     {
-        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
-            return Unauthorized(new { Success = false, Message = "Invalid user identity" });
+        try
+        {
+            var post = await postCommand.UpdateAsync(id, request, GetUserId(), IsAdmin());
+            if (post is null) return NotFound(new { Success = false, Message = Messages.Post.NotFound });
+            return Ok(new { Success = true, Data = post });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { Success = false, Message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Success = false, Message = ex.Message });
+        }
+    }
 
-        var isAdmin = User.IsInRole("Admin");
-        var post = await postService.UpdateAsync(id, request, userId, isAdmin);
-        if (post is null) return NotFound(new { Success = false, Message = "Post not found" });
+    /// <summary>Publie un article.</summary>
+    [HttpPatch("{id:guid}/publish")]
+    [Authorize]
+    public async Task<IActionResult> Publish(Guid id)
+    {
+        var post = await postModeration.PublishAsync(id, GetUserId(), IsAdmin());
+        if (post is null) return NotFound(new { Success = false, Message = Messages.Post.NotFound });
         return Ok(new { Success = true, Data = post });
     }
 
+    /// <summary>Dépublie un article.</summary>
+    [HttpPatch("{id:guid}/unpublish")]
+    [Authorize]
+    public async Task<IActionResult> Unpublish(Guid id)
+    {
+        var post = await postModeration.UnpublishAsync(id, GetUserId(), IsAdmin());
+        if (post is null) return NotFound(new { Success = false, Message = Messages.Post.NotFound });
+        return Ok(new { Success = true, Data = post });
+    }
+
+    /// <summary>Incrémente le compteur de vues d'un article.</summary>
+    [HttpPost("{id:guid}/views")]
+    public async Task<IActionResult> IncrementViewCount(Guid id)
+    {
+        var post = await postCommand.IncrementViewCountAsync(id);
+        if (post is null) return NotFound(new { Success = false, Message = Messages.Post.NotFound });
+        return Ok(new { Success = true, Data = post });
+    }
+
+    /// <summary>Supprime un article par son identifiant.</summary>
     [HttpDelete("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Delete(Guid id)
     {
-        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
-            return Unauthorized(new { Success = false, Message = "Invalid user identity" });
-
-        var isAdmin = User.IsInRole("Admin");
-        var deleted = await postService.DeleteAsync(id, userId, isAdmin);
-        if (!deleted) return NotFound(new { Success = false, Message = "Post not found" });
-        return Ok(new { Success = true, Message = "Post deleted" });
+        var deleted = await postCommand.DeleteAsync(id, GetUserId(), IsAdmin());
+        if (!deleted) return NotFound(new { Success = false, Message = Messages.Post.NotFound });
+        return Ok(new { Success = true, Message = Messages.Post.Deleted });
     }
 }

@@ -1,0 +1,55 @@
+@page
+@model DotnetNiger.Identity.Pages.Account.ConfirmEmailModel
+@{
+    ViewData["Title"] = "Confirmer mon email";
+    ViewData["Subtitle"] = "Activez votre compte";
+}
+
+<form method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="returnUrl" value="@Model.ReturnUrl" />
+
+    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+    {
+        <div class="error">@Model.ErrorMessage</div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+    {
+        <div class="success">@Model.SuccessMessage</div>
+    }
+
+    @if (Model.ShowCodeForm)
+    {
+        <input type="hidden" name="email" value="@Model.Email" />
+
+        <div class="form-group">
+            <label for="confirmationCode">Code de confirmation</label>
+            <input type="text" id="confirmationCode" name="confirmationCode" value="@Model.ConfirmationCode" required autofocus
+                   placeholder="Code a 6 caracteres" maxlength="6" class="code-input" />
+        </div>
+
+        <button type="submit">Confirmer mon email</button>
+
+        <div style="text-align:center;margin-top:10px">
+            <button type="submit" asp-page-handler="ResendCode" class="btn-link">
+                Renvoyer le code
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="form-group">
+            <label for="email">Adresse email</label>
+            <input type="email" id="email" name="email" value="@Model.Email" required autofocus
+                   placeholder="vous@exemple.com" />
+        </div>
+
+        <button type="submit">Envoyer le code de confirmation</button>
+    }
+
+    <div style="text-align:center;margin-top:12px;font-size:13px">
+        Deja un compte ?
+        <a href="/Account/Login@(string.IsNullOrEmpty(Model.ReturnUrl) ? "" : "?returnUrl=" + Uri.EscapeDataString(Model.ReturnUrl))" class="text-link">Connectez-vous</a>
+    </div>
+</form>

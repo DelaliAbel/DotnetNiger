@@ -1,7 +1,13 @@
+using DotnetNiger.Common.Constants;
+using DotnetNiger.Common.DTOs.Requests;
+using DotnetNiger.Common.DTOs.Responses;
+using DotnetNiger.Identity.Application;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using DotnetNiger.Identity.Application.DTOs;
+using DotnetNiger.Identity.Application.DTOs.Requests;
+using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Services;
+using ErrorResponse = DotnetNiger.Identity.Application.DTOs.Responses.ErrorResponse;
 
 namespace DotnetNiger.Identity.Api.Controllers;
 
@@ -9,13 +15,13 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiVersion("1.0")]
 
 [Route("api/v{version:apiVersion}/{tenantId:guid}/roles")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
 public class RolesController : ControllerBase
 {
-    private readonly RoleService _roleService;
-    private readonly UserService _userService;
+    private readonly IRoleService _roleService;
+    private readonly IUserService _userService;
 
-    public RolesController(RoleService roleService, UserService userService)
+    public RolesController(IRoleService roleService, IUserService userService)
     {
         _roleService = roleService;
         _userService = userService;
@@ -56,8 +62,6 @@ public class RolesController : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid tenantId, Guid id)
     {
-        var role = await _roleService.GetByIdAsync(id);
-        if (role == null || role.TenantId != tenantId) return NotFound();
         await _roleService.DeleteAsync(id);
         return NoContent();
     }
@@ -66,10 +70,6 @@ public class RolesController : ControllerBase
     [HttpPost("{roleId:guid}/users/{userId:guid}")]
     public async Task<IActionResult> AssignUser(Guid tenantId, Guid roleId, Guid userId)
     {
-        var role = await _roleService.GetByIdAsync(roleId);
-        if (role == null || role.TenantId != tenantId) return NotFound();
-        var user = await _userService.GetByIdAsync(tenantId, userId);
-        if (user == null) return NotFound();
         await _roleService.AssignToUserAsync(userId, roleId);
         return NoContent();
     }

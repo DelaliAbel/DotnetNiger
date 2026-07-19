@@ -1,0 +1,114 @@
+﻿@* Tableau admin des événements avec actions harmonisées. *@
+@using DotnetNiger.Client.Models.Responses
+@inject IEventService EventService
+@inject NavigationManager Navigation
+
+<div class="rounded-lg bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
+        <table class="w-full">
+            <thead class="border-b border-gray-100 bg-gray-50">
+                <tr>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">évènement</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Organisateur</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Type</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date début</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Statut</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Inscrits</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @if (Event is null || Event.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="px-6 py-10 text-center text-sm text-gray-500">Aucun évènement disponible.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var ev in Event)
+                    {
+                        <tr @key="ev.Id" class="transition hover:bg-gray-50/80">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                                        <ResolvedImage Src="@ev.CoverImageUrl" Icon="fa-calendar" alt="@ev.Title" class="h-full w-full" />
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="truncate text-sm font-semibold text-title">@ev.Title</p>
+                                        <p class="truncate text-xs text-muted">@ev.Location</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-body">@ev.OrganizerName</td>
+                            <td class="px-6 py-4 text-sm text-body">@ev.EventType</td>
+                            <td class="px-6 py-4 text-sm text-body whitespace-nowrap">@ev.StartDate.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="px-6 py-4 text-sm">
+                                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @GetStatusClass(ev)">
+                                    @GetStatusLabel(ev)
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-body">@ev.RegisteredCount / @ev.Capacity</td>
+                            <td class="px-6 py-4 text-sm">
+                                <AdminActionDropdown ItemId="ev.Id"
+                                                     Status="@(IsPending(ev) ? "Pending" : "Published")"
+                                                     ViewLabel="Voir l'événement"
+                                                     EditLabel="Modifier"
+                                                     DeleteLabel="Supprimer"
+                                                     ApproveLabel="Publier"
+                                                     RejectLabel="Rejeter"
+                                                     OnView="OpenEvent"
+                                                     OnEdit="EditEvent"
+                                                     OnDelete="DeleteEvent"
+                                                     OnApprove="PublishEvent"
+                                                     OnReject="DeleteEvent" />
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+</div>
+
+@code {
+    [Parameter] public List<EventDto> Event { get; set; } = new();
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private static bool IsPublished(EventDto ev) => ev.IsPublished;
+    private static bool IsPending(EventDto ev) => !ev.IsPublished;
+
+
+    private static string GetStatusLabel(EventDto ev)
+    {
+
+        return IsPublished(ev) ? "Publié" : "En attente";
+    }
+
+    private static string GetStatusClass(EventDto ev)
+    {
+        return IsPublished(ev) ? "bg-success-bg text-success" : "bg-amber-100 text-amber-700";
+    }
+
+    private Task OpenEvent(Guid id)
+    {
+        Navigation.NavigateTo($"/admin/events/{id}");
+        return Task.CompletedTask;
+    }
+
+    private Task EditEvent(Guid id)
+    {
+        Navigation.NavigateTo($"/admin/events/edit/{id}");
+        return Task.CompletedTask;
+    }
+
+    private async Task DeleteEvent(Guid id)
+    {
+        await EventService.DeleteEventAsync(id);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task PublishEvent(Guid id)
+    {
+        await EventService.ApproveEventAsync(id);
+        await OnChanged.InvokeAsync();
+    }
+}

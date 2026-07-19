@@ -1,10 +1,20 @@
 {
+  "$schema": "https://json.schemastore.org/launchsettings.json",
   "profiles": {
-    "DotnetNiger.Identity.Web": {
+    "http": {
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,
-      "applicationUrl": "https://localhost:7100;http://localhost:5100",
+      "applicationUrl": "http://localhost:5197",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      }
+    },
+    "https": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "applicationUrl": "https://localhost:7106;http://localhost:5197",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

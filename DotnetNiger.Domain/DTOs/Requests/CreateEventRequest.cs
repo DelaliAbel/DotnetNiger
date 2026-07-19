@@ -1,0 +1,46 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace DotnetNiger.Domain.DTOs.Requests;
+
+public class CreateEventRequest
+{
+    [Required]
+    public string Title { get; set; } = string.Empty;
+
+    public string? Slug { get; set; }
+
+    [Required]
+    public string Description { get; set; } = string.Empty;
+
+    public string Location { get; set; } = string.Empty;
+
+    [Required]
+    public string EventType { get; set; } = string.Empty;
+
+    public string Category { get; set; } = string.Empty;
+
+    [Required]
+    public DateTime StartDate { get; set; }
+
+    [Required]
+    public DateTime EndDate { get; set; }
+
+    public string CoverImageUrl { get; set; } = string.Empty;
+    public string OrganizerName { get; set; } = string.Empty;
+    public int Capacity { get; set; } = 100;
+    public string MeetupLink { get; set; } = string.Empty;
+    public bool IsPublished { get; set; }
+    public bool IsArchived { get; set; }
+    public List<string> TagNames { get; set; } = [];
+    public List<Guid> TagIds { get; set; } = [];
+    public List<string> GalleryImageUrls { get; set; } = [];
+    public List<SpeakerRequest> Speakers { get; set; } = [];
+}
+
+public class SpeakerRequest
+{
+    public Guid UserId { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public string AvatarUrl { get; set; } = string.Empty;
+}

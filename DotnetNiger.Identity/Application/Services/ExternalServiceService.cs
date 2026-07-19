@@ -1,11 +1,15 @@
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
+using DotnetNiger.Common.DTOs.Requests;
+using DotnetNiger.Common.DTOs.Responses;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure;
-using DotnetNiger.Identity.Application.DTOs;
+using DotnetNiger.Identity.Application.DTOs.Requests;
+using DotnetNiger.Identity.Application.DTOs.Responses;
 
 namespace DotnetNiger.Identity.Application.Services;
 
-public class ExternalServiceService
+public class ExternalServiceService : IExternalServiceService
 {
     private readonly IdentityDbContext _db;
 
@@ -39,7 +43,7 @@ public class ExternalServiceService
 
     public async Task<PaginatedResponse<ExternalServiceResponse>> GetByTenantAsync(Guid tenantId, PaginationQuery pagination)
     {
-        var query = _db.ExternalServices.Where(s => s.TenantId == tenantId);
+        var query = _db.ExternalServices.AsNoTracking().Where(s => s.TenantId == tenantId);
 
         var totalCount = await query.CountAsync();
 
@@ -55,7 +59,7 @@ public class ExternalServiceService
 
     public async Task<ExternalServiceResponse> GetByIdAsync(Guid tenantId, Guid serviceId)
     {
-        var service = await _db.ExternalServices
+        var service = await _db.ExternalServices.AsNoTracking()
             .FirstOrDefaultAsync(s => s.Id == serviceId && s.TenantId == tenantId)
             ?? throw new KeyNotFoundException("External service not found");
 
@@ -64,7 +68,7 @@ public class ExternalServiceService
 
     public async Task<ServiceLookupResult?> ResolveSlugAsync(string slug)
     {
-        var service = await _db.ExternalServices
+        var service = await _db.ExternalServices.AsNoTracking()
             .FirstOrDefaultAsync(s => s.Slug == slug && s.IsActive && s.Status == ExternalServiceStatus.Active);
 
         return service == null ? null : new ServiceLookupResult(service.BaseUrl);
@@ -90,11 +94,13 @@ public class ExternalServiceService
         return MapToResponse(service);
     }
 
-    public async Task<List<ExternalServiceResponse>> GetAllActiveAsync()
+    public async Task<List<ExternalServiceResponse>> GetAllActiveAsync(int page = 1, int pageSize = 50)
     {
-        var services = await _db.ExternalServices
+        var services = await _db.ExternalServices.AsNoTracking()
             .Where(s => s.IsActive && s.Status == ExternalServiceStatus.Active)
             .OrderByDescending(s => s.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
         return services.Select(MapToResponse).ToList();
@@ -132,11 +138,29 @@ public class ExternalServiceService
         await _db.SaveChangesAsync();
     }
 
+    public async Task<(Guid tenantId, Guid? apiKeyId)> GetAuthInfoAsync(ClaimsPrincipal user)
+    {
+        var tenantId = Guid.Parse(user.FindFirstValue("tenant_id")!);
+        Guid? apiKeyId = null;
+        var keyClaim = user.FindFirstValue("api_key_id");
+        if (!string.IsNullOrEmpty(keyClaim))
+            apiKeyId = Guid.Parse(keyClaim);
+        else
+        {
+            var key = await _db.TenantApiKeys
+                .Where(k => k.TenantId == tenantId && k.IsActive)
+                .OrderBy(k => k.CreatedAt)
+                .FirstOrDefaultAsync();
+            apiKeyId = key?.Id;
+        }
+        return (tenantId, apiKeyId);
+    }
+
     private static ExternalServiceResponse MapToResponse(ExternalService s)
     {
         return new ExternalServiceResponse(
             s.Id, s.TenantId, s.Name, s.Slug, s.Description,
-            s.BaseUrl, s.HealthEndpoint, s.IsActive, s.Status,
+            s.BaseUrl, s.HealthEndpoint, s.IsActive, s.Status.ToString(),
             s.LastHealthCheckAt, s.HealthCheckFailures,
             s.CreatedAt, s.UpdatedAt);
     }

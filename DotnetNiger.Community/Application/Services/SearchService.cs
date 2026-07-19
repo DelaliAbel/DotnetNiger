@@ -1,11 +1,16 @@
+using DotnetNiger.Common.Constants;
 using DotnetNiger.Community.Infrastructure;
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.DTOs.Responses;
+using DotnetNiger.Common.DTOs.Responses;
 using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Application.Services;
 
+/// <summary>Recherche unifiée dans les articles publiés, événements publiés et ressources.</summary>
 public class SearchService(AppDbContext db) : ISearchService
 {
+    /// <summary>Cherche dans tous les types de contenu, avec pagination et filtre par type optionnel.</summary>
     public async Task<PaginatedResponse<SearchResultResponse>> SearchAsync(SearchQueryRequest request)
     {
         request.Page = Math.Max(1, request.Page);
@@ -14,59 +19,86 @@ public class SearchService(AppDbContext db) : ISearchService
         var query = request.Query?.Trim();
         var type = request.Type?.Trim();
 
-        var results = new List<SearchResultResponse>();
+        var postsQuery = string.IsNullOrWhiteSpace(type) || type == "Post"
+            ? BuildPostQuery(query)
+            : null;
 
-        if (string.IsNullOrWhiteSpace(type) || type == "Post")
-        {
-            var posts = db.Posts.AsNoTracking().Where(p => p.IsPublished)
-                .Select(p => new SearchResultResponse
-                {
-                    Type = "Post", Id = p.Id, Title = p.Title, Slug = p.Slug,
-                    Excerpt = p.Excerpt, Content = p.Content, CoverImageUrl = p.CoverImageUrl,
-                    CreatedAt = p.CreatedAt
-                });
-            if (!string.IsNullOrWhiteSpace(query))
-                posts = posts.Where(p => p.Title != null && p.Title.Contains(query) || p.Content != null && p.Content.Contains(query));
-            results.AddRange(await posts.ToListAsync());
-        }
+        var eventsQuery = string.IsNullOrWhiteSpace(type) || type == "Event"
+            ? BuildEventQuery(query)
+            : null;
 
-        if (string.IsNullOrWhiteSpace(type) || type == "Event")
-        {
-            var events = db.Events.AsNoTracking().Where(e => e.IsPublished)
-                .Select(e => new SearchResultResponse
-                {
-                    Type = "Event", Id = e.Id, Title = e.Title, Slug = e.Slug,
-                    Description = e.Description, CoverImageUrl = e.CoverImageUrl,
-                    StartDateTime = e.StartDate, CreatedAt = e.CreatedAt
-                });
-            if (!string.IsNullOrWhiteSpace(query))
-                events = events.Where(e => e.Title != null && e.Title.Contains(query) || e.Description != null && e.Description.Contains(query));
-            results.AddRange(await events.ToListAsync());
-        }
+        var resourcesQuery = string.IsNullOrWhiteSpace(type) || type == "Resource"
+            ? BuildResourceQuery(query)
+            : null;
 
-        if (string.IsNullOrWhiteSpace(type) || type == "Resource")
-        {
-            var resources = db.Resources.AsNoTracking()
-                .Select(r => new SearchResultResponse
-                {
-                    Type = "Resource", Id = r.Id, Title = r.Title, Slug = r.Slug,
-                    Description = r.Description, CreatedAt = r.CreatedAt
-                });
-            if (!string.IsNullOrWhiteSpace(query))
-                resources = resources.Where(r => r.Title != null && r.Title.Contains(query) || r.Description != null && r.Description.Contains(query));
-            results.AddRange(await resources.ToListAsync());
-        }
+        var allResults = Enumerable.Empty<SearchResultResponse>()
+            .AsQueryable();
 
-        var total = results.Count;
-        var items = results
+        if (postsQuery != null)
+            allResults = allResults.Concat(postsQuery);
+        if (eventsQuery != null)
+            allResults = allResults.Concat(eventsQuery);
+        if (resourcesQuery != null)
+            allResults = allResults.Concat(resourcesQuery);
+
+        var total = await allResults.CountAsync();
+
+        var items = await allResults
             .OrderByDescending(r => r.CreatedAt)
             .Skip((request.Page - 1) * request.PageSize)
             .Take(request.PageSize)
-            .ToList();
+            .ToListAsync();
 
         return new PaginatedResponse<SearchResultResponse>
         {
             Items = items, TotalCount = total, Page = request.Page, PageSize = request.PageSize
         };
+    }
+
+    private IQueryable<SearchResultResponse> BuildPostQuery(string? query)
+    {
+        var q = db.Posts.AsNoTracking().Where(p => p.IsPublished)
+            .Select(p => new SearchResultResponse
+            {
+                Type = "Post", Id = p.Id, Title = p.Title, Slug = p.Slug,
+                Excerpt = p.Excerpt, Content = p.Content, CoverImageUrl = p.CoverImageUrl,
+                CreatedAt = p.CreatedAt
+            });
+        if (!string.IsNullOrWhiteSpace(query))
+            q = q.Where(p =>
+                (p.Title != null && p.Title.Contains(query)) ||
+                (p.Content != null && p.Content.Contains(query)));
+        return q;
+    }
+
+    private IQueryable<SearchResultResponse> BuildEventQuery(string? query)
+    {
+        var q = db.Events.AsNoTracking().Where(e => e.IsPublished)
+            .Select(e => new SearchResultResponse
+            {
+                Type = "Event", Id = e.Id, Title = e.Title, Slug = e.Slug,
+                Description = e.Description, CoverImageUrl = e.CoverImageUrl,
+                StartDateTime = e.StartDate, CreatedAt = e.CreatedAt
+            });
+        if (!string.IsNullOrWhiteSpace(query))
+            q = q.Where(e =>
+                (e.Title != null && e.Title.Contains(query)) ||
+                (e.Description != null && e.Description.Contains(query)));
+        return q;
+    }
+
+    private IQueryable<SearchResultResponse> BuildResourceQuery(string? query)
+    {
+        var q = db.Resources.AsNoTracking()
+            .Select(r => new SearchResultResponse
+            {
+                Type = "Resource", Id = r.Id, Title = r.Title, Slug = r.Slug,
+                Description = r.Description, CreatedAt = r.CreatedAt
+            });
+        if (!string.IsNullOrWhiteSpace(query))
+            q = q.Where(r =>
+                (r.Title != null && r.Title.Contains(query)) ||
+                (r.Description != null && r.Description.Contains(query)));
+        return q;
     }
 }

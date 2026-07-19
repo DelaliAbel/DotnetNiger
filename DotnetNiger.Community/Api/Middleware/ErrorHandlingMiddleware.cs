@@ -3,8 +3,11 @@ using System.Text.Json;
 
 namespace DotnetNiger.Community.Api.Middleware;
 
+/// <summary>Intercepte les exceptions non gérées et retourne une réponse JSON structurée.</summary>
 public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandlingMiddleware> logger)
 {
+    /// <summary>Exécute le middleware : capture les exceptions et les transforme en réponses HTTP appropriées.</summary>
+    /// <param name="context">Contexte HTTP de la requête.</param>
     public async Task InvokeAsync(HttpContext context)
     {
         try
@@ -19,6 +22,9 @@ public class ErrorHandlingMiddleware(RequestDelegate next, ILogger<ErrorHandling
         }
     }
 
+    /// <summary>Construit et écrit la réponse d'erreur formatée (problem+json).</summary>
+    /// <param name="context">Contexte HTTP.</param>
+    /// <param name="exception">Exception capturée.</param>
     private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
         var (statusCode, detail) = exception switch

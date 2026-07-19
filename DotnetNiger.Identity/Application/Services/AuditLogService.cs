@@ -1,83 +1,49 @@
+using System.Security.Claims;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Identity.Application.Services;
 
-/// <summary>
-/// Service for logging administrative actions to an audit trail.
-/// </summary>
-public interface IAuditLogService
-{
-    /// <summary>
-    /// Logs an administrative action.
-    /// </summary>
-    /// <param name="userId">The ID of the user performing the action.</param>
-    /// <param name="entityType">The type of entity acted upon.</param>
-    /// <param name="entityId">The ID of the entity acted upon.</param>
-    /// <param name="action">The action performed (e.g., Create, Update, Delete).</param>
-    /// <param name="description">Optional description of the changes made.</param>
-    /// <param name="ipAddress">The IP address from which the action originated.</param>
-    /// <param name="tenantId">The tenant ID (optional, will be resolved from HttpContext if not provided).</param>
-    /// <returns>The created audit log entry.</returns>
-    Task<AuditLog> LogAsync(
-        Guid userId,
-        string entityType,
-        Guid entityId,
-        string action,
-        string? description = null,
-        string? ipAddress = null,
-        Guid? tenantId = null);
-}
-
 public class AuditLogService : IAuditLogService
 {
-    private readonly IdentityDbContext _dbContext;
-    private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IdentityDbContext _db;
     private readonly TenantContext _tenantContext;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
-    public AuditLogService(
-        IdentityDbContext dbContext,
-        IHttpContextAccessor httpContextAccessor,
-        TenantContext tenantContext)
+    public AuditLogService(IdentityDbContext db, TenantContext tenantContext, IHttpContextAccessor httpContextAccessor)
     {
-        _dbContext = dbContext;
-        _httpContextAccessor = httpContextAccessor;
+        _db = db;
         _tenantContext = tenantContext;
+        _httpContextAccessor = httpContextAccessor;
     }
 
-    public async Task<AuditLog> LogAsync(
-        Guid userId,
-        string entityType,
-        Guid entityId,
-        string action,
-        string? description = null,
-        string? ipAddress = null,
-        Guid? tenantId = null)
+    public async Task LogAsync(string entityType, Guid entityId, string action, string? description = null)
     {
-        // Use provided tenantId or resolve from HttpContext
-        var resolvedTenantId = tenantId ?? _tenantContext.TenantId;
-        
-        // Use provided IP address or resolve from HttpContext
-        var resolvedIpAddress = ipAddress ?? 
-            _httpContextAccessor.HttpContext?.Connection.RemoteIpAddress?.ToString();
+        var httpContext = _httpContextAccessor.HttpContext;
+        var userId = httpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+        var ipAddress = httpContext?.Connection.RemoteIpAddress?.ToString();
 
-        var auditLog = new AuditLog
+        var entry = new AuditLog
         {
-            TenantId = resolvedTenantId,
-            UserId = userId,
+            Id = Guid.NewGuid(),
+            TenantId = _tenantContext.TenantId,
+            UserId = userId is not null && Guid.TryParse(userId, out var uid) ? uid : Guid.Empty,
             EntityType = entityType,
             EntityId = entityId,
             Action = action,
             Description = description,
-            IpAddress = resolvedIpAddress,
+            IpAddress = ipAddress,
             CreatedAt = DateTime.UtcNow
         };
 
-        _dbContext.AuditLogs.Add(auditLog);
-        await _dbContext.SaveChangesAsync();
+        _db.AuditLogs.Add(entry);
+        await _db.SaveChangesAsync();
+    }
 
-        return auditLog;
+    public async Task LogAsync(AuditLog entry)
+    {
+        _db.AuditLogs.Add(entry);
+        await _db.SaveChangesAsync();
     }
 }

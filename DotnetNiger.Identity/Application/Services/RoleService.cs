@@ -1,12 +1,15 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using DotnetNiger.Common.DTOs.Requests;
+using DotnetNiger.Common.DTOs.Responses;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure;
-using DotnetNiger.Identity.Application.DTOs;
+using DotnetNiger.Identity.Application.DTOs.Requests;
+using DotnetNiger.Identity.Application.DTOs.Responses;
 
 namespace DotnetNiger.Identity.Application.Services;
 
-public class RoleService
+public class RoleService : IRoleService
 {
     private readonly RoleManager<ApplicationRole> _roleManager;
     private readonly UserManager<ApplicationUser> _userManager;
@@ -35,7 +38,7 @@ public class RoleService
 
     public async Task<PaginatedResponse<RoleResponse>> GetByTenantAsync(Guid tenantId, PaginationQuery pagination)
     {
-        var query = _db.Roles.Where(r => r.TenantId == tenantId);
+        var query = _db.Roles.AsNoTracking().Where(r => r.TenantId == tenantId);
 
         var totalCount = await query.CountAsync();
 
@@ -113,7 +116,7 @@ public class RoleService
         if (user == null) throw new KeyNotFoundException();
 
         var roleNames = await _userManager.GetRolesAsync(user);
-        var roles = await _db.Roles
+        var roles = await _db.Roles.AsNoTracking()
             .Where(r => roleNames.Contains(r.Name!))
             .ToListAsync();
 

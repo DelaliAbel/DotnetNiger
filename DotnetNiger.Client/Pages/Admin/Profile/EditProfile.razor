@@ -1,0 +1,354 @@
+@page "/admin/profile/informations"
+@attribute [Authorize]
+@* Page admin : formulaire de mise à jour du profil utilisateur. *@
+@using DotnetNiger.Client.Models
+@using DotnetNiger.Client.Components.Shared
+@implements IDisposable
+@using DotnetNiger.Client.Components.Admin
+@inject IUserStateService UserStateService
+@inject IProfileService ProfileService
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IToastService ToastService
+
+@if (!isLoading)
+{
+    <div class="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
+        <AdminBreadcrumb />
+
+        <header class="mb-8 space-y-3">
+            <p class="max-w-3xl text-sm text-slate-600 sm:text-base md:text-lg">Mets a jour ton identite professionnelle au sein de la communaute .NET Niger.</p>
+        </header>
+
+        <div class="space-y-6">
+            <section class="rounded-lg border border-slate-200 bg-slate-100/80 p-6 shadow-sm md:p-8">
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-[340px_1fr] md:gap-8">
+                    <div>
+                        <h2 class="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl">Informations personnelles</h2>
+                        <p class="mt-2 text-sm leading-relaxed text-slate-600 sm:mt-4 sm:text-base md:text-lg">Ce que les membres voient sur ton profil.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                        <div class="md:col-span-1">
+                            <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 sm:mb-2 sm:text-sm">Nom Complet</label>
+                            <InputText @bind-Value="model.FullName" class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none sm:h-12 sm:px-4 sm:text-base" />
+                        </div>
+                        <div class="md:col-span-1">
+                            <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 sm:mb-2 sm:text-sm">Ville</label>
+                            <InputText @bind-Value="model.City" class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none sm:h-12 sm:px-4 sm:text-base" />
+                        </div>
+                        <div class="md:col-span-1">
+                            <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 sm:mb-2 sm:text-sm">Adresse Email</label>
+                            <InputText Value="@displayEmail" ValueExpression="() => displayEmail" disabled class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 sm:h-12 sm:px-4 sm:text-base" />
+                        </div>
+                        <div class="md:col-span-1">
+                            <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 sm:mb-2 sm:text-sm">Telephone</label>
+                            <InputText @bind-Value="model.PhoneNumber" class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none sm:h-12 sm:px-4 sm:text-base" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 sm:mb-2 sm:text-sm">Pays</label>
+                            <InputText @bind-Value="model.Country" class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none sm:h-12 sm:px-4 sm:text-base" />
+                        </div>
+                    </div>
+                    <button type="button" @onclick="SavePersonalInfoAsync" class="mt-5 inline-flex h-8 items-center rounded-lg bg-secondary px-4 text-xs font-semibold text-white hover:bg-secondary-500 sm:h-10 sm:px-6 sm:text-sm">
+                        <i class="fa-solid fa-floppy-disk mr-2"></i>Sauvegarder les informations
+                    </button>
+                </div>
+            </section>
+
+            <section class="rounded-lg border border-slate-200 bg-slate-100/80 p-6 shadow-sm md:p-8">
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-[340px_1fr] md:gap-8">
+                    <div>
+                        <h2 class="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl">Biographie</h2>
+                        <p class="mt-2 text-sm leading-relaxed text-slate-600 sm:mt-4 sm:text-base md:text-lg">Un court texte pour te presenter.</p>
+                    </div>
+
+                    <div class="space-y-5">
+                        <div>
+                            <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Biographie</label>
+                            <Editor @ref="EditorRef" EditorId="bioEditor" InitialContent="@(model.Bio ?? string.Empty)" />
+                        </div>
+                        <button type="button" @onclick="SaveBioAsync" class="inline-flex h-8 items-center rounded-lg bg-secondary px-4 text-xs font-semibold text-white hover:bg-secondary-500 sm:h-10 sm:px-6 sm:text-sm">
+                            <i class="fa-solid fa-floppy-disk mr-2"></i>Sauvegarder la bio
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="rounded-lg border border-slate-200 bg-slate-100/80 p-6 shadow-sm md:p-8">
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-[340px_1fr] md:gap-8">
+                    <div>
+                        <h2 class="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl">Compétences</h2>
+                        <p class="mt-2 text-sm leading-relaxed text-slate-600 sm:mt-4 sm:text-base md:text-lg">Les technologies et outils que tu maîtrises.</p>
+                    </div>
+                    <div>
+                        <SkillsEditor @bind-Skills="model.Skills" />
+                        <button type="button" @onclick="SaveSkillsAsync" class="mt-5 inline-flex h-8 items-center rounded-lg bg-secondary px-4 text-xs font-semibold text-white hover:bg-secondary-500 sm:h-10 sm:px-6 sm:text-sm">
+                            <i class="fa-solid fa-floppy-disk mr-2"></i>Sauvegarder les compétences
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="rounded-lg border border-slate-200 bg-slate-100/80 p-6 shadow-sm md:p-8">
+                <div class="mb-5 flex items-center justify-between gap-3">
+                    <h2 class="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl">Liens sociaux</h2>
+                    <span class="text-xs text-slate-500 sm:text-sm">Renseigne les URLs de tes reseaux</span>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(messageSocial))
+                {
+                    <p class="mb-4 rounded-lg bg-white px-4 py-2 text-sm text-slate-700">@messageSocial</p>
+                }
+
+                <div class="space-y-3">
+                    @foreach (var item in socialLinksEdit)
+                    {
+                        <div class="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
+                            <div class="text-xl sm:text-2xl md:text-3xl text-black w-8 text-center">
+                                <i class="@GetIconeForPlatform(item.Platform)"></i>
+                            </div>
+                            <span class="w-16 text-xs font-semibold text-slate-700 sm:w-20 sm:text-sm md:w-24">@item.Platform</span>
+                            <input @bind="item.Url"
+                                   placeholder="https://"
+                                   class="flex-1 min-w-[120px] h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 focus:border-indigo-400 focus:outline-none sm:min-w-[200px] sm:h-10 sm:px-3 sm:text-sm" />
+                        </div>
+                    }
+                </div>
+
+                <div class="mt-5">
+                    <button type="button" @onclick="SaveSocialLinksAsync"
+                            class="inline-flex h-8 items-center rounded-lg bg-secondary px-4 text-xs font-semibold text-white hover:bg-indigo-500 sm:h-10 sm:px-6 sm:text-sm">
+                        Enregistrer les liens
+                    </button>
+                </div>
+            </section>
+
+            <div class="flex flex-wrap items-center gap-2 pt-1 sm:gap-3">
+                <a href="/admin/profile" class="inline-flex h-10 items-center rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:h-12 sm:px-8 sm:text-base">
+                    <i class="fa-solid fa-arrow-left mr-2"></i>Retour
+                </a>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
+        <AdminBreadcrumb />
+
+        <div class="space-y-6">
+            <section class="rounded-lg border border-slate-200 bg-slate-100/80 p-6 shadow-sm md:p-8">
+                <div class="mb-5">
+                    <Skeleton Type="SkeletonType.Title" Class="w-1/3" />
+                </div>
+                <Skeleton Type="SkeletonType.Text" Lines="2" />
+                <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr_auto]">
+                    <Skeleton Type="SkeletonType.Custom" Class="h-12 rounded-lg w-full" />
+                    <Skeleton Type="SkeletonType.Custom" Class="h-12 rounded-lg w-full" />
+                    <Skeleton Type="SkeletonType.Button" Class="h-12" Width="100px" />
+                </div>
+            </section>
+
+            <div class="flex gap-3">
+                <Skeleton Type="SkeletonType.Button" Class="h-12" Width="140px" />
+                <Skeleton Type="SkeletonType.Button" Class="h-12" Width="140px" />
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private static readonly string[] SocialPlatforms = ["GitHub", "LinkedIn", "Portfolio", "Facebook"];
+
+    private static string GetIconeForPlatform(string platform) => platform switch
+    {
+        "GitHub"    => "fab fa-github",
+        "LinkedIn"  => "fab fa-linkedin",
+        "Portfolio" => "fas fa-briefcase",
+        "Facebook"  => "fab fa-facebook",
+        _           => "fas fa-link"
+    };
+
+    private class SocialLinkEditModel
+    {
+        public string Platform { get; set; } = "";
+        public string Url { get; set; } = "";
+    }
+
+    private Editor EditorRef { get; set; } = default!;
+    private UpdateProfileRequest model = new();
+    private List<SocialLinkEditModel> socialLinksEdit = [];
+    private string? messageSocial;
+    private string displayEmail = string.Empty;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserStateService.OnChange += HandleStateChanged;
+
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (!(authState.User.Identity?.IsAuthenticated ?? false))
+                return;
+
+            if (UserStateService.CurrentUser is null)
+                await UserStateService.LoadUserFromStorageAsync();
+
+            if (UserStateService.CurrentUser is null)
+            {
+                var profil = await ProfileService.GetProfileAsync();
+                if (profil.Id != Guid.Empty)
+                    await UserStateService.SetUserAsync(profil);
+            }
+
+            SyncFormFromState();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        UserStateService.OnChange -= HandleStateChanged;
+    }
+
+    private void HandleStateChanged()
+    {
+        SyncFormFromState();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void SyncFormFromState()
+    {
+        var user = UserStateService.CurrentUser;
+        if (user is null) return;
+
+        model = new UpdateProfileRequest
+        {
+            FullName    = user.FullName,
+            PhoneNumber = user.PhoneNumber,
+            Country     = user.Country,
+            City        = user.City,
+            Bio         = user.Bio,
+            Skills      = user.Skills?.ToList() ?? new()
+        };
+        displayEmail = user.Email;
+        socialLinksEdit = SocialPlatforms.Select(p => new SocialLinkEditModel
+        {
+            Platform = p,
+            Url = user.SocialLinks?.FirstOrDefault(sl => sl.Platform == p)?.Url ?? ""
+        }).ToList();
+    }
+
+    private async Task SaveBioAsync()
+    {
+        var bioContent = await EditorRef.GetContentAsync();
+        var updated = await ProfileService.UpdateProfileAsync(new UpdateProfileRequest { Bio = bioContent });
+        if (updated.Id != Guid.Empty)
+        {
+            await UserStateService.UpdateUserAsync(updated);
+            ToastService.ShowToast("Bio sauvegardée avec succès.", ToastLevel.Success);
+        }
+        else
+        {
+            ToastService.ShowToast("Erreur lors de la sauvegarde de la bio.", ToastLevel.Error);
+        }
+    }
+
+    private async Task SavePersonalInfoAsync()
+    {
+        var updated = await ProfileService.UpdateProfileAsync(new UpdateProfileRequest
+        {
+            FullName = model.FullName,
+            PhoneNumber = model.PhoneNumber,
+            Country = model.Country,
+            City = model.City
+        });
+        if (updated.Id != Guid.Empty)
+        {
+            await UserStateService.UpdateUserAsync(updated);
+            ToastService.ShowToast("Informations personnelles sauvegardées avec succès.", ToastLevel.Success);
+        }
+        else
+        {
+            ToastService.ShowToast("Erreur lors de la sauvegarde des informations.", ToastLevel.Error);
+        }
+    }
+
+    private bool isSavingSkills;
+
+    private async Task SaveSkillsAsync()
+    {
+        if (isSavingSkills) return;
+        isSavingSkills = true;
+        StateHasChanged();
+
+        var previousSkills = model.Skills?.ToList();
+        var updated = await ProfileService.UpdateProfileAsync(new UpdateProfileRequest
+        {
+            Skills = model.Skills
+        });
+        if (updated.Id != Guid.Empty)
+        {
+            await UserStateService.UpdateUserAsync(updated);
+            ToastService.ShowToast("Compétences sauvegardées avec succès.", ToastLevel.Success);
+        }
+        else
+        {
+            model.Skills = previousSkills ?? [];
+            StateHasChanged();
+            ToastService.ShowToast("Erreur lors de la sauvegarde des compétences.", ToastLevel.Error);
+        }
+
+        isSavingSkills = false;
+        StateHasChanged();
+    }
+
+    private async Task SaveSocialLinksAsync()
+    {
+        messageSocial = null;
+        var currentLinks = await ProfileService.GetSocialLinksAsync();
+
+        foreach (var edit in socialLinksEdit)
+        {
+            var existing = currentLinks.FirstOrDefault(sl => sl.Platform == edit.Platform);
+
+            if (string.IsNullOrWhiteSpace(edit.Url))
+            {
+                if (existing is not null)
+                    await ProfileService.DeleteSocialLinkAsync(existing.Id);
+            }
+            else
+            {
+                if (existing is null || existing.Url != edit.Url)
+                {
+                    if (existing is not null)
+                        await ProfileService.DeleteSocialLinkAsync(existing.Id);
+
+                    await ProfileService.AddSocialLinkAsync(new AddSocialLinkRequest
+                    {
+                        Platform = edit.Platform,
+                        Url = edit.Url
+                    });
+                }
+            }
+        }
+
+        var updatedLinks = await ProfileService.GetSocialLinksAsync();
+        socialLinksEdit = SocialPlatforms.Select(p => new SocialLinkEditModel
+        {
+            Platform = p,
+            Url = updatedLinks.FirstOrDefault(sl => sl.Platform == p)?.Url ?? ""
+        }).ToList();
+
+        messageSocial = "Liens sociaux mis a jour avec succes.";
+    }
+
+
+
+}

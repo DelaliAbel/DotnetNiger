@@ -1,11 +1,14 @@
 using DotnetNiger.Community.Infrastructure;
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Community.Application.DTOs.Responses;
+using DotnetNiger.Common.DTOs.Responses;
 using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Community.Application.Services;
 
+/// <summary>Annuaire public des membres de la communauté DotnetNiger.</summary>
 public class MemberDirectoryService(AppDbContext db) : IMemberDirectoryService
 {
+    /// <summary>Liste paginée filtrée par mot-clé et/ou pays.</summary>
     public async Task<PaginatedResponse<MemberDirectoryResponse>> GetAllAsync(string? query, string? country, int page = 1, int pageSize = 10)
     {
         var q = db.Members.AsNoTracking()
@@ -19,16 +22,42 @@ public class MemberDirectoryService(AppDbContext db) : IMemberDirectoryService
             q = q.Where(m => m.Country == country);
 
         var total = await q.CountAsync();
-        var items = await q
+        var memberEntities = await q
             .OrderBy(m => m.FullName)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .Select(m => MapMember(m))
             .ToListAsync();
+        var items = memberEntities.Select(MapMember).ToList();
 
         return new PaginatedResponse<MemberDirectoryResponse> { Items = items, TotalCount = total, Page = page, PageSize = pageSize };
     }
 
+    /// <summary>Retourne les membres de l'équipe (IsTeamMember).</summary>
+    public async Task<List<TeamMemberResponse>> GetTeamMembersAsync()
+    {
+        var members = await db.Members.AsNoTracking()
+            .Include(m => m.SocialLinks)
+            .Where(m => m.IsTeamMember && !string.IsNullOrWhiteSpace(m.FullName))
+            .OrderByDescending(m => m.CreatedAt)
+            .ToListAsync();
+
+        return members.Select(m => new TeamMemberResponse
+        {
+            Id = m.Id,
+            FullName = m.FullName,
+            Bio = m.Bio,
+            AvatarUrl = m.AvatarUrl,
+            Position = m.Position,
+            SocialLinks = m.SocialLinks.Select(s => new SocialLinkResponse
+            {
+                Id = s.Id,
+                Platform = s.Platform,
+                Url = s.Url
+            }).ToList()
+        }).ToList();
+    }
+
+    /// <summary>Détail d'un membre avec ses liens sociaux.</summary>
     public async Task<MemberDirectoryResponse?> GetByIdAsync(Guid id)
     {
         var m = await db.Members.AsNoTracking().Include(m => m.SocialLinks).FirstOrDefaultAsync(m => m.Id == id);

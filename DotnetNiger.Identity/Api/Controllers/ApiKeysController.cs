@@ -1,6 +1,11 @@
+using DotnetNiger.Common.Constants;
+using DotnetNiger.Common.DTOs.Requests;
+using DotnetNiger.Common.DTOs.Responses;
+using DotnetNiger.Identity.Application;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using DotnetNiger.Identity.Application.DTOs;
+using DotnetNiger.Identity.Application.DTOs.Requests;
+using DotnetNiger.Identity.Application.DTOs.Responses;
 using DotnetNiger.Identity.Application.Services;
 
 namespace DotnetNiger.Identity.Api.Controllers;
@@ -9,12 +14,12 @@ namespace DotnetNiger.Identity.Api.Controllers;
 [ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/admin/tenants/{tenantId:guid}/api-keys")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
 public class ApiKeysController : ControllerBase
 {
-    private readonly TenantApiKeyService _apiKeyService;
+    private readonly ITenantApiKeyService _apiKeyService;
 
-    public ApiKeysController(TenantApiKeyService apiKeyService) => _apiKeyService = apiKeyService;
+    public ApiKeysController(ITenantApiKeyService apiKeyService) => _apiKeyService = apiKeyService;
 
     /// <summary>Liste toutes les clés API d'un tenant.</summary>
     [HttpGet]

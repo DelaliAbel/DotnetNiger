@@ -1,13 +1,17 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using DotnetNiger.Common.DTOs.Requests;
+using DotnetNiger.Common.DTOs.Responses;
+using DotnetNiger.Common.Email;
 using DotnetNiger.Identity.Domain.Entities;
 using DotnetNiger.Identity.Infrastructure;
-using DotnetNiger.Identity.Application.DTOs;
+using DotnetNiger.Identity.Application.DTOs.Requests;
+using DotnetNiger.Identity.Application.DTOs.Responses;
 
 namespace DotnetNiger.Identity.Application.Services;
 
-public class UserService
+public class UserService : IUserService
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly IdentityDbContext _db;
@@ -54,7 +58,7 @@ public class UserService
 
     public async Task<PaginatedResponse<UserResponse>> GetByTenantAsync(Guid tenantId, PaginationQuery pagination)
     {
-        var query = _db.Users.Where(u => u.TenantId == tenantId);
+        var query = _db.Users.AsNoTracking().Where(u => u.TenantId == tenantId);
         var total = await query.CountAsync();
         var users = await query
             .OrderBy(u => u.Email)

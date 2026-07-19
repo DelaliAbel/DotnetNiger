@@ -1,18 +1,24 @@
 using Asp.Versioning;
-using System.Security.Claims;
-using DotnetNiger.Community.Application;
-using DotnetNiger.Community.Application.DTOs;
+using DotnetNiger.Common.Constants;
+using DotnetNiger.Community.Application.Constants;
+using DotnetNiger.Community.Application.DTOs.Requests;
+using DotnetNiger.Community.Application.DTOs.Responses;
 using DotnetNiger.Community.Application.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Community.Api.Controllers;
 
-[ApiController]
+/// <summary>Gestion des événements de la communauté.</summary>
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
-public class EventsController(IEventService eventService) : ControllerBase
+public class EventsController(
+    IEventQueryService eventQuery,
+    IEventCommandService eventCommand,
+    IEventModerationService eventModeration,
+    IEventRegistrationService eventRegistration) : BaseController
 {
+    /// <summary>Retourne la liste des événements avec filtres et pagination.</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? published, [FromQuery] string? past, [FromQuery] string? eventType,
@@ -24,106 +30,169 @@ public class EventsController(IEventService eventService) : ControllerBase
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
-        var result = await eventService.GetAllAsync(published, past, eventType, query, tag, startDateFrom, startDateTo, submitterId, page, pageSize, after);
+        var result = await eventQuery.GetAllAsync(published, past, eventType, query, tag, startDateFrom, startDateTo, submitterId, page, pageSize, after);
         return Ok(new { Success = true, Data = result });
     }
 
+    /// <summary>Retourne les événements à venir avec pagination.</summary>
     [HttpGet("upcoming")]
     public async Task<IActionResult> GetUpcoming([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
-        var events = await eventService.GetUpcomingAsync(page, pageSize);
+        var events = await eventQuery.GetUpcomingAsync(page, pageSize);
         return Ok(new { Success = true, Data = events });
     }
 
-    [HttpGet("{id:guid}")]
+    /// <summary>Retourne les événements créés par l'utilisateur connecté.</summary>
+    [HttpGet("mine")]
+    [Authorize]
+    public async Task<IActionResult> GetMine([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
+        var userId = GetUserId();
+        var result = await eventQuery.GetAllAsync(null, null, null, null, null, null, null, userId, page, pageSize, null);
+        return Ok(new { Success = true, Data = result });
+    }
+
+    /// <summary>Retourne un événement par son identifiant.</summary>
+    [HttpGet("{id:guid}", Order = 1)]
     public async Task<IActionResult> GetById(Guid id)
     {
-        var ev = await eventService.GetByIdAsync(id);
-        if (ev is null) return NotFound(new { Success = false, Message = "Event not found" });
+        var ev = await eventQuery.GetByIdAsync(id);
+        if (ev is null) return NotFound(new { Success = false, Message = Messages.Event.NotFound });
         return Ok(new { Success = true, Data = ev });
     }
 
-    [HttpGet("{slug:regex(^[[a-z0-9]]+(?:-[[a-z0-9]]+)*$)}")]
+    /// <summary>Retourne un événement par son slug.</summary>
+    [HttpGet("{slug:regex(^[[a-z0-9]]+(?:-[[a-z0-9]]+)*$)}", Order = 2)]
     public async Task<IActionResult> GetBySlug(string slug)
     {
-        var ev = await eventService.GetBySlugAsync(slug);
-        if (ev is null) return NotFound(new { Success = false, Message = "Event not found" });
+        var ev = await eventQuery.GetBySlugAsync(slug);
+        if (ev is null) return NotFound(new { Success = false, Message = Messages.Event.NotFound });
         return Ok(new { Success = true, Data = ev });
     }
 
+    /// <summary>Retourne les métadonnées Open Graph d'un événement par son slug.</summary>
+    [HttpGet("by-slug/{slug}")]
+    public async Task<ActionResult<OGMetadata>> GetOGBySlug(string slug)
+    {
+        var ev = await eventQuery.GetBySlugAsync(slug);
+        if (ev is null) return NotFound(new { Success = false, Message = Messages.Event.NotFound });
+        return Ok(new ApiSuccessResponse<OGMetadata>
+        {
+            Data = new OGMetadata { Title = ev.Title, Description = ev.Description, ImageUrl = ev.CoverImageUrl, UpdatedAt = ev.UpdatedAt }
+        });
+    }
+
+    /// <summary>Crée un nouvel événement pour l'utilisateur connecté.</summary>
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> Create([FromBody] CreateEventRequest request)
     {
-        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
-            return Unauthorized(new { Success = false, Message = "Invalid user identity" });
-
-        var ev = await eventService.CreateAsync(request, userId);
-        return CreatedAtAction(nameof(GetById), new { id = ev.Id }, new { Success = true, Data = ev });
+        var userId = GetUserId();
+        try
+        {
+            var ev = await eventCommand.CreateAsync(request, userId, IsAdmin(), IsCollaborator());
+            return CreatedAtAction(nameof(GetById), new { id = ev.Id }, new { Success = true, Data = ev });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Success = false, Message = ex.Message });
+        }
     }
 
+    /// <summary>Met à jour un événement existant.</summary>
     [HttpPut("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Update(Guid id, [FromBody] CreateEventRequest request)
     {
-        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
-            return Unauthorized(new { Success = false, Message = "Invalid user identity" });
-
-        var isAdmin = User.IsInRole("Admin");
-        var ev = await eventService.UpdateAsync(id, request, userId, isAdmin);
-        if (ev is null) return NotFound(new { Success = false, Message = "Event not found" });
-        return Ok(new { Success = true, Data = ev });
+        try
+        {
+            var ev = await eventCommand.UpdateAsync(id, request, GetUserId(), IsAdmin());
+            if (ev is null) return NotFound(new { Success = false, Message = Messages.Event.NotFound });
+            return Ok(new { Success = true, Data = ev });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { Success = false, Message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Success = false, Message = ex.Message });
+        }
     }
 
+    /// <summary>Supprime un événement par son identifiant.</summary>
     [HttpDelete("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Delete(Guid id)
     {
-        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
-            return Unauthorized(new { Success = false, Message = "Invalid user identity" });
-
-        var isAdmin = User.IsInRole("Admin");
-        var deleted = await eventService.DeleteAsync(id, userId, isAdmin);
-        if (!deleted) return NotFound(new { Success = false, Message = "Event not found" });
-        return Ok(new { Success = true, Message = "Event deleted" });
+        var deleted = await eventCommand.DeleteAsync(id, GetUserId(), IsAdmin());
+        if (!deleted) return NotFound(new { Success = false, Message = Messages.Event.NotFound });
+        return Ok(new { Success = true, Message = Messages.Event.Deleted });
     }
 
+    /// <summary>Inscrit l'utilisateur connecté à un événement.</summary>
     [HttpPost("registrations")]
     [Authorize]
     public async Task<IActionResult> Register([FromBody] RegisterEventRequest request)
     {
-        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
-            return Unauthorized(new { Success = false, Message = "Invalid user identity" });
-
-        var userName = User.FindFirstValue("full_name") ?? "Unknown";
-        var result = await eventService.RegisterAsync(request.EventId, userId, userName);
-        if (result is null)
-            return BadRequest(new { Success = false, Message = "Event is full or already registered" });
+        var userId = GetUserId();
+        var result = await eventRegistration.RegisterAsync(request.EventId, userId, GetUserName(), GetUserAvatar() ?? request.AvatarUrl);
+        if (result is null) return BadRequest(new { Success = false, Message = Messages.Event.FullOrRegistered });
         return Ok(new { Success = true, Data = result });
     }
 
+    /// <summary>Annule l'inscription de l'utilisateur connecté à un événement.</summary>
     [HttpDelete("{eventId:guid}/registrations")]
     [Authorize]
     public async Task<IActionResult> CancelRegistration(Guid eventId)
     {
-        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
-            return Unauthorized(new { Success = false, Message = "Invalid user identity" });
-
-        var cancelled = await eventService.CancelRegistrationAsync(eventId, userId);
-        if (!cancelled) return NotFound(new { Success = false, Message = "Registration not found" });
-        return Ok(new { Success = true, Message = "Registration cancelled" });
+        var cancelled = await eventRegistration.CancelRegistrationAsync(eventId, GetUserId());
+        if (!cancelled) return NotFound(new { Success = false, Message = Messages.Event.RegistrationNotFound });
+        return Ok(new { Success = true, Message = Messages.Event.RegistrationCancelled });
     }
 
+    /// <summary>Retourne les inscriptions d'un événement.</summary>
     [HttpGet("{eventId:guid}/registrations")]
     [Authorize]
     public async Task<IActionResult> GetRegistrations(Guid eventId)
     {
-        if (!Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId))
-            return Unauthorized(new { Success = false, Message = "Invalid user identity" });
-
-        var registrations = await eventService.GetRegistrationsAsync(eventId);
+        var registrations = await eventQuery.GetRegistrationsAsync(eventId);
         return Ok(new { Success = true, Data = registrations });
+    }
+
+    /// <summary>Retourne les événements en attente de modération.</summary>
+    [HttpGet("pending")]
+    [Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
+    public async Task<IActionResult> GetPending([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
+        return Ok(new { Success = true, Data = await eventQuery.GetPendingEventsAsync(page, pageSize) });
+    }
+
+    /// <summary>Approuve un événement en attente de modération.</summary>
+    [HttpPatch("{id:guid}/approve")]
+    [Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
+    public async Task<IActionResult> Approve(Guid id)
+    {
+        var ev = await eventModeration.ApproveAsync(id);
+        if (ev is null) return NotFound(new { Success = false, Message = Messages.Event.NotFound });
+        return Ok(new { Success = true, Data = ev });
+    }
+
+    /// <summary>Rejette un événement avec une raison donnée.</summary>
+    [HttpPatch("{id:guid}/reject")]
+    [Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
+    public async Task<IActionResult> Reject(Guid id, [FromQuery] string reason)
+    {
+        if (string.IsNullOrWhiteSpace(reason))
+            return BadRequest(new { Success = false, Message = Messages.Certificate.RejectReasonRequired });
+        var ev = await eventModeration.RejectAsync(id, reason);
+        if (ev is null) return NotFound(new { Success = false, Message = Messages.Event.NotFound });
+        return Ok(new { Success = true, Data = ev });
     }
 }
