@@ -1,0 +1,419 @@
+﻿@* Composant admin : barre latérale de navigation (responsive + mode réduit). *@
+@using DotnetNiger.Client.Helpers
+@inject IUserStateService UserStateService
+@inject IUploadService UploadService
+
+<div class="h-full">
+      <aside class="hidden h-full flex-col justify-between bg-secondary text-white shadow-lg transition-all duration-300 sm:flex @DesktopSidebarWidthClass">
+            <div class="flex flex-1 flex-col overflow-hidden">
+                  <NavLink href="/admin/profile" class="flex items-center gap-3 border-b border-slate-700/60 px-4 py-4 bg-active/80" ActiveClass="bg-active">
+                        <div class="flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-full bg-slate-700 text-lg font-semibold text-white">
+                              @if (HasAvatar)
+                              {
+                                    <ResolvedImage Src="@(UserStateService.CurrentUser?.AvatarUrl)" class="h-full w-full object-cover" alt="@($"Avatar de {DisplayName}")" />
+                              }
+                              else
+                              {
+                                    <span>@UserInitial</span>
+                              }
+                        </div>
+
+                        @if (!IsCollapsed)
+                        {
+                              <div class="min-w-0">
+                                    <span class="Button block truncate text-white">@DisplayName</span>
+                                    <span class="Badge block truncate text-role-badge">@PrimaryRole</span>
+                              </div>
+                        }
+                  </NavLink>
+
+                  <nav class="sidebar-scroll mt-4 flex-1 space-y-2 overflow-y-auto px-3">
+                        @if (IsAdmin)
+                        {
+                            <NavLink href="/admin" Match="NavLinkMatch.All" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active">
+                                  <i class="fas fa-gauge w-8 text-2xl"></i>
+                                  @if (!IsCollapsed)
+                                  {
+                                        <span class="Link">Dashboard</span>
+                                  }
+                            </NavLink>
+                        }
+
+                        @if (IsAdmin)
+                        {
+                            <NavLink href="/admin/users" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active">
+                                  <i class="fas fa-user w-8 text-2xl"></i>
+                                  @if (!IsCollapsed)
+                                  {
+                                        <span class="Link">Utilisateurs</span>
+                                  }
+                            </NavLink>
+                        }
+
+                        @if (IsAdmin)
+                        {
+                            <NavLink href="/admin/blog" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active">
+                                  <i class="fas fa-newspaper w-8 text-2xl"></i>
+                                  @if (!IsCollapsed)
+                                  {
+                                        <span class="Link">Blog</span>
+                                  }
+                            </NavLink>
+                        }
+
+                        @if (IsAdmin)
+                        {
+                            <NavLink href="/admin/events" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active">
+                                  <i class="fas fa-calendar w-8 text-2xl"></i>
+                                  @if (!IsCollapsed)
+                                  {
+                                        <span class="Link">Événements</span>
+                                  }
+                            </NavLink>
+                        }
+
+                        @if (IsAdmin)
+                        {
+                            <NavLink href="/admin/ressources" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active">
+                                  <i class="fas fa-folder w-8 text-2xl"></i>
+                                  @if (!IsCollapsed)
+                                  {
+                                        <span class="Link">Ressources</span>
+                                  }
+                            </NavLink>
+                        }
+
+                        @if (IsAdmin)
+                        {
+                            <NavLink href="/admin/projects" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active">
+                                  <i class="fas fa-code-branch w-8 text-2xl"></i>
+                                  @if (!IsCollapsed)
+                                  {
+                                        <span class="Link">Projets</span>
+                                  }
+                            </NavLink>
+                        }
+
+                        @if (IsAdmin)
+                        {
+                            <NavLink href="/admin/partners" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active">
+                                  <i class="fas fa-handshake w-8 text-2xl"></i>
+                                  @if (!IsCollapsed)
+                                  {
+                                        <span class="Link">Partenaires</span>
+                                  }
+                            </NavLink>
+                        }
+
+                        @if (IsAdmin)
+                        {
+                            <NavLink href="/admin/team" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active">
+                                  <i class="fas fa-users w-8 text-2xl"></i>
+                                  @if (!IsCollapsed)
+                                  {
+                                        <span class="Link">Équipe</span>
+                                  }
+                            </NavLink>
+                        }
+
+                        @if (CanAccessMesSections)
+                        {
+                            <NavLink href="/admin/comments" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active">
+                                  <i class="fas fa-comments w-8 text-2xl"></i>
+                                  @if (!IsCollapsed)
+                                  {
+                                        <span class="Link">Commentaires</span>
+                                  }
+                            </NavLink>
+                        }
+
+                        @if (CanAccessMesSections)
+                        {
+                            <NavLink href="/admin/newsletter" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active">
+                                  <i class="fas fa-envelope w-8 text-2xl"></i>
+                                  @if (!IsCollapsed)
+                                  {
+                                        <span class="Link">Newsletter</span>
+                                  }
+                            </NavLink>
+                        }
+
+                        @if (CanAccessMesSections)
+                        {
+                            <div class="border-t border-slate-700/40 my-2"></div>
+                        }
+
+                        @if (CanAccessMesSections)
+                        {
+                            <NavLink href="/admin/mes-articles" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active">
+                                  <i class="fas fa-pen-nib w-8 text-2xl"></i>
+                                  @if (!IsCollapsed)
+                                  {
+                                        <span class="Link">Mes Articles</span>
+                                  }
+                            </NavLink>
+                        }
+
+                        @if (CanAccessMesSections)
+                        {
+                            <NavLink href="/admin/mes-evenements" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active">
+                                  <i class="fas fa-calendar-check w-8 text-2xl"></i>
+                                  @if (!IsCollapsed)
+                                  {
+                                        <span class="Link">Mes Événements</span>
+                                  }
+                            </NavLink>
+                        }
+
+                        @if (CanAccessMesSections)
+                        {
+                            <NavLink href="/admin/mes-ressources" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active">
+                                  <i class="fas fa-bookmark w-8 text-2xl"></i>
+                                  @if (!IsCollapsed)
+                                  {
+                                        <span class="Link">Mes Ressources</span>
+                                  }
+                            </NavLink>
+                        }
+
+                        @if (CanAccessMesSections)
+                        {
+                            <NavLink href="/admin/mes-projets" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active">
+                                  <i class="fas fa-laptop-code w-8 text-2xl"></i>
+                                  @if (!IsCollapsed)
+                                  {
+                                        <span class="Link">Mes Projets</span>
+                                  }
+                            </NavLink>
+                        }
+
+                        @if (IsAdmin)
+                        {
+                            <div class="border-t border-slate-700/40 my-2"></div>
+
+                            <NavLink href="/admin/settings" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active">
+                                  <i class="fas fa-gear w-8 text-2xl"></i>
+                                  @if (!IsCollapsed)
+                                  {
+                                        <span class="Link">Paramètres</span>
+                                  }
+                            </NavLink>
+                        }
+                  </nav>
+            </div>
+
+            <div>
+                  <div class="border-t border-slate-700 p-4">
+                        <NavLink href="/" class="@GetBackLinkClass()">
+                              <i class="fas fa-arrow-left mr-3"></i>
+                              @if (!IsCollapsed)
+                              {
+                                    <span>Retour au site</span>
+                              }
+                        </NavLink>
+                  </div>
+            </div>
+      </aside>
+
+      <div class="fixed inset-0 z-40 bg-black/50 sm:hidden @(IsOpen ? string.Empty : "hidden")" @onclick="Closed"></div>
+
+      <aside class="fixed top-0 left-0 z-50 flex h-full w-64 flex-col justify-between bg-secondary text-white shadow-lg transition-transform duration-300 sm:hidden @(IsOpen ? "translate-x-0" : "-translate-x-full")">
+            <div class="flex flex-1 flex-col overflow-hidden">
+                  <div class="flex h-16 items-center gap-3 bg-active px-5 text-2xl font-bold">
+                        <img src="/Logo.svg" alt="Logo du Dotnet Niger" class="h-10 w-10">
+                        <span class="Link">Dotnet Niger</span>
+                  </div>
+
+                  <NavLink href="/admin/profile" class="mt-4 flex items-center gap-3 px-5 py-3" ActiveClass="bg-active/80" @onclick="Closed">
+                        <div class="flex h-[46px] w-[46px] items-center justify-center overflow-hidden rounded-full bg-slate-700 text-lg font-semibold text-white">
+                              @if (HasAvatar)
+                              {
+                                    <ResolvedImage Src="@(UserStateService.CurrentUser?.AvatarUrl)" class="h-full w-full object-cover" alt="@($"Avatar de {DisplayName}")" />
+                              }
+                              else
+                              {
+                                    <span>@UserInitial</span>
+                              }
+                        </div>
+
+                        <div class="min-w-0">
+                              <span class="Button block truncate text-white">@DisplayName</span>
+                              <span class="Badge block truncate text-role-badge">@PrimaryRole</span>
+                        </div>
+                  </NavLink>
+
+                  <nav class="sidebar-scroll mt-3 flex-1 space-y-2 overflow-y-auto px-4">
+                        @if (IsAdmin)
+                        {
+                            <NavLink href="/admin" Match="NavLinkMatch.All" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
+                                  <i class="fas fa-gauge w-8 text-2xl"></i>
+                                  <span class="Link">Dashboard</span>
+                            </NavLink>
+                        }
+
+                        @if (IsAdmin)
+                        {
+                            <NavLink href="/admin/users" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
+                                  <i class="fas fa-user w-8 text-2xl"></i>
+                                  <span class="Link">Utilisateurs</span>
+                            </NavLink>
+                        }
+
+                        @if (IsAdmin)
+                        {
+                            <NavLink href="/admin/blog" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
+                                  <i class="fas fa-newspaper w-8 text-2xl"></i>
+                                  <span class="Link">Blog</span>
+                            </NavLink>
+                        }
+
+                        @if (IsAdmin)
+                        {
+                            <NavLink href="/admin/events" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
+                                  <i class="fas fa-calendar w-8 text-2xl"></i>
+                                  <span class="Link">Événements</span>
+                            </NavLink>
+                        }
+
+                        @if (IsAdmin)
+                        {
+                            <NavLink href="/admin/ressources" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
+                                  <i class="fas fa-folder w-8 text-2xl"></i>
+                                  <span class="Link">Ressources</span>
+                            </NavLink>
+                        }
+
+                        @if (IsAdmin)
+                        {
+                            <NavLink href="/admin/projects" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
+                                  <i class="fas fa-code-branch w-8 text-2xl"></i>
+                                  <span class="Link">Projets</span>
+                            </NavLink>
+                        }
+
+                        @if (IsAdmin)
+                        {
+                            <NavLink href="/admin/partners" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
+                                  <i class="fas fa-handshake w-8 text-2xl"></i>
+                                  <span class="Link">Partenaires</span>
+                            </NavLink>
+                        }
+
+                        @if (IsAdmin)
+                        {
+                            <NavLink href="/admin/team" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
+                                  <i class="fas fa-users w-8 text-2xl"></i>
+                                  <span class="Link">Équipe</span>
+                            </NavLink>
+                        }
+
+                        @if (CanAccessMesSections)
+                        {
+                            <NavLink href="/admin/comments" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
+                                  <i class="fas fa-comments w-8 text-2xl"></i>
+                                  <span class="Link">Commentaires</span>
+                            </NavLink>
+                        }
+
+                        @if (CanAccessMesSections)
+                        {
+                            <NavLink href="/admin/newsletter" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
+                                  <i class="fas fa-envelope w-8 text-2xl"></i>
+                                  <span class="Link">Newsletter</span>
+                            </NavLink>
+                        }
+
+                        @if (CanAccessMesSections)
+                        {
+                            <div class="border-t border-slate-700/40 my-2"></div>
+                        }
+
+                        @if (CanAccessMesSections)
+                        {
+                            <NavLink href="/admin/mes-articles" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
+                                  <i class="fas fa-pen-nib w-8 text-2xl"></i>
+                                  <span class="Link">Mes Articles</span>
+                            </NavLink>
+                        }
+
+                        @if (CanAccessMesSections)
+                        {
+                            <NavLink href="/admin/mes-evenements" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
+                                  <i class="fas fa-calendar-check w-8 text-2xl"></i>
+                                  <span class="Link">Mes Événements</span>
+                            </NavLink>
+                        }
+
+                        @if (CanAccessMesSections)
+                        {
+                            <NavLink href="/admin/mes-ressources" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
+                                  <i class="fas fa-bookmark w-8 text-2xl"></i>
+                                  <span class="Link">Mes Ressources</span>
+                            </NavLink>
+                        }
+
+                        @if (CanAccessMesSections)
+                        {
+                            <NavLink href="/admin/mes-projets" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
+                                  <i class="fas fa-laptop-code w-8 text-2xl"></i>
+                                  <span class="Link">Mes Projets</span>
+                            </NavLink>
+                        }
+
+                        @if (IsAdmin)
+                        {
+                            <div class="border-t border-slate-700/40 my-2"></div>
+
+                            <NavLink href="/admin/settings" class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover" ActiveClass="bg-active" @onclick="Closed">
+                                  <i class="fas fa-gear w-8 text-2xl"></i>
+                                  <span class="Link">Paramètres</span>
+                            </NavLink>
+                        }
+                  </nav>
+            </div>
+
+            <div class="mb-[5%] border-t border-slate-700 p-4">
+                  <NavLink href="/" class="flex items-center gap-2 text-gray-300 transition-colors hover:text-white" @onclick="Closed">
+                        <i class="fas fa-arrow-left mr-2"></i>
+                        <span>Retour au site</span>
+                  </NavLink>
+            </div>
+      </aside>
+</div>
+
+@code {
+      [Parameter]
+      public bool IsCollapsed { get; set; }
+
+      [Parameter]
+      public EventCallback Closed { get; set; }
+
+      [Parameter]
+      public bool IsOpen { get; set; }
+
+      private bool IsAdmin => UserStateService.CurrentUser?.Roles.Any(r => RoleConstants.IsAdminRole(r)) ?? false;
+
+      private bool IsCollaborator => UserStateService.CurrentUser?.Roles.Any(r => string.Equals(r, RoleConstants.Collaborator, StringComparison.OrdinalIgnoreCase)) ?? false;
+
+      private bool CanAccessMesSections => IsAdmin || (IsCollaborator && UserStateService.CurrentUser?.IsCertificateValidated == true);
+
+	private string GetBackLinkClass() => $"flex items-center gap-2 text-gray-300 transition-colors hover:text-white {(IsCollapsed ? "justify-center" : "")}";
+
+	private string DesktopSidebarWidthClass => IsCollapsed ? "w-20" : "w-64"; 
+
+	private string DisplayName => string.IsNullOrWhiteSpace(UserStateService.CurrentUser?.Username) ? "Administrateur" : UserStateService.CurrentUser.Username;
+
+	private string PrimaryRole => UserStateService.CurrentUser?.Roles?.FirstOrDefault() ?? "Membre";
+
+	private string AvatarUrl => UserStateService.CurrentUser?.AvatarUrl ?? string.Empty;
+
+	private bool HasAvatar => !string.IsNullOrWhiteSpace(AvatarUrl);
+
+	private string UserInitial => DisplayName.Substring(0, 1).ToUpperInvariant();
+
+	protected override async Task OnInitializedAsync()
+	{
+		if (UserStateService.CurrentUser is null)
+			await UserStateService.LoadUserFromStorageAsync();
+	}
+}

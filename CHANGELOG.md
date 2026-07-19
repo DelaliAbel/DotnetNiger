@@ -1,107 +1,121 @@
 # Changelog
 
+Toutes les modifications notables de ce projet sont documentées dans ce fichier.
+
+Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/),
+et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
+
+---
+
 ## [Unreleased]
 
 ### Added
-- Gestion d'erreurs avec try-catch sur Login, Register et ForgotPassword (affichait du JSON brut au lieu d'un message utilisateur)
-- Page dediee `/Account/ConfirmEmail` pour la confirmation de mail (separee du login)
-- Anti-spam : MultipartAlternative (texte + HTML), MessageId unique, FromName dans les emails
-- Lien "Email non confirme ?" sur la page de login vers `/Account/ConfirmEmail`
+- **Tag/Category sync** dans `EventCommandService`, `PostCommandService`, `ResourceCommandService` : synchronisation complète des tags (`TagNames`, `TagIds`) et catégories (`CategoryIds`) à la création et à la mise à jour
+- **Endpoint `GET /api/v1/admin/stats/mine`** : statistiques personnelles pour le dashboard Collaborateur (events, blogs, resources, projects count)
+- **CRUD Membres** : `POST /api/v1/members` (créer profil), `PUT /api/v1/members/{id}` (modifier), `DELETE /api/v1/members/{id}` (supprimer)
+- **Endpoint `GET /api/v1/members/mine`** (via `GetProfileAsync`) : récupération du profil du user connecté
+- **CI/CD corrigé** : workflows `.github/workflows/ci.yml` et `deploy.yml` utilisent `DotnetNiger.sln` et publient vers `deploy/backend` / `deploy/frontend`
+- **Docker** : `docker-compose.yml` simplifié (SQL Server uniquement), suppression des services orphelins
+- **Fichier `FRONTEND_TASKS.md`** : liste des tâches UI/UX pour le développeur frontend
 
 ### Changed
-- Uniformisation design auth pages : bleu `#0067b8` partout (Layout, Login, Register, ForgotPassword, ResetPassword)
-- Uniformisation design emails HTML : bleu `#0067b8` au lieu de violet `#512BD4`, arriere-plans `#f5f5f5` pour les codes
-- Connection strings : remplacement de `localhost` par la base de production (databaseasp.net) dans Identity, Community et DbManager
-- Seed cleanup : suppression de toutes les donnees de seed (categories, tags, posts, events, ressources, partenaires, etc.)
-- Correction email admin member : `admin@dotnetniger.ne` → `admin@dotnetniger.com`
-- `EmailSender.cs` : `ILogger<EmailSenderBase>` au lieu de `ILogger<EmailSender>` pour compatibilite constructeur
+- **Program.cs** : suppression du middleware de debug claims-logging ; CORS utilise maintenant `Cors:AllowedOrigins` depuis `appsettings.json`
+- **ResourceResponse** : ajout du champ `Url` (manquant dans le DTO)
+- **MembersController** : hérite de `BaseController` pour accéder à `GetUserId()`, `IsAdmin()`, etc.
+- **README.md** : mise à jour complète pour refléter l'architecture monolithique (4 projets : Domain, Infrastructure, Server, Client)
 
 ### Fixed
-- Section confirmation email imbriquee dans la page login retiree (page dediee desormais)
-- Race condition potentielle sur le refresh token (gestion 400 Bad Request)
-- Bouton CTA email : design uniforme avec le theme du site
+- **Tags/Catégories effacés à l'update** : le backend ne remplace plus les associations si `TagNames`/`CategoryIds` est `null` (seulement si fourni, même liste vide)
+- **CORS** : plus de `AllowAnyOrigin()` en dur, lecture depuis la config
+- **CI/CD** : correction de la référence `.slnx` → `.sln` ; suppression des 4 projets inexistants (Identity, Identity.Web, Community, Gateway)
 
 ### Removed
-- `SeedCommunityContentService.cs` : posts, commentaires, relations (seed)
-- `SeedCommunityEventService.cs` : evenements, medias, intervenants, inscriptions (seed)
-- `SeedCommunityResourceService.cs` : ressources, projets, partenaires, site settings (seed)
-- Section de confirmation email imbriquee dans `Login.cshtml`
-- CI workflow for BackEnd branch
-- Dockerfiles for all 4 projects (Identity, Identity.Web, Community, Gateway)
-- docker-compose.yml for local development with SQL Server
-- docker-compose.prod.yml for production Docker deployment
-- .dockerignore
-- `GET /api/v1/posts/mine` — retourne les articles de l'utilisateur courant
-- `GET /api/v1/events/mine` — retourne les événements de l'utilisateur courant
-- `GET /api/v1/resources/mine` — retourne les ressources de l'utilisateur courant
-- `DELETE /api/v1/newsletter/{email}` — supprime un abonné par email (Admin/SuperAdmin)
-- `INewsletterService.DeleteByEmailAsync` — méthode pour suppression admin d'un abonné
+- Middleware debug claims dans `Program.cs` (lignes 128-139)
+- Services Docker orphelins dans `docker-compose.yml`
+- Anciens workflows de deploy vers branches `deploy/identity*`, `deploy/community`, `deploy/gateway`
+
+---
+
+## [2026-07-19] — Consolidation monolithique & Fixes critiques
+
+### Added
+- Fusion des 4 anciens repos (Identity, Community, Gateway, Identity.Web) en **un seul repo monolithique** avec 4 projets .NET
+- Single-role enforcement : un user = un seul rôle (le nouveau remplace l'ancien)
+- `TokenPrincipalBuilder` : double claim `ClaimTypes.Role` + `"role"` pour validation OpenIddict locale
+- Admin endpoints : `GET /api/v1/admin/users`, `GET /api/v1/admin/stats`, `POST /api/v1/admin/invite`
+- Update endpoints corrigés (Events, Posts, Resources, Projects) : ownership checks, champs nullable, retour 404/403 appropriés
+- Frontend single-role UI : `AdminActionDropdown.razor` et `ViewUser.razor` passent de toggles à radio-select
+- Refactoring >200 lignes : 15 fichiers splittés en `partial class` (tous < 250 lignes)
 
 ### Changed
-- deploy workflow: clean wwwroot/uploads before pushing to deploy branches
-- .gitignore: cleaned up, added Docker exclusions
-- Community csproj: exclude uploads from dotnet publish
-- README: updated deploy section with production instructions
-- `SettingsController` : `[Authorize(Roles = SuperAdmin)]` → `[Authorize(Roles = AdminOrSuperAdmin)]`
-- `PostQueryService.GetAllAsync` : ajout du paramètre `authorId` pour filtrer par auteur
-- `ResourceQueryService.GetAllAsync` : ajout du paramètre `createdBy` pour filtrer par créateur
+- Target framework : Client `net8.0` / Backend `net9.0`
+- Architecture : monolithique modulaire (Domain, Infrastructure, Server, Client)
 
 ### Fixed
-- OpenIddict endpoint permission prefix (`ep:` → `ept:`)
-- Frontend comment crash (async CurrentUserId in WASM)
-- Admin blog publish/unpublish toggle
-- 503 on `/api/posts?published=true` (pageSize=6, exclude Content in listing)
-- Certificate submission blocked by class-level `[Authorize]`
-- CORS misconfiguration (unified to AllowAnyOrigin)
+- 403 `insufficient_access` sur endpoints admin (double claim role)
+- Ownership checks manquants sur PUT/DELETE
+- Champs non mappés dans Update DTOs (EventType, Category, IsPublished, Url, etc.)
 
 ### Removed
-- Test projects and architecture guards
-- All sub-READMEs and integration guides
-- Docs folder, Dockerfiles (old), favicons, .gitkeep files
-- SQL creation scripts (superseded by EF Core seeding)
+- Anciens projets séparés (Identity, Community, Gateway, Identity.Web)
+- Dockerfiles pour les 4 anciens projets
+- `docker-compose.prod.yml`
+- Projets de tests et architecture guards
+
+---
 
 ## [2026-06-25]
 
 ### Fixed
-- Gateway CORS preflight and 500 error responses
-- Downstream HTTPS configuration
-- JWT metadata HTTPS requirement disabled for gateway
+- Gateway CORS preflight et réponses 500
+- Configuration HTTPS downstream
+- JWT metadata HTTPS requirement désactivé pour gateway
+
+---
 
 ## [2026-06-24]
 
 ### Added
-- SQL Server creation scripts for Identity and Community
+- Scripts de création SQL Server pour Identity et Community
 
 ### Fixed
-- Remove auto-migration/seed in favor of SQL scripts
-- Gateway routing for `/Account/*` to Portal
+- Suppression auto-migration/seed au profit des scripts SQL
+- Routage Gateway pour `/Account/*` vers Portal
+
+---
 
 ## [2026-06-23]
 
 ### Added
-- Deploy workflow (push to deploy/* branches)
-- MonsterASP deployment configuration
-- DB seeding infrastructure
+- Workflow Deploy (push vers branches `deploy/*`)
+- Configuration déploiement MonsterASP
+- Infrastructure seeding DB
+
+---
 
 ## [2026-06-22]
 
 ### Added
-- Team member management endpoints
-- Identity API key authentication for internal endpoints
+- Gestion Team Members (endpoints)
+- Authentification par API Key Identity pour endpoints internes
 - Admin CRUD endpoints
-- SuperAdmin (Identity) and Collaborator (Community) roles
-- Open Graph social preview system
+- Rôles SuperAdmin (Identity) et Collaborator (Community)
+- Système Open Graph social preview
 
 ### Fixed
-- Security issues for MonsterASP deployment
+- Problèmes de sécurité pour déploiement MonsterASP
+
+---
 
 ## [2026-06-20]
 
 ### Added
-- MemberSkill entity and Skills support for member profiles
-- Gateway routes for upload base64 and static file serving
+- Entité `MemberSkill` et support Skills pour profils membres
+- Routes Gateway pour upload base64 et fichiers statiques
+
+---
 
 ## [2026-06-19]
 
 ### Fixed
-- Concurrent DbUpdateException handling in ProfileService
+- Gestion `DbUpdateException` concurrente dans ProfileService

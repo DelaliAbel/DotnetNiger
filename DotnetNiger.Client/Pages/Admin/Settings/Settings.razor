@@ -1,0 +1,327 @@
+@page "/admin/settings"
+@attribute [Authorize(Roles = "Admin,SuperAdmin")]
+@inject ISettingsService SettingsService
+@inject IToastService ToastService
+
+@if (isLoading)
+{
+    <div class="min-h-screen px-4 py-6 md:px-8 md:py-8">
+        <div class="mx-auto max-w-7xl">
+            <Skeleton Type="SkeletonType.Title" Class="w-48 mb-6" />
+            <div class="space-y-6">
+                @for (int i = 0; i < 3; i++)
+                {
+                    <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                        <Skeleton Type="SkeletonType.Title" Class="w-1/3 mb-4" />
+                        <div class="space-y-4">
+                            <Skeleton Type="SkeletonType.Custom" Class="h-12 rounded-lg w-full" />
+                            <Skeleton Type="SkeletonType.Custom" Class="h-12 rounded-lg w-full" />
+                        </div>
+                    </section>
+                }
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="min-h-screen px-4 py-6 md:px-8 md:py-8">
+        <div class="mx-auto max-w-7xl">
+            <div class="mb-8">
+                <AdminBreadcrumb />
+                <p class="mt-2 max-w-2xl text-sm leading-6 text-body md:text-base">Configurez les paramètres généraux du
+                    site.</p>
+            </div>
+
+            <div class="mb-8 border-b border-gray-200">
+                <nav class="flex flex-wrap gap-1" role="tablist">
+                    @foreach (var tab in tabs)
+                    {
+                        <button @onclick='() => activeTab = tab.id'
+                            class="px-5 py-3 text-sm font-medium transition border-b-2 @(activeTab == tab.id ? "border-black text-black" : "border-transparent text-gray-500 hover:text-gray-700")"
+                            role="tab" aria-selected="@(activeTab == tab.id)">
+                            <i class="fas @tab.icon mr-2"></i>@tab.label
+                        </button>
+                    }
+                </nav>
+            </div>
+
+            <div class="space-y-6">
+                @if (activeTab == "general")
+                {
+                    <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+                        <h2 class="text-xl font-semibold text-title mb-6">Général</h2>
+                        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Nom du
+                                    site</label>
+                                <InputText @bind-Value="site_name"
+                                    class="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-base text-slate-700 focus:border-indigo-400 focus:outline-none" />
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">URL du
+                                    logo</label>
+                                <InputText @bind-Value="logo_url"
+                                    class="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-base text-slate-700 focus:border-indigo-400 focus:outline-none" />
+                            </div>
+                            <div class="md:col-span-2">
+                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Email de
+                                    contact</label>
+                                <InputText @bind-Value="contact_email"
+                                    class="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-base text-slate-700 focus:border-indigo-400 focus:outline-none" />
+                            </div>
+                        </div>
+                    </section>
+                }
+                else if (activeTab == "social")
+                {
+                    <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+                        <h2 class="text-xl font-semibold text-title mb-6">Réseaux sociaux</h2>
+                        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500"><i
+                                        class="fab fa-facebook mr-2 text-blue-600"></i>Facebook</label>
+                                <InputText @bind-Value="facebook_url"
+                                    class="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-base text-slate-700 focus:border-indigo-400 focus:outline-none" />
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500"><i
+                                        class="fab fa-twitter mr-2 text-sky-500"></i>Twitter</label>
+                                <InputText @bind-Value="twitter_url"
+                                    class="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-base text-slate-700 focus:border-indigo-400 focus:outline-none" />
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500"><i
+                                        class="fab fa-linkedin mr-2 text-blue-700"></i>LinkedIn</label>
+                                <InputText @bind-Value="linkedin_url"
+                                    class="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-base text-slate-700 focus:border-indigo-400 focus:outline-none" />
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500"><i
+                                        class="fab fa-github mr-2 text-gray-800"></i>GitHub</label>
+                                <InputText @bind-Value="github_url"
+                                    class="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-base text-slate-700 focus:border-indigo-400 focus:outline-none" />
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500"><i
+                                        class="fab fa-youtube mr-2 text-red-600"></i>YouTube</label>
+                                <InputText @bind-Value="youtube_url"
+                                    class="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-base text-slate-700 focus:border-indigo-400 focus:outline-none" />
+                            </div>
+                        </div>
+                    </section>
+                }
+                @* TODO : Partie a revoir , d'ou la mise en commentaire *@
+    @*                 
+                else if (activeTab == "features")
+                {
+                    <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+                        <h2 class="text-xl font-semibold text-title mb-6">Fonctionnalités</h2>
+                        <div class="space-y-5">
+                            <div class="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-5 py-4">
+                                <div>
+                                    <p class="text-sm font-semibold text-title">Approbation requise pour les événements</p>
+                                    <p class="text-xs text-gray-500">Les événements doivent être approuvés avant publication</p>
+                                </div>
+                                <label class="relative inline-flex cursor-pointer items-center">
+                                    <input type="checkbox" class="peer sr-only" @bind="event_approval_required" />
+                                    <div class="h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:bg-black peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-5 py-4">
+                                <div>
+                                    <p class="text-sm font-semibold text-title">Approbation requise pour les articles</p>
+                                    <p class="text-xs text-gray-500">Les articles doivent être approuvés avant publication</p>
+                                </div>
+                                <label class="relative inline-flex cursor-pointer items-center">
+                                    <input type="checkbox" class="peer sr-only" @bind="post_approval_required" />
+                                    <div class="h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:bg-black peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-5 py-4">
+                                <div>
+                                    <p class="text-sm font-semibold text-title">Inscription newsletter active</p>
+                                    <p class="text-xs text-gray-500">Les visiteurs peuvent s'inscrire à la newsletter</p>
+                                </div>
+                                <label class="relative inline-flex cursor-pointer items-center">
+                                    <input type="checkbox" class="peer sr-only" @bind="newsletter_active" />
+                                    <div class="h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:bg-black peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-5 py-4">
+                                <div>
+                                    <p class="text-sm font-semibold text-title">Upload public</p>
+                                    <p class="text-xs text-gray-500">Les membres peuvent uploader des fichiers</p>
+                                </div>
+                                <label class="relative inline-flex cursor-pointer items-center">
+                                    <input type="checkbox" class="peer sr-only" @bind="public_upload" />
+                                    <div class="h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:bg-black peer-checked:after:translate-x-full peer-checked:after:border-white"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </section>
+                }
+                else if (activeTab == "notifications")
+                {
+                    <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+                        <h2 class="text-xl font-semibold text-title mb-6">Notifications</h2>
+                        <div class="grid grid-cols-1 gap-5">
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Email admin pour notifications</label>
+                                <InputText @bind-Value="admin_notification_email" class="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-base text-slate-700 focus:border-indigo-400 focus:outline-none" />
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Slack webhook URL (optionnel)</label>
+                                <InputText @bind-Value="slack_webhook_url" class="h-12 w-full rounded-lg border border-slate-200 bg-white px-4 text-base text-slate-700 focus:border-indigo-400 focus:outline-none" />
+                            </div>
+                        </div>
+                    </section>
+                }
+                else if (activeTab == "registration")
+                {
+                    <section class="rounded-lg border border-gray-200 bg-white p-6 shadow-sm md:p-8">
+                        <h2 class="text-xl font-semibold text-title mb-6">Inscription</h2>
+                        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Mode d'inscription</label>
+                                <select @bind="registration_mode"
+                                        class="h-12 w-full cursor-pointer rounded-lg border border-gray-200 bg-white px-4 text-sm text-title shadow-sm outline-none transition hover:border-gray-300">
+                                    <option value="open">Ouverte</option>
+                                    <option value="invitation">Invitation</option>
+                                    <option value="closed">Fermée</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Rôle par défaut des nouveaux</label>
+                                <select @bind="default_role"
+                                        class="h-12 w-full cursor-pointer rounded-lg border border-gray-200 bg-white px-4 text-sm text-title shadow-sm outline-none transition hover:border-gray-300">
+                                    <option value="member">Collaborateur</option>
+                                    <option value="none">Aucun</option>
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+                }
+             *@
+
+            </div>
+
+            <div class="mt-8 flex items-center gap-3">
+                <button @onclick="SaveSettings"
+                    class="inline-flex h-12 items-center rounded-lg bg-black px-8 font-semibold text-white transition hover:bg-gray-800">
+                    <i class="fas fa-floppy-disk mr-2"></i>
+                    Enregistrer les modifications
+                </button>
+                <button @onclick="ResetSettings"
+                    class="inline-flex h-12 items-center rounded-lg border border-gray-300 bg-white px-8 font-semibold text-gray-700 transition hover:bg-gray-100">
+                    Annuler
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private string activeTab = "general";
+
+    private string site_name = "";
+    private string logo_url = "";
+    private string contact_email = "";
+    private string facebook_url = "";
+    private string twitter_url = "";
+    private string linkedin_url = "";
+    private string github_url = "";
+    private string youtube_url = "";
+    private bool event_approval_required = false;
+    private bool post_approval_required = false;
+    private bool newsletter_active = true;
+    private bool public_upload = false;
+    private string admin_notification_email = "";
+    private string slack_webhook_url = "";
+    private string registration_mode = "open";
+    private string default_role = "member";
+
+    private readonly List<(string id, string label, string icon)> tabs = new()
+{
+("general", "Général", "fa-globe"),
+("social", "Réseaux sociaux", "fa-share-nodes"),
+("features", "Fonctionnalités", "fa-toggle-on"),
+("notifications", "Notifications", "fa-bell"),
+("registration", "Inscription", "fa-user-plus"),
+};
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSettingsAsync();
+    }
+
+    private async Task LoadSettingsAsync()
+    {
+        isLoading = true;
+        try
+        {
+            var allSettings = await SettingsService.GetAllAsync();
+            var dict = allSettings.ToDictionary(s => s.Key, s => s.Value, StringComparer.OrdinalIgnoreCase);
+
+            site_name = dict.GetValueOrDefault("site_name", "Dotnet Niger");
+            logo_url = dict.GetValueOrDefault("logo_url", "");
+            contact_email = dict.GetValueOrDefault("contact_email", "");
+            facebook_url = dict.GetValueOrDefault("facebook_url", "");
+            twitter_url = dict.GetValueOrDefault("twitter_url", "");
+            linkedin_url = dict.GetValueOrDefault("linkedin_url", "");
+            github_url = dict.GetValueOrDefault("github_url", "");
+            youtube_url = dict.GetValueOrDefault("youtube_url", "");
+            event_approval_required = dict.GetValueOrDefault("event_approval_required", "false") == "true";
+            post_approval_required = dict.GetValueOrDefault("post_approval_required", "false") == "true";
+            newsletter_active = dict.GetValueOrDefault("newsletter_active", "true") == "true";
+            public_upload = dict.GetValueOrDefault("public_upload", "false") == "true";
+            admin_notification_email = dict.GetValueOrDefault("admin_notification_email", "");
+            slack_webhook_url = dict.GetValueOrDefault("slack_webhook_url", "");
+            registration_mode = dict.GetValueOrDefault("registration_mode", "open");
+            default_role = dict.GetValueOrDefault("default_role", "member");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task SaveSettings()
+    {
+        var batch = new Dictionary<string, string>
+        {
+            ["site_name"] = site_name,
+            ["logo_url"] = logo_url,
+            ["contact_email"] = contact_email,
+            ["facebook_url"] = facebook_url,
+            ["twitter_url"] = twitter_url,
+            ["linkedin_url"] = linkedin_url,
+            ["github_url"] = github_url,
+            ["youtube_url"] = youtube_url,
+            ["event_approval_required"] = event_approval_required ? "true" : "false",
+            ["post_approval_required"] = post_approval_required ? "true" : "false",
+            ["newsletter_active"] = newsletter_active ? "true" : "false",
+            ["public_upload"] = public_upload ? "true" : "false",
+            ["admin_notification_email"] = admin_notification_email,
+            ["slack_webhook_url"] = slack_webhook_url,
+            ["registration_mode"] = registration_mode,
+            ["default_role"] = default_role,
+        };
+
+        var saved = await SettingsService.SetBatchAsync(batch);
+        if (saved)
+        {
+            ToastService.ShowToast("Paramètres enregistrés avec succès.", ToastLevel.Success);
+        }
+        else
+        {
+            ToastService.ShowToast("Erreur lors de l'enregistrement.", ToastLevel.Error);
+        }
+    }
+
+    private async Task ResetSettings()
+    {
+        await LoadSettingsAsync();
+    }
+}

@@ -18,7 +18,7 @@ jobs:
           dotnet-version: "9.0.x"
 
       - name: Restore
-        run: dotnet restore DotnetNiger.slnx
+        run: dotnet restore DotnetNiger.sln
 
       - name: Build
-        run: dotnet build DotnetNiger.slnx --configuration Release --no-restore /p:TreatWarningsAsErrors=true
+        run: dotnet build DotnetNiger.sln --configuration Release --no-restore /p:TreatWarningsAsErrors=true

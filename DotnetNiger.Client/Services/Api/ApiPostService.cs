@@ -1,0 +1,137 @@
+using DotnetNiger.Client.Models.Requests;
+using DotnetNiger.Client.Models.Responses;
+using DotnetNiger.Client.Services.Contracts;
+using System.Net.Http.Json;
+
+namespace DotnetNiger.Client.Services.Api;
+
+public class ApiPostService : ApiServiceBase, IPostService
+{
+    public ApiPostService(HttpClient http) : base(http)
+    {
+    }
+
+    public async Task<List<PostDto>> GetAllPostsAsync()
+    {
+        return await GetCollectionAsync<PostDto>(ApiEndpoints.Posts);
+    }
+
+    public async Task<List<PostDto>> GetPublishedPostsAsync()
+    {
+        var posts = await GetCollectionAsync<PostDto>(ApiEndpoints.Posts, new Dictionary<string, string?>
+        {
+            ["published"] = "true"
+        });
+
+        return posts.Where(p => p.PublishedAt != DateTime.MinValue).ToList();
+    }
+
+    public async Task<List<PostDto>> GetPostsByCategoryAsync(string categorySlug)
+    {
+        var posts = await GetCollectionAsync<PostDto>(ApiEndpoints.Posts, new Dictionary<string, string?>
+        {
+            ["category"] = categorySlug
+        });
+
+        return posts
+            .Where(p => p.Categories.Any(c => c.Slug.Equals(categorySlug, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+    }
+
+    public async Task<List<PostDto>> GetPostsByTagAsync(string tagSlug)
+    {
+        var posts = await GetCollectionAsync<PostDto>(ApiEndpoints.Posts, new Dictionary<string, string?>
+        {
+            ["tag"] = tagSlug
+        });
+
+        return posts
+            .Where(p => p.Tags.Any(t => t.Slug.Equals(tagSlug, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+    }
+
+    public async Task<PostDto?> GetPostByIdAsync(Guid id)
+    {
+        var response = await Http.GetAsync($"{ApiEndpoints.Posts}/{id}");
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await ApiResponseReader.ReadAsync<PostDto>(response);
+    }
+
+    public async Task<PostDto?> GetPostBySlugAsync(string slug)
+    {
+        var response = await Http.GetAsync($"{ApiEndpoints.Posts}/{slug}");
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await ApiResponseReader.ReadAsync<PostDto>(response);
+    }
+
+    public async Task<PostDto?> CreatePostAsync(CreatePostRequest request , Guid currentId)
+    {
+        var response = await Http.PostAsJsonAsync(ApiEndpoints.Posts, request);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await ApiResponseReader.ReadAsync<PostDto>(response);
+    }
+
+    public async Task<PostDto?> UpdatePostAsync(Guid id, UpdatePostRequest request)
+    {
+        var response = await Http.PutAsJsonAsync($"{ApiEndpoints.Posts}/{id}", request);
+        if (!response.IsSuccessStatusCode)
+            return null;
+
+        return await ApiResponseReader.ReadAsync<PostDto>(response);
+    }
+
+    public async Task<bool> DeletePostAsync(Guid id)
+    {
+        var response = await Http.DeleteAsync($"{ApiEndpoints.Posts}/{id}");
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<List<PostDto>> SearchPostsAsync(string query)
+    {
+        return await GetCollectionAsync<PostDto>(ApiEndpoints.Posts, new Dictionary<string, string?>
+        {
+            ["query"] = query
+        });
+    }
+
+    public async Task<bool> PublishPostAsync(Guid postId)
+    {
+        var response = await Http.PatchAsync($"{ApiEndpoints.Posts}/{postId}/publish", null);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task<bool> UnPublishPostAsync(Guid postId)
+    {
+        var response = await Http.PatchAsync($"{ApiEndpoints.Posts}/{postId}/unpublish", null);
+        return response.IsSuccessStatusCode;
+    }
+
+    public async Task IncrementViewCountAsync(Guid id)
+    {
+        await Http.PostAsync($"{ApiEndpoints.Posts}/{id}/views", null);
+    }
+
+    public async Task<List<PostDto>> GetAdminPostsAsync(string? status = null)
+    {
+        var query = new Dictionary<string, string?>();
+        if (!string.IsNullOrWhiteSpace(status))
+            query["status"] = status;
+
+        return await GetCollectionAsync<PostDto>(ApiEndpoints.AdminPosts, query);
+    }
+
+    public async Task<List<PostDto>> GetMyPostsAsync()
+    {
+        var response = await Http.GetAsync($"{ApiEndpoints.Posts}/mine");
+        if (!response.IsSuccessStatusCode)
+            return new List<PostDto>();
+
+        return await ApiResponseReader.ReadCollectionAsync<PostDto>(response);
+    }
+}

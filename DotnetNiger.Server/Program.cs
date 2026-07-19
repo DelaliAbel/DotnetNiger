@@ -1,0 +1,153 @@
+using Asp.Versioning;
+using DotnetNiger.Domain.Email;
+using DotnetNiger.Domain.Entities;
+using DotnetNiger.Infrastructure;
+using DotnetNiger.Infrastructure.Data;
+using DotnetNiger.Infrastructure.Seed;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using OpenIddict.EntityFrameworkCore.Models;
+using Microsoft.AspNetCore.Authentication;
+using OpenIddict.Server.AspNetCore;
+using OpenIddict.Validation.AspNetCore;
+
+try
+{
+    var builder = WebApplication.CreateBuilder(args);
+
+    builder.Services.AddControllers()
+        .AddApplicationPart(typeof(DependencyInjection).Assembly);
+
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddMemoryCache();
+
+    builder.Services.AddDbContext<DotnetNigerDbContext>(options =>
+    {
+        options.UseSqlServer(
+            builder.Configuration.GetConnectionString("DefaultConnection"));
+        options.UseOpenIddict();
+    });
+
+    builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
+    {
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+        options.Password.RequiredLength = 8;
+        options.User.RequireUniqueEmail = true;
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+        options.Lockout.MaxFailedAccessAttempts = 5;
+    })
+    .AddEntityFrameworkStores<DotnetNigerDbContext>()
+    .AddDefaultTokenProviders();
+
+    builder.Services.Configure<SmtpOptions>(
+        builder.Configuration.GetSection("Smtp"));
+
+    builder.Services.AddOpenIddict()
+        .AddCore(options =>
+        {
+            options.UseEntityFrameworkCore()
+                   .UseDbContext<DotnetNigerDbContext>();
+        })
+        .AddServer(options =>
+        {
+            options.SetTokenEndpointUris("/connect/token");
+            options.SetAuthorizationEndpointUris("/connect/authorize");
+            options.AllowPasswordFlow();
+            options.AllowRefreshTokenFlow();
+            options.AllowAuthorizationCodeFlow();
+            options.AcceptAnonymousClients();
+            options.AddDevelopmentEncryptionCertificate()
+                   .AddDevelopmentSigningCertificate();
+            options.UseAspNetCore()
+                   .EnableTokenEndpointPassthrough()
+                   .EnableAuthorizationEndpointPassthrough();
+
+        })
+        .AddValidation(options =>
+        {
+            options.UseLocalServer();
+            options.UseAspNetCore();
+            options.Configure(opt =>
+            {
+                opt.TokenValidationParameters.RoleClaimType = "role";
+            });
+        });
+
+    builder.Services.AddIdentityServices();
+
+    builder.Services.AddApiVersioning(options =>
+    {
+        options.DefaultApiVersion = new ApiVersion(1, 0);
+        options.AssumeDefaultVersionWhenUnspecified = true;
+        options.ReportApiVersions = true;
+    })
+    .AddApiExplorer(options =>
+    {
+        options.GroupNameFormat = "'v'VVV";
+        options.SubstituteApiVersionInUrl = true;
+    });
+
+    builder.Services.Configure<AuthenticationOptions>(options =>
+    {
+        options.DefaultAuthenticateScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+        options.DefaultChallengeScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+    });
+    builder.Services.AddAuthorization();
+
+    builder.Services.AddCors(options =>
+    {
+        var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Value;
+        var origins = !string.IsNullOrWhiteSpace(allowedOrigins)
+            ? allowedOrigins.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            : [];
+
+        options.AddDefaultPolicy(policy =>
+        {
+            if (origins.Length != 0)
+                policy.WithOrigins(origins)
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+            else
+                policy.AllowAnyOrigin()
+                      .AllowAnyMethod()
+                      .AllowAnyHeader();
+        });
+    });
+
+    var app = builder.Build();
+
+    using (var scope = app.Services.CreateScope())
+    {
+        var db = scope.ServiceProvider.GetRequiredService<DotnetNigerDbContext>();
+        await SeedIdentityService.SeedAsync(scope.ServiceProvider);
+        await SeedCommunityService.SeedAsync(scope.ServiceProvider);
+        Console.WriteLine("\n=== Database setup complete ===");
+    }
+
+    if (app.Environment.IsDevelopment())
+    {
+        app.UseDeveloperExceptionPage();
+    }
+
+    app.UseHttpsRedirection();
+    app.UseCors();
+    app.UseAuthentication();
+    app.UseAuthorization();
+    app.MapControllers();
+
+    var logger = app.Services.GetRequiredService<ILogger<Program>>();
+    logger.LogInformation("DotnetNiger.Server starting...");
+    await app.RunAsync();
+    return 0;
+}
+catch (Exception ex)
+{
+    Console.WriteLine(ex);
+    var logger = LoggerFactory.Create(x => x.AddConsole()).CreateLogger("Program");
+    logger.LogCritical(ex, "Application terminated unexpectedly");
+
+    return 1;
+}

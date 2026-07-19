@@ -135,9 +135,7 @@ prod-configs/
 # Local DB manager
 DotnetNiger.DbManager/
 
-# Local docs
-Explication.md
-TODO.md
+
 
 # Docker
 .docker/

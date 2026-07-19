@@ -1,0 +1,136 @@
+@* Tableau admin des articles avec actions harmonisées. *@
+@using DotnetNiger.Client.Models.Responses
+@using DotnetNiger.Client.Models.Requests
+@using System.Net
+@using System.Text.RegularExpressions
+@inject IPostService PostService
+@inject NavigationManager NavigationManager
+
+<div class="bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
+        <table class="w-full">
+            <thead class="border-b border-gray-100 bg-gray-50">
+                <tr>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Titre</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Auteur</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Type</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Statut</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Vues</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
+                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                @if (Posts is null || Posts.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="px-6 py-10 text-center text-sm text-gray-500">Aucun article disponible.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var post in Posts)
+                    {
+                        <tr @key="post.Id" class="transition hover:bg-gray-50/80">
+                            <td class="px-6 py-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
+                                        <ResolvedImage Src="@post.CoverImageUrl" Icon="fa-newspaper" alt="@post.Title" class="h-full w-full" />
+                                    </div>
+                                    <div class="min-w-0">
+                                        <p class="truncate text-sm font-semibold text-title">@post.Title</p>
+                                        <p class="truncate text-xs text-muted">@post.PostType</p>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-body">@post.AuthorName</td>
+                            <td class="px-6 py-4 text-sm text-body">@GetPostTypeLabel(post.PostType)</td>
+                            <td class="px-6 py-4 text-sm">
+                                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @(IsPublished(post) ? "bg-success-bg text-success" : "bg-amber-100 text-amber-700")">
+                                    @(IsPublished(post) ? "Publié" : "Brouillon")
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm text-body">@post.ViewCount</td>
+                            <td class="px-6 py-4 text-sm text-body">@GetDateLabel(post)</td>
+                            <td class="px-6 py-4 text-sm">
+                                <AdminActionDropdown ItemId="post.Id"
+                                                     Status=""
+                                                     ViewLabel="Voir l'article"
+                                                     EditLabel="Modifier"
+                                                     DeleteLabel="Supprimer"
+                                                     ToggleStatusLabel="@(IsPublished(post) ? "Dépublier" : "Publier")"
+                                                     OnView="OpenPost"
+                                                     OnEdit="EditPost"
+                                                     OnDelete="DeletePost"
+                                                     OnToggleStatus="TogglePublishStatus" />
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+</div>
+
+@code {
+    [Parameter] public List<PostDto> Posts { get; set; } = new();
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private static bool IsPublished(PostDto post) => post.PublishedAt.HasValue;
+
+    private static string GetPostTypeLabel(string? postType)
+    {
+        return string.IsNullOrWhiteSpace(postType) ? "Sans catégorie" : postType;
+    }
+
+    private static string GetDateLabel(PostDto post)
+    {
+        return IsPublished(post) ? post.PublishedAt?.ToString("dd/MM/yyyy HH:mm") ?? "" : "En attente";
+    }
+
+    private Task OpenPost(Guid id)
+    {
+        NavigationManager.NavigateTo($"/admin/blog/{id}");
+        return Task.CompletedTask;
+    }
+
+    private Task EditPost(Guid id)
+    {
+        NavigationManager.NavigateTo($"/admin/blog/edit/{id}");
+        return Task.CompletedTask;
+    }
+
+    private async Task DeletePost(Guid id)
+    {
+        await PostService.DeletePostAsync(id);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task TogglePublishStatus(Guid id)
+    {
+        var post = Posts.FirstOrDefault(item => item.Id == id);
+        if (post is null) return;
+
+        if (IsPublished(post))
+        {
+            await PostService.UnPublishPostAsync(id);
+        }
+        else
+        {
+            var request = new UpdatePostRequest
+            {
+                Title = post.Title,
+                Content = post.Content,
+                Excerpt = post.Excerpt,
+                CoverImageUrl = post.CoverImageUrl,
+                PostType = post.PostType,
+                SeoDescription = string.IsNullOrWhiteSpace(post.Excerpt) ? post.Title : post.Excerpt,
+                CategoryIds = post.Categories.Select(category => category.Id).ToList(),
+                TagNames = post.Tags.Select(tag => tag.Name).ToList(),
+                IsPublished = true
+            };
+
+            await PostService.UpdatePostAsync(id, request);
+        }
+
+        await OnChanged.InvokeAsync();
+    }
+}

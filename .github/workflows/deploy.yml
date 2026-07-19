@@ -8,7 +8,7 @@ permissions:
   contents: write
 
 jobs:
-  build-and-deploy:
+  build-backend:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,59 +20,44 @@ jobs:
           dotnet-version: '9.0.x'
 
       - name: Restore
-        run: dotnet restore DotnetNiger.slnx
+        run: dotnet restore DotnetNiger.sln
 
-      - name: Publish Identity
-        run: dotnet publish DotnetNiger.Identity/DotnetNiger.Identity.csproj -c Release -o publish/identity --no-restore
+      - name: Publish Backend
+        run: dotnet publish DotnetNiger.Server/DotnetNiger.Server.csproj -c Release -o publish/backend --no-restore
 
-      - name: Publish Identity.Web
-        run: dotnet publish DotnetNiger.Identity.Web/DotnetNiger.Identity.Web.csproj -c Release -o publish/identity-web --no-restore
-
-      - name: Publish Community
-        run: dotnet publish DotnetNiger.Community/DotnetNiger.Community.csproj -c Release -o publish/community --no-restore
-
-      - name: Publish Gateway
-        run: dotnet publish DotnetNiger.Gateway/DotnetNiger.Gateway.csproj -c Release -o publish/gateway --no-restore
-
-      - name: Clean uploads from Community publish
-        run: rm -rf publish/community/wwwroot/uploads
-
-      - name: Push to deploy/identity
+      - name: Push to deploy/backend
         run: |
-          cd publish/identity
+          cd publish/backend
           git init
-          git checkout -b deploy/identity
+          git checkout -b deploy/backend
           git add -A
-          git -c user.name=github-actions -c user.email=actions@github.com commit -m "Deploy Identity from ${GITHUB_SHA}"
+          git -c user.name=github-actions -c user.email=actions@github.com commit -m "Deploy Backend from ${GITHUB_SHA}"
           git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          git push origin deploy/identity --force
+          git push origin deploy/backend --force
 
-      - name: Push to deploy/identity-web
-        run: |
-          cd publish/identity-web
-          git init
-          git checkout -b deploy/identity-web
-          git add -A
-          git -c user.name=github-actions -c user.email=actions@github.com commit -m "Deploy Identity.Web from ${GITHUB_SHA}"
-          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          git push origin deploy/identity-web --force
+  build-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Push to deploy/community
-        run: |
-          cd publish/community
-          git init
-          git checkout -b deploy/community
-          git add -A
-          git -c user.name=github-actions -c user.email=actions@github.com commit -m "Deploy Community from ${GITHUB_SHA}"
-          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          git push origin deploy/community --force
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
 
-      - name: Push to deploy/gateway
+      - name: Restore
+        run: dotnet restore DotnetNiger.Client/DotnetNiger.Client.csproj
+
+      - name: Publish Frontend
+        run: dotnet publish DotnetNiger.Client/DotnetNiger.Client.csproj -c Release -o publish/frontend
+
+      - name: Push to deploy/frontend
         run: |
-          cd publish/gateway
+          cd publish/frontend
           git init
-          git checkout -b deploy/gateway
+          git checkout -b deploy/frontend
           git add -A
-          git -c user.name=github-actions -c user.email=actions@github.com commit -m "Deploy Gateway from ${GITHUB_SHA}"
+          git -c user.name=github-actions -c user.email=actions@github.com commit -m "Deploy Frontend from ${GITHUB_SHA}"
           git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          git push origin deploy/gateway --force
+          git push origin deploy/frontend --force

@@ -1,0 +1,223 @@
+﻿@page "/admin/blog"
+@attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")]
+@* Page admin : gestion des articles (recherche, filtres, vue liste/grille). *@
+@using DotnetNiger.Client.Components.Admin.Cards
+@inject NavigationManager NavigationManager
+@inject IPostService PostService
+@inject IJSRuntime JS
+
+<div class="min-h-screen px-4 py-6 md:px-8 md:py-8">
+    <div class="mx-auto max-w-7xl">
+        @if (!isLoading)
+        {
+        <div class="mb-8 flex items-center justify-between gap-4">
+        <section>
+                <AdminBreadcrumb />
+            <p class="mt-2 max-w-2xl text-sm leading-6 text-body md:text-base">Consultez, filtrez et modérez les articles dans une interface plus claire et plus rapide.</p>
+        </section>
+        <button @onclick='() => NavigationManager.NavigateTo("/admin/blog/create")'
+                class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(91,77,245,0.25)] transition hover:brightness-95">
+            <i class="fas fa-plus text-sm"></i>
+            <span class="hidden sm:block">Nouveau</span>
+        </button>
+        </div>
+
+        <section class="mb-6 flex flex-col gap-4 md:flex-row md:items-center">
+            <div class="flex-1 rounded-lg bg-white px-4 py-3 shadow-sm ring-1 ring-black/5">
+                <div class="relative">
+                    <i class="fas fa-search absolute left-0 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" placeholder="Rechercher un article..."
+                           @bind="searchQuery" @bind:event="oninput"
+                           class="w-full border-0 bg-transparent pl-7 text-sm text-title outline-none placeholder:text-gray-400" />
+                </div>
+            </div>
+
+            <select @bind="selectedType"
+                    class="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-title shadow-sm outline-none transition hover:border-gray-300">
+                <option value="">Type d'article</option>
+                <option value="Tutorial">Tutorial</option>
+                <option value="Article">Article</option>
+                <option value="Interview">Interview</option>
+            </select>
+
+            <select @bind="selectedStatus"
+                    class="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-title shadow-sm outline-none transition hover:border-gray-300">
+                <option value="">Statut</option>
+                <option value="published">Publié</option>
+                <option value="draft">Brouillon</option>
+            </select>
+
+            <div class="hidden md:block">
+                <ViewToggle @bind-IsListView="isListView" />
+            </div>
+        </section>
+
+        <div class="">
+            @if (isListView)
+            {
+                <BlogTable Posts="@pagedPosts" OnChanged="LoadPostsAsync" />
+            }
+            else
+            {
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-5 md:gap-6">
+                    @foreach (var post in pagedPosts)
+                    {
+                        <AdminBlogCard @key="post.Id" post="@post" OnPostDeleted="LoadPostsAsync" />
+                    }
+                </div>
+            }
+        </div>
+
+        <div class="mt-6">
+            <Paginated @bind-CurrentPage="currentPage" TotalPages="@totalPages" />
+        </div>
+        }
+        else
+        {
+            <div class="mb-8 flex items-center justify-between gap-4">
+                <section>
+                    <AdminBreadcrumb />
+                    <Skeleton Type="SkeletonType.Title" Class="h-6 w-96 mt-2" />
+                    <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-2/3 mt-2" />
+                </section>
+                <Skeleton Type="SkeletonType.Button" Class="h-12 w-32" />
+            </div>
+
+            <section class="mb-6 flex flex-col gap-4 md:flex-row md:items-center">
+                <Skeleton Type="SkeletonType.Custom" Class="h-12 flex-1 rounded-lg" />
+                <Skeleton Type="SkeletonType.Custom" Class="h-12 w-40 rounded-lg" />
+                <Skeleton Type="SkeletonType.Custom" Class="h-12 w-32 rounded-lg" />
+                <Skeleton Type="SkeletonType.Custom" Class="h-12 w-24 rounded-lg" />
+            </section>
+
+            <div class="rounded-lg bg-white ring-1 ring-gray-100 overflow-hidden">
+                <div class="divide-y divide-gray-100">
+                    @for (int i = 0; i < 6; i++)
+                    {
+                        <div class="flex items-center gap-3 px-5 py-4">
+                            <Skeleton Type="SkeletonType.Custom" Class="h-10 w-10 rounded-lg" />
+                            <div class="flex-1 min-w-0">
+                                <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-1/3" />
+                                <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-1/4 mt-1" />
+                            </div>
+                            <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-1/6" />
+                            <Skeleton Type="SkeletonType.Badge" Width="80px" />
+                            <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-24" />
+                            <div class="flex gap-2">
+                                <Skeleton Type="SkeletonType.Custom" Class="h-8 w-8 rounded-lg" />
+                                <Skeleton Type="SkeletonType.Custom" Class="h-8 w-8 rounded-lg" />
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="mt-6 flex items-center justify-center gap-2">
+                @for (int i = 0; i < 3; i++)
+                {
+                    <Skeleton Type="SkeletonType.Custom" Class="h-10 w-10 rounded-lg" />
+                }
+            </div>
+        }
+    </div>
+</div>
+ 
+@code {
+    private bool isLoading = true;
+    private bool isListView = false;
+    private bool responsiveViewApplied;
+    private string searchQueryValue = string.Empty;
+    private string selectedTypeValue = string.Empty;
+    private string selectedStatusValue = string.Empty;
+    private int currentPage = 1;
+    private int pageSize = 7;
+    private List<PostDto> allPosts = new(); 
+
+    private string searchQuery
+    {
+        get => searchQueryValue;
+        set
+        {
+            if (searchQueryValue == value) return;
+            searchQueryValue = value;
+            currentPage = 1;
+        }
+    }
+
+    private string selectedType
+    {
+        get => selectedTypeValue;
+        set
+        {
+            if (selectedTypeValue == value) return;
+            selectedTypeValue = value;
+            currentPage = 1;
+        }
+    }
+
+    private string selectedStatus
+    {
+        get => selectedStatusValue;
+        set
+        {
+            if (selectedStatusValue == value) return;
+            selectedStatusValue = value;
+            currentPage = 1;
+        }
+    }
+
+    private List<PostDto> filteredPosts => allPosts
+        .Where(p => string.IsNullOrEmpty(searchQuery) ||
+                    p.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    p.AuthorName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .Where(p => string.IsNullOrEmpty(selectedType) || p.PostType == selectedType)
+        .Where(p => string.IsNullOrEmpty(selectedStatus) ||
+                    (selectedStatus == "published" && p.PublishedAt.HasValue) ||
+                    (selectedStatus == "draft" && !p.PublishedAt.HasValue))
+        .ToList();
+
+    private int totalPages => Math.Max(1, (int)Math.Ceiling((double)filteredPosts.Count / pageSize));
+
+    private List<PostDto> pagedPosts => filteredPosts
+        .Skip((SafeCurrentPage - 1) * pageSize)
+        .Take(pageSize)
+        .ToList();
+
+    private int SafeCurrentPage => Math.Clamp(currentPage, 1, totalPages);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPostsAsync();
+    }
+
+    private async Task LoadPostsAsync()
+    {
+        isLoading = true;
+        try
+        {
+            allPosts = await PostService.GetAllPostsAsync();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || responsiveViewApplied)
+        {
+            return;
+        }
+
+        responsiveViewApplied = true;
+        var isMobile = await JS.InvokeAsync<bool>("dotnetNigerIsMobile");
+        var shouldShowListView = !isMobile;
+
+        if (isListView != shouldShowListView)
+        {
+            isListView = shouldShowListView;
+            StateHasChanged();
+        }
+    }
+}

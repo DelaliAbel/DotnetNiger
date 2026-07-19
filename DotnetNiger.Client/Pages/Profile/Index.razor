@@ -1,0 +1,490 @@
+@page "/profile"
+@attribute [Authorize]
+@implements IDisposable
+@inject IUserStateService UserStateService
+@inject IProfileService ProfileService
+@inject NavigationManager Navigation
+@inject IUploadService UploadService
+@inject IJSRuntime JS
+@inject IRegistrationService RegistrationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@if (!isLoading)
+{
+    <div class="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
+        <div class="mb-6">
+            <h1 class="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl">Mon profil</h1>
+            <p class="mt-2 text-slate-600">Consulte tes informations publiques et mets ton profil a jour.</p>
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 xl:grid-cols-[390px_1fr]">
+            <div class="space-y-6">
+                <section class="rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+                    <div class="mb-5 flex justify-center">
+                        <div class="relative">
+                            <ResolvedImage Src="@CurrentUser?.AvatarUrl" Icon="fa-user"
+                                 alt="Avatar"
+                                 class="h-40 w-40 rounded-full border-4 border-indigo-100" />
+
+                            @if (isUploadingAvatar)
+                            {
+                                <div class="absolute inset-0 flex items-center justify-center rounded-full bg-black/40">
+                                    <i class="fa-solid fa-spinner fa-spin text-2xl text-white"></i>
+                                </div>
+                            }
+
+                            <InputFile id="avatarProfileUpload" accept=".jpg,.jpeg,.png,.webp,.gif" OnChange="HandleAvatarSelected"
+                                       class="absolute -z-10 opacity-0 w-0 h-0 pointer-events-none" />
+
+                            <button @onclick='() => JS.InvokeVoidAsync("triggerFileInput", "avatarProfileUpload")'
+                                    title="Modifier l'avatar"
+                                    class="absolute -bottom-1 -right-1 inline-flex h-10 w-10 items-center justify-center rounded-full bg-indigo-600 text-white shadow-md transition hover:bg-indigo-500">
+                                <i class="fas fa-camera text-sm"></i>
+                            </button>
+
+                            @if (!string.IsNullOrWhiteSpace(avatarUploadError))
+                            {
+                                <div class="absolute -bottom-14 left-1/2 w-56 -translate-x-1/2 rounded-lg bg-red-50 p-2 text-center text-xs text-red-700 shadow-lg">
+                                    <i class="fa-solid fa-circle-exclamation mr-1"></i> @avatarUploadError
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 text-center">
+                        <h2 class="text-xl font-semibold tracking-tight text-slate-800 sm:text-4xl">@DisplayOrFallback(CurrentUser?.FullName, CurrentUser?.Username ?? "Utilisateur")</h2>
+                        <p class="text-lg text-slate-500">@DisplayPrimaryRole(CurrentUser?.Roles)</p>
+                    </div>
+
+                    <div class="mt-7 space-y-3 text-sm text-slate-700">
+                        <div class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 px-4 py-2">
+                            <i class="fas fa-map-marker-alt text-slate-500"></i>
+                            <span>@BuildLocation(CurrentUser?.City, CurrentUser?.Country)</span>
+                        </div>
+                        <div class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 px-4 py-2">
+                            <i class="fas fa-envelope text-slate-500"></i>
+                            <span>@DisplayOrFallback(CurrentUser?.Email, "Email non renseigne")</span>
+                        </div>
+                        <div class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 px-4 py-2">
+                            <i class="fas fa-phone text-slate-500"></i>
+                            <span>@DisplayOrFallback(CurrentUser?.PhoneNumber, "Telephone non renseigne")</span>
+                        </div>
+                        <div class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 px-4 py-2">
+                            <i class="fas fa-calendar-alt text-slate-500"></i>
+                            <span>Membre depuis @FormatMemberSince(CurrentUser?.CreatedAt)</span>
+                        </div>
+                        <div class="inline-flex w-full items-center justify-center gap-2 rounded-full @((CurrentUser?.IsActive ?? false) ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600") px-4 py-2">
+                            <span class="h-2.5 w-2.5 rounded-full @((CurrentUser?.IsActive ?? false) ? "bg-emerald-500" : "bg-slate-400")"></span>
+                            <span>@((CurrentUser?.IsActive ?? false) ? "En ligne" : "Hors ligne")</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                    <div class="mb-4 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-700">Reseaux sociaux</h3>
+                        <button @onclick='() => Navigation.NavigateTo("/profile/informations")'
+                                class="inline-flex items-center gap-2 text-sm font-semibold text-indigo-600 hover:text-indigo-500">
+                            <i class="fas fa-pen text-xs"></i>
+                            Modifier
+                        </button>
+                    </div>
+
+                    @if (SocialLinks.Count == 0)
+                    {
+                        <p class="text-sm text-slate-500">Aucun lien social enregistre.</p>
+                    }
+                    else
+                    {
+                        <div class="flex flex-wrap gap-3">
+                            @foreach (var link in SocialLinks)
+                            {
+                                <a href="@link.Url"
+                                   target="_blank"
+                                   rel="noopener noreferrer"
+                                   class="inline-flex h-11 w-11 items-center justify-center rounded-lg bg-indigo-600 text-xl text-white transition hover:bg-indigo-500"
+                                   title="@link.Platform">
+                                    <i class="@link.Icone"></i>
+                                </a>
+                            }
+                        </div>
+                    }
+                </section>
+
+                @* Carte certificat *@
+                <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                    <div class="mb-4 flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-slate-700">Certification</h3>
+                    </div>
+
+                    @if (CurrentUser?.Certificate is null)
+                    {
+                        <p class="text-sm text-slate-500 mb-4">Vous n'avez pas encore soumis votre certificat.</p>
+                        <button @onclick='() => showCertifForm = true'
+                                class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-purple-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-purple-800">
+                            <i class="fas fa-certificate"></i>
+                            Soumettre mon certificat
+                        </button>
+                    }
+                    else
+                    {
+                        var cert = CurrentUser.Certificate;
+                        <div class="space-y-3 text-sm">
+                            <div class="inline-flex w-full items-center justify-center gap-2 rounded-full px-4 py-2 @(cert.Status switch
+                            {
+                                "Approved" => "bg-emerald-50 text-emerald-700",
+                                "Rejected" => "bg-red-50 text-red-700",
+                                _ => "bg-amber-50 text-amber-700"
+                            })">
+                                <i class="fas fa-@(cert.Status switch
+                                {
+                                    "Approved" => "check-circle",
+                                    "Rejected" => "times-circle",
+                                    _ => "clock"
+                                })"></i>
+                                <span>@(cert.Status switch
+                                {
+                                    "Approved" => "Certificat validé",
+                                    "Rejected" => "Certificat rejeté",
+                                    _ => "En attente de validation"
+                                })</span>
+                            </div>
+                            <p class="text-slate-600">Type : @cert.CertificateType</p>
+                            <p class="text-slate-600">Soumis le : @cert.SubmissionDate.ToLocalTime().ToString("dd/MM/yyyy")</p>
+
+                            @if (!string.IsNullOrWhiteSpace(cert.ReviewedNotes))
+                            {
+                                <div class="rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+                                    <span class="font-semibold">Motif :</span> @cert.ReviewedNotes
+                                </div>
+                            }
+
+                            @if (cert.Status is "Rejected")
+                            {
+                                <button @onclick='() => showCertifForm = true'
+                                        class="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg-purple-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-purple-800">
+                                    <i class="fas fa-redo"></i>
+                                    Renvoyer mon certificat
+                                </button>
+                            }
+                        </div>
+                    }
+
+                    @if (showCertifForm)
+                    {
+                        <div class="mt-4 border-t border-slate-200 pt-4">
+                            @if (!isCertifSubmitted)
+                            {
+                                <EditForm Model="certifModel" OnValidSubmit="HandleCertifSubmit">
+                                    <DataAnnotationsValidator />
+
+                                    <div class="mb-3">
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">URL de la certification</label>
+                                        <InputText @bind-Value="certifModel.CertificateUrl" placeholder="https://www.freecodecamp.org/certification/..." class="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm" />
+                                        <ValidationMessage For="@(() => certifModel.CertificateUrl)" class="text-xs text-red-500 mt-1" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="block text-xs font-medium text-gray-500 mb-1">Type de certificat</label>
+                                        <InputSelect @bind-Value="certifModel.CertificateType" class="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-sm bg-white">
+                                            <option value="">Sélectionnez un type</option>
+                                            <option value="Foundational C# with Microsoft">Foundational C# with Microsoft</option>
+                                            <option value="C# Data and Web">C# Data and Web</option>
+                                            <option value="Autre">Autre</option>
+                                        </InputSelect>
+                                        <ValidationMessage For="@(() => certifModel.CertificateType)" class="text-xs text-red-500 mt-1" />
+                                    </div>
+
+                                    @if (!string.IsNullOrWhiteSpace(certifErrorMessage))
+                                    {
+                                        <div class="mb-3 rounded-lg bg-red-50 border border-red-200 px-3 py-2 text-xs text-red-700">@certifErrorMessage</div>
+                                    }
+
+                                    <div class="flex gap-2">
+                                        <button type="button" @onclick='() => showCertifForm = false'
+                                                class="flex-1 rounded-full border border-gray-200 py-2.5 text-sm text-slate-600 transition hover:bg-slate-50">
+                                            Annuler
+                                        </button>
+                                        <button type="submit" disabled="@isCertifLoading"
+                                                class="flex-1 rounded-full bg-purple-700 py-2.5 text-sm font-semibold text-white transition hover:bg-purple-800 disabled:opacity-70">
+                                            @(isCertifLoading ? "Soumission..." : "Envoyer")
+                                        </button>
+                                    </div>
+                                </EditForm>
+                            }
+                            else
+                            {
+                                <div class="text-center py-4">
+                                    <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-purple-50">
+                                        <i class="fas fa-clock text-purple-600 text-xl"></i>
+                                    </div>
+                                    <p class="text-sm font-semibold text-gray-800">Certification soumise</p>
+                                    <p class="mt-1 text-xs text-gray-500">
+                                        Statut : <span class="font-semibold">@(certifStatus?.Status ?? "En attente")</span>
+                                    </p>
+                                    @if (certifStatus is not null)
+                                    {
+                                        <p class="text-xs text-gray-500">Soumis le : @certifStatus.SubmissionDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</p>
+                                        <p class="text-xs text-gray-500">Délai estimé : @certifStatus.EstimatedWaitTime</p>
+                                    }
+                                    <button @onclick='() => { showCertifForm = false; StateHasChanged(); }'
+                                            class="mt-3 rounded-full bg-purple-700 px-6 py-2 text-xs font-semibold text-white transition hover:bg-purple-800">
+                                        Fermer
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+                </section>
+            </div>
+
+            <div class="space-y-6">
+                <section class="rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+                    <div class="mb-4 flex items-center justify-between gap-4">
+                        <h2 class="text-lg font-semibold tracking-tight text-slate-800">A propos</h2>
+                        <button @onclick='() => Navigation.NavigateTo("/profile/informations")'
+                                title="Modifier la biographie"
+                                class="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(CurrentUser?.Bio))
+                    {
+                        <div class="text-lg leading-relaxed text-slate-600 prose prose-slate max-w-none break-words">@(new MarkupString(HtmlSanitizer.Sanitize(CurrentUser?.Bio) ?? string.Empty))</div>
+                    }
+                    else
+                    {
+                        <p class="max-w-4xl text-lg leading-relaxed text-slate-600">Aucune biographie renseignee.</p>
+                    }
+                </section>
+
+                <section class="rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+                    <div class="mb-4 flex items-start justify-between gap-4">
+                        <h2 class="text-lg font-semibold tracking-tight text-slate-800">Competences et technologies</h2>
+                        <button @onclick='() => Navigation.NavigateTo("/profile/informations")'
+                                title="Modifier les competences"
+                                class="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-700">
+                            <i class="fas fa-pen"></i>
+                        </button>
+                    </div>
+
+                    @if (CurrentUser?.Skills is { Count: > 0 })
+                    {
+                        <div class="flex flex-wrap gap-3">
+                            @foreach (var skill in CurrentUser.Skills)
+                            {
+                                <span class="rounded-lg bg-indigo-100 px-4 py-2 text-sm font-semibold text-indigo-700">@skill</span>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-sm text-slate-500">Aucune compétence renseignée.</p>
+                    }
+                </section>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
+        <div class="mb-6">
+            <Skeleton Type="SkeletonType.Title" Class="w-1/3" />
+            <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-1/2 mt-2" />
+        </div>
+
+        <div class="grid grid-cols-1 gap-6 xl:grid-cols-[390px_1fr]">
+            <div class="space-y-6">
+                <section class="rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+                    <div class="flex flex-col items-center space-y-4">
+                        <Skeleton Type="SkeletonType.Custom" Class="h-32 rounded-lg w-full" />
+                        <Skeleton Type="SkeletonType.Avatar" Size="96px" Class="h-24 w-24" />
+                        <Skeleton Type="SkeletonType.Title" Class="w-1/2" />
+                        <Skeleton Type="SkeletonType.Text" Lines="2" Class="w-3/4" />
+                    </div>
+                    <div class="mt-7 space-y-3">
+                        <Skeleton Type="SkeletonType.Text" Lines="4" />
+                    </div>
+                </section>
+
+                <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                    <Skeleton Type="SkeletonType.Title" Class="w-1/3 mb-4" />
+                    <div class="flex flex-wrap gap-3">
+                        <Skeleton Type="SkeletonType.Badge" Width="40px" />
+                        <Skeleton Type="SkeletonType.Badge" Width="40px" />
+                        <Skeleton Type="SkeletonType.Badge" Width="40px" />
+                    </div>
+                </section>
+            </div>
+
+            <div class="space-y-6">
+                <section class="rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+                    <div class="mb-4 flex items-center justify-between">
+                        <Skeleton Type="SkeletonType.Title" Class="w-1/4" />
+                        <Skeleton Type="SkeletonType.Button" Width="40px" />
+                    </div>
+                    <Skeleton Type="SkeletonType.Text" Lines="3" />
+                </section>
+
+                <section class="rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+                    <div class="mb-4 flex items-start justify-between">
+                        <Skeleton Type="SkeletonType.Title" Class="w-1/3" />
+                        <Skeleton Type="SkeletonType.Button" Width="40px" />
+                    </div>
+                    <div class="flex flex-wrap gap-3">
+                        <Skeleton Type="SkeletonType.Badge" />
+                        <Skeleton Type="SkeletonType.Badge" />
+                        <Skeleton Type="SkeletonType.Badge" />
+                        <Skeleton Type="SkeletonType.Badge" />
+                        <Skeleton Type="SkeletonType.Badge" />
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private UserDto? CurrentUser => UserStateService.CurrentUser;
+    private List<SocialLinkDto> SocialLinks => CurrentUser?.SocialLinks ?? new();
+    private bool isLoading = true;
+    private bool isUploadingAvatar;
+    private string? avatarUploadError;
+
+    private bool showCertifForm;
+    private bool isCertifSubmitted;
+    private bool isCertifLoading;
+    private string? certifErrorMessage;
+    private CertificateStatusDto? certifStatus;
+    private readonly CertificateSubmissionDto certifModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        UserStateService.OnChange += HandleStateChanged;
+        showCertifForm = false;
+
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            if (!(authState.User.Identity?.IsAuthenticated ?? false))
+                return;
+
+            if (UserStateService.CurrentUser is null)
+                await UserStateService.LoadUserFromStorageAsync();
+
+            var profil = await ProfileService.GetProfileAsync();
+            if (profil.Id != Guid.Empty)
+                await UserStateService.SetUserAsync(profil);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleCertifSubmit()
+    {
+        isCertifLoading = true;
+        certifErrorMessage = null;
+
+        try
+        {
+            var result = await RegistrationService.SubmitStep2Async(certifModel);
+
+            if (result.Success && result.Data is not null)
+            {
+                certifStatus = result.Data;
+                isCertifSubmitted = true;
+
+                var profil = await ProfileService.GetProfileAsync();
+                if (profil.Id != Guid.Empty)
+                    await UserStateService.SetUserAsync(profil);
+            }
+            else
+            {
+                certifErrorMessage = result.Message ?? "Erreur lors de la soumission. Vérifiez le lien et réessayez.";
+            }
+        }
+        catch (Exception ex)
+        {
+            certifErrorMessage = $"Erreur inattendue : {ex.Message}";
+        }
+        finally
+        {
+            isCertifLoading = false;
+        }
+    }
+
+    private async Task HandleAvatarSelected(InputFileChangeEventArgs e)
+    {
+        avatarUploadError = null;
+        var file = e.File;
+        if (file is null) return;
+
+        if (file.Size > 3 * 1024 * 1024)
+        {
+            avatarUploadError = "Le fichier ne doit pas dépasser 3 Mo.";
+            return;
+        }
+
+        isUploadingAvatar = true;
+        try
+        {
+            using var memoryStream = new MemoryStream();
+            await file.OpenReadStream(maxAllowedSize: 3 * 1024 * 1024).CopyToAsync(memoryStream);
+            var bytes = memoryStream.ToArray();
+            var base64 = Convert.ToBase64String(bytes);
+
+            var upload = await UploadService.UploadImageBase64Async(base64, file.Name, UploadType.User);
+            if (!upload.Success)
+            {
+                avatarUploadError = upload.Message ?? "Erreur lors de l'upload.";
+                return;
+            }
+
+            await ProfileService.UpdateProfileAsync(new UpdateProfileRequest { AvatarUrl = upload.ImageUrl });
+
+            var profil = await ProfileService.GetProfileAsync();
+            if (profil.Id != Guid.Empty)
+                await UserStateService.SetUserAsync(profil);
+        }
+        catch (Exception ex)
+        {
+            avatarUploadError = $"Erreur : {ex.Message}";
+        }
+        finally
+        {
+            isUploadingAvatar = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        UserStateService.OnChange -= HandleStateChanged;
+    }
+
+    private void HandleStateChanged() => InvokeAsync(StateHasChanged);
+
+    private static string DisplayOrFallback(string? value, string fallback)
+        => string.IsNullOrWhiteSpace(value) ? fallback : value;
+
+    private static string BuildLocation(string? city, string? country)
+    {
+        var hasCity    = !string.IsNullOrWhiteSpace(city);
+        var hasCountry = !string.IsNullOrWhiteSpace(country);
+        return (hasCity, hasCountry) switch
+        {
+            (true, true)  => $"{city}, {country}",
+            (true, false) => city!,
+            (false, true) => country!,
+            _             => "Non renseignee"
+        };
+    }
+
+    private static string DisplayPrimaryRole(List<string>? roles)
+        => (roles is { Count: > 0 }) ? roles[0] : "Membre .NET Niger";
+
+    private static string FormatMemberSince(DateTime? createdAt)
+        => createdAt.HasValue ? createdAt.Value.ToString("MMMM yyyy") : "Date inconnue";
+}
