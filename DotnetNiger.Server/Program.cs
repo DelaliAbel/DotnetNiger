@@ -90,7 +90,8 @@ try
                    .AddDevelopmentSigningCertificate();
             options.UseAspNetCore()
                    .EnableTokenEndpointPassthrough()
-                   .EnableAuthorizationEndpointPassthrough();
+                   .EnableAuthorizationEndpointPassthrough()
+                   .DisableTransportSecurityRequirement();
 
         })
         .AddValidation(options =>
