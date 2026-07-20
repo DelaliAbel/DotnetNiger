@@ -1,4 +1,3 @@
-using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using static OpenIddict.Abstractions.OpenIddictConstants;
@@ -10,8 +9,7 @@ using DotnetNiger.Infrastructure.Services;
 namespace DotnetNiger.Server.Controllers;
 
 [ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/account")]
+[Route("api/account")]
 [Authorize]
 public class GdprController : ControllerBase
 {

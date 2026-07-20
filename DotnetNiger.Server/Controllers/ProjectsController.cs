@@ -1,4 +1,3 @@
-using Asp.Versioning;
 using DotnetNiger.Infrastructure.Services;
 using DotnetNiger.Domain.Constants;
 using DotnetNiger.Domain.DTOs.Requests;
@@ -7,8 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Server.Controllers;
 
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/[controller]")]
 public class ProjectsController(IProjectService projectService) : BaseController
 {
     [HttpGet]

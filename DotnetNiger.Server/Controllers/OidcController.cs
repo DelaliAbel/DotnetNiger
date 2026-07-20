@@ -1,4 +1,3 @@
-using Asp.Versioning;
 using DotnetNiger.Infrastructure.Services;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
@@ -11,8 +10,7 @@ using OpenIddict.Server.AspNetCore;
 namespace DotnetNiger.Server.Controllers;
 
 [ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/auth")]
+[Route("api/auth")]
 [EnableRateLimiting("Auth")]
 public class OidcController : ControllerBase
 {

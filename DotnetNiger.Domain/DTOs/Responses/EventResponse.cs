@@ -11,5 +11,6 @@ public record EventResponse(
     string? CoverImageUrl,
     Guid OrganizerId,
     string Status,
+    bool IsPublished,
     DateTime CreatedAt,
     DateTime UpdatedAt);

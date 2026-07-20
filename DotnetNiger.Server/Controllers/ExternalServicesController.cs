@@ -1,4 +1,3 @@
-using Asp.Versioning;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,8 +10,7 @@ using OpenIddict.Validation.AspNetCore;
 namespace DotnetNiger.Server.Controllers;
 
 [ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/external-services")]
+[Route("api/external-services")]
 public class ExternalServicesController : ControllerBase
 {
     private readonly IExternalServiceService _service;

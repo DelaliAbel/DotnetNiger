@@ -1,4 +1,3 @@
-using Asp.Versioning;
 using DotnetNiger.Domain.DTOs.Requests;
 using DotnetNiger.Domain.DTOs.Responses;
 using DotnetNiger.Infrastructure.Services;
@@ -10,8 +9,7 @@ using OpenIddict.Server.AspNetCore;
 namespace DotnetNiger.Server.Controllers;
 
 [ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/auth")]
+[Route("api/auth")]
 [EnableRateLimiting("Auth")]
 public class TwoFactorController : ControllerBase
 {

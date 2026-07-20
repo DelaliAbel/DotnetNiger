@@ -3,7 +3,7 @@ namespace DotnetNiger.Client.Services.Api;
 public static class ApiEndpoints
 {
     public const string Events = "api/events";
-    public const string AdminEvents = "api/community/admin/events";
+    public const string AdminEvents = "api/events";
     public const string Posts = "api/posts";
     public const string Resources = "api/resources";
     public const string Projects = "api/projects";
@@ -16,22 +16,22 @@ public static class ApiEndpoints
     public const string Newsletters = "api/newsletters";
     public const string Upload = "api/upload";
     public const string UploadBase64 = "api/upload/base64";
-    public const string Profile = "api/me";
+    public const string Profile = "api/profile";
     public const string SocialLinks = "api/social-links";
     public const string Certificates = "api/profile/certificates";
-    public const string AdminUsers = "api/identity/admin/users";
-    public const string CommunityAdminUsers = "api/community/admin/users";
-    public const string AdminUserRoles = "api/community/admin/users/{0}/roles";
-    public const string AdminUserRole = "api/community/admin/users/{0}/roles/{1}";
-    public const string AdminUserTeam = "api/community/admin/users/{0}/team";
+    public const string AdminUsers = "api/admin/users";
+    public const string CommunityAdminUsers = "api/admin/users";
+    public const string AdminUserRoles = "api/admin/users/{0}/roles";
+    public const string AdminUserRole = "api/admin/users/{0}/roles/{1}";
+    public const string AdminUserTeam = "api/admin/users/{0}/team";
     public const string Comments = "api/comments";
     public const string Categories = "api/categories";
     public const string Tags = "api/tags";
     public const string Stats = "api/stats";
-    public const string AdminCertificates = "api/community/admin/certificates";
-    public const string AdminPosts = "api/community/admin/posts";
-    public const string AdminComments = "api/community/admin/comments";
-    public const string AdminSettings = "api/community/admin/settings";
+    public const string AdminCertificates = "api/profile/certificates";
+    public const string AdminPosts = "api/posts";
+    public const string AdminComments = "api/comments";
+    public const string AdminSettings = "api/admin/settings";
 
     public static class Auth
     {

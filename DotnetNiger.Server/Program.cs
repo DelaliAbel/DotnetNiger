@@ -1,4 +1,3 @@
-using Asp.Versioning;
 using DotnetNiger.Domain.Email;
 using DotnetNiger.Domain.Entities;
 using DotnetNiger.Infrastructure;
@@ -19,6 +18,7 @@ try
         .AddApplicationPart(typeof(DependencyInjection).Assembly);
 
     builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
     builder.Services.AddMemoryCache();
 
     builder.Services.AddDbContext<DotnetNigerDbContext>(options =>
@@ -78,18 +78,6 @@ try
 
     builder.Services.AddIdentityServices();
 
-    builder.Services.AddApiVersioning(options =>
-    {
-        options.DefaultApiVersion = new ApiVersion(1, 0);
-        options.AssumeDefaultVersionWhenUnspecified = true;
-        options.ReportApiVersions = true;
-    })
-    .AddApiExplorer(options =>
-    {
-        options.GroupNameFormat = "'v'VVV";
-        options.SubstituteApiVersionInUrl = true;
-    });
-
     builder.Services.Configure<AuthenticationOptions>(options =>
     {
         options.DefaultAuthenticateScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
@@ -122,6 +110,7 @@ try
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<DotnetNigerDbContext>();
+        await db.Database.MigrateAsync();
         await SeedIdentityService.SeedAsync(scope.ServiceProvider);
         await SeedCommunityService.SeedAsync(scope.ServiceProvider);
         Console.WriteLine("\n=== Database setup complete ===");
@@ -131,6 +120,9 @@ try
     {
         app.UseDeveloperExceptionPage();
     }
+
+    app.UseSwagger();
+    app.UseSwaggerUI();
 
     app.UseHttpsRedirection();
     app.UseCors();

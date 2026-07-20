@@ -1,4 +1,3 @@
-using Asp.Versioning;
 using DotnetNiger.Domain.Constants;
 using DotnetNiger.Domain.DTOs.Requests;
 using DotnetNiger.Infrastructure.Services;
@@ -8,12 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 namespace DotnetNiger.Server.Controllers;
 
 [ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/admin/settings")]
+[Route("api/admin/settings")]
 [Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
 public class SettingsController(ISettingsService settingsService) : ControllerBase
 {
-    [HttpGet("~/api/v{version:apiVersion}/settings/public")]
+    [HttpGet("api/settings/public")]
     [AllowAnonymous]
     public async Task<IActionResult> GetPublic()
     {

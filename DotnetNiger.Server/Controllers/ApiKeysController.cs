@@ -1,4 +1,3 @@
-using Asp.Versioning;
 using DotnetNiger.Domain.Constants;
 using DotnetNiger.Domain.DTOs.Requests;
 using DotnetNiger.Domain.DTOs.Responses;
@@ -9,8 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DotnetNiger.Server.Controllers;
 
 [ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/admin/api-keys")]
+[Route("api/admin/api-keys")]
 [Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
 public class ApiKeysController : ControllerBase
 {

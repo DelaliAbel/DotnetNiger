@@ -1,4 +1,3 @@
-using Asp.Versioning;
 using DotnetNiger.Domain.DTOs.Requests;
 using DotnetNiger.Infrastructure.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -7,8 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DotnetNiger.Server.Controllers;
 
 [ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/support")]
+[Route("api/support")]
 [Authorize]
 public class SupportController(ISupportService supportService) : ControllerBase
 {

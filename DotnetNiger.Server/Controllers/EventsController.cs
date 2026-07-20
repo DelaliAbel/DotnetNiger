@@ -1,4 +1,3 @@
-using Asp.Versioning;
 using DotnetNiger.Infrastructure.Services;
 using DotnetNiger.Domain.Constants;
 using DotnetNiger.Domain.DTOs.Requests;
@@ -8,9 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DotnetNiger.Server.Controllers;
 
 [ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
-[Authorize]
+[Route("api/[controller]")]
 public class EventsController(
     IEventQueryService eventQuery,
     IEventCommandService eventCommand,
@@ -18,6 +15,7 @@ public class EventsController(
     IEventModerationService eventModeration) : BaseController
 {
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAll([FromQuery] string? status, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         page = Math.Max(1, page);
@@ -27,6 +25,7 @@ public class EventsController(
     }
 
     [HttpGet("{id:guid}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetById(Guid id)
     {
         var ev = await eventQuery.GetByIdAsync(id);
@@ -35,6 +34,7 @@ public class EventsController(
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> Create([FromBody] CreateEventRequest request)
     {
         var userId = GetUserId();
@@ -50,6 +50,7 @@ public class EventsController(
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateEventRequest request)
     {
         try
@@ -69,6 +70,7 @@ public class EventsController(
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize]
     public async Task<IActionResult> Delete(Guid id)
     {
         var deleted = await eventCommand.DeleteAsync(id, GetUserId(), IsAdmin());
@@ -77,6 +79,7 @@ public class EventsController(
     }
 
     [HttpPost("registrations")]
+    [Authorize]
     public async Task<IActionResult> Register([FromBody] RegisterEventRequest request)
     {
         var userId = GetUserId();
@@ -86,6 +89,7 @@ public class EventsController(
     }
 
     [HttpDelete("{eventId:guid}/registrations")]
+    [Authorize]
     public async Task<IActionResult> CancelRegistration(Guid eventId)
     {
         var cancelled = await eventRegistration.CancelRegistrationAsync(eventId, GetUserId());
@@ -94,6 +98,7 @@ public class EventsController(
     }
 
     [HttpGet("{eventId:guid}/registrations")]
+    [Authorize]
     public async Task<IActionResult> GetRegistrations(Guid eventId)
     {
         var registrations = await eventQuery.GetRegistrationsAsync(eventId);
@@ -107,6 +112,24 @@ public class EventsController(
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
         return Ok(new { Success = true, Data = await eventQuery.GetPendingEventsAsync(page, pageSize) });
+    }
+
+    [HttpPatch("{id:guid}/publish")]
+    [Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
+    public async Task<IActionResult> Publish(Guid id)
+    {
+        var ev = await eventModeration.PublishAsync(id);
+        if (ev is null) return NotFound(new { Success = false, Message = Messages.Event.NotFound });
+        return Ok(new { Success = true, Data = ev });
+    }
+
+    [HttpPatch("{id:guid}/unpublish")]
+    [Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
+    public async Task<IActionResult> Unpublish(Guid id)
+    {
+        var ev = await eventModeration.UnpublishAsync(id);
+        if (ev is null) return NotFound(new { Success = false, Message = Messages.Event.NotFound });
+        return Ok(new { Success = true, Data = ev });
     }
 
     [HttpPatch("{id:guid}/approve")]

@@ -1,4 +1,3 @@
-using Asp.Versioning;
 using DotnetNiger.Domain.DTOs.Requests;
 using DotnetNiger.Infrastructure.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -6,8 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DotnetNiger.Server.Controllers;
 
 [ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/[controller]")]
 public class SearchController(ISearchService searchService) : ControllerBase
 {
     [HttpGet]

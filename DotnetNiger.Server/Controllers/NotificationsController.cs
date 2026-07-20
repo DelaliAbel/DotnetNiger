@@ -1,4 +1,3 @@
-using Asp.Versioning;
 using DotnetNiger.Infrastructure.Services;
 using DotnetNiger.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
@@ -7,8 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DotnetNiger.Server.Controllers;
 
 [ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/[controller]")]
+[Route("api/[controller]")]
 [Authorize]
 public class NotificationsController(IUserNotificationService notificationService) : BaseController
 {

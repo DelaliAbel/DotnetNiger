@@ -21,7 +21,7 @@ public class ApiEventService : ApiServiceBase, IEventService
     {
         var events = await GetCollectionAsync<EventDto>(ApiEndpoints.Events, new Dictionary<string, string?>
         {
-            ["published"] = "true"
+            ["status"] = "Published"
         });
 
         return events.Where(e => e.IsPublished).ToList();

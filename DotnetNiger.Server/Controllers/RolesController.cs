@@ -1,4 +1,3 @@
-using Asp.Versioning;
 using DotnetNiger.Domain.Constants;
 using DotnetNiger.Domain.DTOs.Requests;
 using DotnetNiger.Domain.DTOs.Responses;
@@ -10,9 +9,8 @@ using ErrorResponse = DotnetNiger.Domain.DTOs.Responses.ErrorResponse;
 namespace DotnetNiger.Server.Controllers;
 
 [ApiController]
-[ApiVersion("1.0")]
 
-[Route("api/v{version:apiVersion}/roles")]
+[Route("api/roles")]
 [Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
 public class RolesController : ControllerBase
 {

@@ -1,4 +1,3 @@
-using Asp.Versioning;
 using DotnetNiger.Domain.DTOs.Responses;
 using ErrorResponse = DotnetNiger.Domain.DTOs.Responses.ErrorResponse;
 using DotnetNiger.Infrastructure.Services;
@@ -15,8 +14,7 @@ using SuccessMessages = DotnetNiger.Domain.Constants.SuccessMessages;
 namespace DotnetNiger.Server.Controllers;
 
 [ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/admin")]
+[Route("api/admin")]
 [Authorize(Roles = RoleConstants.AdminOrSuperAdmin)]
 public class AdminController : BaseController
 {

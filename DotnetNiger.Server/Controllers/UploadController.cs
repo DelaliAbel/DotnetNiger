@@ -1,4 +1,3 @@
-using Asp.Versioning;
 using DotnetNiger.Domain.Constants;
 using DotnetNiger.Domain.DTOs.Requests;
 using DotnetNiger.Infrastructure.Services;
@@ -7,8 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DotnetNiger.Server.Controllers;
 
 [ApiController]
-[ApiVersion("1.0")]
-[Route("api/v{version:apiVersion}/upload")]
+[Route("api/upload")]
 public class UploadController(IImageProcessingService imageService) : ControllerBase
 {
     private const long MaxFileSize = 4 * 1024 * 1024;
