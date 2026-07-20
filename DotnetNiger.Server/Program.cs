@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using OpenIddict.EntityFrameworkCore.Models;
 using Microsoft.AspNetCore.Authentication;
+using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using OpenIddict.Validation.AspNetCore;
 using Microsoft.OpenApi.Models;
@@ -86,6 +87,12 @@ try
             options.AllowRefreshTokenFlow();
             options.AllowAuthorizationCodeFlow();
             options.AllowCustomFlow("external_login");
+            options.RegisterScopes(
+                OpenIddictConstants.Scopes.OpenId,
+                OpenIddictConstants.Scopes.Email,
+                OpenIddictConstants.Scopes.Profile,
+                OpenIddictConstants.Scopes.Roles,
+                OpenIddictConstants.Scopes.OfflineAccess);
             options.AcceptAnonymousClients();
             options.AddDevelopmentEncryptionCertificate()
                    .AddDevelopmentSigningCertificate();
