@@ -149,6 +149,7 @@ try
         await db.Database.MigrateAsync();
         await SeedIdentityService.SeedAsync(scope.ServiceProvider);
         await SeedCommunityService.SeedAsync(scope.ServiceProvider);
+        await ClientSetupService.SetupAsync(scope.ServiceProvider);
         Console.WriteLine("\n=== Database setup complete ===");
     }
 
