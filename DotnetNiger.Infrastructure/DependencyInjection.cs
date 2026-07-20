@@ -1,8 +1,8 @@
 using DotnetNiger.Domain.Email;
-using DotnetNiger.Domain.Interfaces;
-using DotnetNiger.Infrastructure.Services;
 using DotnetNiger.Domain.Entities;
+using DotnetNiger.Domain.Interfaces;
 using DotnetNiger.Infrastructure.Data;
+using DotnetNiger.Infrastructure.Services.User;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,7 +18,6 @@ public static class DependencyInjection
         services.AddScoped<IAuthService>(sp => sp.GetRequiredService<AuthService>());
         services.AddScoped<AccountService>();
         services.AddScoped<TokenService>();
-        services.AddScoped<TwoFactorService>();
         services.AddScoped<OidcService>();
         services.AddScoped<OpenIddictManagementService>();
         services.AddScoped<IUserService, UserService>();
@@ -26,12 +25,10 @@ public static class DependencyInjection
         services.AddScoped<IPermissionService, PermissionService>();
         services.AddScoped<OAuthClientService>();
         services.AddScoped<OpenIddictClientManager>();
-        services.AddScoped<IApiKeyService, ApiKeyService>();
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<DashboardService>();
         services.AddScoped<IEmailSender<ApplicationUser>, EmailSender>();
         services.AddScoped<EmailSender>();
-        services.AddScoped<IExternalServiceService, ExternalServiceService>();
         services.AddScoped<GdprService>();
         services.AddScoped<GdprExportService>();
         services.AddScoped<ISupportService, SupportService>();
@@ -60,6 +57,8 @@ public static class DependencyInjection
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<IImageProcessingService, ImageProcessingService>();
         services.AddScoped<IUserNotificationService, UserNotificationService>();
+
+        services.AddHostedService<DeletionProcessorService>();
 
         return services;
     }

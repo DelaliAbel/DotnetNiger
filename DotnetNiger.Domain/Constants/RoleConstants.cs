@@ -9,8 +9,14 @@ public static class RoleConstants
     public const string Client = "Client";
     public const string AdminOrSuperAdmin = "SuperAdmin,Admin";
 
-    public static readonly string[] All = [SuperAdmin, Admin, User, Collaborator, Client, AdminOrSuperAdmin];
+    public static readonly string[] All = [SuperAdmin, Admin, User, Collaborator];
 
     public static bool IsValid(string roleName)
-        => Array.Exists(All, r => r.Equals(roleName, StringComparison.OrdinalIgnoreCase));
+        => All.Any(r => r.Equals(roleName, StringComparison.OrdinalIgnoreCase));
+
+    public static bool IsAdminOrSuperAdmin(string roleName)
+        => roleName == SuperAdmin || roleName == Admin;
+
+    public static string[] SplitRoles(string roles)
+        => roles.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 }

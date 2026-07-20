@@ -44,6 +44,7 @@ public class DotnetNigerDbContext : IdentityDbContext<
     public DbSet<Partner> Partners => Set<Partner>();
     public DbSet<Certificate> Certificates => Set<Certificate>();
     public DbSet<SiteSetting> SiteSettings => Set<SiteSetting>();
+    public DbSet<AccountDeletionRequest> AccountDeletionRequests => Set<AccountDeletionRequest>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

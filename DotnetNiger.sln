@@ -9,8 +9,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotnetNiger.Infrastructure"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotnetNiger.Server", "DotnetNiger.Server\DotnetNiger.Server.csproj", "{B44CCCF0-A0A9-41D7-B6BC-3430A67424EC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotnetNiger.Client", "DotnetNiger.Client\DotnetNiger.Client.csproj", "{66A8B698-0658-4512-A7E8-C1020B7BD974}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

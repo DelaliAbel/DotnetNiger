@@ -8,7 +8,6 @@ public static class ErrorMessages
     public const string RoleNotFound = "Rôle introuvable";
     public const string InvalidCredentials = "Email ou mot de passe incorrect.";
     public const string AccountLocked = "Compte temporairement verrouillé. Réessayez plus tard.";
-    public const string TwoFactorRequired = "Authentification à deux facteurs requise (non configurée).";
     public const string InternalError = "Une erreur interne est survenue.";
     public const string ResourceNotFound = "Ressource non trouvée.";
     public const string BadRequest = "Requête invalide.";

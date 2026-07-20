@@ -16,9 +16,6 @@ public record UpdateUserRequest(
     string? AvatarUrl,
     bool? IsActive);
 
-public record ResendEmailConfirmationRequest(
-    [Required][EmailAddress] string Email);
-
 public record AdminCreateUserRequest(
     [Required][EmailAddress] string Email,
     [Required] string Password,

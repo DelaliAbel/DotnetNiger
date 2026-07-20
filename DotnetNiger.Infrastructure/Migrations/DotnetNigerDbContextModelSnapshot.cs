@@ -22,6 +22,36 @@ namespace DotnetNiger.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("DotnetNiger.Domain.Entities.AccountDeletionRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CancelledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsProcessed")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("RequestedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ScheduledFor")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique()
+                        .HasFilter("[IsProcessed] = 0 AND [CancelledAt] IS NULL");
+
+                    b.ToTable("AccountDeletionRequests");
+                });
+
             modelBuilder.Entity("DotnetNiger.Domain.Entities.ApiKey", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1842,6 +1872,17 @@ namespace DotnetNiger.Infrastructure.Migrations
                     b.HasIndex("PermissionId");
 
                     b.ToTable("RolePermission");
+                });
+
+            modelBuilder.Entity("DotnetNiger.Domain.Entities.AccountDeletionRequest", b =>
+                {
+                    b.HasOne("DotnetNiger.Domain.Entities.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("DotnetNiger.Domain.Entities.Certificate", b =>

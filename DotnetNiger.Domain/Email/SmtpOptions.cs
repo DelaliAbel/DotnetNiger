@@ -7,8 +7,8 @@ public class SmtpOptions
     public string Username { get; set; } = "";
     public string Password { get; set; } = "";
     public string FromEmail { get; set; } = "noreply@dotnetniger.com";
-    public string FromName { get; set; } = "DotnetNiger";
-    public string AppName { get; set; } = "DotnetNiger";
+    public string FromName { get; set; } = "DotnetNiger Community";
+    public string AppName { get; set; } = "DotnetNiger Community";
     public string AppSubtitle { get; set; } = "";
     public string AppBaseUrl { get; set; } = "";
     public string FrontendBaseUrl { get; set; } = "";
