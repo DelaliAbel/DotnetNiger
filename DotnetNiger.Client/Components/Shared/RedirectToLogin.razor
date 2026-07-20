@@ -20,7 +20,15 @@
             return;
         }
 
+        var apiBase = Config["ApiBaseUrl"];
+        if (string.IsNullOrWhiteSpace(apiBase))
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
         var returnUrl = $"{Navigation.BaseUri.TrimEnd('/')}/auth/external-callback";
-        Navigation.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(returnUrl)}");
+        var path = "/Account/Login";
+        var loginUrl = $"{apiBase}{path}?returnUrl={Uri.EscapeDataString(returnUrl)}";
+        Navigation.NavigateTo(loginUrl, forceLoad: true);
     }
 }

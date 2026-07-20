@@ -17,6 +17,7 @@ try
 
     builder.Services.AddControllers()
         .AddApplicationPart(typeof(DependencyInjection).Assembly);
+    builder.Services.AddRazorPages();
 
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen(options =>
@@ -150,10 +151,12 @@ try
     app.UseSwagger();
     app.UseSwaggerUI();
 
+    app.UseStaticFiles();
     app.UseHttpsRedirection();
     app.UseCors();
     app.UseAuthentication();
     app.UseAuthorization();
+    app.MapRazorPages();
     app.MapControllers();
 
     var logger = app.Services.GetRequiredService<ILogger<Program>>();
