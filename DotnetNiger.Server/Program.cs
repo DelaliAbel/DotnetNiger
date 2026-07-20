@@ -85,6 +85,7 @@ try
             options.AllowPasswordFlow();
             options.AllowRefreshTokenFlow();
             options.AllowAuthorizationCodeFlow();
+            options.AllowCustomFlow("external_login");
             options.AcceptAnonymousClients();
             options.AddDevelopmentEncryptionCertificate()
                    .AddDevelopmentSigningCertificate();
