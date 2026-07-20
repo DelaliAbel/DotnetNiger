@@ -34,7 +34,7 @@ public class MemberDirectoryService : IMemberDirectoryService
                 Id = Guid.NewGuid(),
                 UserId = userId,
                 DisplayName = request.DisplayName ?? "",
-                Bio = request.Bio,
+                Bio = request.Bio ?? string.Empty,
                 Location = request.Location,
                 WebsiteUrl = request.WebsiteUrl
             };
@@ -64,7 +64,7 @@ public class MemberDirectoryService : IMemberDirectoryService
             Id = Guid.NewGuid(),
             UserId = userId,
             DisplayName = request.DisplayName,
-            Bio = request.Bio,
+            Bio = request.Bio ?? string.Empty,
             Location = request.Location,
             WebsiteUrl = request.WebsiteUrl
         };

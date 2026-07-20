@@ -82,13 +82,13 @@ public partial class AuthService
         };
     }
 
-    public async Task<TokenResponse> RefreshTokenAsync(RefreshTokenRequest request, CancellationToken cancellationToken = default)
+    public Task<TokenResponse> RefreshTokenAsync(RefreshTokenRequest request, CancellationToken cancellationToken = default)
     {
-        return new TokenResponse
+        return Task.FromResult(new TokenResponse
         {
             AccessToken = "",
             ExpiresIn = 3600
-        };
+        });
     }
 
     public async Task ConfirmEmailAsync(ConfirmEmailRequest request, CancellationToken cancellationToken = default)

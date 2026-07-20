@@ -18,9 +18,9 @@ public class ResourceCommandService : IResourceCommandService
         {
             Id = Guid.NewGuid(),
             Title = request.Title,
-            Slug = request.Slug,
-            Description = request.Description,
-            Url = request.Url,
+            Slug = request.Slug ?? string.Empty,
+            Description = request.Description ?? string.Empty,
+            Url = request.Url ?? string.Empty,
             DownloadUrl = request.DownloadUrl,
             ThumbnailUrl = request.ThumbnailUrl,
             AuthorId = authorId,

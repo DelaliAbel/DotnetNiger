@@ -18,7 +18,7 @@ public class CategoryService : ICategoryService
         {
             Id = Guid.NewGuid(),
             Name = name,
-            Description = description
+            Description = description ?? string.Empty
         };
         _db.Categories.Add(category);
         await _db.SaveChangesAsync();
@@ -55,7 +55,7 @@ public class CategoryService : ICategoryService
         if (category == null) return null;
 
         category.Name = name;
-        category.Description = description;
+        category.Description = description ?? string.Empty;
         category.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();

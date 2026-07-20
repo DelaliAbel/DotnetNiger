@@ -18,7 +18,7 @@ public class EventCommandService : IEventCommandService
         {
             Id = Guid.NewGuid(),
             Title = request.Title,
-            Slug = request.Slug,
+            Slug = request.Slug ?? string.Empty,
             Description = request.Description,
             StartDate = request.StartDate,
             EndDate = request.EndDate,

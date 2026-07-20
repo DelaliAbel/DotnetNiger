@@ -57,11 +57,11 @@ public class TokenService
         };
     }
 
-    private async Task<TokenExchangeResult> HandleClientCredentialsAsync(HttpRequest request)
+    private Task<TokenExchangeResult> HandleClientCredentialsAsync(HttpRequest request)
     {
         var clientId = request.Form["client_id"].FirstOrDefault();
         if (string.IsNullOrEmpty(clientId))
-            return TokenExchangeResult.Failure("client_id is required");
+            return Task.FromResult(TokenExchangeResult.Failure("client_id is required"));
 
         var identity = new ClaimsIdentity(
             OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
@@ -83,7 +83,7 @@ public class TokenService
             ClaimTypes.Role => [OpenIddictConstants.Destinations.AccessToken, OpenIddictConstants.Destinations.IdentityToken],
             _ => [OpenIddictConstants.Destinations.AccessToken],
         });
-        return TokenExchangeResult.Success(principal);
+        return Task.FromResult(TokenExchangeResult.Success(principal));
     }
 
     private async Task<TokenExchangeResult> HandleRefreshTokenAsync(HttpContext context)

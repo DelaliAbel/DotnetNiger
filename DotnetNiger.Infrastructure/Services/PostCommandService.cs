@@ -18,7 +18,7 @@ public class PostCommandService : IPostCommandService
         {
             Id = Guid.NewGuid(),
             Title = request.Title,
-            Slug = request.Slug,
+            Slug = request.Slug ?? string.Empty,
             Content = request.Content,
             Excerpt = request.Excerpt,
             CoverImageUrl = request.CoverImageUrl,
