@@ -20,15 +20,7 @@
             return;
         }
 
-        var apiBase = Config["ApiBaseUrl"];
-        if (string.IsNullOrWhiteSpace(apiBase))
-        {
-            Navigation.NavigateTo("/");
-            return;
-        }
         var returnUrl = $"{Navigation.BaseUri.TrimEnd('/')}/auth/external-callback";
-        var path = "/Account/Login";
-        var loginUrl = $"{apiBase}{path}?returnUrl={Uri.EscapeDataString(returnUrl)}";
-        Navigation.NavigateTo(loginUrl, forceLoad: true);
+        Navigation.NavigateTo($"/login?returnUrl={Uri.EscapeDataString(returnUrl)}");
     }
 }
