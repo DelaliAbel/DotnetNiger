@@ -9,6 +9,7 @@ using OpenIddict.EntityFrameworkCore.Models;
 using Microsoft.AspNetCore.Authentication;
 using OpenIddict.Server.AspNetCore;
 using OpenIddict.Validation.AspNetCore;
+using Microsoft.OpenApi.Models;
 
 try
 {
@@ -18,7 +19,32 @@ try
         .AddApplicationPart(typeof(DependencyInjection).Assembly);
 
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+    builder.Services.AddSwaggerGen(options =>
+    {
+        options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+        {
+            Name = "Authorization",
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            In = ParameterLocation.Header,
+            Description = "Entrez votre token JWT"
+        });
+        options.AddSecurityRequirement(new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = "Bearer"
+                    }
+                },
+                Array.Empty<string>()
+            }
+        });
+    });
     builder.Services.AddMemoryCache();
 
     builder.Services.AddDbContext<DotnetNigerDbContext>(options =>
