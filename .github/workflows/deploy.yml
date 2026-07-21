@@ -2,7 +2,7 @@ name: Build & Push to Deploy Branches
 
 on:
   push:
-    branches: [BackEnd]
+    branches: [master]
 
 permissions:
   contents: write
@@ -47,10 +47,10 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore DotnetNiger.Client/DotnetNiger.Client.csproj
+        run: dotnet restore DotnetNiger.UI/DotnetNiger.UI.csproj
 
       - name: Publish Frontend
-        run: dotnet publish DotnetNiger.Client/DotnetNiger.Client.csproj -c Release -o publish/frontend
+        run: dotnet publish DotnetNiger.UI/DotnetNiger.UI.csproj -c Release -o publish/frontend
 
       - name: Push to deploy/frontend
         run: |

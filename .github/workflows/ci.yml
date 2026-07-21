@@ -1,10 +1,6 @@
 name: CI Build Verification
 
-on:
-  push:
-    branches: ["BackEnd", "main", "develop"]
-  pull_request:
-    branches: ["BackEnd", "main", "develop"]
+on: [push, pull_request]
 
 jobs:
   build-backend:
@@ -36,10 +32,10 @@ jobs:
           dotnet-version: "8.0.x"
 
       - name: Restore Frontend
-        run: dotnet restore DotnetNiger.Client/DotnetNiger.Client.csproj
+        run: dotnet restore DotnetNiger.UI/DotnetNiger.UI.csproj
 
       - name: Build Frontend
-        run: dotnet build DotnetNiger.Client/DotnetNiger.Client.csproj --configuration Release --no-restore /p:TreatWarningsAsErrors=true
+        run: dotnet build DotnetNiger.UI/DotnetNiger.UI.csproj --configuration Release --no-restore /p:TreatWarningsAsErrors=true
 
   build-solution:
     name: Build Full Solution
