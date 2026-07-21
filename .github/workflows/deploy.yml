@@ -23,7 +23,7 @@ jobs:
         run: dotnet restore DotnetNiger.sln
 
       - name: Publish Backend
-        run: dotnet publish DotnetNiger.Server/DotnetNiger.Server.csproj -c Release -o publish/backend --no-restore
+        run: dotnet publish DotnetNiger.Api/DotnetNiger.Api.csproj -c Release -o publish/backend --no-restore
 
       - name: Push to deploy/backend
         run: |

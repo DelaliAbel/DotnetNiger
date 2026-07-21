@@ -1,0 +1,649 @@
+@page "/admin/Users"
+@attribute [Authorize(Roles = "Admin,SuperAdmin")]
+@using DotnetNiger.UI.Models.Requests
+@using DotnetNiger.UI.Components.Admin.Cards
+@using DotnetNiger.UI.Components.Admin.Shared
+@using DotnetNiger.UI.Services.Contracts
+@inject IUserService UserService
+@inject ICertificateAdminService CertificateAdminService
+@inject INotificationService NotificationService
+@inject NavigationManager Navigation
+@inject IToastService ToastService
+@inject IUploadService UploadService
+@inject IJSRuntime JS
+
+<div class="min-h-screen p-6">
+    @if (!isLoading)
+    {
+        <div class="mb-8 flex items-center justify-between gap-4">
+            <div>
+                <AdminBreadcrumb />
+                <h3 class="mt-2 font-bold text-gray-900">Comptes, demandes en attente et actions d'administration.</h3>
+            </div>
+
+            <button @onclick="OpenCreateAsync"
+                    class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(91,77,245,0.25)] transition hover:brightness-95">
+                <i class="fas fa-plus text-sm"></i>
+                <span class="hidden sm:block">Nouveau</span>
+            </button>
+        </div>
+
+        <div class="mb-6 grid gap-4 sm:grid-cols-3">
+            <article class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-100">
+                <p class="text-sm text-gray-500">Total utilisateurs</p>
+                <p class="mt-2 text-3xl font-bold text-gray-900">@totalUsers</p>
+            </article>
+            <article class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-100">
+                <p class="text-sm text-gray-500">Actifs</p>
+                <p class="mt-2 text-3xl font-bold text-emerald-600">@activeUsers</p>
+            </article>
+            <article class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-100">
+                <p class="text-sm text-gray-500">En attente</p>
+                <p class="mt-2 text-3xl font-bold text-amber-600">@pendingUsers.Count</p>
+            </article>
+        </div>
+
+        <div class="mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center">
+            <div class="flex-1">
+                <div class="relative ">
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 transform text-gray-400"></i>
+                    <input type="text" placeholder="Rechercher un utilisateur..." value="@searchQuery"
+                           @oninput="HandleSearchInput"
+                           class="w-full bg-white min-w-[280px] rounded-lg border border-gray-300 py-3 pl-12 pr-4 focus:outline-none" />
+                </div>
+            </div>
+
+            <select value="@selectedRole" @onchange="HandleRoleChange"
+                    class="cursor-pointer rounded-lg border border-gray-300 bg-white px-4 py-3 hover:border-gray-400 focus:outline-none">
+                <option value="">Tous les rôles</option>
+                <option value="Admin">Admin</option>
+                <option value="User">User</option>
+            </select>
+
+            <div class="hidden md:block">
+                <ViewToggle @bind-IsListView="isListView" />
+            </div>
+        </div>
+
+        <section class="mb-8 rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-100">
+            <div class="mb-4 flex items-center justify-between gap-3">
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-900">Validation de certificat</h2>
+                    <p class="text-sm text-gray-500">Approuver ou rejeter les certificats des nouveaux membres.</p>
+                </div>
+                <button class="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700"
+                        @onclick="ReloadAsync">Actualiser</button>
+            </div>
+
+            @if (pendingCertificates.Count == 0)
+            {
+                <p class="rounded-lg border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500">Aucun certificat en
+                    attente.</p>
+                }
+        else
+                {
+                    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        @foreach (var cert in pendingCertificates)
+                        {
+                            <article class="rounded-lg border border-gray-200 p-4 shadow-sm">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="flex min-w-0 items-center gap-3">
+                                        <ResolvedImage Src="@cert.AvatarUrl" Icon="fa-user" class="h-14 w-14 rounded-full" />
+                                        <div class="min-w-0">
+                                            <p class="truncate text-sm font-semibold text-gray-900">@cert.UserName</p>
+                                            <p class="truncate text-xs text-gray-500">@cert.UserEmail</p>
+                                            <p class="mt-1 text-xs text-gray-400">@cert.CertificateType</p>
+                                            @if (!string.IsNullOrWhiteSpace(cert.CertificateUrl))
+                                            {
+                                                <a href="@cert.CertificateUrl" target="_blank"
+                                                   class="mt-1 inline-flex items-center gap-1 text-xs text-accent hover:underline">
+                                                    <i class="fas fa-external-link-alt"></i> Voir le certificat
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
+                                    <AdminActionDropdown ItemId="cert.Id" Status="Pending" ViewLabel="Voir" EditLabel="Modifier"
+                                                         DeleteLabel="Rejeter" ApproveLabel="Approuver" RejectLabel="Rejeter"
+                                                         OnView="ViewCertificateAsync" OnEdit="EditCertificateAsync" OnDelete="RejectCertificateAsync"
+                                                         OnApprove="ApproveCertificateAsync" OnReject="RejectCertificateAsync" />
+                                </div>
+                            </article>
+                        }
+                    </div>
+                }
+            </section>
+
+            @if (isListView)
+            {
+                <UsersTable Users="pagedUsers" OnEdit="EditAsync" OnDelete="DeleteAsync" OnToggleStatus="ToggleStatusAsync"
+                            OnAddToTeam="HandleAddToTeam" OnRemoveFromTeam="HandleRemoveFromTeam" OnChangeRole="HandleChangeRole" />
+            }
+            else
+            {
+                <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    @foreach (var user in pagedUsers)
+                    {
+                        <AdminUsersCard User="user" OnEdit="EditAsync" OnDelete="DeleteAsync" OnToggleStatus="ToggleStatusAsync"
+                                        OnAddToTeam="HandleAddToTeam" OnRemoveFromTeam="HandleRemoveFromTeam" OnChangeRole="HandleChangeRole" />
+                    }
+                </div>
+            }
+
+            <Paginated @bind-CurrentPage="currentPage" TotalPages="@totalPages" />
+        }
+    else
+        {
+            <div class="mb-8 flex items-center justify-between gap-4">
+                <div>
+                    <AdminBreadcrumb />
+                    <Skeleton Type="SkeletonType.Title" Class="h-6 w-96 mt-2" />
+                </div>
+                <Skeleton Type="SkeletonType.Button" Class="h-12 w-32" />
+            </div>
+
+            <div class="mb-6 grid gap-4 sm:grid-cols-3">
+                @for (int i = 0; i < 3; i++)
+                {
+                    <article class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-100">
+                        <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-20" />
+                        <Skeleton Type="SkeletonType.Title" Class="h-8 w-16 mt-2" />
+                    </article>
+                }
+            </div>
+
+            <div class="mb-6 flex flex-col items-stretch gap-4 md:flex-row md:items-center">
+                <div class="flex-1">
+                    <Skeleton Type="SkeletonType.Custom" Class="h-12 w-full rounded-lg" />
+                </div>
+                <Skeleton Type="SkeletonType.Custom" Class="h-12 w-40 rounded-lg" />
+                <Skeleton Type="SkeletonType.Custom" Class="h-12 w-24 rounded-lg" />
+            </div>
+
+            <section class="mb-8 rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-100">
+                <div class="mb-4 flex items-center justify-between gap-3">
+                    <div>
+                        <Skeleton Type="SkeletonType.Title" Class="h-6 w-48" />
+                        <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-64 mt-1" />
+                    </div>
+                    <Skeleton Type="SkeletonType.Button" Class="h-10 w-28" />
+                </div>
+                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    @for (int i = 0; i < 3; i++)
+                    {
+                        <article class="rounded-lg border border-gray-200 p-4 shadow-sm">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="flex min-w-0 items-center gap-3">
+                                    <Skeleton Type="SkeletonType.Avatar" Size="56px" Class="h-14 w-14" />
+                                    <div class="min-w-0">
+                                        <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-32" />
+                                        <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-40 mt-1" />
+                                        <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-20 mt-1" />
+                                    </div>
+                                </div>
+                                <Skeleton Type="SkeletonType.Custom" Class="h-8 w-24 rounded-lg" />
+                            </div>
+                        </article>
+                    }
+                </div>
+            </section>
+
+            <div class="rounded-lg bg-white ring-1 ring-gray-100 overflow-hidden">
+                <div class="divide-y divide-gray-100">
+                    @for (int i = 0; i < 6; i++)
+                    {
+                        <div class="flex items-center gap-3 px-5 py-4">
+                            <Skeleton Type="SkeletonType.Custom" Class="h-4 w-4 rounded" />
+                            <Skeleton Type="SkeletonType.Avatar" Size="36px" Class="h-9 w-9" />
+                            <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-1/4" />
+                            <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-1/4" />
+                            <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-1/6" />
+                            <div class="flex gap-2 ml-auto">
+                                <Skeleton Type="SkeletonType.Custom" Class="h-8 w-8 rounded-lg" />
+                                <Skeleton Type="SkeletonType.Custom" Class="h-8 w-8 rounded-lg" />
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="mt-6 flex items-center justify-center gap-2">
+                @for (int i = 0; i < 3; i++)
+                {
+                    <Skeleton Type="SkeletonType.Custom" Class="h-10 w-10 rounded-lg" />
+                }
+            </div>
+        }
+
+        @if (isFormOpen)
+        {
+            <div class="fixed inset-0 bg-black bg-opacity-50 z-40" @onclick="CloseForm"></div>
+            <div
+                class="fixed top-0 right-0 h-screen w-full sm:w-4/5 md:w-3/5 lg:w-2/5 bg-white shadow-lg z-50 transform transition-transform duration-300">
+                <div class="flex flex-col h-full">
+                    <div class="flex justify-between items-center px-6 py-4 border-b">
+                        <h2 class="text-xl font-semibold"> "Nouveau utilisateur"</h2>
+                        <button @onclick="CloseForm" class="text-gray-500 hover:text-black text-lg">&times;</button>
+                    </div>
+                    <div class="flex-1 overflow-y-auto px-6 py-6 space-y-5">
+                        <EditForm Model="CreateUser" OnValidSubmit="SaveAsync">
+                            <DataAnnotationsValidator />
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Nom Complet</label>
+                                <InputText @bind-Value="CreateUser.FullName"
+                                           class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                           placeholder="Titre de la ressource" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Email</label>
+                                <InputText @bind-Value="CreateUser.Email"
+                                           class="w-full border rounded-lg px-4 py-2 focus:outline-none"
+                                           placeholder="Email de l'utilisateur" />
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Mot de Passe</label>
+                                <InputText @bind-Value="CreateUser.Password" type="password"
+                                           class="w-full border rounded-lg px-4 py-2 focus:outline-none"
+                                           placeholder="le mot de passe temporaire" />
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-medium mb-1">Position dans l'équipe</label>
+                                <InputText @bind-Value="CreateUser.Position"
+                                           class="w-full border rounded-lg px-4 py-2 focus:outline-none"
+                                           placeholder="Ex: Community Lead" />
+                            </div>
+
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <InputCheckbox @bind-Value="CreateUser.IsTeamMember"
+                                               class="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary" />
+                                <span class="text-sm font-medium">Intégrer à l'équipe</span>
+                            </label>
+
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <InputCheckbox @bind-Value="CreateUser.IsCollaborator"
+                                               class="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary" />
+                                <span class="text-sm font-medium">Collaborateur</span>
+                            </label>
+
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <InputCheckbox @bind-Value="CreateUser.IsAdmin"
+                                               class="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary" />
+                                <span class="text-sm font-medium">Administrateur</span>
+                            </label>
+
+                            <label class="flex items-center gap-3 cursor-pointer">
+                                <InputCheckbox @bind-Value="CreateUser.HasApprovedCertificate"
+                                               class="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary" />
+                                <span class="text-sm font-medium">Certificat approuvé</span>
+                            </label>
+
+                            <div class="border-t pt-4 flex justify-end gap-3 bg-white">
+                                <button type="button" @onclick="CloseForm"
+                                        class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">
+                                    Annuler
+                                </button>
+                                <button type="submit"
+                                        class="inline-flex items-center gap-2 rounded-lg bg-green-600 px-6 py-3 text-sm font-semibold text-white transition hover:bg-green-700">
+                                    <i class="fas fa-paper-plane"></i>
+                                    Créer
+                                </button>
+                            </div>
+                        </EditForm>
+                    </div>
+                </div>
+            </div>
+
+        }
+    </div>
+
+@code {
+    private bool isLoading = true;
+    private bool isListView = false;
+    private bool responsiveViewApplied;
+    private string searchQuery = string.Empty;
+    private string selectedRole = string.Empty;
+    private string editPrimaryRole = "User";
+
+    private List<UserDto> allUsers = new();
+    private List<UserDto> filteredUsers = new();
+    private List<UserDto> pendingUsers = new();
+    private List<CertificateAdminDto> pendingCertificates = new();
+    private int totalUsers;
+    private int activeUsers;
+
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalPages => Math.Max(1, (int)Math.Ceiling((double)filteredUsers.Count / pageSize));
+    private int SafeCurrentPage => Math.Clamp(currentPage, 1, totalPages);
+    private List<UserDto> pagedUsers => filteredUsers
+        .Skip((SafeCurrentPage - 1) * pageSize)
+        .Take(pageSize)
+        .ToList();
+
+    private bool isFormOpen;
+    private Guid? editingUserId;
+    private UserDto editModel = new();
+    private CreateUserRequest CreateUser = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        allUsers = await UserService.GetUsersAsync();
+        totalUsers = allUsers.Count;
+        activeUsers = allUsers.Count(u => u.IsActive);
+        pendingUsers = allUsers.Where(u => !u.IsActive).ToList();
+        pendingCertificates = await CertificateAdminService.GetAllAsync("Pending");
+        await ApplyFiltersAsync();
+    }
+
+    private async Task ApplyFiltersAsync()
+    {
+        var users = string.IsNullOrWhiteSpace(searchQuery)
+            ? allUsers.ToList()
+            : await UserService.SearchUsersAsync(searchQuery);
+
+        if (!string.IsNullOrWhiteSpace(selectedRole))
+        {
+            users = users.Where(user => user.Roles.Any(role => role.Equals(selectedRole,
+StringComparison.OrdinalIgnoreCase))).ToList();
+        }
+
+        filteredUsers = users;
+        currentPage = 1;
+        isLoading = false;
+    }
+
+    private Task HandleSearchInput(ChangeEventArgs args)
+    {
+        searchQuery = args.Value?.ToString() ?? string.Empty;
+        return ApplyFiltersAsync();
+    }
+
+    private Task HandleRoleChange(ChangeEventArgs args)
+    {
+        selectedRole = args.Value?.ToString() ?? string.Empty;
+        return ApplyFiltersAsync();
+    }
+
+    private static string GetPrimaryRole(UserDto user)
+        => user.Roles.FirstOrDefault() ?? "User";
+
+    private async Task ApproveAsync(Guid userId)
+    {
+        try
+        {
+            await UserService.ApproveUserAsync(userId);
+            ToastService.ShowToast("Utilisateur approuvé.", ToastLevel.Success);
+            await ReloadAsync();
+        }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors de l'approbation.", ToastLevel.Error);
+        }
+    }
+
+    private async Task RejectAsync(Guid userId)
+    {
+        try
+        {
+            await UserService.RejectUserAsync(userId);
+            ToastService.ShowToast("Utilisateur rejeté.", ToastLevel.Success);
+            await ReloadAsync();
+        }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors du rejet.", ToastLevel.Error);
+        }
+    }
+
+    private async Task ApproveCertificateAsync(Guid certId)
+    {
+        try
+        {
+            await CertificateAdminService.ApproveAsync(certId);
+            ToastService.ShowToast("Certificat approuvé.", ToastLevel.Success);
+            await ReloadAsync();
+        }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors de l'approbation du certificat.", ToastLevel.Error);
+        }
+    }
+
+    private async Task RejectCertificateAsync(Guid certId)
+    {
+        try
+        {
+            await CertificateAdminService.RejectAsync(certId);
+            ToastService.ShowToast("Certificat rejeté.", ToastLevel.Success);
+            await ReloadAsync();
+        }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors du rejet du certificat.", ToastLevel.Error);
+        }
+    }
+
+    private async Task ViewCertificateAsync(Guid certId)
+    {
+        var cert = pendingCertificates.FirstOrDefault(c => c.Id == certId);
+        if (cert is not null)
+        {
+            Navigation.NavigateTo($"/admin/profile/{cert.UserId}");
+        }
+        await Task.CompletedTask;
+    }
+
+    private async Task EditCertificateAsync(Guid certId)
+    {
+        var cert = pendingCertificates.FirstOrDefault(c => c.Id == certId);
+        if (cert is not null)
+        {
+            Navigation.NavigateTo($"/admin/profile/{cert.UserId}");
+        }
+        await Task.CompletedTask;
+    }
+
+    private async Task DeleteAsync(Guid userId)
+    {
+        try
+        {
+            await UserService.DeleteUserAsync(userId);
+            ToastService.ShowToast("Utilisateur supprimé.", ToastLevel.Success);
+            await ReloadAsync();
+        }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors de la suppression.", ToastLevel.Error);
+        }
+    }
+
+    private async Task ToggleStatusAsync(Guid userId)
+    {
+        try
+        {
+            var user = await UserService.GetUserByIdAsync(userId);
+            if (user is null)
+                return;
+
+            user.IsActive = !user.IsActive;
+            await UserService.UpdateUserAsync(user);
+            ToastService.ShowToast(user.IsActive ? "Utilisateur activé." : "Utilisateur désactivé.", ToastLevel.Success);
+            await ReloadAsync();
+        }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors du changement de statut.", ToastLevel.Error);
+        }
+    }
+
+    private async Task HandleAddToTeam((Guid UserId, string Position) request)
+    {
+        try
+        {
+            await UserService.AddToTeamAsync(request.UserId, request.Position);
+            await NotificationService.SendNotificationAsync(request.UserId, "Vous avez été intégré(e) à l'équipe DotnetNiger.");
+            ToastService.ShowToast("Utilisateur intégré à l'équipe.", ToastLevel.Success);
+            await ReloadAsync();
+        }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors de l'intégration à l'équipe.", ToastLevel.Error);
+        }
+    }
+
+    private async Task HandleRemoveFromTeam(Guid userId)
+    {
+        try
+        {
+            await UserService.RemoveFromTeamAsync(userId);
+            await NotificationService.SendNotificationAsync(userId, "Vous avez été retiré(e) de l'équipe DotnetNiger.");
+            ToastService.ShowToast("Utilisateur retiré de l'équipe.", ToastLevel.Success);
+            await ReloadAsync();
+        }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors du retrait de l'équipe.", ToastLevel.Error);
+        }
+    }
+
+    private async Task HandleChangeRole(ChangeRoleRequest request)
+    {
+        try
+        {
+            if (request.IsRemove)
+            {
+                await UserService.RemoveRoleAsync(request.UserId, request.NewRole);
+                await NotificationService.SendNotificationAsync(request.UserId, $"Le rôle \"{request.NewRole}\" vous a été retiré.");
+            }
+            else
+            {
+                await UserService.AssignRoleAsync(request.UserId, request.NewRole);
+                await NotificationService.SendNotificationAsync(request.UserId, $"Le rôle \"{request.NewRole}\" vous a été attribué.");
+            }
+            ToastService.ShowToast("Rôle modifié avec succès.", ToastLevel.Success);
+            await ReloadAsync();
+        }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors du changement de rôle.", ToastLevel.Error);
+        }
+    }
+
+
+    private async Task EditAsync(Guid userId)
+    {
+        var user = await UserService.GetUserByIdAsync(userId);
+        if (user is null)
+            return;
+
+        editingUserId = userId;
+        editModel = CloneUser(user);
+        CreateUser.FullName = user.FullName;
+        CreateUser.Email = user.Email;
+        CreateUser.Password = string.Empty;
+        CreateUser.IsTeamMember = user.IsTeamMember;
+        CreateUser.Position = user.Position;
+        CreateUser.IsCollaborator = false;
+        CreateUser.IsAdmin = false;
+        CreateUser.HasApprovedCertificate = false;
+        editPrimaryRole = GetPrimaryRole(user);
+        isFormOpen = true;
+    }
+
+    private async Task OpenCreateAsync()
+    {
+        editingUserId = null;
+        CreateUser = new CreateUserRequest();
+        editModel = new UserDto
+        {
+            IsActive = true,
+            CreatedAt = DateTime.Now,
+            Roles = new List<string> { "User" }
+        };
+        editPrimaryRole = "User";
+        isFormOpen = true;
+        await Task.CompletedTask;
+    }
+
+    private void CloseForm()
+    {
+        isFormOpen = false;
+        editingUserId = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        try
+        {
+            editModel.Roles = new List<string> { editPrimaryRole };
+
+            if (editingUserId is null)
+            {
+                await UserService.CreateUserAsync(CreateUser);
+                ToastService.ShowToast("Utilisateur créé.", ToastLevel.Success);
+            }
+            else
+            {
+                editModel.FullName = CreateUser.FullName;
+                editModel.Email = CreateUser.Email;
+                editModel.Id = editingUserId.Value;
+                editModel.IsTeamMember = CreateUser.IsTeamMember;
+                editModel.Position = CreateUser.Position;
+                await UserService.UpdateUserAsync(editModel);
+                ToastService.ShowToast("Utilisateur mis à jour.", ToastLevel.Success);
+            }
+
+            CloseForm();
+            await ReloadAsync();
+        }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors de l'enregistrement.", ToastLevel.Error);
+        }
+    }
+
+    private static UserDto CloneUser(UserDto user)
+        => new()
+        {
+            Id = user.Id,
+            Username = user.Username,
+            Email = user.Email,
+            FullName = user.FullName,
+            PhoneNumber = user.PhoneNumber,
+            Bio = user.Bio,
+            AvatarUrl = user.AvatarUrl,
+            Country = user.Country,
+            City = user.City,
+            IsActive = user.IsActive,
+            IsTeamMember = user.IsTeamMember,
+            Position = user.Position,
+            CreatedAt = user.CreatedAt,
+            LastLoginAt = user.LastLoginAt,
+            Skills = user.Skills.ToList(),
+            Roles = user.Roles.ToList(),
+            SocialLinks = user.SocialLinks.ToList()
+        };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || responsiveViewApplied)
+        {
+            return;
+        }
+
+        responsiveViewApplied = true;
+        var isMobile = await JS.InvokeAsync<bool>("dotnetNigerIsMobile");
+        var shouldShowListView = !isMobile;
+
+        if (isListView != shouldShowListView)
+        {
+            isListView = shouldShowListView;
+            StateHasChanged();
+        }
+    }
+}

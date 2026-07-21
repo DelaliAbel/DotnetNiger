@@ -19,16 +19,10 @@ jobs:
           dotnet-version: "9.0.x"
 
       - name: Restore Backend
-        run: dotnet restore DotnetNiger.Server/DotnetNiger.Server.csproj
+        run: dotnet restore DotnetNiger.Api/DotnetNiger.Api.csproj
 
       - name: Build Backend
-        run: dotnet build DotnetNiger.Server/DotnetNiger.Server.csproj --configuration Release --no-restore /p:TreatWarningsAsErrors=true
-
-      - name: Build Infrastructure
-        run: dotnet build DotnetNiger.Infrastructure/DotnetNiger.Infrastructure.csproj --configuration Release --no-restore /p:TreatWarningsAsErrors=true
-
-      - name: Build Domain
-        run: dotnet build DotnetNiger.Domain/DotnetNiger.Domain.csproj --configuration Release --no-restore /p:TreatWarningsAsErrors=true
+        run: dotnet build DotnetNiger.Api/DotnetNiger.Api.csproj --configuration Release --no-restore /p:TreatWarningsAsErrors=true
 
   build-frontend:
     name: Build Frontend (net8.0)

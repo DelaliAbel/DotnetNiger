@@ -1,0 +1,9 @@
+global using DotnetNiger.Api.Services.Auth;
+global using DotnetNiger.Api.Services.Content;
+global using DotnetNiger.Api.Services.Community;
+global using DotnetNiger.Api.Services.Admin;
+global using DotnetNiger.Api.Services.User;
+global using DotnetNiger.Api.Services.General;
+global using DotnetNiger.Api.Data;
+global using DotnetNiger.Api.Data.Email;
+global using DotnetNiger.Api.Data.Email.Templates;

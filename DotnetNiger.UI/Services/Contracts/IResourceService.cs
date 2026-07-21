@@ -1,0 +1,22 @@
+using DotnetNiger.UI.Models.Requests;
+using DotnetNiger.UI.Models.Responses;
+
+namespace DotnetNiger.UI.Services.Contracts;
+
+public interface IResourceService
+{
+    Task<List<ResourceDto>> GetAllResourcesAsync();
+    Task<ResourceDto?> GetResourceByIdAsync(Guid id);
+    Task<ResourceDto?> GetResourceBySlugAsync(string slug);
+    Task<List<ResourceDto>> GetResourcesByTypeAsync(string resourceType);
+    Task<List<ResourceDto>> GetResourcesByLevelAsync(string level);
+    Task<List<ResourceDto>> SearchResourcesAsync(string query);
+    Task<List<string>> GetResourceTypesAsync();
+    Task<List<string>> GetLevelsAsync();
+    Task<ResourceDto?> CreateResourceAsync(CreateResourceRequest request);
+    Task<ResourceDto?> AddResourceAsync(CreateResourceRequest request);
+    Task<ResourceDto?> UpdateResourceAsync(Guid id, UpdateResourceRequest request);
+    Task<bool> DeleteResourceAsync(Guid id);
+    Task IncrementViewCountAsync(Guid id);
+    Task<List<ResourceDto>> GetMyResourcesAsync();
+}

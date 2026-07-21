@@ -1,0 +1,130 @@
+﻿@page "/Community"
+@using DotnetNiger.UI.Components.Cards;
+@using DotnetNiger.UI.Models.Responses
+@using DotnetNiger.UI.Services.Contracts
+@inject IEventService EventService
+@inject IProjectService ProjectService
+@inject NavigationManager Navigation
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
+@* Page publique : espace communauté - implémentation fidèle au design fourni *@
+
+<div class="bg-gray-50 text-gray-800">
+	<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 md:py-16">
+		<header class="text-center mb-8 sm:mb-12">
+			<h2 class="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-extrabold text-primary">Meetups et
+				Evenements</h2>
+				<p class="mt-2 sm:mt-3 text-xs sm:text-sm md:text-base text-gray-600">Les plus populaires des evenements</p>
+			</header>
+
+			<section class="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+				@if (isLoading)
+				{
+					@for (int i = 0; i < 6; i++)
+					{
+						<SkeletonCard HasImage="true" HasBadge="true" HasFooter="true" Class="rounded-xl" />
+					}
+				}
+				else if (upcomingEvents?.Count > 0)
+				{
+					@foreach (var eventItem in upcomingEvents.Take(maxUpcomingEvents))
+					{
+						<EventCard Event="eventItem" />
+					}
+				}
+				else
+				{
+					<div class="col-span-full text-center py-8 sm:py-10">
+						<p class="text-xs sm:text-sm md:text-base text-gray-600">Aucun événement à venir pour le moment.</p>
+					</div>
+				}
+			</section>
+
+			<div class="mt-8 sm:mt-10 text-center">
+				<button
+					class="bg-primary text-white px-5 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm md:text-base rounded-lg shadow hover:bg-opacity-90 transition"
+					@onclick="NavigateToAllEvents">
+					Voir d'autres événements
+				</button>
+			</div>
+		</div>
+
+		<section class="bg-purple-50 py-8 sm:py-12 md:py-16">
+			<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+				<header class="text-center mb-6 sm:mb-8">
+					<h2 class="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-extrabold">Projets Open Source de
+						la Communauté</h2>
+						<p class="mt-2 sm:mt-2 text-xs sm:text-sm md:text-base text-gray-600">Découvrez et contribuez aux
+							projets créés par les développeurs .NET Niger</p>
+						</header>
+
+						<div class="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
+							@if (projects is not null)
+							{
+								@foreach (var project in projects)
+								{
+									<ProjectCard Project="project" />
+								}
+							}
+							else
+							{
+								@for (int j = 0; j < 3; j++)
+								{
+									<div class="bg-white rounded-lg shadow-md p-3 sm:p-4 md:p-6">
+										<div class="h-5 sm:h-6 bg-gray-200 rounded w-3/4"></div>
+										<div class="mt-2 sm:mt-3 space-y-2">
+											<div class="h-3 bg-gray-200 rounded w-full"></div>
+											<div class="h-3 bg-gray-200 rounded w-5/6"></div>
+										</div>
+										<div class="mt-3 sm:mt-4 flex flex-wrap gap-1 sm:gap-2">
+											<div class="h-5 sm:h-6 bg-gray-200 rounded w-12"></div>
+											<div class="h-5 sm:h-6 bg-gray-200 rounded w-20"></div>
+										</div>
+										<div class="mt-4 sm:mt-6 h-8 bg-gray-200 rounded w-32"></div>
+									</div>
+								}
+							}
+						</div>
+					</div>
+				</section>
+			</div>
+
+@code {
+	private List<EventDto> upcomingEvents = new();
+	private List<ProjectResponse>? projects;
+	private bool isLoading = true;
+	private int maxUpcomingEvents => int.TryParse(Config["Community:MaxUpcomingEvents"], out var val) ? val : 6;
+
+	protected override async Task OnInitializedAsync()
+	{
+		try
+		{
+			// Charger les projets
+			var result = await ProjectService.GetAllAsync(status: null, query: null, page: 1, pageSize: 6);
+			projects = result?.Items;
+
+			// Charger les événements à venir (publiés et non archivés)
+			var allEvents = await EventService.GetPublishedEventsAsync();
+
+			// Filtrer et trier par date de début (ascendant)
+			upcomingEvents = allEvents
+				?.Where(e => e.StartDate >= DateTime.UtcNow)
+				.OrderBy(e => e.StartDate)
+				.ToList() ?? new();
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine($"Erreur lors du chargement des événements: {ex.Message}");
+			upcomingEvents = new();
+		}
+		finally
+		{
+			isLoading = false;
+		}
+	}
+
+	private void NavigateToAllEvents()
+	{
+		Navigation.NavigateTo("/evenements");
+	}
+
+}

@@ -1,0 +1,17 @@
+@* Redirects to the Blazor login page when auth fails. *@
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (state.User.Identity?.IsAuthenticated == true)
+        {
+            Navigation.NavigateTo("/admin");
+            return;
+        }
+
+        Navigation.NavigateTo("/login");
+    }
+}

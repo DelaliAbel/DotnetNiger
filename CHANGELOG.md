@@ -16,6 +16,15 @@ Le format est base sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) 
 ### Fixed
 - Tags/Categories effaces a l'update : backend ne remplace plus si `null`
 - CORS : plus de `AllowAnyOrigin()` en dur
+- Tous les Update DTOs frontend (Event, Resource, Post, Project) rendus nullable pour corriger les PUT 400
+- Routes API frontend synchronisées avec le backend (auth, admin, profile)
+- `Sidebar.razor` : NewsLetter et Commentaires cachés pour les Collaborateurs
+- `RedirectToLogin.razor` : utilisateur connecté sans rôle redirigé vers `/admin` au lieu de `/`
+
+### Added
+- `BootstrapOpenIddictAsync` dans SeedData — enregistre le client OpenIddict "web-ui" au démarrage
+- Redirect URI `/auth/callback-popup.html` ajouté au client web-ui (nécessaire pour le popup OAuth)
+- `RoleConstants.IsSuperAdminRole()`
 
 ## [2026-07-19] — Consolidation monolithique
 

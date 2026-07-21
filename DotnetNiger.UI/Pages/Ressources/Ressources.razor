@@ -1,0 +1,226 @@
+﻿@page "/ressources"
+@inject IResourceService ResourceService
+@inject NavigationManager Navigation
+
+@using DotnetNiger.UI.Components.Cards;
+@using DotnetNiger.UI.Components.Admin.Cards;
+
+<PageTitle>Ressources - .NET Niger</PageTitle>
+
+@if (isLoading)
+{
+    <section class="bg-gradient-to-b from-accent-bg to-white px-4 py-10 sm:py-14 lg:px-10">
+        <div class="mx-auto w-full max-w-6xl">
+            <div class="text-center mb-10">
+                <Skeleton Type="SkeletonType.Title" Class="h-8 w-72 mx-auto" />
+                <Skeleton Type="SkeletonType.Text" Lines="1" Class="mt-3 max-w-lg mx-auto" />
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
+                @for (int i = 0; i < 8; i++)
+                {
+                    <SkeletonCard HasImage="true" HasBadge="true" Class="rounded-xl" />
+                }
+            </div>
+        </div>
+    </section>
+}
+else if (errorMessage is not null)
+{
+    <div class="min-h-[60vh] flex items-center justify-center px-4">
+        <div class="text-center max-w-md">
+            <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100">
+                <i class="fas fa-exclamation-triangle text-2xl text-red-500"></i>
+            </div>
+            <h2 class="text-lg font-bold text-gray-900 mb-2">Oups ! Une erreur est survenue</h2>
+            <p class="text-sm text-gray-500 mb-6">@errorMessage</p>
+            <button @onclick="LoadResourcesAsync"
+                    class="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:brightness-110 transition">
+                <i class="fas fa-redo-alt"></i>
+                Réessayer
+            </button>
+        </div>
+    </div>
+}
+else
+{
+    <section class="bg-gradient-to-b from-accent-bg to-white px-4 py-10 sm:py-14 lg:px-10">
+        <div class="mx-auto w-full max-w-6xl">
+            <div class="text-center mb-10">
+                <h1 class="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-primary mb-3">Ressources</h1>
+                <p class="text-sm sm:text-base text-gray-600 max-w-2xl mx-auto">
+                    Documentation, tutoriels, articles et outils pour la communauté .NET — trouvez tout ce qu'il vous faut
+                    pour monter en compétence.
+                </p>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3 mb-8">
+                <div class="relative flex-1">
+                    <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" placeholder="Rechercher une ressource..." @bind="searchQuery" @bind:event="oninput"
+                           class="w-full bg-white pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-sm transition" />
+                    @if (!string.IsNullOrEmpty(searchQuery))
+                    {
+                        <button @onclick="() => { searchQuery = string.Empty; currentPage = 1; }"
+                                class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    }
+                </div>
+                <select @bind="selectedType" @bind:after="() => currentPage = 1"
+                        class="bg-white px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm min-w-[150px]">
+                    <option value="">Tous les types</option>
+                    @foreach (var t in resourceTypes)
+                    {
+                        <option value="@t">@t</option>
+                    }
+                </select>
+                <select @bind="selectedLevel" @bind:after="() => currentPage = 1"
+                        class="bg-white px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm min-w-[150px]">
+                    <option value="">Tous les niveaux</option>
+                    @foreach (var l in levels)
+                    {
+                        <option value="@l">@l</option>
+                    }
+                </select>
+            </div>
+
+            @if (filteredResources.Count == 0)
+            {
+                <div class="text-center py-16">
+                    <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
+                        <i class="fas fa-search text-2xl text-gray-400"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-1">Aucune ressource trouvée</h3>
+                    <p class="text-sm text-gray-500 mb-4">Essayez de modifier vos filtres ou votre recherche.</p>
+                    <button @onclick="ClearFilters" class="text-sm text-primary font-semibold hover:underline">
+                        Effacer tous les filtres
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 sm:gap-6">
+                    @foreach (var resource in pagedResources)
+                    {
+                        <RessourceCard Resource="resource" />
+                    }
+                </div>
+            }
+
+            <div class="flex items-center justify-between mt-6">
+                <p class="text-sm text-gray-500">
+                    @((currentPage - 1) * pageSize + 1)–@Math.Min(currentPage * pageSize, filteredResources.Count) sur
+                    @filteredResources.Count ressource@(filteredResources.Count > 1 ? "s" : "")
+                </p>
+                <Paginated @bind-CurrentPage="currentPage" TotalPages="@totalPages" MaxVisiblePages="5" />
+            </div>
+        </div>
+    </section>
+}
+
+@code {
+    private bool isLoading = true;
+    private string? errorMessage;
+    private List<ResourceDto> allResources = [];
+    private List<string> resourceTypes = [];
+    private List<string> levels = [];
+
+    private string searchQuery = string.Empty;
+    private string selectedType = string.Empty;
+    private string selectedLevel = string.Empty;
+    private int currentPage = 1;
+    private const int pageSize = 9;
+
+    private List<ResourceDto> filteredResources => allResources
+        .Where(r => string.IsNullOrEmpty(searchQuery) ||
+                    r.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    r.Description.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    r.Tags.Any(t => t.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)))
+        .Where(r => string.IsNullOrEmpty(selectedType) || r.ResourceType == selectedType)
+        .Where(r => string.IsNullOrEmpty(selectedLevel) || r.Level == selectedLevel)
+        .ToList();
+
+    private int totalPages => Math.Max(1, (int)Math.Ceiling((double)filteredResources.Count / pageSize));
+
+    private List<ResourceDto> pagedResources => filteredResources
+        .Skip((SafeCurrentPage - 1) * pageSize)
+        .Take(pageSize)
+        .ToList();
+
+    private int SafeCurrentPage => Math.Clamp(currentPage, 1, totalPages);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadResourcesAsync();
+    }
+
+    private async Task LoadResourcesAsync()
+    {
+        isLoading = true;
+        errorMessage = null;
+        try
+        {
+            allResources = await ResourceService.GetAllResourcesAsync();
+            resourceTypes = await ResourceService.GetResourceTypesAsync();
+            levels = await ResourceService.GetLevelsAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void ClearFilters()
+    {
+        searchQuery = string.Empty;
+        selectedType = string.Empty;
+        selectedLevel = string.Empty;
+        currentPage = 1;
+    }
+
+    private static string RowIconBgClass(string type) => type switch
+    {
+        "Documentation" => "bg-blue-500",
+        "Tutoriel" => "bg-emerald-500",
+        "Article" => "bg-purple-500",
+        "GitHub" => "bg-gray-700",
+        "Cours" => "bg-orange-500",
+        "Livre" => "bg-rose-500",
+        "Outil" => "bg-cyan-500",
+        _ => "bg-indigo-500"
+    };
+
+    private static string RowIconClass(string type) => type switch
+    {
+        "Documentation" => "fas fa-book",
+        "Tutoriel" => "fas fa-graduation-cap",
+        "Article" => "fas fa-newspaper",
+        "GitHub" => "fab fa-github",
+        "Cours" => "fas fa-video",
+        "Livre" => "fas fa-book-open",
+        "Outil" => "fas fa-wrench",
+        _ => "fas fa-file"
+    };
+
+    private static string LevelTextColor(string level) => level switch
+    {
+        "Débutant" => "text-emerald-600",
+        "Intermédiaire" or "Intermediaire" => "text-amber-600",
+        "Avancé" => "text-rose-600",
+        "Tous niveaux" => "text-blue-600",
+        _ => "text-gray-500"
+    };
+
+    private static string RowLevelIcon(string level) => level switch
+    {
+        "Débutant" => "fas fa-seedling text-xs",
+        "Intermédiaire" or "Intermediaire" => "fas fa-chart-line text-xs",
+        "Avancé" => "fas fa-rocket text-xs",
+        "Tous niveaux" => "fas fa-users text-xs",
+        _ => "fas fa-tag text-xs"
+    };
+}

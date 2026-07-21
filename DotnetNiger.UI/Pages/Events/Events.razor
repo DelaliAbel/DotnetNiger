@@ -1,0 +1,178 @@
+﻿@page "/evenements"
+@using DotnetNiger.UI.Components.Cards;
+@using DotnetNiger.UI.Components.Admin.Cards;
+
+@inject IEventService EventService
+@inject IJSRuntime JS
+
+<PageTitle>Événements - .NET Niger</PageTitle>
+
+<section class="bg-accent-bg px-4 py-14 sm:px-6 lg:px-10">
+	<div class="mx-auto w-full max-w-6xl">
+		<div class="mb-8 sm:mb-10 text-center">
+			<h1 class="text-lg sm:text-xl md:text-2xl lg:text-3xl xl:text-4xl font-extrabold text-primary">Événements et
+				Meetups .NET Niger</h1>
+				<p class="mt-2 sm:mt-3 text-xs sm:text-sm md:text-base text-gray-700">Découvrez tous nos événements en ligne
+					et en personne</p>
+				</div>
+
+				<div class="flex flex-col sm:flex-row gap-3 mb-8">
+					<div class="relative flex-1">
+						<i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+						<input type="text" placeholder="Rechercher un événement..." @bind="searchQuery" @bind:event="oninput"
+							   @bind:after="() => currentPage = 1"
+							   class="w-full bg-white pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary text-sm transition" />
+						@if (!string.IsNullOrEmpty(searchQuery))
+						{
+							<button @onclick="() => { searchQuery = string.Empty; }"
+									class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+								<i class="fas fa-times"></i>
+							</button>
+						}
+					</div>
+					<select @bind="selectedLocation" @bind:after="() => currentPage = 1"
+							class="bg-white px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm min-w-[150px]">
+						<option value="">Lieu d'événement</option>
+						<option value="Online">En ligne</option>
+						<option value="Niamey">Niamey</option>
+						<option value="other">Autres villes</option>
+					</select>
+					<select @bind="selectedDateFilter" @bind:after="() => currentPage = 1"
+							class="bg-white px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 text-sm min-w-[150px]">
+						<option value="">Date d'événement</option>
+						<option value="week">Cette semaine</option>
+						<option value="month">Ce mois</option>
+						<option value="quarter">Ce trimestre</option>
+					</select>
+				</div>
+
+				@if (IsLoading)
+				{
+					<div class="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+						@for (int i = 0; i < 8; i++)
+						{
+							<SkeletonCard HasImage="true" HasBadge="true" HasFooter="true" Class="rounded-lg bg-white shadow-sm" />
+						}
+					</div>
+				}
+				else if (!string.IsNullOrWhiteSpace(LoadError))
+				{
+					<div class="rounded-lg bg-red-50 p-4 sm:p-6 text-xs sm:text-sm md:text-base text-red-600 shadow-sm">@LoadError
+					</div>
+				}
+				else
+				{
+					@if (!FilteredEvents.Any())
+					{
+						<div class="text-center py-12 text-gray-500 text-sm">Aucun événement trouvé.</div>
+					}
+					else
+					{
+						<div class="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+							@foreach (var evt in PagedEvents)
+							{
+								<EventCard Event="@evt" />
+							}
+						</div>
+
+						@if (TotalPages > 1)
+						{
+							<Paginated CurrentPage="@currentPage" CurrentPageChanged="@OnPageChanged" TotalPages="@TotalPages" />
+						}
+					}
+				}
+			</div>
+		</section>
+
+
+@code {
+	public List<EventDto> AllEvents = new();
+	private bool IsLoading { get; set; } = true;
+	private string? LoadError { get; set; }
+	private string searchQuery = string.Empty;
+	private string selectedLocation = string.Empty;
+	private string selectedDateFilter = string.Empty;
+	private int currentPage = 1;
+	private const int ItemsPerPage = 12;
+
+	private int TotalPages => (int)Math.Ceiling(FilteredEvents.Count / (double)ItemsPerPage);
+
+	private List<EventDto> PagedEvents => FilteredEvents
+		.Skip((currentPage - 1) * ItemsPerPage)
+		.Take(ItemsPerPage)
+		.ToList();
+
+	private void OnPageChanged(int page)
+	{
+		currentPage = page;
+	}
+
+	private List<EventDto> FilteredEvents
+	{
+		get
+		{
+			var events = AllEvents;
+			if (!string.IsNullOrWhiteSpace(searchQuery))
+			{
+				var q = searchQuery.ToLowerInvariant();
+				events = events.Where(e =>
+					(e.Title?.ToLowerInvariant().Contains(q) ?? false) ||
+					(e.Description?.ToLowerInvariant().Contains(q) ?? false) ||
+					(e.Location?.ToLowerInvariant().Contains(q) ?? false))
+					.ToList();
+			}
+			if (!string.IsNullOrWhiteSpace(selectedLocation))
+			{
+				events = events.Where(e =>
+				{
+					var loc = selectedLocation.ToLowerInvariant();
+					if (loc == "online")
+						return e.EventType?.Equals("Online", StringComparison.OrdinalIgnoreCase) == true;
+					if (loc == "other")
+						return !e.EventType?.Equals("Online", StringComparison.OrdinalIgnoreCase) == true
+							&& e.Location?.Equals("Niamey", StringComparison.OrdinalIgnoreCase) != true;
+					return e.Location?.Equals(selectedLocation, StringComparison.OrdinalIgnoreCase) == true;
+				}).ToList();
+			}
+			if (!string.IsNullOrWhiteSpace(selectedDateFilter))
+			{
+				var now = DateTime.Now;
+				events = events.Where(e => selectedDateFilter switch
+				{
+					"week" => e.StartDate >= now && e.StartDate <= now.AddDays(7),
+					"month" => e.StartDate >= now && e.StartDate <= now.AddMonths(1),
+					"quarter" => e.StartDate >= now && e.StartDate <= now.AddMonths(3),
+					_ => true
+				}).ToList();
+			}
+			return events;
+		}
+	}
+
+	protected override async Task OnInitializedAsync()
+	{
+		IsLoading = true;
+		try
+		{
+			AllEvents = await EventService.GetPublishedEventsAsync();
+		}
+		catch
+		{
+			LoadError = "Impossible de charger les événements.";
+		}
+		finally
+		{
+			IsLoading = false;
+		}
+	}
+
+	private static string BuildEventUrl(EventDto eventDto)
+	{
+		if (!string.IsNullOrWhiteSpace(eventDto.Slug))
+		{
+			return $"/evenements/{eventDto.Slug}";
+		}
+
+		return $"/evenements/{eventDto.Id}";
+	}
+}

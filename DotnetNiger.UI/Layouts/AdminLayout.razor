@@ -1,0 +1,52 @@
+﻿@using DotnetNiger.UI.Components.Admin.Shared
+@using System.Security.Claims
+@using DotnetNiger.UI.Helpers
+@using DotnetNiger.UI.Services.Contracts
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
+@inject IUserStateService UserStateService
+
+@if (_authorized)
+{
+    <div class="flex flex-col h-screen">
+       <Topbar ToggleSidebar="ToggleSidebar" ToggleCollapsed="ToggleCollapsed" IsCollapsed="isCollapsed"/>
+      <div class="flex flex-1 overflow-hidden">
+           <Sidebar IsOpen="sidebarOpen" IsCollapsed="isCollapsed" Closed="ToggleSidebar"/>
+        <main class="flex-1 overflow-y-auto bg-background transition-all duration-300">
+          <div class="container mx-auto ">
+            @Body
+          </div>
+        </main>
+      </div>
+    </div>
+    <ToastContainer />
+}
+
+@code{
+  bool sidebarOpen = false;
+  bool isCollapsed = false;
+  bool _authorized;
+
+  protected override async Task OnInitializedAsync()
+  {
+      var state = await AuthStateProvider.GetAuthenticationStateAsync();
+      if (state.User.Identity?.IsAuthenticated != true)
+      {
+          Navigation.NavigateTo("/", forceLoad: true);
+          return;
+      }
+
+      if (UserStateService.CurrentUser is null)
+          await UserStateService.LoadUserFromStorageAsync();
+
+      _authorized = true;
+  }
+
+  void ToggleCollapsed(){
+    isCollapsed = !isCollapsed;
+  }
+  void ToggleSidebar(){
+    sidebarOpen = !sidebarOpen;
+  }
+}

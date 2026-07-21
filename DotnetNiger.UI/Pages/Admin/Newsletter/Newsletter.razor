@@ -1,0 +1,164 @@
+@page "/admin/newsletter"
+@attribute [Authorize(Roles = "Admin,SuperAdmin")]
+@using DotnetNiger.UI.Components.Admin.Cards
+@inject INewsletterService NewsletterService
+@inject IToastService ToastService
+@inject IJSRuntime JS
+
+@if (isLoading)
+{
+    <div class="min-h-screen px-4 py-6 md:px-8 md:py-8">
+        <div class="mx-auto max-w-7xl">
+            <div class="mb-8 flex items-center justify-between gap-4">
+                <div class="space-y-2">
+                    <Skeleton Type="SkeletonType.Title" Class="w-48" />
+                    <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-64" />
+                </div>
+                <Skeleton Type="SkeletonType.Button" Width="140px" />
+            </div>
+            <div class="overflow-hidden rounded-lg bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="border-b border-gray-100 bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Email</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date inscription</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Statut</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @for (int i = 0; i < 4; i++)
+                            {
+                                <tr>
+                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Text" Lines="1" Class="w-48" /></td>
+                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Text" Lines="1" Class="w-32" /></td>
+                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Badge" Width="80px" /></td>
+                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Button" Width="32px" Class="h-8" /></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="min-h-screen px-4 py-6 md:px-8 md:py-8">
+        <div class="mx-auto max-w-7xl">
+            <div class="mb-8 flex items-center justify-between gap-4">
+                <section>
+                    <AdminBreadcrumb />
+                    <p class="mt-2 max-w-2xl text-sm leading-6 text-body md:text-base">@subscribers.Count abonné@(subscribers.Count > 1 ? "s" : "") à la newsletter.</p>
+                </section>
+                <button @onclick="ExportCsv"
+                        class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(91,77,245,0.25)] transition hover:brightness-95">
+                    <i class="fas fa-download text-sm"></i>
+                    <span class="hidden sm:block">Export CSV</span>
+                </button>
+            </div>
+
+            <section class="mb-6 flex flex-col gap-4 md:flex-row md:items-center">
+                <div class="flex-1 rounded-lg bg-white px-4 py-3 shadow-sm ring-1 ring-black/5">
+                    <div class="relative">
+                        <i class="fas fa-search absolute left-0 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" placeholder="Rechercher un email..."
+                               @bind="searchQuery" @bind:event="oninput"
+                               class="w-full border-0 bg-transparent pl-7 text-sm text-gray-900 outline-none placeholder:text-gray-400" />
+                    </div>
+                </div>
+            </section>
+
+            <NewsletterTable Subscribers="pagedSubscribers" OnDelete="DeleteSubscriber" />
+
+            <div class="mt-6">
+                <Paginated @bind-CurrentPage="currentPage" TotalPages="@totalPages" />
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private string searchQueryValue = string.Empty;
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private List<NewsletterSubscriberDto> subscribers = new();
+
+    private string searchQuery
+    {
+        get => searchQueryValue;
+        set
+        {
+            if (searchQueryValue == value) return;
+            searchQueryValue = value;
+            currentPage = 1;
+        }
+    }
+
+    private List<NewsletterSubscriberDto> filteredSubscribers => subscribers
+        .Where(s => string.IsNullOrEmpty(searchQuery) ||
+                    s.Email.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+    private int totalPages => Math.Max(1, (int)Math.Ceiling((double)filteredSubscribers.Count / pageSize));
+
+    private List<NewsletterSubscriberDto> pagedSubscribers => filteredSubscribers
+        .Skip((SafeCurrentPage - 1) * pageSize)
+        .Take(pageSize)
+        .ToList();
+
+    private int SafeCurrentPage => Math.Clamp(currentPage, 1, totalPages);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSubscribersAsync();
+    }
+
+    private async Task LoadSubscribersAsync()
+    {
+        isLoading = true;
+        try
+        {
+            subscribers = await NewsletterService.GetAllSubscribersAsync();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task DeleteSubscriber(string email)
+    {
+        var confirmed = await JS.InvokeAsync<bool>("confirm", $"Supprimer l'abonné {email} ?");
+        if (!confirmed) return;
+
+        var deleted = await NewsletterService.DeleteSubscriberAsync(email);
+        if (deleted)
+        {
+            ToastService.ShowToast("Abonné supprimé avec succès.", ToastLevel.Success);
+            await LoadSubscribersAsync();
+        }
+        else
+        {
+            ToastService.ShowToast("Erreur lors de la suppression.", ToastLevel.Error);
+        }
+    }
+
+    private async Task ExportCsv()
+    {
+        var csv = new System.Text.StringBuilder();
+        csv.AppendLine("Email,Date inscription,Statut");
+        foreach (var sub in subscribers)
+        {
+            var status = sub.IsConfirmed ? "Confirmé" : "En attente";
+            csv.AppendLine($"{sub.Email},{sub.SubscribedAt:yyyy-MM-dd HH:mm:ss},{status}");
+        }
+
+        var bytes = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+        var base64 = Convert.ToBase64String(bytes);
+        await JS.InvokeVoidAsync("downloadFile", "abonnes-newsletter.csv", "text/csv", base64);
+    }
+}
