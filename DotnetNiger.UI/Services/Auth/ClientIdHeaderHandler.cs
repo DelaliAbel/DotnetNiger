@@ -110,7 +110,7 @@ public class ClientIdHeaderHandler : DelegatingHandler
         try
         {
             var currentUrl = _navigationManager.Uri;
-            var loginUrl = $"/Account/Login?returnUrl={Uri.EscapeDataString(currentUrl)}";
+            var loginUrl = $"/auth/login?returnUrl={Uri.EscapeDataString(currentUrl)}";
             _navigationManager.NavigateTo(loginUrl, forceLoad: true);
         }
         catch (Exception ex)
