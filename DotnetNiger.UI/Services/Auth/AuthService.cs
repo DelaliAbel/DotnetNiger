@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
@@ -411,7 +412,8 @@ public class AuthService : IAuthService
     {
         try
         {
-            var json = await response.Content.ReadAsStringAsync();
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+            var json = DecompressAndDecode(bytes);
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 
@@ -524,4 +526,50 @@ public class AuthService : IAuthService
 
     private static IEnumerable<Claim> ParseClaimsFromJwt(string jwt)
         => JwtParser.ParseClaimsFromJwt(jwt);
+
+#pragma warning disable CA1416
+    private static string DecompressAndDecode(byte[] bytes)
+    {
+        if (bytes.Length == 0)
+            return string.Empty;
+
+        if (bytes.Length > 2 && bytes[0] == 0x1F && bytes[1] == 0x8B)
+        {
+            try
+            {
+                using var input = new MemoryStream(bytes);
+                using var gzip = new GZipStream(input, CompressionMode.Decompress);
+                using var output = new MemoryStream();
+                gzip.CopyTo(output);
+                return Encoding.UTF8.GetString(output.ToArray());
+            }
+            catch { }
+        }
+
+        if (bytes.Length > 2 && bytes[0] >= 0xA0 && bytes[0] <= 0xEF)
+        {
+            try
+            {
+                using var input = new MemoryStream(bytes);
+                using var brotli = new BrotliStream(input, CompressionMode.Decompress);
+                using var output = new MemoryStream();
+                brotli.CopyTo(output);
+                return Encoding.UTF8.GetString(output.ToArray());
+            }
+            catch { }
+        }
+
+        try
+        {
+            using var input = new MemoryStream(bytes);
+            using var deflate = new DeflateStream(input, CompressionMode.Decompress);
+            using var output = new MemoryStream();
+            deflate.CopyTo(output);
+            return Encoding.UTF8.GetString(output.ToArray());
+        }
+        catch { }
+
+        return Encoding.UTF8.GetString(bytes);
+    }
+#pragma warning restore CA1416
 }
