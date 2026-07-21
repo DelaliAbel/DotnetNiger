@@ -230,20 +230,7 @@ NotificationCount.GetValueOrDefault();
     private async Task NavigateToLoginAsync()
     {
         await NotifyActionCompletedAsync();
-        var useMock = Config.GetValue<bool>("UseMockServices");
-        if (useMock)
-        {
-            Navigation.NavigateTo("/login");
-        }
-        else
-        {
-            var returnUrl = $"{Navigation.BaseUri.TrimEnd('/')}/auth/external-callback";
-            var apiBase = Config["ApiBaseUrl"];
-            if (string.IsNullOrWhiteSpace(apiBase)) return;
-            var path = "/Account/Login";
-            var loginUrl = $"{apiBase}{path}?returnUrl={Uri.EscapeDataString(returnUrl)}";
-            Navigation.NavigateTo(loginUrl, forceLoad: true);
-        }
+        Navigation.NavigateTo("/login");
     }
 
     private async Task NavigateToProfileAsync()
