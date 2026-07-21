@@ -70,20 +70,27 @@ public class TokenService
         if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             return TokenExchangeResult.Failure("Username and password are required");
 
-        var (loginUser, roles) = await _authService.ValidateCredentialsAsync(username, password);
-        var loginPrincipal = await _signInManager.CreateUserPrincipalAsync(loginUser);
-        var loginPermissions = await _permissionService.GetUserPermissionsAsync(loginUser.Id);
-        TokenPrincipalBuilder.SetUserClaims(loginPrincipal, loginUser, roles, loginPermissions);
-        var scopes = request.Form["scope"];
-        loginPrincipal.SetScopes(scopes.Count > 0
-            ? scopes.SelectMany(s => (s ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries))
-            : ["openid", "profile", "email", "roles"]);
+        try
+        {
+            var (loginUser, roles) = await _authService.ValidateCredentialsAsync(username, password);
+            var loginPrincipal = await _signInManager.CreateUserPrincipalAsync(loginUser);
+            var loginPermissions = await _permissionService.GetUserPermissionsAsync(loginUser.Id);
+            TokenPrincipalBuilder.SetUserClaims(loginPrincipal, loginUser, roles, loginPermissions);
+            var scopes = request.Form["scope"];
+            loginPrincipal.SetScopes(scopes.Count > 0
+                ? scopes.SelectMany(s => (s ?? "").Split(' ', StringSplitOptions.RemoveEmptyEntries))
+                : ["openid", "profile", "email", "roles"]);
 
-        var rememberMe = string.Equals(request.Form["remember_me"].FirstOrDefault(), "true",
-            StringComparison.OrdinalIgnoreCase);
-        loginPrincipal.SetAccessTokenLifetime(
-            rememberMe ? TimeSpan.FromDays(7) : TimeSpan.FromHours(1));
-        TokenPrincipalBuilder.SetCommonDestinations(loginPrincipal);
-        return TokenExchangeResult.Success(loginPrincipal);
+            var rememberMe = string.Equals(request.Form["remember_me"].FirstOrDefault(), "true",
+                StringComparison.OrdinalIgnoreCase);
+            loginPrincipal.SetAccessTokenLifetime(
+                rememberMe ? TimeSpan.FromDays(7) : TimeSpan.FromHours(1));
+            TokenPrincipalBuilder.SetCommonDestinations(loginPrincipal);
+            return TokenExchangeResult.Success(loginPrincipal);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return TokenExchangeResult.Failure(ex.Message);
+        }
     }
 }
