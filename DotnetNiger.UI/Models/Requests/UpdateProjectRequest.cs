@@ -1,22 +1,20 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace DotnetNiger.UI.Models.Requests;
 
 public class UpdateProjectRequest
 {
-    public string? Title { get; set; }
+    [Required, MaxLength(200)]
+    public string Title { get; set; } = string.Empty;
 
-    public string? Description { get; set; }
+    [Required]
+    public string Description { get; set; } = string.Empty;
 
-    public string? Url { get; set; }
-
-    public string? GithubUrl { get; set; }
-
-    public string? ImageUrl { get; set; }
-
-    public string? Technologies { get; set; }
-
-    public string? Status { get; set; }
-
+    public string Url { get; set; } = string.Empty;
+    public string GithubUrl { get; set; } = string.Empty;
+    public string ImageUrl { get; set; } = string.Empty;
+    public string Technologies { get; set; } = string.Empty;
+    public string Status { get; set; } = "active";
     public bool IsFeatured { get; set; }
-
     public bool IsPublished { get; set; }
 }

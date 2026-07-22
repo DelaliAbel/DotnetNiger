@@ -5,31 +5,24 @@
 
 <div class="relative inline-block text-left">
     <button type="button"
-            class="inline-flex items-center justify-center rounded-full p-2 text-gray-500 transition hover:bg-gray-100 hover:text-gray-900"
-            aria-haspopup="menu"
-            aria-expanded="@isOpen"
-            aria-label="@AriaLabel"
-            @onclick="ToggleMenu"
+            class="inline-flex items-center justify-center rounded-full p-2 text-body transition hover:bg-gray-100 hover:text-title"
+            aria-haspopup="menu" aria-expanded="@isOpen" aria-label="@AriaLabel" @onclick="ToggleMenu"
             @onclick:stopPropagation="true">
         <i class="fas fa-ellipsis-vertical text-xl"></i>
     </button>
 
     @if (isOpen)
     {
-        <button type="button"
-                class="fixed inset-0 z-40 cursor-default"
-                aria-label="Fermer le menu"
-                @onclick="CloseMenu">
+        <button type="button" class="fixed inset-0 z-40 cursor-default" aria-label="Fermer le menu" @onclick="CloseMenu">
         </button>
 
-        <div class="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-[22px] border border-gray-100 bg-white shadow-[0_18px_35px_rgba(15,23,42,0.18)]">
+        <div
+            class="absolute right-0 z-50 mt-2 w-56 overflow-hidden rounded-[22px]   border-gray-100 bg-surface shadow-[0_18px_35px_rgba(15,23,42,0.18)]">
             <div class="py-2">
                 @if (showChangeRoleView)
                 {
                     <div class="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                        <button type="button"
-                                class="text-gray-500 hover:text-gray-700 transition"
-                                @onclick="BackToMainMenu"
+                        <button type="button" class="text-body hover:text-gray-700 transition" @onclick="BackToMainMenu"
                                 @onclick:stopPropagation="true">
                             <i class="fas fa-arrow-left"></i>
                         </button>
@@ -43,9 +36,8 @@
                         var isAssigned = UserRoles.Any(r => r.Equals(role.Key, StringComparison.OrdinalIgnoreCase));
                         <button type="button"
                                 class="flex w-full items-center gap-3 px-4 py-3 text-left transition @(isAssigned ? "text-rose-600 hover:bg-rose-50" : "text-gray-700 hover:bg-gray-50")"
-                                @onclick="() => ToggleRoleAsync(role.Key, isAssigned)"
-                                @onclick:stopPropagation="true">
-                            <i class="fas @(isAssigned ? "fa-user-minus text-rose-500" : "fa-user-plus text-gray-500") text-base"></i>
+                                @onclick="() => ToggleRoleAsync(role.Key, isAssigned)" @onclick:stopPropagation="true">
+                            <i class="fas @(isAssigned ? "fa-user-minus text-rose-500" : "fa-user-plus text-body") text-base"></i>
                             <span class="text-sm font-medium">@(isAssigned ? "Retirer " : "Ajouter ")@role.Value</span>
                         </button>
                     }
@@ -54,16 +46,14 @@
                 {
                     <button type="button"
                             class="flex w-full items-center gap-3 px-4 py-3 text-left text-emerald-600 transition hover:bg-emerald-50"
-                            @onclick="ApproveAsync"
-                            @onclick:stopPropagation="true">
+                            @onclick="ApproveAsync" @onclick:stopPropagation="true">
                         <i class="fas fa-check text-base"></i>
                         <span class="text-sm font-medium">@ApproveLabel</span>
                     </button>
 
                     <button type="button"
                             class="flex w-full items-center gap-3 px-4 py-3 text-left text-rose-600 transition hover:bg-rose-50"
-                            @onclick="RejectAsync"
-                            @onclick:stopPropagation="true">
+                            @onclick="RejectAsync" @onclick:stopPropagation="true">
                         <i class="fas fa-xmark text-base"></i>
                         <span class="text-sm font-medium">@RejectLabel</span>
                     </button>
@@ -72,9 +62,8 @@
 
                     <button type="button"
                             class="flex w-full items-center gap-3 px-4 py-3 text-left text-gray-700 transition hover:bg-gray-50"
-                            @onclick="EditAsync"
-                            @onclick:stopPropagation="true">
-                        <i class="fas fa-pen text-base text-gray-500"></i>
+                            @onclick="EditAsync" @onclick:stopPropagation="true">
+                        <i class="fas fa-pen text-base text-body"></i>
                         <span class="text-sm font-medium">@EditLabel</span>
                     </button>
                 }
@@ -82,17 +71,15 @@
                 {
                     <button type="button"
                             class="flex w-full items-center gap-3 px-4 py-3 text-left text-gray-700 transition hover:bg-gray-50"
-                            @onclick="ViewAsync"
-                            @onclick:stopPropagation="true">
-                        <i class="fas fa-eye text-base text-gray-500"></i>
+                            @onclick="ViewAsync" @onclick:stopPropagation="true">
+                        <i class="fas fa-eye text-base text-body"></i>
                         <span class="text-sm font-medium">@ViewLabel</span>
                     </button>
 
                     <button type="button"
                             class="flex w-full items-center gap-3 px-4 py-3 text-left text-gray-700 transition hover:bg-gray-50"
-                            @onclick="EditAsync"
-                            @onclick:stopPropagation="true">
-                        <i class="fas fa-pen text-base text-gray-500"></i>
+                            @onclick="EditAsync" @onclick:stopPropagation="true">
+                        <i class="fas fa-pen text-base text-body"></i>
                         <span class="text-sm font-medium">@EditLabel</span>
                     </button>
 
@@ -100,9 +87,8 @@
                     {
                         <button type="button"
                                 class="flex w-full items-center gap-3 px-4 py-3 text-left text-gray-700 transition hover:bg-gray-50"
-                                @onclick="ToggleStatusAsync"
-                                @onclick:stopPropagation="true">
-                            <i class="fas fa-toggle-on text-base text-gray-500"></i>
+                                @onclick="ToggleStatusAsync" @onclick:stopPropagation="true">
+                            <i class="fas fa-toggle-on text-base text-body"></i>
                             <span class="text-sm font-medium">@ToggleStatusLabel</span>
                         </button>
                     }
@@ -111,9 +97,8 @@
                     {
                         <button type="button"
                                 class="flex w-full items-center gap-3 px-4 py-3 text-left text-gray-700 transition hover:bg-gray-50"
-                                @onclick="ShowRoleSelection"
-                                @onclick:stopPropagation="true">
-                            <i class="fas fa-user-shield text-base text-gray-500"></i>
+                                @onclick="ShowRoleSelection" @onclick:stopPropagation="true">
+                            <i class="fas fa-user-shield text-base text-body"></i>
                             <span class="text-sm font-medium">Changer le rôle</span>
                         </button>
                     }
@@ -122,8 +107,7 @@
                     {
                         <button type="button"
                                 class="flex w-full items-center gap-3 px-4 py-3 text-left text-rose-600 transition hover:bg-rose-50"
-                                @onclick="RemoveFromTeamAsync"
-                                @onclick:stopPropagation="true">
+                                @onclick="RemoveFromTeamAsync" @onclick:stopPropagation="true">
                             <i class="fas fa-user-minus text-base"></i>
                             <span class="text-sm font-medium">Retirer de l'équipe</span>
                         </button>
@@ -132,9 +116,8 @@
                     {
                         <button type="button"
                                 class="flex w-full items-center gap-3 px-4 py-3 text-left text-gray-700 transition hover:bg-gray-50"
-                                @onclick="AddToTeamAsync"
-                                @onclick:stopPropagation="true">
-                            <i class="fas fa-user-plus text-base text-gray-500"></i>
+                                @onclick="AddToTeamAsync" @onclick:stopPropagation="true">
+                            <i class="fas fa-user-plus text-base text-body"></i>
                             <span class="text-sm font-medium">Intégrer à l'équipe</span>
                         </button>
                     }
@@ -143,8 +126,7 @@
 
                     <button type="button"
                             class="flex w-full items-center gap-3 px-4 py-3 text-left text-rose-600 transition hover:bg-rose-50"
-                            @onclick="DeleteAsync"
-                            @onclick:stopPropagation="true">
+                            @onclick="DeleteAsync" @onclick:stopPropagation="true">
                         <i class="fas fa-trash text-base"></i>
                         <span class="text-sm font-medium">@DeleteLabel</span>
                     </button>

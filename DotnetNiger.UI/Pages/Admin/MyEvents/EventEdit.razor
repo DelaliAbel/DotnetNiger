@@ -1,5 +1,5 @@
 @page "/admin/mes-evenements/edit/{Id:guid}"
-@attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")]
+@* @attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")] *@
 @* Page admin : édition d'un événement (mes événements). *@
 @using DotnetNiger.UI.Models
 @using DotnetNiger.UI.Models.Requests
@@ -21,7 +21,7 @@
             <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-48" />
             <Skeleton Type="SkeletonType.Button" Width="100px" />
         </div>
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-surface rounded-lg shadow p-6">
             <Skeleton Type="SkeletonType.Title" Class="w-64 mb-6" />
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div class="space-y-2">
@@ -85,7 +85,7 @@
             </button>
         </div>
 
-        <div class="bg-white rounded-lg shadow p-6">
+        <div class="bg-surface rounded-lg shadow p-6">
             <EditForm Model="@eventRequest" OnValidSubmit="PublishAsync">
                 <DataAnnotationsValidator />
 
@@ -98,7 +98,7 @@
                             <div>
                                 <label class="block text-sm font-semibold mb-2">Titre</label>
                                 <InputText @bind-Value="eventRequest.Title"
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                           class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                            placeholder="Titre de l'événement" />
                                 <ValidationMessage For="@(() => eventRequest.Title)" class="text-red-500 text-sm mt-1" />
                             </div>
@@ -106,7 +106,7 @@
                             <div>
                                 <label class="block text-sm font-semibold mb-2">Capacité</label>
                                 <InputNumber @bind-Value="eventRequest.Capacity"
-                                             class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                             class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                              placeholder="100" />
                             </div>
                         </div>
@@ -114,14 +114,14 @@
                         <div>
                             <label class="block text-sm font-semibold mb-2">Auteur</label>
                             <InputText @bind-Value="organizerName"
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                        placeholder="Nom de l'organisateur" />
                         </div>
 
                         <div>
                             <label class="block text-sm font-semibold mb-2">Catégorie</label>
                             <InputSelect @bind-Value="eventRequest.Category"
-                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                         class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface">
                                 <option value="">Sélectionner une catégorie</option>
                                 <option value="Présentation">Présentation</option>
                                 <option value="Meeting">Meeting</option>
@@ -139,7 +139,7 @@
                                 <label class="block text-sm font-semibold mb-2">Date du début</label>
                                 <div class="relative">
                                     <InputDate @bind-Value="eventRequest.StartDate" Type="InputDateType.DateTimeLocal"
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                               class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                                     <i
                                     class="fas fa-calendar-alt absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                                 </div>
@@ -151,7 +151,7 @@
                                 <label class="block text-sm font-semibold mb-2">Date de fin</label>
                                 <div class="relative">
                                     <InputDate @bind-Value="eventRequest.EndDate" Type="InputDateType.DateTimeLocal"
-                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                               class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                                     <i
                                     class="fas fa-calendar-alt absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                                 </div>
@@ -176,8 +176,7 @@
                                 @foreach (var (url, index) in galleryImageUrls.Select((u, i) => (u, i)))
                                 {
                                     <div class="relative group">
-                                        <ResolvedImage Src="@url"
-                                                       class="h-24 w-full rounded-lg object-cover border border-gray-200" />
+                                        <ResolvedImage Src="@url" class="h-24 w-full rounded-lg object-cover    " />
                                         <button type="button" @onclick="() => RemoveGalleryImage(index)"
                                                 class="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white text-xs shadow opacity-0 group-hover:opacity-100 transition hover:bg-red-600">
                                             <i class="fas fa-times"></i>
@@ -212,14 +211,14 @@
                                                class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                                 </div>
                                 <button type="button" @onclick="() => showGalleryUploader = false"
-                                        class="mt-2 text-xs text-gray-500 hover:text-gray-700">Annuler</button>
+                                        class="mt-2 text-xs text-body hover:text-gray-700">Annuler</button>
                             }
                             else
                             {
                                 <button type="button" @onclick="() => showGalleryUploader = true"
                                         class="w-full border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-primary transition">
                                     <i class="fas fa-plus text-gray-400"></i>
-                                    <p class="text-sm text-gray-500 mt-1">Ajouter une photo</p>
+                                    <p class="text-sm text-body mt-1">Ajouter une photo</p>
                                 </button>
                             }
                         </div>
@@ -241,7 +240,7 @@
                                         <div class="flex-1">
                                             <p class="text-sm font-semibold text-gray-800">@speakers[i].Name</p>
                                             <input @bind="speakers[i].Role"
-                                                   class="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
+                                                   class="w-full px-3 py-1.5   border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
                                                    placeholder="Rôle (ex: Intervenant)" />
                                         </div>
                                         <button type="button" @onclick="() => RemoveSpeaker(i)"
@@ -256,12 +255,12 @@
                             {
                                 <div class="relative">
                                     <input value="@memberSearchQuery" @oninput="OnMemberSearchChanged"
-                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                           class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                            placeholder="Rechercher un membre..." />
                                     @if (filteredMembers.Count > 0)
                                     {
                                         <div
-                                            class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                            class="absolute z-10 mt-1 w-full bg-surface     rounded-lg shadow-lg max-h-60 overflow-y-auto">
                                             @foreach (var member in filteredMembers)
                                             {
                                                 <button type="button" @onclick="() => AddSpeakerFromMember(member)"
@@ -274,7 +273,7 @@
                                                     </div>
                                                     <div>
                                                         <p class="text-sm font-semibold text-gray-800">@member.FullName</p>
-                                                        <p class="text-xs text-gray-500">@@@member.Username</p>
+                                                        <p class="text-xs text-body">@@@member.Username</p>
                                                     </div>
                                                 </button>
                                             }
@@ -283,13 +282,13 @@
                                     else if (!string.IsNullOrWhiteSpace(memberSearchQuery))
                                     {
                                         <div
-                                            class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg p-4 text-sm text-gray-500 text-center">
+                                            class="absolute z-10 mt-1 w-full bg-surface     rounded-lg shadow-lg p-4 text-sm text-body text-center">
                                             Aucun membre trouvé.
                                         </div>
                                     }
                                 </div>
                                 <button type="button" @onclick="() => showMemberSearch = false"
-                                        class="mt-2 text-xs text-gray-500 hover:text-gray-700">
+                                        class="mt-2 text-xs text-body hover:text-gray-700">
                                     Annuler
                                 </button>
                             }
@@ -317,35 +316,35 @@
                             <label class="block text-sm font-semibold mb-3">Mode de l'événement</label>
                             <div class="flex flex-col gap-3">
                                 <button type="button" @onclick='() => SetEventMode("online")'
-                                        class='flex items-center gap-3 rounded-lg border-2 p-4 transition @(eventMode == "online" ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "border-gray-200 bg-white hover:border-gray-300")'>
+                                        class='flex items-center gap-3 rounded-lg border-2 p-4 transition @(eventMode == "online" ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "  bg-surface hover:border-gray-300")'>
                                     <div
-                                        class='flex h-10 w-10 items-center justify-center rounded-lg @(eventMode == "online" ? "bg-primary text-white" : "bg-gray-100 text-gray-500")'>
+                                        class='flex h-10 w-10 items-center justify-center rounded-lg @(eventMode == "online" ? "bg-primary text-white" : "bg-gray-100 text-body")'>
                                         <i class="fas fa-globe"></i>
                                     </div>
                                     <div class="text-left">
                                         <p
                                             class='text-sm font-semibold @(eventMode == "online" ? "text-primary" : "text-gray-800")'>
                                             En ligne</p>
-                                            <p class="text-xs text-gray-500">Lien de visioconférence</p>
+                                            <p class="text-xs text-body">Lien de visioconférence</p>
                                         </div>
                                     </button>
                                     <button type="button" @onclick='() => SetEventMode("physical")'
-                                            class='flex items-center gap-3 rounded-lg border-2 p-4 transition @(eventMode == "physical" ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "border-gray-200 bg-white hover:border-gray-300")'>
+                                            class='flex items-center gap-3 rounded-lg border-2 p-4 transition @(eventMode == "physical" ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "  bg-surface hover:border-gray-300")'>
                                         <div
-                                            class='flex h-10 w-10 items-center justify-center rounded-lg @(eventMode == "physical" ? "bg-primary text-white" : "bg-gray-100 text-gray-500")'>
+                                            class='flex h-10 w-10 items-center justify-center rounded-lg @(eventMode == "physical" ? "bg-primary text-white" : "bg-gray-100 text-body")'>
                                             <i class="fas fa-building"></i>
                                         </div>
                                         <div class="text-left">
                                             <p
                                                 class='text-sm font-semibold @(eventMode == "physical" ? "text-primary" : "text-gray-800")'>
                                                 Présentiel</p>
-                                                <p class="text-xs text-gray-500">Lieu physique</p>
+                                                <p class="text-xs text-body">Lieu physique</p>
                                             </div>
                                         </button>
                                         <button type="button" @onclick='() => SetEventMode("hybrid")'
-                                                class='flex items-center gap-3 rounded-lg border-2 p-4 transition @(eventMode == "hybrid" ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "border-gray-200 bg-white hover:border-gray-300")'>
+                                                class='flex items-center gap-3 rounded-lg border-2 p-4 transition @(eventMode == "hybrid" ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "  bg-surface hover:border-gray-300")'>
                                             <div
-                                                class='flex h-10 w-10 items-center justify-center rounded-lg @(eventMode == "hybrid" ? "bg-primary text-white" : "bg-gray-100 text-gray-500")'>
+                                                class='flex h-10 w-10 items-center justify-center rounded-lg @(eventMode == "hybrid" ? "bg-primary text-white" : "bg-gray-100 text-body")'>
                                                 <i class="fas fa-globe"></i><i class="fas fa-plus text-[8px] mx-0.5"></i><i
                                                 class="fas fa-building"></i>
                                             </div>
@@ -353,7 +352,7 @@
                                                 <p
                                                     class='text-sm font-semibold @(eventMode == "hybrid" ? "text-primary" : "text-gray-800")'>
                                                     Hybride</p>
-                                                    <p class="text-xs text-gray-500">Lieu + Lien en ligne</p>
+                                                    <p class="text-xs text-body">Lieu + Lien en ligne</p>
                                                 </div>
                                             </button>
                                         </div>
@@ -362,14 +361,14 @@
                                     <div class='@((eventMode == "online") ? "hidden" : "")'>
                                         <label class="block text-sm font-semibold mb-2">Lieu</label>
                                         <InputText @bind-Value="eventRequest.Location"
-                                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                                                   class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none"
                                                    placeholder="Adresse du lieu" />
                                     </div>
 
                                     <div class='@((eventMode == "physical") ? "hidden" : "")'>
                                         <label class="block text-sm font-semibold mb-2">Lien de visioconférence</label>
                                         <InputText @bind-Value="eventRequest.MeetupLink"
-                                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                                                   class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none"
                                                    placeholder="https://meet.example.com/..." />
                                     </div>
                                 </div>
@@ -406,7 +405,7 @@
     [Parameter] public Guid Id { get; set; }
 
     private bool isLoading = true;
-    private UpdateEventRequest eventRequest = new()
+    private CreateEventRequest eventRequest = new()
     {
         EventType = "Physical"
     };
@@ -510,25 +509,7 @@
             var expectedReturn = $"/admin/mes-evenements/edit/{Id}";
             if (PreviewState.PendingEventRequest is not null && PreviewState.ReturnUrl == expectedReturn)
             {
-                var pending = PreviewState.PendingEventRequest;
-                eventRequest = new UpdateEventRequest
-                {
-                    Title = pending.Title,
-                    Description = pending.Description,
-                    Location = pending.Location,
-                    Category = pending.Category,
-                    EventType = pending.EventType,
-                    StartDate = pending.StartDate,
-                    EndDate = pending.EndDate,
-                    CoverImageUrl = pending.CoverImageUrl,
-                    Capacity = pending.Capacity,
-                    MeetupLink = pending.MeetupLink,
-                    IsPublished = pending.IsPublished,
-                    IsArchived = pending.IsArchived,
-                    TagNames = pending.TagNames,
-                    GalleryImageUrls = pending.GalleryImageUrls,
-                    Speakers = pending.Speakers
-                };
+                eventRequest = PreviewState.PendingEventRequest;
                 galleryImageUrls = eventRequest.GalleryImageUrls?.ToList() ?? new();
                 speakers = eventRequest.Speakers?.ToList() ?? new();
                 eventMode = eventRequest.EventType?.ToLowerInvariant() switch
@@ -632,37 +613,21 @@
         eventRequest.GalleryImageUrls = galleryImageUrls;
 
         // Sauvegarder l'état du formulaire pour restauration après retour
-        PreviewState.PendingEventRequest = new CreateEventRequest
-        {
-            Title = eventRequest.Title ?? string.Empty,
-            Description = eventRequest.Description ?? string.Empty,
-            Location = eventRequest.Location ?? string.Empty,
-            Category = eventRequest.Category ?? string.Empty,
-            EventType = eventRequest.EventType ?? "Physical",
-            StartDate = eventRequest.StartDate.GetValueOrDefault(),
-            EndDate = eventRequest.EndDate.GetValueOrDefault(),
-            CoverImageUrl = eventRequest.CoverImageUrl ?? string.Empty,
-            Capacity = eventRequest.Capacity.GetValueOrDefault(),
-            MeetupLink = eventRequest.MeetupLink ?? string.Empty,
-            IsPublished = eventRequest.IsPublished.GetValueOrDefault(),
-            TagNames = eventRequest.TagNames ?? new(),
-            GalleryImageUrls = eventRequest.GalleryImageUrls ?? new(),
-            Speakers = eventRequest.Speakers?.ToList() ?? new()
-        };
+        PreviewState.PendingEventRequest = eventRequest;
 
         var previewDto = new EventDto
         {
             Id = Id,
-            Title = eventRequest.Title ?? string.Empty,
-            Description = eventRequest.Description ?? string.Empty,
-            Location = eventRequest.Location ?? string.Empty,
-            Category = eventRequest.Category ?? string.Empty,
-            EventType = eventRequest.EventType ?? "Physical",
-            StartDate = eventRequest.StartDate.GetValueOrDefault(),
-            EndDate = eventRequest.EndDate.GetValueOrDefault(),
-            CoverImageUrl = eventRequest.CoverImageUrl ?? string.Empty,
-            Capacity = eventRequest.Capacity.GetValueOrDefault(),
-            MeetupLink = eventRequest.MeetupLink ?? string.Empty,
+            Title = eventRequest.Title,
+            Description = eventRequest.Description,
+            Location = eventRequest.Location,
+            Category = eventRequest.Category,
+            EventType = eventRequest.EventType,
+            StartDate = eventRequest.StartDate,
+            EndDate = eventRequest.EndDate,
+            CoverImageUrl = eventRequest.CoverImageUrl,
+            Capacity = eventRequest.Capacity,
+            MeetupLink = eventRequest.MeetupLink,
             RegisteredCount = 0,
             GalleryImageUrls = galleryImageUrls,
             Speakers = speakers.ToList(),
@@ -708,9 +673,9 @@
             ToastService.ShowToast("Erreur lors de la mise à jour.", ToastLevel.Error);
         }
     }
-    private static UpdateEventRequest MapToRequest(EventDto ev)
+    private static CreateEventRequest MapToRequest(EventDto ev)
     {
-        return new UpdateEventRequest
+        return new CreateEventRequest
         {
             Title = ev.Title,
             Description = ev.Description,
@@ -723,14 +688,14 @@
             Capacity = ev.Capacity,
             MeetupLink = ev.MeetupLink,
             IsPublished = ev.IsPublished,
-            GalleryImageUrls = ev.GalleryImageUrls?.ToList(),
+            GalleryImageUrls = ev.GalleryImageUrls?.ToList() ?? new(),
             Speakers = ev.Speakers?.Select(s => new SpeakerDto
             {
                 UserId = s.UserId,
                 Name = s.Name,
                 Role = s.Role,
                 AvatarUrl = s.AvatarUrl
-            }).ToList(),
+            }).ToList() ?? new(),
         };
     }
 }

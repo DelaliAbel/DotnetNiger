@@ -3,36 +3,25 @@
 @using DotnetNiger.UI.Components.Admin.Shared
 @inject NavigationManager NavigationManager
 
-<div class="rounded-lg bg-white p-5 shadow-sm ring-1 ring-gray-100">
+<div class="rounded-lg bg-surface p-5 shadow-md">
     <div class="flex items-start justify-between gap-4">
         <div class="flex min-w-0 items-center gap-3">
-            <ResolvedImage Src="@User.AvatarUrl" Icon="fa-user"
-                 class="h-14 w-14 rounded-full" />
+            <ResolvedImage Src="@User.AvatarUrl" Icon="fa-user" class="h-14 w-14 rounded-full" />
             <div class="min-w-0">
-                <p class="truncate text-sm font-semibold text-gray-900">@User.FullName</p>
-                <p class="truncate text-xs text-gray-500">@User.Email</p>
+                <p class="truncate text-sm font-semibold text-title">@User.FullName</p>
+                <p class="truncate text-xs text-body">@User.Email</p>
                 <p class="mt-1 text-xs text-gray-400">@GetPrimaryRole()</p>
             </div>
         </div>
 
-        <AdminActionDropdown ItemId="User.Id"
-                             Status="@(User.IsActive ? "Active" : "Inactive")"
-                             IsTeamMember="User.IsTeamMember"
-                             UserRoles="User.Roles"
-                             ViewLabel="Voir"
-                             EditLabel="Éditer"
-                             DeleteLabel="Supprimer"
-                             ToggleStatusLabel="Activer / Désactiver"
-                             OnView="OnView"
-                             OnEdit="OnEdit"
-                             OnDelete="OnDelete"
-                             OnToggleStatus="OnToggleStatus"
-                             OnAddToTeam="OnAddToTeam"
-                             OnRemoveFromTeam="OnRemoveFromTeam"
-                             OnChangeRole="OnChangeRole" />
+        <AdminActionDropdown ItemId="User.Id" Status="@(User.IsActive ? "Active" : "Inactive")"
+                             IsTeamMember="User.IsTeamMember" UserRoles="User.Roles" ViewLabel="Voir" EditLabel="Éditer"
+                             DeleteLabel="Supprimer" ToggleStatusLabel="Activer / Désactiver" OnView="OnView" OnEdit="OnEdit"
+                             OnDelete="OnDelete" OnToggleStatus="OnToggleStatus" OnAddToTeam="OnAddToTeam"
+                             OnRemoveFromTeam="OnRemoveFromTeam" OnChangeRole="OnChangeRole" />
     </div>
 
-    <div class="mt-4 flex items-center justify-between text-xs text-gray-500">
+    <div class="mt-4 flex items-center justify-between text-xs text-body">
         <span>@User.City</span>
         <span class="@(User.IsActive ? "text-emerald-600" : "text-amber-600") font-semibold">
             @(User.IsActive ? "Actif" : "Inactif")

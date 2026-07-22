@@ -4,23 +4,23 @@
 @inject NavigationManager Navigation
 @inject IToastService ToastService
 
-<div class="rounded-lg bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
+<div class="rounded-lg bg-surface shadow-md">
     <table class="w-full">
         <thead class="border-b border-gray-100 bg-gray-50">
             <tr>
-                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Nom</th>
-                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Type</th>
-                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Site web</th>
-                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Ordre</th>
-                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Statut</th>
-                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Nom</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Type</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Site web</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Ordre</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Statut</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Actions</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
             @if (Partners is null || Partners.Count == 0)
             {
                 <tr>
-                    <td colspan="6" class="px-6 py-10 text-center text-sm text-gray-500">Aucun partenaire disponible.</td>
+                    <td colspan="6" class="px-6 py-10 text-center text-sm text-body">Aucun partenaire disponible.</td>
                 </tr>
             }
             else
@@ -67,7 +67,7 @@
                         <td class="px-6 py-4 text-sm text-body">@partner.SortOrder</td>
                         <td class="px-6 py-4 text-sm">
                             <span
-                                class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @(partner.IsActive ? "bg-success-bg text-success" : "bg-gray-100 text-gray-700")">
+                                class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @(partner.IsActive ? "bg-success-bg text-success" : "bg-gray-100 text-title")">
                                 @(partner.IsActive ? "Actif" : "Inactif")
                             </span>
                         </td>

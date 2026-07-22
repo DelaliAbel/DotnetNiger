@@ -4,20 +4,19 @@
 
 @if (IsOpen && Images?.Any() == true)
 {
-    <div class="fixed inset-0 z-50 flex items-center justify-center"
-         @onclick="HandleOverlayClick"
+    <div class="fixed inset-0 z-50 flex items-center justify-center" @onclick="HandleOverlayClick"
          @onkeydown="HandleKeyDown" tabindex="0" style="background-color: rgba(0,0,0,0.85);">
 
         <!-- Close button -->
         <button type="button"
-                class="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/40 transition"
-                @onclick:stopPropagation
-                @onclick="Close">
+                class="absolute top-4 right-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-surface/20 text-white hover:bg-surface/40 transition"
+                @onclick:stopPropagation @onclick="Close">
             <i class="fa-solid fa-xmark text-lg"></i>
         </button>
 
         <!-- Counter -->
-        <div class="absolute top-4 left-1/2 -translate-x-1/2 z-10 rounded-full bg-white/20 px-4 py-1 text-sm text-white font-medium">
+        <div
+            class="absolute top-4 left-1/2 -translate-x-1/2 z-10 rounded-full bg-surface/20 px-4 py-1 text-sm text-white font-medium">
             @(_currentIndex + 1) / @Images.Count
         </div>
 
@@ -25,26 +24,23 @@
         @if (Images.Count > 1 && _currentIndex > 0)
         {
             <button type="button"
-                    class="absolute left-4 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/40 transition"
-                    @onclick:stopPropagation
-                    @onclick="GoToPrevious">
+                    class="absolute left-4 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-surface/20 text-white hover:bg-surface/40 transition"
+                    @onclick:stopPropagation @onclick="GoToPrevious">
                 <i class="fa-solid fa-chevron-left text-lg"></i>
             </button>
         }
 
         <!-- Image -->
         <div class="flex max-h-[85vh] max-w-[90vw] items-center justify-center" @onclick:stopPropagation>
-            <ResolvedImage Src="@Images[_currentIndex]"
-                           class="max-h-[85vh] max-w-[90vw] rounded-lg object-contain" />
+            <ResolvedImage Src="@Images[_currentIndex]" class="max-h-[85vh] max-w-[90vw] rounded-lg object-contain" />
         </div>
 
         <!-- Next arrow -->
         @if (Images.Count > 1 && _currentIndex < Images.Count - 1)
         {
             <button type="button"
-                    class="absolute right-4 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-white hover:bg-white/40 transition"
-                    @onclick:stopPropagation
-                    @onclick="GoToNext">
+                    class="absolute right-4 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-surface/20 text-white hover:bg-surface/40 transition"
+                    @onclick:stopPropagation @onclick="GoToNext">
                 <i class="fa-solid fa-chevron-right text-lg"></i>
             </button>
         }

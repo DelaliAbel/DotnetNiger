@@ -91,13 +91,12 @@ public class MockProjectService : IProjectService
         var existing = _projects.FirstOrDefault(p => p.Id == id);
         if (existing is null) return Task.FromResult<ProjectResponse?>(null);
 
-        if (request.Title is not null) existing.Title = request.Title;
-        if (request.Description is not null) existing.Description = request.Description;
-        if (request.Url is not null) existing.Url = request.Url;
-        if (request.GithubUrl is not null) existing.GithubUrl = request.GithubUrl;
-        if (request.ImageUrl is not null) existing.ImageUrl = request.ImageUrl;
-        if (request.Technologies is not null) existing.Technologies = request.Technologies;
-        if (request.Status is not null) existing.Status = request.Status;
+        existing.Title = request.Title;
+        existing.Description = request.Description;
+        existing.GithubUrl = request.GithubUrl;
+        existing.ImageUrl = request.ImageUrl;
+        existing.Technologies = request.Technologies;
+        existing.Status = request.Status;
         existing.IsFeatured = request.IsFeatured;
         existing.IsPublished = request.IsPublished;
         existing.UpdatedAt = DateTime.UtcNow;

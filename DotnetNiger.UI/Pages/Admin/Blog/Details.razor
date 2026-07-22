@@ -1,5 +1,5 @@
 @page "/admin/blog/{Id:guid}"
-@attribute [Authorize(Roles = "Admin,SuperAdmin")]
+@* @attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")] *@
 @layout AdminLayout
 @* Page admin : détail d'article avec actions de modération. *@
 @using DotnetNiger.UI.Models.Responses
@@ -28,7 +28,7 @@
 				</ol>
 			</nav>
 			<button @onclick="GoBack"
-					class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-black/5 transition hover:bg-gray-50">
+					class="inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-black/5 transition hover:bg-gray-50">
 				<i class="fas fa-arrow-left text-sm"></i>
 				<span>Retour</span>
 			</button>
@@ -59,7 +59,7 @@
 					</div>
 				</div>
 
-				<hr class="border-gray-200" />
+				<hr class=" " />
 
 				<Skeleton Type="SkeletonType.Custom" Class="h-56 sm:h-[330px] w-full rounded-3xl" />
 
@@ -76,7 +76,7 @@
 					</div>
 				</div>
 
-				<div class="rounded-xl bg-white border-t p-4 sm:p-6 border-gray-200">
+				<div class="rounded-xl bg-surface border-t p-4 sm:p-6  ">
 					<Skeleton Type="SkeletonType.Title" Class="h-6 w-32" />
 					<div class="mt-5 space-y-3">
 						<Skeleton Type="SkeletonType.Text" Lines="1" Class="w-full" />
@@ -95,14 +95,14 @@
 		else if (post is null)
 		{
 			<div class="py-20 text-center">
-				<h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900">Article non trouvé</h1>
+				<h1 class="text-2xl sm:text-3xl font-extrabold text-title">Article non trouvé</h1>
 				<p class="mt-3 text-sm sm:text-base text-gray-600">L'article demandé n'existe pas.</p>
 			</div>
 		}
 		else
 		{
 			<div class="space-y-6 sm:space-y-7">
-				<div class="flex flex-wrap items-center gap-2 text-[11px] sm:text-[13px] text-gray-500">
+				<div class="flex flex-wrap items-center gap-2 text-[11px] sm:text-[13px] text-body">
 					@if (post.Categories?.Any() == true)
 					{
 						@foreach (var category in post.Categories.Take(1))
@@ -128,18 +128,18 @@
 							class="rounded-full bg-primary px-3 py-1 text-[10px] sm:text-xs font-semibold text-gray-700">@GetPostTypeLabel()</span>
 							<span
 								class="rounded-full px-3 py-1 text-[10px] sm:text-xs font-semibold @(IsPublished ? "bg-success-bg text-success" : "bg-amber-100 text-amber-700")">@(IsPublished
-															? "Publié" : "Brouillon")</span>
+																																															? "Publié" : "Brouillon")</span>
 							</div>
 
 							<h1
-								class="text-2xl sm:text-3xl md:text-[2.8rem] font-extrabold leading-[1.1] tracking-[-0.03em] text-gray-900">
+								class="text-2xl sm:text-3xl md:text-[2.8rem] font-extrabold leading-[1.1] tracking-[-0.03em] text-title">
 								@post.Title
 							</h1>
 						</div>
 
 						<div class="flex flex-wrap gap-2">
 							<button @onclick="() => EditPost(post.Id)"
-									class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-black/5 transition hover:bg-gray-50">
+									class="inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-black/5 transition hover:bg-gray-50">
 								<i class="fas fa-pen text-xs"></i>
 								Modifier
 							</button>
@@ -160,7 +160,7 @@
 								</button>
 							}
 							<button @onclick="() => DeletePost(post.Id)"
-									class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-red-600 shadow-sm ring-1 ring-red-100 transition hover:bg-red-50">
+									class="inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-sm font-semibold text-red-600 shadow-sm ring-1 ring-red-100 transition hover:bg-red-50">
 								<i class="fas fa-trash text-xs"></i>
 								Supprimer
 							</button>
@@ -181,12 +181,12 @@
 								}
 							</div>
 							<div>
-								<p class="text-sm sm:text-[15px] font-semibold text-gray-900">@post.AuthorName</p>
-								<p class="text-[11px] sm:text-xs text-gray-500">Article administré • @post.PublishedAt?.ToString("dd MMM yyyy")</p>
+								<p class="text-sm sm:text-[15px] font-semibold text-title">@post.AuthorName</p>
+								<p class="text-[11px] sm:text-xs text-body">Article administré • @post.PublishedAt?.ToString("dd MMM yyyy")</p>
 							</div>
 						</div>
 
-						<hr class="border-gray-200" />
+						<hr class=" " />
 
 						<div class="overflow-hidden rounded-md bg-[#0b1220] shadow-[0_18px_40px_rgba(15,23,42,0.16)]">
 							<ResolvedImage Src="@post?.CoverImageUrl" Icon="fa-newspaper" alt="@(post?.Title ?? "Article")"
@@ -211,7 +211,7 @@
 							<div class="space-y-3 pt-2">
 								@if (post?.Tags?.Any() == true)
 								{
-									<p class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500">
+									<p class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.2em] text-body">
 										ÉTIQUETTES</p>
 										<div class="flex flex-wrap gap-2">
 											@foreach (var tag in post.Tags)
@@ -225,23 +225,23 @@
 									}
 								</div>
 
-								<div class="rounded-xl bg-white border-t p-4 sm:p-6 border-gray-200">
+								<div class="rounded-xl bg-surface border-t p-4 sm:p-6  ">
 									<div class="flex items-center justify-between">
-										<h2 class="text-xl sm:text-2xl font-semibold text-gray-900">Métadonnées</h2>
+										<h2 class="text-xl sm:text-2xl font-semibold text-title">Métadonnées</h2>
 									</div>
 
 									<div class="mt-5 sm:mt-6 space-y-3 text-sm text-gray-600">
 										<div class="flex items-center justify-between gap-4 border-b border-gray-100 pb-2">
 											<span>ID</span>
-											<span class="font-mono text-gray-900">@(post?.Id.ToString() ?? "")</span>
+											<span class="font-mono text-title">@(post?.Id.ToString() ?? "")</span>
 										</div>
 										<div class="flex items-center justify-between gap-4 border-b border-gray-100 pb-2">
 											<span>Slug</span>
-											<span class="font-mono text-gray-900">@(post?.Slug ?? "")</span>
+											<span class="font-mono text-title">@(post?.Slug ?? "")</span>
 										</div>
 										<div class="flex items-center justify-between gap-4 border-b border-gray-100 pb-2">
 											<span>Créé le</span>
-											<span class="font-mono text-gray-900">@post?.PublishedAt?.ToString("dd/MM/yyyy HH:mm")</span>
+											<span class="font-mono text-title">@post?.PublishedAt?.ToString("dd/MM/yyyy HH:mm")</span>
 										</div>
 									</div>
 								</div>
@@ -329,6 +329,7 @@
 				Excerpt = post.Excerpt,
 				CoverImageUrl = post.CoverImageUrl,
 				PostType = post.PostType,
+				SeoDescription = string.IsNullOrWhiteSpace(post.Excerpt) ? post.Title : post.Excerpt,
 				CategoryIds = post.Categories?.Select(c => c.Id).ToList() ?? new(),
 				TagNames = post.Tags?.Select(t => t.Name).ToList() ?? new(),
 				IsPublished = true
@@ -358,6 +359,7 @@
 				Excerpt = post.Excerpt,
 				CoverImageUrl = post.CoverImageUrl,
 				PostType = post.PostType,
+				SeoDescription = string.IsNullOrWhiteSpace(post.Excerpt) ? post.Title : post.Excerpt,
 				CategoryIds = post.Categories?.Select(c => c.Id).ToList() ?? new(),
 				TagNames = post.Tags?.Select(t => t.Name).ToList() ?? new(),
 				IsPublished = false

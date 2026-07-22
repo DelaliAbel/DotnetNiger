@@ -2,23 +2,23 @@
 @using DotnetNiger.UI.Models.Requests
 @using DotnetNiger.UI.Models.Responses
 
-<div class="rounded-lg bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
+<div class="rounded-lg bg-surface shadow-md">
     <table class="w-full">
         <thead class="border-b border-gray-100 bg-gray-50">
             <tr>
-                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Membre</th>
-                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Position</th>
-                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Email</th>
-                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Rôle</th>
-                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Statut</th>
-                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Membre</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Position</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Email</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Rôle</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Statut</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Actions</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
             @if (Members.Count == 0)
             {
                 <tr>
-                    <td colspan="6" class="px-6 py-10 text-center text-sm text-gray-500">Aucun membre dans l'équipe.</td>
+                    <td colspan="6" class="px-6 py-10 text-center text-sm text-body">Aucun membre dans l'équipe.</td>
                 </tr>
             }
             else
@@ -66,7 +66,7 @@
                         </td>
                         <td class="px-6 py-4 text-sm">
                             <span
-                                class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @(member.IsActive ? "bg-success-bg text-success" : "bg-gray-100 text-gray-700")">
+                                class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @(member.IsActive ? "bg-success-bg text-success" : "bg-gray-100 text-title")">
                                 @(member.IsActive ? "Actif" : "Inactif")
                             </span>
                         </td>

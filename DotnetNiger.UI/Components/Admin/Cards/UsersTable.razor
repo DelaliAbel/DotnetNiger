@@ -3,69 +3,64 @@
 @using DotnetNiger.UI.Components.Admin.Shared
 @inject NavigationManager NavigationManager
 
-<div class="rounded-lg bg-white shadow">
-            <table class="w-full">
-                  <thead class="border-b border-gray-200 bg-gray-100">
+<div class="rounded-lg bg-surface shadow-md">
+      <table class="w-full">
+            <thead class="border-b bg-gray-100">
+                  <tr>
+                        <th class="Button px-6 py-4 text-left text-title">Avatar</th>
+                        <th class="Button px-6 py-4 text-left text-title">ID</th>
+                        <th class="Button px-6 py-4 text-left text-title">Nom</th>
+                        <th class="Button px-6 py-4 text-left text-title">Email</th>
+                        <th class="Button px-6 py-4 text-left text-title">Role</th>
+                        <th class="Button px-6 py-4 text-left text-title">Date création</th>
+                        <th class="Button px-6 py-4 text-left text-title">Actions</th>
+                  </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                  @if (Users.Count == 0)
+                  {
                         <tr>
-                              <th class="Button px-6 py-4 text-left text-text">Avatar</th>
-                              <th class="Button px-6 py-4 text-left text-text">ID</th>
-                              <th class="Button px-6 py-4 text-left text-text">Nom</th>
-                              <th class="Button px-6 py-4 text-left text-text">Email</th>
-                              <th class="Button px-6 py-4 text-left text-text">Role</th>
-                              <th class="Button px-6 py-4 text-left text-text">Date création</th>
-                              <th class="Button px-6 py-4 text-left text-text">Actions</th>
-                        </tr>
-                  </thead>
-                  <tbody class="divide-y divide-gray-200">
-                        @if (Users.Count == 0)
-                        {
-                              <tr>
-                                    <td colspan="7" class="px-6 py-10 text-center text-sm text-gray-500">Aucun utilisateur ne correspond au filtre actuel.</td>
+                              <td colspan="7" class="px-6 py-10 text-center text-sm text-body">Aucun utilisateur ne
+                                    correspond au filtre actuel.</td>
                               </tr>
                         }
                         else
                         {
                               @foreach (var user in Users)
                               {
-                              <tr @key="user.Id" class="transition hover:bg-gray-50">
-                                    <td class="px-6 py-4 text-sm font-medium text-text">
-                                          <ResolvedImage Src="@user.AvatarUrl" Icon="fa-user" class="h-10 w-10 rounded-full" />
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-text">@user.Id.ToString()[..8]</td>
-                                    <td class="px-6 py-4 text-sm text-text">@user.FullName</td>
-                                    <td class="px-6 py-4 text-sm text-text">
-                                          <span class="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">@user.Email</span>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm">
-                                          <div class="flex items-center gap-2">
-                                                <div class="h-3 w-3 rounded-full @(user.IsActive ? "bg-emerald-500" : "bg-amber-500")"></div>
-                                                <span class="text-gray-700">@GetPrimaryRole(user)</span>
-                                          </div>
-                                    </td>
-                                    <td class="px-6 py-4 text-sm text-text">@user.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
-                                    <td class="px-6 py-4 text-sm">
-                                          <AdminActionDropdown ItemId="user.Id"
-                                                                Status="@(user.IsActive ? "Active" : "Inactive")"
-                                                                IsTeamMember="user.IsTeamMember"
-                                                                UserRoles="user.Roles"
-                                                                ViewLabel="Voir"
-                                                                EditLabel="Éditer"
-                                                                DeleteLabel="Supprimer"
-                                                                ToggleStatusLabel="Activer / Désactiver"
-                                                                OnView="OnView"
-                                                                 OnEdit="OnEdit"
-                                                                 OnDelete="OnDelete"
-                                                                 OnToggleStatus="OnToggleStatus"
-                                                                 OnAddToTeam="OnAddToTeam"
-                                                                 OnRemoveFromTeam="OnRemoveFromTeam"
-                                                                 OnChangeRole="OnChangeRole" />
-                                    </td>
-                              </tr>
+                                    <tr @key="user.Id" class="transition hover:bg-gray-50">
+                                          <td class="px-6 py-4 text-sm font-medium text-text">
+                                                <ResolvedImage Src="@user.AvatarUrl" Icon="fa-user" class="h-10 w-10 rounded-full" />
+                                          </td>
+                                          <td class="px-6 py-4 text-sm text-text">@user.Id.ToString()[..8]</td>
+                                          <td class="px-6 py-4 text-sm text-text">@user.FullName</td>
+                                          <td class="px-6 py-4 text-sm text-text">
+                                                <span
+                                                class="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">@user.Email</span>
+                                          </td>
+                                          <td class="px-6 py-4 text-sm">
+                                                <div class="flex items-center gap-2">
+                                                      <div
+                                                            class="h-3 w-3 rounded-full @(user.IsActive ? "bg-emerald-500" : "bg-amber-500")">
+                                                      </div>
+                                                      <span class="text-gray-700">@GetPrimaryRole(user)</span>
+                                                </div>
+                                          </td>
+                                          <td class="px-6 py-4 text-sm text-text">@user.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                          <td class="px-6 py-4 text-sm">
+                                                <AdminActionDropdown ItemId="user.Id" Status="@(user.IsActive ? "Active" : "Inactive")"
+                                                                     IsTeamMember="user.IsTeamMember" UserRoles="user.Roles" ViewLabel="Voir"
+                                                                     EditLabel="Éditer" DeleteLabel="Supprimer" ToggleStatusLabel="Activer / Désactiver"
+                                                                     OnView="OnView" OnEdit="OnEdit" OnDelete="OnDelete" OnToggleStatus="OnToggleStatus"
+                                                                     OnAddToTeam="OnAddToTeam" OnRemoveFromTeam="OnRemoveFromTeam"
+                                                                     OnChangeRole="OnChangeRole" />
+                                          </td>
+                                    </tr>
                               }
                         }
                   </tbody>
             </table>
-</div>
+      </div>
 
 @code {
       [Parameter] public List<UserDto> Users { get; set; } = new();
@@ -80,8 +75,8 @@
             => user.Roles.FirstOrDefault() ?? "User";
 
       private Task OnView(Guid Id)
-    {
-        NavigationManager.NavigateTo($"/admin/users/{Id}");
-        return Task.CompletedTask;
-    }
+      {
+            NavigationManager.NavigateTo($"/admin/users/{Id}");
+            return Task.CompletedTask;
+      }
 }

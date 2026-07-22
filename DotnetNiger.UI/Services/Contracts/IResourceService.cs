@@ -15,7 +15,7 @@ public interface IResourceService
     Task<List<string>> GetLevelsAsync();
     Task<ResourceDto?> CreateResourceAsync(CreateResourceRequest request);
     Task<ResourceDto?> AddResourceAsync(CreateResourceRequest request);
-    Task<ResourceDto?> UpdateResourceAsync(Guid id, UpdateResourceRequest request);
+    Task<ResourceDto?> UpdateResourceAsync(Guid id, CreateResourceRequest request);
     Task<bool> DeleteResourceAsync(Guid id);
     Task IncrementViewCountAsync(Guid id);
     Task<List<ResourceDto>> GetMyResourcesAsync();

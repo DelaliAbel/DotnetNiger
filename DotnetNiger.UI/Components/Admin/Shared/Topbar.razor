@@ -3,12 +3,12 @@
 @inject NavigationManager NavigationManager
 @inject IConfiguration Config
 
-<header class="sticky z-20 w-full flex h-16 items-center justify-between bg-white px-8 sm:px-4 md:px-6 shadow-md">
+<header class="sticky z-20 w-full flex h-16 items-center justify-between bg-background px-8 sm:px-4 md:px-6 shadow-md">
       <div class="flex gap-4">
             <button class="sm:hidden" @onclick="ToggleSidebar">
                   <i class="fas fa-bars text-xl"></i>
             </button>
-            <button class="hidden sm:flex items-center text-gray-500 hover:text-gray-800 transition-colors"
+            <button class="hidden sm:flex items-center text-body hover:text-gray-800 transition-colors"
                     @onclick="ToggleCollapsed" title="@(IsCollapsed ? "Développer" : "Réduire")">
                   <i class="fas @(IsCollapsed ? "fa-chevron-right" : "fa-chevron-left") text-xl"></i>
             </button>

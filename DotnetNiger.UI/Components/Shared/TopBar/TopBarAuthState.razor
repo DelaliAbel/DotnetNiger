@@ -22,7 +22,7 @@
 
             @* Panneau coulissant *@
             <div
-                class="fixed top-0 right-0 z-40 flex h-screen w-[75%] flex-col bg-white shadow-xl transition-transform duration-300 @(isOverlayOpen ? "translate-x-0" : "translate-x-full")">
+                class="fixed top-0 right-0 z-40 flex h-screen w-[75%] flex-col bg-surface shadow-xl transition-transform duration-300 @(isOverlayOpen ? "translate-x-0" : "translate-x-full")">
                 <div class="flex items-center justify-between border-b p-4">
                     <div class="flex flex-col justify-center items-center gap-3">
                         <button class="h-20 w-20 overflow-hidden rounded-full border-2 border-primary"
@@ -38,11 +38,11 @@
                             }
                         </button>
                         <div>
-                            <p class="text-lg text-center font-bold text-gray-900">@DisplayName</p>
+                            <p class="text-lg text-center font-bold text-title">@DisplayName</p>
                         </div>
                     </div>
                     <button @onclick="CloseOverlay"
-                            class="absolute top-3 right-3 z-40 flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100">
+                            class="absolute top-3 right-3 z-40 flex h-8 w-8 items-center justify-center rounded-full text-body hover:bg-gray-100">
                         <i class="fa-solid fa-xmark text-xl"></i>
                     </button>
                 </div>
@@ -52,8 +52,8 @@
                     {
                         if (item.Href == "/admin" && !UserStateService.IsAdmin) { continue; }
                         <NavLink href="@item.Href" Match="@item.Match"
-                                 class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-                                 ActiveClass="bg-primary/10 text-primary" @onclick="CloseOverlay">
+                                 class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-title transition hover:bg-gray-100"
+                                 ActiveClass="bg-active" @onclick="CloseOverlay">
                             <i class="@item.Icon w-6 text-lg"></i>
                             <span>@item.Label</span>
                         </NavLink>
@@ -89,11 +89,11 @@
 
             @* Panneau coulissant *@
             <div
-                class="fixed top-0 right-0 z-40 flex h-screen w-[75%] flex-col bg-white shadow-xl transition-transform duration-300 @(isOverlayOpen ? "translate-x-0" : "translate-x-full")">
+                class="fixed top-0 right-0 z-40 flex h-screen w-[75%] flex-col bg-surface shadow-xl transition-transform duration-300 @(isOverlayOpen ? "translate-x-0" : "translate-x-full")">
                 <div class="flex items-center justify-between border-b p-4">
-                    <span class="text-lg font-bold text-gray-900">Menu</span>
+                    <span class="text-lg font-bold text-title">Menu</span>
                     <button @onclick="CloseOverlay"
-                            class="flex h-8 w-8 items-center justify-center rounded-full text-gray-500 hover:bg-gray-100">
+                            class="flex h-8 w-8 items-center justify-center rounded-full text-body hover:bg-gray-100">
                         <i class="fa-solid fa-xmark text-xl"></i>
                     </button>
                 </div>
@@ -102,8 +102,8 @@
                     @foreach (var item in GuestMobileNavigationItems)
                     {
                         <NavLink href="@item.Href" Match="@item.Match"
-                                 class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
-                                 ActiveClass="bg-primary/10 text-primary" @onclick="CloseOverlay">
+                                 class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-title transition hover:bg-gray-100"
+                                 ActiveClass="bg-active" @onclick="CloseOverlay">
                             <i class="@item.Icon w-6 text-lg"></i>
                             <span>@item.Label</span>
                         </NavLink>
@@ -114,7 +114,7 @@
                     <button @onclick="NavigateToLoginAsync"
                             class="flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-4 py-3 text-sm font-semibold text-white transition hover:bg-hover">
                         <i class="fa-solid fa-sign-in-alt"></i>
-                        <span>Connexion</span>
+                        <span>Connecter</span>
                     </button>
                 </div>
             </div>
@@ -125,7 +125,7 @@
                     class="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-white transition duration-150 ease-in-out hover:bg-hover"
                     @onclick="NavigateToLoginAsync">
                 <i class="fas fa-sign-in-alt text-2xl"></i>
-                <span class="text-sm font-semibold text-white">Connexion</span>
+                <span class="text-sm font-semibold text-white">Connecter</span>
             </button>
         }
     </NotAuthorized>
@@ -230,7 +230,19 @@ NotificationCount.GetValueOrDefault();
     private async Task NavigateToLoginAsync()
     {
         await NotifyActionCompletedAsync();
-        Navigation.NavigateTo("/login");
+        var useMock = Config.GetValue<bool>("UseMockServices");
+        if (useMock)
+        {
+            Navigation.NavigateTo("/login");
+        }
+        else
+        {
+            var returnUrl = $"{Navigation.BaseUri.TrimEnd('/')}/auth/callback-popup";
+            var apiBase = Config["ApiBaseUrl"];
+            if (string.IsNullOrWhiteSpace(apiBase)) return;
+            var loginUrl = $"/login?returnUrl={Uri.EscapeDataString(returnUrl)}";
+            Navigation.NavigateTo(loginUrl);
+        }
     }
 
     private async Task NavigateToProfileAsync()

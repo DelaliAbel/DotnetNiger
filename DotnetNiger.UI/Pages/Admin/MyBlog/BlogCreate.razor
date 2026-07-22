@@ -1,5 +1,5 @@
 @page "/admin/mes-articles/nouveau"
-@attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")]
+@* @attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")] *@
 @* Page admin : création d'article (mes articles). *@
 @using DotnetNiger.UI.Models
 @using DotnetNiger.UI.Components.Admin
@@ -22,19 +22,19 @@
         </button>
     </div>
 
-    <div class="rounded-lg bg-white p-6 shadow">
+    <div class="rounded-lg bg-surface p-6 shadow">
         <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
             <div class="lg:col-span-2 order-2 lg:order-1 space-y-6">
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-gray-700">Titre</label>
                     <input @bind="postRequest.Title" type="text"
-                           class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none" />
+                           class="w-full rounded-lg   border-gray-300 px-4 py-3 focus:outline-none" />
                 </div>
 
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-gray-700">Type d'article</label>
                     <select @bind="postRequest.PostType"
-                            class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 focus:outline-none">
+                            class="w-full rounded-lg   border-gray-300 bg-surface px-4 py-3 focus:outline-none">
                         <option value="">Sélectionner</option>
                         <option value="Tutorial">Tutorial</option>
                         <option value="Article">Article</option>
@@ -56,7 +56,7 @@
                     <label class="mb-2 block text-sm font-semibold text-gray-700">Tags</label>
                     <div class="flex gap-2">
                         <input @bind="tagInput" @onkeydown="HandleTagKeyDown" type="text"
-                               class="flex-1 rounded-lg border border-gray-300 px-4 py-3 focus:outline-none"
+                               class="flex-1 rounded-lg   border-gray-300 px-4 py-3 focus:outline-none"
                                placeholder="Saisir un tag puis Entrée" />
                         <button type="button" @onclick="AddTag"
                                 class="rounded-lg bg-primary px-4 text-sm font-semibold text-white transition hover:brightness-110">

@@ -1,5 +1,5 @@
 @page "/admin/comments"
-@attribute [Authorize(Roles = "Admin,SuperAdmin")]
+@* @attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")] *@
 @using DotnetNiger.UI.Components.Admin.Cards
 @inject ICommentService CommentService
 @inject IToastService ToastService
@@ -21,7 +21,7 @@
                 <Skeleton Type="SkeletonType.Button" Width="120px" />
                 <Skeleton Type="SkeletonType.Button" Width="100px" />
             </div>
-            <div class="overflow-hidden rounded-lg bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
+            <div class="overflow-hidden rounded-lg bg-surface shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead class="border-b border-gray-100 bg-gray-50">
@@ -38,12 +38,24 @@
                             @for (int i = 0; i < 4; i++)
                             {
                                 <tr>
-                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Custom" Class="h-8 w-32" /></td>
-                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Text" Lines="2" Class="w-48" /></td>
-                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Badge" Width="80px" /></td>
-                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Text" Lines="1" Class="w-24" /></td>
-                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Badge" Width="80px" /></td>
-                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Button" Width="32px" Class="h-8" /></td>
+                                    <td class="px-6 py-4">
+                                        <Skeleton Type="SkeletonType.Custom" Class="h-8 w-32" />
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <Skeleton Type="SkeletonType.Text" Lines="2" Class="w-48" />
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <Skeleton Type="SkeletonType.Badge" Width="80px" />
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-24" />
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <Skeleton Type="SkeletonType.Badge" Width="80px" />
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <Skeleton Type="SkeletonType.Button" Width="32px" Class="h-8" />
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -60,71 +72,72 @@ else
             <div class="mb-8 flex items-center justify-between gap-4">
                 <section>
                     <AdminBreadcrumb />
-                    <p class="mt-2 max-w-2xl text-sm leading-6 text-body md:text-base">Modérez les commentaires des articles et événements.</p>
-                </section>
-            </div>
-
-            <section class="mb-6 flex flex-wrap items-center gap-3">
-                <div class="flex flex-wrap gap-2">
-                    <button @onclick='() => SetFilter("all")'
-                            class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "all" ? "bg-black text-white" : "bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50")">
-                        Tous (@allComments.Count)
-                    </button>
-                    <button @onclick='() => SetFilter("pending")'
-                            class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "pending" ? "bg-amber-500 text-white" : "bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50")">
-                        En attente (@pendingCount)
-                    </button>
-                    <button @onclick='() => SetFilter("approved")'
-                            class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "approved" ? "bg-green-600 text-white" : "bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50")">
-                        Approuvés (@approvedCount)
-                    </button>
-                    <button @onclick='() => SetFilter("rejected")'
-                            class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "rejected" ? "bg-red-600 text-white" : "bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50")">
-                        Rejetés (@rejectedCount)
-                    </button>
+                    <p class="mt-2 max-w-2xl text-sm leading-6 text-body md:text-base">Modérez les commentaires des articles
+                        et événements.</p>
+                    </section>
                 </div>
 
-                <div class="flex-1 min-w-0">
-                    <div class="relative">
-                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        <input type="text" placeholder="Rechercher un commentaire..."
-                               @bind="searchQuery" @bind:event="oninput"
-                               class="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-4 text-sm text-title outline-none placeholder:text-gray-400" />
+                <section class="mb-6 flex flex-wrap items-center gap-3">
+                    <div class="flex flex-wrap gap-2">
+                        <button @onclick='() => SetFilter("all")'
+                                class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "all" ? "bg-black text-white" : "bg-surface text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50")">
+                            Tous (@allComments.Count)
+                        </button>
+                        <button @onclick='() => SetFilter("pending")'
+                                class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "pending" ? "bg-amber-500 text-white" : "bg-surface text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50")">
+                            En attente (@pendingCount)
+                        </button>
+                        <button @onclick='() => SetFilter("approved")'
+                                class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "approved" ? "bg-green-600 text-white" : "bg-surface text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50")">
+                            Approuvés (@approvedCount)
+                        </button>
+                        <button @onclick='() => SetFilter("rejected")'
+                                class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "rejected" ? "bg-red-600 text-white" : "bg-surface text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50")">
+                            Rejetés (@rejectedCount)
+                        </button>
                     </div>
+
+                    <div class="flex-1 min-w-0">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" placeholder="Rechercher un commentaire..." @bind="searchQuery"
+                                   @bind:event="oninput"
+                                   class="w-full rounded-lg     bg-surface py-2.5 pl-9 pr-4 text-sm text-title outline-none placeholder:text-gray-400" />
+                        </div>
+                    </div>
+
+                    <select @bind="typeFilter"
+                            class="cursor-pointer rounded-lg     bg-surface px-4 py-2.5 text-sm text-title shadow-sm outline-none transition hover:border-gray-300">
+                        <option value="">Type</option>
+                        <option value="post">Articles</option>
+                        <option value="event">Événements</option>
+                    </select>
+                </section>
+
+                <div class="mb-6 hidden md:block">
+                    <ViewToggle @bind-IsListView="isListView" />
                 </div>
 
-                <select @bind="typeFilter"
-                        class="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm text-title shadow-sm outline-none transition hover:border-gray-300">
-                    <option value="">Type</option>
-                    <option value="post">Articles</option>
-                    <option value="event">Événements</option>
-                </select>
-            </section>
+                @if (isListView)
+                {
+                    <CommentsTable Comments="pagedComments" OnChanged="LoadCommentsAsync" />
+                }
+                else
+                {
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-5 lg:gap-6">
+                        @foreach (var comment in pagedComments)
+                        {
+                            <AdminCommentCard @key="comment.Id" Comment="comment" OnChanged="LoadCommentsAsync" />
+                        }
+                    </div>
+                }
 
-            <div class="mb-6 hidden md:block">
-                <ViewToggle @bind-IsListView="isListView" />
-            </div>
-
-            @if (isListView)
-            {
-                <CommentsTable Comments="pagedComments" OnChanged="LoadCommentsAsync" />
-            }
-            else
-            {
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-5 lg:gap-6">
-                    @foreach (var comment in pagedComments)
-                    {
-                        <AdminCommentCard @key="comment.Id" Comment="comment" OnChanged="LoadCommentsAsync" />
-                    }
+                <div class="mt-6">
+                    <Paginated @bind-CurrentPage="currentPage" TotalPages="@totalPages" />
                 </div>
-            }
-
-            <div class="mt-6">
-                <Paginated @bind-CurrentPage="currentPage" TotalPages="@totalPages" />
             </div>
         </div>
-    </div>
-}
+    }
 
 @code {
     private bool isLoading = true;

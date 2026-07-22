@@ -78,7 +78,7 @@ public class MockAuthService : IAuthService
         };
     }
 
-    public async Task<ApiSuccessResponse<AuthDto>> CompleteCodeExchangeAsync(string code, string redirectUri)
+    public async Task<ApiSuccessResponse<AuthDto>> CompleteExternalLoginAsync(string ticket)
     {
         await Task.Delay(600);
         return new ApiSuccessResponse<AuthDto>

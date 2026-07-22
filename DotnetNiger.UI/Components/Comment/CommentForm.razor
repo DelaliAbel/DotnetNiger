@@ -8,7 +8,7 @@
 
 @if (UserStateService.IsAuthenticated)
 {
-    <div class="flex items-center gap-3 rounded-full border border-gray-200 bg-white px-4 py-3 shadow-sm">
+    <div class="flex items-center gap-3 rounded-full     bg-surface px-4 py-3 shadow-sm">
         <!-- User avatar -->
         <div
             class="h-9 w-9 flex-shrink-0 rounded-full bg-avatar-bg flex items-center justify-center text-sm font-bold text-accent overflow-hidden">
@@ -36,9 +36,9 @@
 }
 else
 {
-    <div class="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 sm:p-6 text-center">
+    <div class="rounded-lg   border-dashed border-gray-300 bg-gray-50 p-4 sm:p-6 text-center">
         <i class="fa-solid fa-lock text-lg text-gray-400 mb-2 block"></i>
-        <p class="text-sm text-gray-500">
+        <p class="text-sm text-body">
             <a href="/login" class="text-primary font-semibold hover:underline">Connectez-vous</a> pour laisser un
             commentaire.
         </p>

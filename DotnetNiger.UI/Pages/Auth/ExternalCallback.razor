@@ -1,19 +1,20 @@
 ﻿@page "/auth/external-callback"
+@using Microsoft.AspNetCore.Components
 @inject IAuthService AuthService
 @inject IUserStateService UserStateService
 @inject NavigationManager Navigation
-@inject Microsoft.Extensions.Configuration.IConfiguration Config
 
 <PageTitle>Connexion en cours - .NET Niger</PageTitle>
 
 <div class="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
     <div class="text-center">
-        <div class="text-gray-500 mb-4">
+        <div class="text-body mb-4">
             @if (isProcessing)
             {
                 <div class="space-y-4">
-                    <div class="inline-block w-8 h-8 border-2 border-violet-600 border-t-transparent rounded-full animate-spin"></div>
-                    <p class="text-sm text-gray-500 mt-2">Finalisation de la connexion...</p>
+                    <Skeleton Type="SkeletonType.Custom" Class="h-16 w-16 rounded-full mx-auto" />
+                    <Skeleton Type="SkeletonType.Title" Class="w-3/4 mx-auto" />
+                    <Skeleton Type="SkeletonType.Text" Lines="2" Class="w-1/2 mx-auto" />
                 </div>
             }
             else if (!string.IsNullOrEmpty(errorMessage))
@@ -26,15 +27,16 @@
 
 @code {
     private bool isProcessing = true;
-    private string? errorMessage;
+    private string errorMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
         var uri = new Uri(Navigation.Uri);
         var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
 
-        var code = query["code"];
+        var ticket = query["ticket"];
         var error = query["error"];
+        var returnUrl = query["returnUrl"];
 
         if (!string.IsNullOrEmpty(error))
         {
@@ -43,27 +45,27 @@
             return;
         }
 
-        if (string.IsNullOrEmpty(code))
+        if (string.IsNullOrEmpty(ticket))
         {
             isProcessing = false;
-            errorMessage = "Aucun code de validation reçu.";
+            errorMessage = "Aucun ticket de connexion reçu.";
             await Task.Delay(3000);
             Navigation.NavigateTo("/login");
             return;
         }
 
-        var apiBase = Config["ApiBaseUrl"] ?? "http://localhost:5000";
-        var redirectUri = Navigation.BaseUri.TrimEnd('/') + "/auth/external-callback";
-
-        var response = await AuthService.CompleteCodeExchangeAsync(code, redirectUri);
+        var response = await AuthService.CompleteExternalLoginAsync(ticket);
 
         if (response.Success && response.Data != null)
         {
             if (response.Data.User is not null)
                 await UserStateService.SetUserAsync(response.Data.User);
 
-            var isAdmin = response.Data.User?.Roles.Any(r => Helpers.RoleConstants.IsAdminRole(r)) == true;
-            Navigation.NavigateTo(isAdmin ? "/admin" : "/");
+            var destination = "/";
+            if (!string.IsNullOrWhiteSpace(returnUrl) && returnUrl.StartsWith("/"))
+                destination = returnUrl;
+
+            Navigation.NavigateTo(destination);
         }
         else
         {

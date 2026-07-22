@@ -18,19 +18,19 @@
 
     @if (!isLoading)
     {
-        <div class="rounded-lg bg-white p-6 shadow">
+        <div class="rounded-lg bg-surface p-6 shadow">
             <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
                 <div class="lg:col-span-2 order-2 lg:order-1 space-y-6">
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-gray-700">Titre</label>
                         <input @bind="postRequest.Title" type="text"
-                               class="w-full rounded-lg border border-gray-300 px-4 py-3 focus:outline-none" />
+                               class="w-full rounded-lg   border-gray-300 px-4 py-3 focus:outline-none" />
                     </div>
 
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-gray-700">Type d'article</label>
                         <select @bind="postRequest.PostType"
-                                class="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 focus:outline-none">
+                                class="w-full rounded-lg   border-gray-300 bg-surface px-4 py-3 focus:outline-none">
                             <option value="">Sélectionner</option>
                             <option value="Tutorial">Tutorial</option>
                             <option value="Article">Article</option>
@@ -65,7 +65,7 @@
                 <label class="mb-2 block text-sm font-semibold text-gray-700">Tags</label>
                 <div class="flex gap-2">
                     <input @bind="tagInput" @onkeydown="HandleTagKeyDown" type="text"
-                           class="flex-1 rounded-lg border border-gray-300 px-4 py-3 focus:outline-none"
+                           class="flex-1 rounded-lg   border-gray-300 px-4 py-3 focus:outline-none"
                            placeholder="Saisir un tag puis Entrée" />
                     <button type="button" @onclick="AddTag"
                             class="rounded-lg bg-primary px-4 text-sm font-semibold text-white transition hover:brightness-110">
@@ -110,7 +110,7 @@
     }
     else
     {
-        <div class="rounded-lg bg-white p-6 shadow">
+        <div class="rounded-lg bg-surface p-6 shadow">
             <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
                 <div class="lg:col-span-2 order-2 lg:order-1 space-y-6">
                     <div>
@@ -226,7 +226,6 @@
         postRequest.Content = await EditorRef.GetContentAsync();
 
         // Sauvegarder l'état du formulaire pour restauration après retour
-        var tagNames = postRequest.TagNames ?? new();
         PreviewState.PendingPostRequest = new CreatePostRequest
         {
             Title = postRequest.Title ?? string.Empty,
@@ -235,8 +234,8 @@
             CoverImageUrl = postRequest.CoverImageUrl ?? string.Empty,
             PostType = postRequest.PostType ?? string.Empty,
             CategoryIds = postRequest.CategoryIds ?? new(),
-            TagNames = tagNames,
-            IsPublished = postRequest.IsPublished.GetValueOrDefault()
+            TagNames = postRequest.TagNames ?? new(),
+            IsPublished = postRequest.IsPublished
         };
 
         var previewDto = new PostDto
@@ -252,7 +251,7 @@
             PostType = postRequest.PostType ?? string.Empty,
             PublishedAt = originalPost?.PublishedAt ?? DateTime.Now,
             Categories = originalPost?.Categories ?? new(),
-            Tags = tagNames.Select(t => new TagDto { Name = t }).ToList()
+            Tags = (postRequest.TagNames ?? new()).Select(t => new TagDto { Name = t }).ToList()
         };
 
         PreviewState.SetBlogPreview(previewDto, $"/admin/blog/edit/{Id}");

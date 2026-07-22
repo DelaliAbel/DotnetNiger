@@ -33,7 +33,7 @@
                   </NavLink>
 
                   <nav class="sidebar-scroll mt-4 flex-1 space-y-2 overflow-y-auto px-3">
-                        @if (IsAdmin || IsCollaborator)
+                        @if (IsAdmin)
                         {
                               <NavLink href="/admin" Match="NavLinkMatch.All"
                                        class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover"
@@ -137,7 +137,7 @@
                               </NavLink>
                         }
 
-                        @if (IsAdmin)
+                        @if (CanAccessMesSections)
                         {
                               <NavLink href="/admin/comments"
                                        class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover"
@@ -150,7 +150,7 @@
                               </NavLink>
                         }
 
-                        @if (IsAdmin)
+                        @if (CanAccessMesSections)
                         {
                               <NavLink href="/admin/newsletter"
                                        class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover"
@@ -220,7 +220,7 @@
                               </NavLink>
                         }
 
-                        @if (IsSuperAdmin)
+                        @if (IsAdmin)
                         {
                               <div class="border-t border-slate-700/40 my-2"></div>
 
@@ -282,7 +282,7 @@
                   </NavLink>
 
                   <nav class="sidebar-scroll mt-3 flex-1 space-y-2 overflow-y-auto px-4">
-                        @if (IsAdmin || IsCollaborator)
+                        @if (IsAdmin)
                         {
                               <NavLink href="/admin" Match="NavLinkMatch.All"
                                        class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover"
@@ -362,7 +362,7 @@
                               </NavLink>
                         }
 
-                        @if (IsAdmin)
+                        @if (CanAccessMesSections)
                         {
                               <NavLink href="/admin/comments"
                                        class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover"
@@ -372,7 +372,7 @@
                               </NavLink>
                         }
 
-                        @if (IsAdmin)
+                        @if (CanAccessMesSections)
                         {
                               <NavLink href="/admin/newsletter"
                                        class="flex items-center gap-2 rounded-lg px-3 py-3 transition-colors hover:bg-hover"
@@ -427,7 +427,7 @@
                               </NavLink>
                         }
 
-                        @if (IsSuperAdmin)
+                        @if (IsAdmin)
                         {
                               <div class="border-t border-slate-700/40 my-2"></div>
 
@@ -462,8 +462,6 @@
       public bool IsOpen { get; set; }
 
       private bool IsAdmin => UserStateService.CurrentUser?.Roles.Any(r => RoleConstants.IsAdminRole(r)) ?? false;
-
-      private bool IsSuperAdmin => UserStateService.CurrentUser?.Roles.Any(r => RoleConstants.IsSuperAdminRole(r)) ?? false;
 
       private bool IsCollaborator => UserStateService.CurrentUser?.Roles.Any(r => string.Equals(r, RoleConstants.Collaborator,
 StringComparison.OrdinalIgnoreCase)) ?? false;

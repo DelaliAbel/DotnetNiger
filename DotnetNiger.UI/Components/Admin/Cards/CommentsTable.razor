@@ -5,90 +5,90 @@
 @inject IToastService ToastService
 @inject IJSRuntime JS
 
-<div class="overflow-hidden rounded-lg bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
-        <table class="w-full">
-            <thead class="border-b border-gray-100 bg-gray-50">
+<div class="overflow-hidden rounded-lg bg-surface shadow-md">
+    <table class="w-full">
+        <thead class="border-b border-gray-100 bg-gray-50">
+            <tr>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Auteur</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Contenu</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Type</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Cible</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Date</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Statut</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            @if (Comments is null || Comments.Count == 0)
+            {
                 <tr>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Auteur</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Contenu</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Type</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Cible</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Statut</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                    <td colspan="7" class="px-6 py-10 text-center text-sm text-body">Aucun commentaire trouvé.</td>
                 </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @if (Comments is null || Comments.Count == 0)
+            }
+            else
+            {
+                @foreach (var comment in Comments)
                 {
-                    <tr>
-                        <td colspan="7" class="px-6 py-10 text-center text-sm text-gray-500">Aucun commentaire trouvé.</td>
+                    <tr @key="comment.Id" class="transition hover:bg-gray-50/80">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full bg-gray-100">
+                                    @if (!string.IsNullOrWhiteSpace(comment.AuthorAvatar))
+                                    {
+                                        <ResolvedImage Src="@comment.AuthorAvatar" alt="@comment.AuthorName"
+                                                       class="h-full w-full object-cover" />
+                                    }
+                                    else
+                                    {
+                                        <div class="flex h-full w-full items-center justify-center text-xs font-semibold text-body">
+                                            @comment.AuthorName[..1].ToUpperInvariant()
+                                        </div>
+                                    }
+                                </div>
+                                <span class="text-sm font-medium text-title">@comment.AuthorName</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-body max-w-xs truncate">@Truncate(comment.Content, 150)</td>
+                        <td class="px-6 py-4 text-sm">
+                            <span
+                                class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @(comment.PostId != Guid.Empty ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700")">
+                                @(comment.PostId != Guid.Empty ? "Article" : "Événement")
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-body max-w-[200px] truncate">
+                            @GetTargetTitle(comment)
+                        </td>
+                        <td class="px-6 py-4 text-sm text-body">@comment.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td class="px-6 py-4 text-sm">
+                            <span
+                                class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @GetStatusClass(comment.Status)">
+                                @GetStatusLabel(comment.Status)
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm">
+                            <div class="flex items-center gap-2">
+                                @if (comment.Status == "pending")
+                                {
+                                    <button @onclick="() => ApproveComment(comment.Id)"
+                                            class="rounded-lg p-2 text-green-600 transition hover:bg-green-50" title="Approuver">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                    <button @onclick="() => RejectComment(comment.Id)"
+                                            class="rounded-lg p-2 text-red-600 transition hover:bg-red-50" title="Rejeter">
+                                        <i class="fas fa-xmark"></i>
+                                    </button>
+                                }
+                                <button @onclick="() => DeleteComment(comment.Id)"
+                                        class="rounded-lg p-2 text-body transition hover:bg-gray-100" title="Supprimer">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                 }
-                else
-                {
-                    @foreach (var comment in Comments)
-                    {
-                        <tr @key="comment.Id" class="transition hover:bg-gray-50/80">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="h-8 w-8 flex-shrink-0 overflow-hidden rounded-full bg-gray-100">
-                                        @if (!string.IsNullOrWhiteSpace(comment.AuthorAvatar))
-                                        {
-                                            <ResolvedImage Src="@comment.AuthorAvatar" alt="@comment.AuthorName" class="h-full w-full object-cover" />
-                                        }
-                                        else
-                                        {
-                                            <div class="flex h-full w-full items-center justify-center text-xs font-semibold text-gray-500">
-                                                @comment.AuthorName[..1].ToUpperInvariant()
-                                            </div>
-                                        }
-                                    </div>
-                                    <span class="text-sm font-medium text-title">@comment.AuthorName</span>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-body max-w-xs truncate">@Truncate(comment.Content, 150)</td>
-                            <td class="px-6 py-4 text-sm">
-                                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @(comment.PostId != Guid.Empty ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700")">
-                                    @(comment.PostId != Guid.Empty ? "Article" : "Événement")
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-body max-w-[200px] truncate">
-                                @GetTargetTitle(comment)
-                            </td>
-                            <td class="px-6 py-4 text-sm text-body">@comment.CreatedAt.ToString("dd/MM/yyyy")</td>
-                            <td class="px-6 py-4 text-sm">
-                                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @GetStatusClass(comment.Status)">
-                                    @GetStatusLabel(comment.Status)
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-sm">
-                                <div class="flex items-center gap-2">
-                                    @if (comment.Status == "pending")
-                                    {
-                                        <button @onclick="() => ApproveComment(comment.Id)"
-                                                class="rounded-lg p-2 text-green-600 transition hover:bg-green-50"
-                                                title="Approuver">
-                                            <i class="fas fa-check"></i>
-                                        </button>
-                                        <button @onclick="() => RejectComment(comment.Id)"
-                                                class="rounded-lg p-2 text-red-600 transition hover:bg-red-50"
-                                                title="Rejeter">
-                                            <i class="fas fa-xmark"></i>
-                                        </button>
-                                    }
-                                    <button @onclick="() => DeleteComment(comment.Id)"
-                                            class="rounded-lg p-2 text-gray-500 transition hover:bg-gray-100"
-                                            title="Supprimer">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                }
-            </tbody>
-        </table>
+            }
+        </tbody>
+    </table>
 </div>
 
 @code {
@@ -150,7 +150,7 @@
         "pending" => "bg-amber-100 text-amber-700",
         "approved" => "bg-success-bg text-success",
         "rejected" => "bg-red-100 text-red-700",
-        _ => "bg-gray-100 text-gray-700"
+        _ => "bg-gray-100 text-title"
     };
 
     private static string GetStatusLabel(string status) => status switch

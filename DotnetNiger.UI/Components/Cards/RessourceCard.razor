@@ -1,7 +1,7 @@
 ﻿@* Carte ressource réutilisable : page publique, accueil, admin *@
 @using DotnetNiger.UI.Components.Admin.Shared
 
-<div class="group bg-white rounded-lg shadow-sm hover:shadow-lg border border-gray-100 overflow-hidden transition-all duration-300 hover:-translate-y-1 flex flex-col @(!AdminMode ? "cursor-pointer" : "")"
+<div class="group bg-surface rounded-lg shadow-sm hover:shadow-lg   border-gray-100 overflow-hidden transition-all duration-300 hover:-translate-y-1 flex flex-col @(!AdminMode ? "cursor-pointer" : "")"
      @onclick="NavigateToDetail">
     <div class="relative h-36 sm:h-40 @GradientClass flex items-center justify-center overflow-hidden">
         @if (AdminMode)
@@ -15,14 +15,14 @@
         <i class="@IconClass text-white text-4xl sm:text-5xl opacity-90"></i>
         <div class="absolute top-3 left-3 flex flex-wrap gap-1.5">
             <span
-                class="inline-flex items-center gap-1 rounded-full bg-white/20 backdrop-blur-sm px-2.5 py-0.5 text-[11px] font-semibold text-white">
+                class="inline-flex items-center gap-1 rounded-full bg-surface/20 backdrop-blur-sm px-2.5 py-0.5 text-[11px] font-semibold text-white">
                 <i class="@LevelIconClass text-xs"></i>
                 @Resource.Level
             </span>
         </div>
         <div class="absolute top-3 right-3 @(AdminMode ? "hidden" : "")">
             <span
-                class="inline-flex items-center gap-1 rounded-full bg-white/20 backdrop-blur-sm px-2.5 py-0.5 text-[11px] font-medium text-white">
+                class="inline-flex items-center gap-1 rounded-full bg-surface/20 backdrop-blur-sm px-2.5 py-0.5 text-[11px] font-medium text-white">
                 <i class="fas fa-eye text-xs"></i>
                 @Resource.ViewCount
             </span>
@@ -38,9 +38,9 @@
             }
         </div>
         <h3
-            class="text-sm sm:text-base font-bold text-gray-900 mb-1.5 line-clamp-2 leading-snug group-hover:text-primary transition-colors">
+            class="text-sm sm:text-base font-bold text-title mb-1.5 line-clamp-2 leading-snug group-hover:text-primary transition-colors">
             @Resource.Title</h3>
-            <p class="text-xs sm:text-sm text-gray-500 leading-relaxed line-clamp-2 mb-4 flex-1">@Resource.Description</p>
+            <p class="text-xs sm:text-sm text-body leading-relaxed line-clamp-2 mb-4 flex-1">@Resource.Description</p>
             @if (Resource.Tags.Count > 0)
             {
                 <div class="flex flex-wrap gap-1.5 mb-3">

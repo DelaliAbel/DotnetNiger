@@ -10,15 +10,15 @@
             {
                   <button @onclick="() => GoToPage(pageNumber)"
                           class="@(SafeCurrentPage == pageNumber
-                              ? "flex px-3 py-1.5 sm:px-5 sm:py-4 items-center justify-center rounded-lg border border-slate-600 bg-black text-white"
-                              : "flex px-3 py-1.5 sm:px-5 sm:py-4 items-center justify-center rounded-lg border border-slate-700 text-black hover:bg-slate-900")">
+                                                        ? "flex px-3 py-1.5 sm:px-5 sm:py-4 items-center justify-center rounded-lg border border-slate-600 bg-black text-white"
+                                                        : "flex px-3 py-1.5 sm:px-5 sm:py-4 items-center justify-center rounded-lg border border-slate-700 text-black hover:bg-slate-900")">
                         <span class="Button text-sm sm:text-base">@pageNumber</span>
                   </button>
             }
             <button @onclick="GoToNextPage" disabled="@(SafeCurrentPage == SafeTotalPages)"
-                    class="flex px-2.5 py-1.5 sm:px-5 sm:py-4 items-center justify-center gap-1 sm:gap-2 rounded-lg border border-slate-700 text-black disabled:cursor-not-allowed disabled:opacity-50">
+                    class="flex px-2.5 py-1.5 sm:px-5 sm:py-4 items-center justify-center gap-1 sm:gap-2 rounded-lg  border border-slate-700 text-black disabled:cursor-not-allowed disabled:opacity-50">
                   <span class="Button text-black hidden sm:block text-sm">Suiv</span>
-                  <i class="fas fa-arrow-right text-base sm:text-sm"></i> 
+                  <i class="fas fa-arrow-right text-base sm:text-sm"></i>
             </button>
       </div>
 </div>

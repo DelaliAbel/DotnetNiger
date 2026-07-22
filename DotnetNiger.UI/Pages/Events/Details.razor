@@ -29,13 +29,13 @@
     </HeadContent>
 }
 
-<section class="min-h-screen bg-[#ececef] px-4 py-8 sm:px-6 sm:py-10 lg:px-10">
+<section class="min-h-screen px-4 py-8 sm:px-6 sm:py-10 lg:px-10">
     <div class="mx-auto w-full max-w-6xl space-y-4">
         @if (IsLoading)
         {
             <div class="lg:grid lg:grid-cols-3 lg:gap-6">
                 <div class="lg:col-span-2 space-y-4">
-                    <div class="overflow-hidden rounded-lg bg-white shadow-sm">
+                    <div class="overflow-hidden rounded-lg bg-surface shadow-sm">
                         <Skeleton Type="SkeletonType.Image" Class="h-64 sm:h-80 w-full rounded-none"
                                   Style="border-radius:0" />
                         <div class="space-y-4 p-4 sm:p-8">
@@ -49,13 +49,13 @@
                             <Skeleton Type="SkeletonType.Button" Width="160px" />
                         </div>
                     </div>
-                    <div class="rounded-lg bg-white p-4 sm:p-6 shadow-sm">
+                    <div class="rounded-lg bg-surface p-4 sm:p-6 shadow-sm">
                         <Skeleton Type="SkeletonType.Title" Class="w-1/2" />
                         <Skeleton Type="SkeletonType.Text" Lines="5" Class="mt-3" />
                     </div>
                 </div>
                 <div class="hidden lg:block lg:col-span-1 space-y-4">
-                    <aside class="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
+                    <aside class="rounded-lg   border-gray-100 bg-surface p-5 shadow-sm">
                         <div class="flex items-start justify-between gap-4">
                             <div class="flex-1 space-y-2">
                                 <Skeleton Type="SkeletonType.Badge" Width="60px" />
@@ -69,7 +69,7 @@
                             <Skeleton Type="SkeletonType.Button" Width="100%" Class="h-9" />
                         </div>
                     </aside>
-                    <aside class="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
+                    <aside class="rounded-lg   border-gray-100 bg-surface p-5 shadow-sm">
                         <Skeleton Type="SkeletonType.Badge" Width="60px" />
                         <Skeleton Type="SkeletonType.Title" Class="w-3/4" />
                         <div class="mt-4 space-y-4">
@@ -102,9 +102,9 @@
                 @* --- Bloc 1 : Contenu principal --- *@
                 <div class="lg:col-span-2 space-y-4">
                     @* --- Hero card --- *@
-                    <article class="overflow-hidden rounded-lg bg-white shadow-sm">
+                    <article class="overflow-hidden rounded-lg bg-surface shadow-sm">
                         <div
-                            class="overflow-hidden rounded-md bg-[#0b1220] shadow-[0_18px_40px_rgba(15,23,42,0.16)] mx-4 sm:mx-8 mt-4 sm:mt-8 aspect-video">
+                            class="overflow-hidden rounded-md mx-4 sm:mx-8 mt-4 sm:mt-8 aspect-video">
                             <ResolvedImage Src="@CurrentEvent?.CoverImageUrl" Icon="fa-calendar"
                                            alt="@(CurrentEvent?.Title ?? "Événement")" class="h-full w-full" />
                         </div>
@@ -116,14 +116,14 @@
                                     @GetEventTypeLabel(CurrentEvent?.EventType ?? string.Empty)
                                 </span>
                                 <button type="button"
-                                        class="items-center rounded-lg bg-white text-black transition hover:bg-gray-800 lg:hidden"
+                                        class="items-center rounded-lg bg-surface text-black transition hover:bg-title lg:hidden"
                                         aria-label="Partager l'événement" aria-expanded="@IsShared"
                                         aria-controls="mobile-share-panel" @onclick="ToggleSharePanel">
                                     <i class="fa-solid fa-share-nodes text-[12px] sm:text-[13px]"></i>
                                 </button>
                             </div>
 
-                            <h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold leading-tight text-gray-700">
+                            <h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold leading-tight text-title">
                                 @CurrentEvent?.Title
                             </h1>
 
@@ -154,13 +154,13 @@
                             @if (_isPastEvent)
                             {
                                 <div class="flex flex-wrap items-center gap-3 rounded-lg bg-gray-50 px-4 py-3">
-                                    <span class="inline-flex items-center gap-1.5 text-xs sm:text-sm text-gray-500">
+                                    <span class="inline-flex items-center gap-1.5 text-xs sm:text-sm text-body">
                                         <i class="fa-regular fa-clock"></i>
                                         événement passé
                                     </span>
                                     @if (IsRegistered)
                                     {
-                                        <span class="inline-flex items-center gap-1.5 text-xs sm:text-sm text-gray-500">
+                                        <span class="inline-flex items-center gap-1.5 text-xs sm:text-sm text-body">
                                             <i class="fa-solid fa-check"></i>
                                             Vous étiez inscrit
                                         </span>
@@ -173,7 +173,7 @@
                                             @foreach (var reg in pastAvatars)
                                             {
                                                 <div
-                                                    class="w-6 h-6 sm:w-7 sm:h-7 rounded-full border-2 border-white flex items-center justify-center text-white text-[8px] sm:text-xs font-bold flex-shrink-0 overflow-hidden @(string.IsNullOrWhiteSpace(reg.AvatarUrl) ? "bg-green-100" : "")">
+                                                    class="w-6 h-6 sm:w-7 sm:h-7 rounded-full border-2    flex items-center justify-center text-white text-[8px] sm:text-xs font-bold flex-shrink-0 overflow-hidden @(string.IsNullOrWhiteSpace(reg.AvatarUrl) ? "bg-green-100" : "")">
                                                     @if (!string.IsNullOrWhiteSpace(reg.AvatarUrl))
                                                     {
                                                         <ResolvedImage Src="@reg.AvatarUrl" alt="@reg.UserName"
@@ -190,15 +190,15 @@
                                             @for (int i = pastAvatars.Count; i < 3; i++)
                                             {
                                                 <div
-                                                    class="w-6 h-6 sm:w-7 sm:h-7 bg-green-100 rounded-full border-2 border-white flex-shrink-0">
+                                                    class="w-6 h-6 sm:w-7 sm:h-7 bg-green-100 rounded-full border-2    flex-shrink-0">
                                                 </div>
                                             }
                                         </div>
                                         <div>
-                                            <p class="text-xs sm:text-sm font-semibold text-gray-700">
+                                            <p class="text-xs sm:text-sm font-semibold text-title">
                                                 @(CurrentEvent?.RegisteredCount) inscrits
                                             </p>
-                                            <p class="text-[11px] sm:text-xs text-gray-500">
+                                            <p class="text-[11px] sm:text-xs text-body">
                                                 Capacité : @(CurrentEvent?.Capacity)
                                             </p>
                                         </div>
@@ -238,7 +238,7 @@
                                             @foreach (var reg in currentAvatars)
                                             {
                                                 <div
-                                                    class="w-6 h-6 sm:w-7 sm:h-7 rounded-full border-2 border-white flex items-center justify-center text-white text-[8px] sm:text-xs font-bold flex-shrink-0 overflow-hidden @(string.IsNullOrWhiteSpace(reg.AvatarUrl) ? "bg-green-100" : "")">
+                                                    class="w-6 h-6 sm:w-7 sm:h-7 rounded-full border-2    flex items-center justify-center text-white text-[8px] sm:text-xs font-bold flex-shrink-0 overflow-hidden @(string.IsNullOrWhiteSpace(reg.AvatarUrl) ? "bg-green-100" : "")">
                                                     @if (!string.IsNullOrWhiteSpace(reg.AvatarUrl))
                                                     {
                                                         <ResolvedImage Src="@reg.AvatarUrl" alt="@reg.UserName"
@@ -255,15 +255,15 @@
                                             @for (int i = currentAvatars.Count; i < 3; i++)
                                             {
                                                 <div
-                                                    class="w-6 h-6 sm:w-7 sm:h-7 bg-green-100 rounded-full border-2 border-white flex-shrink-0">
+                                                    class="w-6 h-6 sm:w-7 sm:h-7 bg-green-100 rounded-full border-2    flex-shrink-0">
                                                 </div>
                                             }
                                         </div>
                                         <div>
-                                            <p class="text-xs sm:text-sm font-semibold text-gray-700">
+                                            <p class="text-xs sm:text-sm font-semibold text-title">
                                                 @(CurrentEvent?.RegisteredCount) inscrits
                                             </p>
-                                            <p class="text-[11px] sm:text-xs text-gray-500">
+                                            <p class="text-[11px] sm:text-xs text-body">
                                                 Capacité : @(CurrentEvent?.Capacity)
                                             </p>
                                         </div>
@@ -274,8 +274,8 @@
                     </article>
 
                     @* --- À propos --- *@
-                    <article class="rounded-lg bg-white p-4 sm:p-6 shadow-sm">
-                        <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-gray-700">
+                    <article class="rounded-lg bg-surface p-4 sm:p-6 shadow-sm">
+                        <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-title">
                             À propos de l'événement
                         </h2>
                         <p class="prose prose-sm max-w-none break-words mt-3">
@@ -287,10 +287,10 @@
                     @* --- Intervenants --- *@
                     @if (CurrentEvent?.Speakers.Count > 0)
                     {
-                        <article class="rounded-lg bg-white p-4 sm:p-6 shadow-sm">
+                        <article class="rounded-lg bg-surface p-4 sm:p-6 shadow-sm">
                             <div class="text-center">
-                                <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-gray-700">Intervenants</h2>
-                                <p class="mt-2 text-xs sm:text-sm text-gray-500 sm:text-base">
+                                <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-title">Intervenants</h2>
+                                <p class="mt-2 text-xs sm:text-sm text-body sm:text-base">
                                     Des experts passionnés partageant leur savoir.
                                 </p>
                             </div>
@@ -310,10 +310,10 @@
                                                 <span>@(speaker.Name.Length > 0 ? speaker.Name[..1].ToUpper() : "?")</span>
                                             }
                                         </div>
-                                        <h3 class="mt-2 sm:mt-3 text-xs sm:text-sm font-semibold text-gray-700">
+                                        <h3 class="mt-2 sm:mt-3 text-xs sm:text-sm font-semibold text-title">
                                             @speaker.Name
                                         </h3>
-                                        <p class="text-[10px] sm:text-xs text-gray-500">@speaker.Role</p>
+                                        <p class="text-[10px] sm:text-xs text-body">@speaker.Role</p>
                                     </div>
                                 }
                             </div>
@@ -323,8 +323,8 @@
                     @* --- Galerie photos --- *@
                     @if (_galleryImages.Count > 0)
                     {
-                        <article class="rounded-lg bg-white p-4 sm:p-6 shadow-sm">
-                            <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-gray-700">Galerie</h2>
+                        <article class="rounded-lg bg-surface p-4 sm:p-6 shadow-sm">
+                            <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-title">Galerie</h2>
                             <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                                 @for (var i = 0; i < _galleryImages.Count; i++)
                                 {
@@ -332,7 +332,7 @@
                                     var img = _galleryImages[index];
                                     <button type="button" class="block cursor-pointer" @onclick="() => OpenLightbox(index)">
                                         <ResolvedImage Src="@img"
-                                                       class="h-28 sm:h-32 w-full rounded-lg object-cover border border-gray-200 hover:opacity-90 transition" />
+                                                       class="h-28 sm:h-32 w-full rounded-lg object-cover     hover:opacity-90 transition" />
                                     </button>
                                 }
                             </div>
@@ -340,15 +340,15 @@
                     }
                     else if (_isPastEvent)
                     {
-                        <article class="rounded-lg bg-white p-4 sm:p-6 shadow-sm">
+                        <article class="rounded-lg bg-surface p-4 sm:p-6 shadow-sm">
                             <div class="flex flex-col items-center justify-center py-10 text-center">
                                 <div class="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
                                     <i class="fas fa-images text-2xl text-gray-400"></i>
                                 </div>
-                                <h3 class="mt-4 text-base sm:text-lg font-bold text-gray-700">
+                                <h3 class="mt-4 text-base sm:text-lg font-bold text-title">
                                     Aucune photo disponible
                                 </h3>
-                                <p class="mt-1 text-xs sm:text-sm text-gray-500">
+                                <p class="mt-1 text-xs sm:text-sm text-body">
                                     Cet événement ne dispose pas de galerie photos.
                                 </p>
                             </div>
@@ -356,15 +356,15 @@
                     }
                     else
                     {
-                        <article class="rounded-lg bg-white p-4 sm:p-6 shadow-sm">
+                        <article class="rounded-lg bg-surface p-4 sm:p-6 shadow-sm">
                             <div class="flex flex-col items-center justify-center py-10 text-center">
                                 <div class="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
                                     <i class="fas fa-images text-2xl text-gray-400"></i>
                                 </div>
-                                <h3 class="mt-4 text-base sm:text-lg font-bold text-gray-700">
+                                <h3 class="mt-4 text-base sm:text-lg font-bold text-title">
                                     Galerie de l'événement à venir
                                 </h3>
-                                <p class="mt-1 text-xs sm:text-sm text-gray-500">
+                                <p class="mt-1 text-xs sm:text-sm text-body">
                                     Les photos souvenirs seront disponibles après l'événement.
                                 </p>
                             </div>
@@ -372,12 +372,12 @@
                     }
 
                     @* --- Commentaires --- *@
-                    <div class="rounded-xl bg-white border-t p-4 sm:p-6 border-gray-200">
+                    <div class="rounded-xl bg-surface border-t p-4 sm:p-6  ">
                         <div class="flex items-center justify-between">
-                            <h2 class="text-xl sm:text-2xl font-semibold text-gray-900">Commentaires & Feedback</h2>
+                            <h2 class="text-xl sm:text-2xl font-semibold text-title">Commentaires & Feedback</h2>
                             @if (EventComments.Any())
                             {
-                                <span class="text-xs sm:text-sm text-gray-500">@EventComments.Count
+                                <span class="text-xs sm:text-sm text-body">@EventComments.Count
                                     commentaire@(EventComments.Count > 1 ? "s" : "")</span>
                                 }
                             </div>
@@ -391,7 +391,7 @@
                                 <div class="mt-6 sm:mt-8 space-y-4">
                                     @for (int i = 0; i < 3; i++)
                                     {
-                                        <div class="flex gap-3 rounded-lg bg-white p-4 border border-gray-100">
+                                        <div class="flex gap-3 rounded-lg bg-surface p-4   border-gray-100">
                                             <Skeleton Type="SkeletonType.Avatar" Size="40px" Class="h-10 w-10" />
                                             <div class="flex-1 space-y-2">
                                                 <div class="flex items-center gap-2">
@@ -414,9 +414,9 @@
                             else
                             {
                                 <div
-                                    class="mt-6 sm:mt-8 rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 sm:p-8 text-center">
+                                    class="mt-6 sm:mt-8 rounded-lg   border-dashed border-gray-300 bg-gray-50 p-6 sm:p-8 text-center">
                                     <i class="fa-solid fa-comments text-2xl sm:text-3xl text-gray-300 mb-3 sm:mb-4 block"></i>
-                                    <p class="text-xs sm:text-sm text-gray-500">Aucun commentaire pour le moment. Soyez le premier à
+                                    <p class="text-xs sm:text-sm text-body">Aucun commentaire pour le moment. Soyez le premier à
                                         commenter !</p>
                                     </div>
                                 }
@@ -427,11 +427,11 @@
                         @if (UpcomingEvents.Any())
                         {
                             <div class="lg:hidden">
-                                <aside class="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
+                                <aside class="rounded-lg   border-gray-100 bg-surface p-5 shadow-sm">
                                     <p class="text-[10px] sm:text-sm font-semibold uppercase tracking-[0.18em] text-gray-400">
                                         À venir
                                     </p>
-                                    <h2 class="mt-1 text-lg sm:text-xl font-bold text-gray-800">
+                                    <h2 class="mt-1 text-lg sm:text-xl font-bold text-title">
                                         Autres événements
                                     </h2>
                                     <div class="mt-4 space-y-4">
@@ -453,10 +453,10 @@
                                                 </div>
                                                 <div class="min-w-0">
                                                     <p
-                                                        class="text-sm font-semibold text-gray-800 group-hover:text-primary transition line-clamp-2">
+                                                        class="text-sm font-semibold text-title group-hover:text-primary transition line-clamp-2">
                                                         @evt.Title
                                                     </p>
-                                                    <p class="mt-1 text-xs text-gray-500">
+                                                    <p class="mt-1 text-xs text-body">
                                                         @evt.StartDate.ToString("dd MMM", FrCulture)
                                                     </p>
                                                 </div>
@@ -471,16 +471,16 @@
                         <div
                             class="hidden lg:block lg:col-span-1 lg:sticky lg:top-8 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto space-y-4">
                             @* --- Partage --- *@
-                            <aside class="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
+                            <aside class="rounded-lg   border-gray-100 bg-surface p-5 shadow-sm">
                                 <div class="flex items-start justify-between gap-4">
                                     <div>
                                         <p class="text-[10px] sm:text-sm font-semibold uppercase tracking-[0.18em] text-gray-400">
                                             Partage
                                         </p>
-                                        <h2 class="mt-1 text-lg sm:text-xl font-bold text-gray-800">
+                                        <h2 class="mt-1 text-lg sm:text-xl font-bold text-title">
                                             Partager cet événement
                                         </h2>
-                                        <p class="mt-2 text-xs sm:text-sm leading-relaxed text-gray-500">
+                                        <p class="mt-2 text-xs sm:text-sm leading-relaxed text-body">
                                             Diffusez l'événement sur vos réseaux ou copiez le lien direct.
                                         </p>
                                     </div>
@@ -495,11 +495,11 @@
                             @* --- 3 événements à venir --- *@
                             @if (UpcomingEvents.Any())
                             {
-                                <aside class="rounded-lg border border-gray-100 bg-white p-5 shadow-sm">
+                                <aside class="rounded-lg   border-gray-100 bg-surface p-5 shadow-sm">
                                     <p class="text-[10px] sm:text-sm font-semibold uppercase tracking-[0.18em] text-gray-400">
                                         À venir
                                     </p>
-                                    <h2 class="mt-1 text-lg sm:text-xl font-bold text-gray-800">
+                                    <h2 class="mt-1 text-lg sm:text-xl font-bold text-title">
                                         Autres événements
                                     </h2>
                                     <div class="mt-4 space-y-4">
@@ -521,10 +521,10 @@
                                                 </div>
                                                 <div class="min-w-0">
                                                     <p
-                                                        class="text-sm font-semibold text-gray-800 group-hover:text-primary transition line-clamp-2">
+                                                        class="text-sm font-semibold text-title group-hover:text-primary transition line-clamp-2">
                                                         @evt.Title
                                                     </p>
-                                                    <p class="mt-1 text-xs text-gray-500">
+                                                    <p class="mt-1 text-xs text-body">
                                                         @evt.StartDate.ToString("dd MMM", FrCulture)
                                                     </p>
                                                 </div>
@@ -540,18 +540,18 @@
                     <div class="fixed inset-0 z-10 bg-black/50 sm:hidden @(IsShared ? "" : "hidden")" @onclick="ToggleSharePanel">
                     </div>
                     <aside id="mobile-share-panel"
-                           class="overflow-hidden z-20 w-[91%] fixed top-20 rounded-lg border border-gray-100 bg-white shadow-sm transition-all duration-300 lg:hidden @(IsShared ? "max-h-80 p-4 opacity-100 pointer-events-auto translate-x-0" : "max-h-0 p-0 opacity-0 pointer-events-none translate-x-full")">
+                           class="overflow-hidden z-20 w-[91%] fixed top-20 rounded-lg   border-gray-100 bg-surface shadow-sm transition-all duration-300 lg:hidden @(IsShared ? "max-h-80 p-4 opacity-100 pointer-events-auto translate-x-0" : "max-h-0 p-0 opacity-0 pointer-events-none translate-x-full")">
                         <div class="flex items-center justify-between gap-3">
                             <div>
                                 <p class="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">
                                     Partage
                                 </p>
-                                <h2 class="mt-1 text-base sm:text-lg font-bold text-gray-800">
+                                <h2 class="mt-1 text-base sm:text-lg font-bold text-title">
                                     Partager cet événement
                                 </h2>
                             </div>
                             <button type="button"
-                                    class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition hover:bg-gray-200"
+                                    class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-body transition hover:bg-gray-200"
                                     aria-label="Fermer le partage" @onclick="ToggleSharePanel">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>

@@ -8,8 +8,8 @@
                 <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-purple-50">
                     <i class="fas fa-certificate text-primary text-xl"></i>
                 </div>
-                <h2 class="text-lg font-bold text-gray-900">Validez votre parcours</h2>
-                <p class="mt-1.5 text-sm text-gray-500 leading-relaxed max-w-sm mx-auto">
+                <h2 class="text-lg font-bold text-title">Validez votre parcours</h2>
+                <p class="mt-1.5 text-sm text-body leading-relaxed max-w-sm mx-auto">
                     Renseignez votre certification <strong class="text-gray-700">Foundational C# with Microsoft</strong>
                     pour activer vos accès contributeur.
                 </p>
@@ -17,7 +17,7 @@
 
             @if (!string.IsNullOrWhiteSpace(ErrorMessage))
             {
-                <div class="mb-5 rounded-xl bg-red-50 border border-red-100 px-4 py-3">
+                <div class="mb-5 rounded-xl bg-red-50   border-red-100 px-4 py-3">
                     <div class="flex items-start gap-2.5">
                         <i class="fas fa-circle-exclamation text-red-400 mt-0.5 text-xs"></i>
                         <p class="text-sm text-red-700">@ErrorMessage</p>
@@ -26,16 +26,16 @@
             }
 
             <div class="mb-4">
-                <label class="block text-xs font-medium text-gray-500 mb-1.5">URL de la certification</label>
+                <label class="block text-xs font-medium text-body mb-1.5">URL de la certification</label>
                 <InputText @bind-Value="Model.CertificateUrl" placeholder="https://www.freecodecamp.org/certification/..."
-                           class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 transition focus:bg-white focus:border-purple-300 focus:ring-2 focus:ring-purple-100 outline-none" />
+                           class="w-full rounded-xl     bg-gray-50 px-4 py-3 text-sm text-title placeholder:text-gray-400 transition focus:bg-surface focus:border-purple-300 focus:ring-2 focus:ring-purple-100 outline-none" />
                 <ValidationMessage For="@(() => Model.CertificateUrl)" class="text-xs text-red-500 mt-1.5" />
             </div>
 
             <div class="mb-6">
-                <label class="block text-xs font-medium text-gray-500 mb-1.5">Type de certificat</label>
+                <label class="block text-xs font-medium text-body mb-1.5">Type de certificat</label>
                 <InputSelect @bind-Value="Model.CertificateType"
-                             class="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 transition focus:bg-white focus:border-purple-300 focus:ring-2 focus:ring-purple-100 outline-none">
+                             class="w-full rounded-xl     bg-gray-50 px-4 py-3 text-sm text-title transition focus:bg-surface focus:border-purple-300 focus:ring-2 focus:ring-purple-100 outline-none">
                     <option value="" disabled>Sélectionnez un type</option>
                     <option value="Foundational C# with Microsoft">Foundational C# with Microsoft</option>
                     <option value="C# Data and Web">C# Data and Web</option>
@@ -46,7 +46,7 @@
 
             <div class="flex gap-3">
                 <button type="button"
-                        class="flex-1 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50 active:scale-[0.98]"
+                        class="flex-1 rounded-xl     bg-surface px-4 py-3 text-sm font-medium text-gray-600 transition hover:bg-gray-50 active:scale-[0.98]"
                         @onclick="HandleBack">
                     <i class="fas fa-arrow-left mr-1.5 text-xs"></i>Retour
                 </button>
@@ -55,7 +55,7 @@
                     @if (IsLoading)
                     {
                         <span class="inline-flex items-center gap-2">
-                            <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                            <span class="w-4 h-4 border-2   /30 border-t-white rounded-full animate-spin"></span>
                             Soumission...
                         </span>
                     }
@@ -78,9 +78,9 @@ else
             <i class="fas fa-check-circle text-primary text-2xl"></i>
         </div>
 
-        <h2 class="text-lg font-bold text-gray-900">Certification soumise</h2>
+        <h2 class="text-lg font-bold text-title">Certification soumise</h2>
 
-        <p class="mt-2 text-sm text-gray-500 leading-relaxed max-w-sm mx-auto">
+        <p class="mt-2 text-sm text-body leading-relaxed max-w-sm mx-auto">
             Votre certification a été envoyée avec succès. Vous recevrez un email dès qu'elle sera validée par notre équipe.
         </p>
 
@@ -97,7 +97,7 @@ else
             </div>
         }
 
-        <div class="mt-6 rounded-xl bg-blue-50 border border-blue-100 p-4 text-left">
+        <div class="mt-6 rounded-xl bg-blue-50   border-blue-100 p-4 text-left">
             <div class="flex items-start gap-2.5">
                 <i class="fas fa-lightbulb text-primary mt-0.5 text-xs"></i>
                 <div class="text-xs text-primary leading-relaxed">
@@ -112,7 +112,7 @@ else
                 @onclick="HandleContinue">
             @if (IsLoading)
             {
-                <span class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                <span class="w-4 h-4 border-2   /30 border-t-white rounded-full animate-spin"></span>
             }
             Aller à la connexion
             <i class="fas fa-arrow-right text-xs"></i>

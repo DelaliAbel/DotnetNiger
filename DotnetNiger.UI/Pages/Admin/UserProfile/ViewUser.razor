@@ -1,5 +1,5 @@
 @page "/admin/users/{UserId:guid}"
-@attribute [Authorize(Roles = "Admin,SuperAdmin")]
+@* @attribute [Authorize(Roles = "Admin,SuperAdmin")] *@
 @using DotnetNiger.UI.Models.Requests
 @using DotnetNiger.UI.Components.Admin.Shared
 @using DotnetNiger.UI.Services.Contracts
@@ -14,7 +14,7 @@
         <AdminBreadcrumb />
         <div class="grid grid-cols-1 gap-6 xl:grid-cols-[390px_1fr]">
             <div class="space-y-6">
-                <section class="rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+                <section class="rounded-lg   border-slate-200 bg-surface p-8 shadow-sm">
                     <div class="flex flex-col items-center space-y-4">
                         <Skeleton Type="SkeletonType.Avatar" Size="96px" Class="h-24 w-24" />
                         <Skeleton Type="SkeletonType.Title" Class="w-1/2" />
@@ -24,7 +24,7 @@
                         <Skeleton Type="SkeletonType.Text" Lines="4" />
                     </div>
                 </section>
-                <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                <section class="rounded-lg   border-slate-200 bg-surface p-6 shadow-sm">
                     <Skeleton Type="SkeletonType.Title" Class="w-1/3 mb-4" />
                     <div class="flex flex-wrap gap-3">
                         <Skeleton Type="SkeletonType.Badge" Width="40px" />
@@ -34,11 +34,11 @@
                 </section>
             </div>
             <div class="space-y-6">
-                <section class="rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+                <section class="rounded-lg   border-slate-200 bg-surface p-8 shadow-sm">
                     <Skeleton Type="SkeletonType.Title" Class="w-1/4 mb-4" />
                     <Skeleton Type="SkeletonType.Text" Lines="3" />
                 </section>
-                <section class="rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+                <section class="rounded-lg   border-slate-200 bg-surface p-8 shadow-sm">
                     <Skeleton Type="SkeletonType.Title" Class="w-1/3 mb-4" />
                     <div class="flex flex-wrap gap-3">
                         <Skeleton Type="SkeletonType.Badge" />
@@ -78,7 +78,7 @@ else
 
         <div class="grid grid-cols-1 gap-6 xl:grid-cols-[390px_1fr]">
             <div class="space-y-6">
-                <section class="rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+                <section class="rounded-lg   border-slate-200 bg-surface p-8 shadow-sm">
                     <div class="mb-5 flex justify-center">
                         <ResolvedImage Src="@user.AvatarUrl" Icon="fa-user" alt="Avatar"
                                        class="h-40 w-40 rounded-full border-4 border-indigo-100" />
@@ -120,7 +120,7 @@ else
                         </div>
                     </section>
 
-                    <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                    <section class="rounded-lg   border-slate-200 bg-surface p-6 shadow-sm">
                         <h3 class="mb-4 text-lg font-semibold text-slate-700">Réseaux sociaux</h3>
 
                         @if (SocialLinks.Count == 0)
@@ -144,12 +144,12 @@ else
                 </div>
 
                 <div class="space-y-6">
-                    <section class="rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+                    <section class="rounded-lg   border-slate-200 bg-surface p-8 shadow-sm">
                         <h2 class="mb-4 text-lg font-semibold tracking-tight text-slate-800">A propos</h2>
                         @if (!string.IsNullOrWhiteSpace(user.Bio))
                         {
                             <div class="break-words text-lg leading-relaxed text-slate-600 prose prose-slate max-w-none">@(new
-                                                    MarkupString(HtmlSanitizer.Sanitize(user.Bio)))</div>
+                                                                                                                    MarkupString(HtmlSanitizer.Sanitize(user.Bio)))</div>
                             }
                     else
                             {
@@ -157,7 +157,7 @@ else
                             }
                         </section>
 
-                        <section class="rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+                        <section class="rounded-lg   border-slate-200 bg-surface p-8 shadow-sm">
                             <h2 class="mb-4 text-lg font-semibold tracking-tight text-slate-800">Competences et technologies</h2>
                             @if (user.Skills is { Count: > 0 })
                             {
@@ -174,7 +174,7 @@ else
                             }
                         </section>
 
-                        <section class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+                        <section class="rounded-lg   border-slate-200 bg-surface p-6 shadow-sm">
                             <h3 class="mb-4 text-lg font-semibold text-slate-700">Actions administrateur</h3>
                             <div class="flex flex-wrap gap-3">
                                 <button @onclick="ToggleStatusAsync"
@@ -198,7 +198,7 @@ else
                                     @if (showRoleMenu)
                                     {
                                         <div
-                                            class="absolute left-0 z-20 mt-2 w-56 rounded-lg border border-slate-200 bg-white py-2 shadow-lg">
+                                            class="absolute left-0 z-20 mt-2 w-56 rounded-lg   border-slate-200 bg-surface py-2 shadow-lg">
                                             @foreach (var role in AvailableRoles)
                                             {
                                                 var isAssigned = user.Roles?.Contains(role) == true;

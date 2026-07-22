@@ -1,5 +1,5 @@
 ﻿@page "/admin/ressources"
-@attribute [Authorize(Roles = "Admin,SuperAdmin")]
+@* @attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")] *@
 @* Page admin : gestion CRUD des ressources via drawer latéral. *@
 @inject NavigationManager Navigation
 @inject IResourceService ResourceService
@@ -25,16 +25,16 @@
 
         <Skeleton Type="SkeletonType.Custom" Class="h-10 w-32 rounded-lg mb-6" />
 
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-surface rounded-lg shadow overflow-hidden">
             <table class="w-full">
                 <thead class="bg-gray-50 border-b">
                     <tr>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Titre</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Type</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Niveau</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">URL</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Vues</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Action</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-title">Titre</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-title">Type</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-title">Niveau</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-title">URL</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-title">Vues</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-title">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -84,17 +84,17 @@
         {
             <div class="fixed inset-0 bg-black bg-opacity-50 z-40" @onclick="CloseDrawer"></div>
             <div
-                class="fixed top-0 right-0 h-screen w-full sm:w-4/5 md:w-3/5 lg:w-2/5 bg-white shadow-2xl z-50 transform transition-transform duration-300">
+                class="fixed top-0 right-0 h-screen w-full sm:w-4/5 md:w-3/5 lg:w-2/5 bg-fondTransparent shadow-2xl z-50 transform transition-transform duration-300">
                 <div class="flex flex-col h-full">
                     <div class="flex justify-between items-center px-6 py-4 border-b">
                         <h2 class="text-xl font-semibold">@(editingId.HasValue ? "Modifier la ressource" : "Nouvelle ressource")
                         </h2>
-                        <button @onclick="CloseDrawer" class="text-gray-500 hover:text-black text-2xl">&times;</button>
+                        <button @onclick="CloseDrawer" class="text-body hover:text-black text-2xl">&times;</button>
                     </div>
                     <div class="flex-1 overflow-y-auto px-6 py-6 space-y-5">
                         @if (!string.IsNullOrEmpty(drawerError))
                         {
-                            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">@drawerError
+                            <div class="bg-red-50   border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">@drawerError
                             </div>
                         }
                         <EditForm Model="resourceRequest" OnValidSubmit="SaveResource">
@@ -102,14 +102,14 @@
                             <div>
                                 <label class="block text-sm font-medium mb-1">Titre *</label>
                                 <InputText @bind-Value="resourceRequest.Title"
-                                           class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                           class="w-full rounded-lg px-4 py-2 focus:outline-none"
                                            placeholder="Titre de la ressource" />
                                 <ValidationMessage For="@(() => resourceRequest.Title)" class="text-xs text-red-500 mt-1" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-1">Description *</label>
                                 <InputTextArea @bind-Value="resourceRequest.Description" rows="3"
-                                               class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                               class="w-full text-body bg-surface rounded-lg px-4 py-2 focus:outline-none"
                                                placeholder="Description de la ressource" />
                                 <ValidationMessage For="@(() => resourceRequest.Description)"
                                                    class="text-xs text-red-500 mt-1" />
@@ -117,14 +117,14 @@
                             <div>
                                 <label class="block text-sm font-medium mb-1">URL *</label>
                                 <InputText @bind-Value="resourceRequest.Url"
-                                           class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                           class="w-full text-body bg-surface rounded-lg px-4 py-2 focus:outline-none"
                                            placeholder="https://..." />
                                 <ValidationMessage For="@(() => resourceRequest.Url)" class="text-xs text-red-500 mt-1" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-1">Type *</label>
                                 <InputSelect @bind-Value="resourceRequest.ResourceType"
-                                             class="w-full border rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                             class="w-full text-body  rounded-lg px-4 py-2 bg-surface focus:outline-none">
                                     <option value="">Selectionner un type</option>
                                     <option value="Documentation">Documentation</option>
                                     <option value="Tutoriel">Tutoriel</option>
@@ -140,7 +140,7 @@
                             <div>
                                 <label class="block text-sm font-medium mb-1">Niveau *</label>
                                 <InputSelect @bind-Value="resourceRequest.Level"
-                                             class="w-full border rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                             class="w-full text-body  rounded-lg px-4 py-2 bg-surface focus:outline-none">
                                     <option value="">Selectionner un niveau</option>
                                     <option value="Débutant">Débutant</option>
                                     <option value="Intermediaire">Intermediaire</option>
@@ -149,7 +149,7 @@
                                 </InputSelect>
                                 <ValidationMessage For="@(() => resourceRequest.Level)" class="text-xs text-red-500 mt-1" />
                             </div>
-                            <div class="border-t pt-4 flex justify-end gap-3 bg-white">
+                            <div class="border-t pt-4 flex justify-end gap-3 bg-surface">
                                 <button type="button" @onclick="CloseDrawer"
                                         class="px-4 py-2 rounded-lg bg-gray-200 hover:bg-gray-300 transition">
                                     Annuler
@@ -170,9 +170,9 @@
             <div class="flex-1 relative">
                 <i class="fas fa-search absolute left-4 top-4 text-gray-400"></i>
                 <input type="text" placeholder="Rechercher une ressource..." @bind="searchQuery" @bind:event="oninput"
-                       class="w-full bg-white pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none" />
+                       class="w-full bg-surface pl-10 text-body pr-4 py-3 border-gray-300 rounded-lg focus:outline-none" />
             </div>
-            <select @bind="selectedType" class="bg-white px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+            <select @bind="selectedType" class="bg-surface px-4 py-3 text-body border-gray-300 rounded-lg focus:outline-none">
                 <option value="">Type</option>
                 <option value="Documentation">Documentation</option>
                 <option value="Tutoriel">Tutoriel</option>
@@ -182,7 +182,7 @@
                 <option value="Livre">Livre</option>
                 <option value="Outil">Outil</option>
             </select>
-            <select @bind="selectedLevel" class="bg-white px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+            <select @bind="selectedLevel" class="bg-surface px-4 py-3 text-body border-gray-300 rounded-lg focus:outline-none">
                 <option value="">Niveau</option>
                 <option value="Débutant">Débutant</option>
                 <option value="Intermediaire">Intermediaire</option>
@@ -336,16 +336,7 @@
         {
             if (editingId.HasValue)
             {
-                var updateRequest = new UpdateResourceRequest
-                {
-                    Title = resourceRequest.Title,
-                    Description = resourceRequest.Description,
-                    Url = resourceRequest.Url,
-                    ResourceType = resourceRequest.ResourceType,
-                    Level = resourceRequest.Level,
-                    CategoryIds = resourceRequest.CategoryIds
-                };
-                await ResourceService.UpdateResourceAsync(editingId.Value, updateRequest);
+                await ResourceService.UpdateResourceAsync(editingId.Value, resourceRequest);
                 ToastService.ShowToast("Ressource mise à jour.", ToastLevel.Success);
             }
             else

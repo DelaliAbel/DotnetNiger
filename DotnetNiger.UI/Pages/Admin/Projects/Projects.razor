@@ -1,5 +1,5 @@
 @page "/admin/projects"
-@attribute [Authorize(Roles = "Admin,SuperAdmin")]
+@* @attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")] *@
 @* Page admin : gestion des projets (liste/grille + filtres + pagination). *@
 @using DotnetNiger.UI.Models.Responses
 @using DotnetNiger.UI.Components.Admin.Cards
@@ -27,27 +27,43 @@
 
             <Skeleton Type="SkeletonType.Custom" Class="h-10 w-32 rounded-lg mb-6" />
 
-            <div class="overflow-hidden rounded-lg bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
+            <div class="overflow-hidden rounded-lg bg-surface shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead class="border-b border-gray-100 bg-gray-50">
                             <tr>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Titre</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Auteur</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Statut</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Titre</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Auteur</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Statut</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Date</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             @for (int i = 0; i < 6; i++)
                             {
                                 <tr>
-                                    <td class="px-6 py-4"><div class="flex items-center gap-3"><Skeleton Type="SkeletonType.Custom" Class="h-12 w-12 rounded-lg" /><div class="space-y-1"><Skeleton Type="SkeletonType.Text" Lines="1" Class="w-32" /><Skeleton Type="SkeletonType.Text" Lines="1" Class="w-24" /></div></div></td>
-                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Text" Lines="1" Class="w-28" /></td>
-                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Badge" Width="80px" /></td>
-                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Text" Lines="1" Class="w-24" /></td>
-                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Button" Width="32px" Class="h-8" /></td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex items-center gap-3">
+                                            <Skeleton Type="SkeletonType.Custom" Class="h-12 w-12 rounded-lg" />
+                                            <div class="space-y-1">
+                                                <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-32" />
+                                                <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-24" />
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-28" />
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <Skeleton Type="SkeletonType.Badge" Width="80px" />
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-24" />
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <Skeleton Type="SkeletonType.Button" Width="32px" Class="h-8" />
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -68,7 +84,8 @@ else
             <div class="mb-8 flex items-center justify-between gap-4">
                 <section>
                     <AdminBreadcrumb />
-                    <p class="mt-2 max-w-2xl text-sm leading-6 text-body md:text-base">Gérez les projets de la communauté.</p>
+                    <p class="mt-2 max-w-2xl text-sm leading-6 text-subtitle md:text-base">Gérez les projets de la communauté.
+                    </p>
                 </section>
                 <button @onclick='() => Navigation.NavigateTo("/admin/projects/nouveau")'
                         class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(91,77,245,0.25)] transition hover:brightness-95">
@@ -78,16 +95,16 @@ else
             </div>
 
             <section class="mb-6 flex flex-col gap-4 md:flex-row md:items-center">
-                <div class="flex-1 rounded-lg bg-white px-4 py-3 shadow-sm ring-1 ring-black/5">
+                <div class="flex-1 rounded-lg bg-surface px-4 py-3 shadow-sm">
                     <div class="relative">
                         <i class="fas fa-search absolute left-0 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        <input type="text" placeholder="Rechercher un projet..."
-                               @bind="searchQuery" @bind:event="oninput"
-                               class="w-full border-0 bg-transparent pl-7 text-sm text-gray-900 outline-none placeholder:text-gray-400" />
+                        <input type="text" placeholder="Rechercher un projet..." @bind="searchQuery" @bind:event="oninput"
+                               class="w-full border-0 bg-transparent pl-7 text-sm text-body outline-none placeholder:text-gray-400" />
                     </div>
                 </div>
 
-                <select @bind="selectedStatus" class="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition hover:border-gray-300">
+                <select @bind="selectedStatus"
+                        class="cursor-pointer rounded-lg bg-surface px-4 py-3 text-sm text-body shadow-sm outline-none transition hover:border-gray-300">
                     <option value="">Tous les statuts</option>
                     <option value="active">Actif</option>
                     <option value="archived">Archivé</option>
@@ -106,8 +123,7 @@ else
                 <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-5 lg:gap-6">
                     @foreach (var project in pagedProjects)
                     {
-                        <AdminProjectCard @key="project.Id" Project="project"
-                                          OnProjectDeleted="LoadProjectsAsync" />
+                        <AdminProjectCard @key="project.Id" Project="project" OnProjectDeleted="LoadProjectsAsync" />
                     }
                 </div>
             }

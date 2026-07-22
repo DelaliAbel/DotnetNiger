@@ -118,15 +118,14 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task<ApiSuccessResponse<AuthDto>> CompleteCodeExchangeAsync(string code, string redirectUri)
+    public async Task<ApiSuccessResponse<AuthDto>> CompleteExternalLoginAsync(string ticket)
     {
         try
         {
             var formData = new Dictionary<string, string>
             {
-                ["grant_type"] = "authorization_code",
-                ["code"] = code,
-                ["redirect_uri"] = redirectUri,
+                ["grant_type"] = "external_login",
+                ["ticket"] = ticket,
                 ["client_id"] = _clientId,
                 ["scope"] = "openid profile email roles offline_access"
             };
@@ -398,13 +397,13 @@ public class AuthService : IAuthService
 
     public async Task<bool> RequestEmailVerificationAsync(RequestEmailVerificationRequest request)
     {
-        var response = await _http.PostAsJsonAsync(ApiEndpoints.Auth.ResendCode, request);
+        var response = await _http.PostAsJsonAsync(ApiEndpoints.Auth.RequestEmailVerification, request);
         return response.IsSuccessStatusCode;
     }
 
     public async Task<bool> VerifyEmailAsync(VerifyEmailRequest request)
     {
-        var response = await _http.PostAsJsonAsync(ApiEndpoints.Auth.ConfirmEmail, request);
+        var response = await _http.PostAsJsonAsync(ApiEndpoints.Auth.VerifyEmail, request);
         return response.IsSuccessStatusCode;
     }
 
@@ -412,8 +411,8 @@ public class AuthService : IAuthService
     {
         try
         {
-            var bytes = await response.Content.ReadAsByteArrayAsync();
-            var json = DecompressAndDecode(bytes);
+            var rawBytes = await response.Content.ReadAsByteArrayAsync();
+            var json = DecompressAndDecode(rawBytes, response.Content.Headers.ContentType?.MediaType);
             using var doc = JsonDocument.Parse(json);
             var root = doc.RootElement;
 
@@ -527,49 +526,47 @@ public class AuthService : IAuthService
     private static IEnumerable<Claim> ParseClaimsFromJwt(string jwt)
         => JwtParser.ParseClaimsFromJwt(jwt);
 
-#pragma warning disable CA1416
-    private static string DecompressAndDecode(byte[] bytes)
+    private static string DecompressAndDecode(byte[] data, string? contentType)
     {
-        if (bytes.Length == 0)
-            return string.Empty;
+        if (data.Length == 0) return string.Empty;
 
-        if (bytes.Length > 2 && bytes[0] == 0x1F && bytes[1] == 0x8B)
+        if (data.Length >= 2)
+        {
+            if (data[0] == 0x1F && data[1] == 0x8B)
+            {
+                using var ms = new MemoryStream(data);
+                using var gzip = new GZipStream(ms, CompressionMode.Decompress);
+                using var reader = new StreamReader(gzip, Encoding.UTF8);
+                return reader.ReadToEnd();
+            }
+
+            if (data[0] == 0x78)
+            {
+                try
+                {
+                    using var ms = new MemoryStream(data);
+                    using var deflate = new DeflateStream(ms, CompressionMode.Decompress);
+                    using var reader = new StreamReader(deflate, Encoding.UTF8);
+                    return reader.ReadToEnd();
+                }
+                catch { }
+            }
+        }
+
+#pragma warning disable CA1416
+        if (contentType != null && contentType.Contains("brotli"))
         {
             try
             {
-                using var input = new MemoryStream(bytes);
-                using var gzip = new GZipStream(input, CompressionMode.Decompress);
-                using var output = new MemoryStream();
-                gzip.CopyTo(output);
-                return Encoding.UTF8.GetString(output.ToArray());
+                using var ms = new MemoryStream(data);
+                using var brotli = new BrotliStream(ms, CompressionMode.Decompress);
+                using var reader = new StreamReader(brotli, Encoding.UTF8);
+                return reader.ReadToEnd();
             }
             catch { }
         }
-
-        if (bytes.Length > 2 && bytes[0] >= 0xA0 && bytes[0] <= 0xEF)
-        {
-            try
-            {
-                using var input = new MemoryStream(bytes);
-                using var brotli = new BrotliStream(input, CompressionMode.Decompress);
-                using var output = new MemoryStream();
-                brotli.CopyTo(output);
-                return Encoding.UTF8.GetString(output.ToArray());
-            }
-            catch { }
-        }
-
-        try
-        {
-            using var input = new MemoryStream(bytes);
-            using var deflate = new DeflateStream(input, CompressionMode.Decompress);
-            using var output = new MemoryStream();
-            deflate.CopyTo(output);
-            return Encoding.UTF8.GetString(output.ToArray());
-        }
-        catch { }
-
-        return Encoding.UTF8.GetString(bytes);
-    }
 #pragma warning restore CA1416
+
+        return Encoding.UTF8.GetString(data);
+    }
 }

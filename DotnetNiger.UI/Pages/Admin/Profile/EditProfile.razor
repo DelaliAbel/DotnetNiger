@@ -1,5 +1,5 @@
 @page "/admin/profile/informations"
-@attribute [Authorize]
+@* @attribute [Authorize] *@
 @* Page admin : formulaire de mise à jour du profil utilisateur. *@
 @using DotnetNiger.UI.Models
 @using DotnetNiger.UI.Components.Shared
@@ -23,7 +23,7 @@
             </header>
 
             <div class="space-y-6">
-                <section class="rounded-lg border border-slate-200 bg-slate-100/80 p-6 shadow-sm md:p-8">
+                <section class="rounded-lg   border-slate-200 bg-slate-100/80 p-6 shadow-sm md:p-8">
                     <div class="grid grid-cols-1 gap-6 md:grid-cols-[340px_1fr] md:gap-8">
                         <div>
                             <h2 class="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl">Informations
@@ -38,32 +38,32 @@
                                             class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 sm:mb-2 sm:text-sm">Nom
                                             Complet</label>
                                             <InputText @bind-Value="model.FullName"
-                                                       class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none sm:h-12 sm:px-4 sm:text-base" />
+                                                       class="h-10 w-full rounded-lg   border-slate-200 bg-surface px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none sm:h-12 sm:px-4 sm:text-base" />
                                         </div>
                                         <div class="md:col-span-1">
                                             <label
                                             class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 sm:mb-2 sm:text-sm">Ville</label>
                                             <InputText @bind-Value="model.City"
-                                                       class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none sm:h-12 sm:px-4 sm:text-base" />
+                                                       class="h-10 w-full rounded-lg   border-slate-200 bg-surface px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none sm:h-12 sm:px-4 sm:text-base" />
                                         </div>
                                         <div class="md:col-span-1">
                                             <label
                                                 class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 sm:mb-2 sm:text-sm">Adresse
                                                 Email</label>
                                                 <InputText Value="@displayEmail" ValueExpression="() => displayEmail" disabled
-                                                           class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 sm:h-12 sm:px-4 sm:text-base" />
+                                                           class="h-10 w-full rounded-lg   border-slate-200 bg-slate-50 px-3 text-sm text-slate-500 sm:h-12 sm:px-4 sm:text-base" />
                                             </div>
                                             <div class="md:col-span-1">
                                                 <label
                                                 class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 sm:mb-2 sm:text-sm">Telephone</label>
                                                 <InputText @bind-Value="model.PhoneNumber"
-                                                           class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none sm:h-12 sm:px-4 sm:text-base" />
+                                                           class="h-10 w-full rounded-lg   border-slate-200 bg-surface px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none sm:h-12 sm:px-4 sm:text-base" />
                                             </div>
                                             <div class="md:col-span-2">
                                                 <label
                                                 class="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500 sm:mb-2 sm:text-sm">Pays</label>
                                                 <InputText @bind-Value="model.Country"
-                                                           class="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none sm:h-12 sm:px-4 sm:text-base" />
+                                                           class="h-10 w-full rounded-lg   border-slate-200 bg-surface px-3 text-sm text-slate-700 focus:border-indigo-400 focus:outline-none sm:h-12 sm:px-4 sm:text-base" />
                                             </div>
                                         </div>
                                         <button type="button" @onclick="SavePersonalInfoAsync"
@@ -73,7 +73,7 @@
                                     </div>
                                 </section>
 
-                                <section class="rounded-lg border border-slate-200 bg-slate-100/80 p-6 shadow-sm md:p-8">
+                                <section class="rounded-lg   border-slate-200 bg-slate-100/80 p-6 shadow-sm md:p-8">
                                     <div class="grid grid-cols-1 gap-6 md:grid-cols-[340px_1fr] md:gap-8">
                                         <div>
                                             <h2 class="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl">Biographie</h2>
@@ -95,7 +95,7 @@
                                         </div>
                                     </section>
 
-                                    <section class="rounded-lg border border-slate-200 bg-slate-100/80 p-6 shadow-sm md:p-8">
+                                    <section class="rounded-lg   border-slate-200 bg-slate-100/80 p-6 shadow-sm md:p-8">
                                         <div class="grid grid-cols-1 gap-6 md:grid-cols-[340px_1fr] md:gap-8">
                                             <div>
                                                 <h2 class="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl">Compétences</h2>
@@ -112,7 +112,7 @@
                                             </div>
                                         </section>
 
-                                        <section class="rounded-lg border border-slate-200 bg-slate-100/80 p-6 shadow-sm md:p-8">
+                                        <section class="rounded-lg   border-slate-200 bg-slate-100/80 p-6 shadow-sm md:p-8">
                                             <div class="mb-5 flex items-center justify-between gap-3">
                                                 <h2 class="text-2xl font-semibold tracking-tight text-slate-800 sm:text-3xl">Liens sociaux</h2>
                                                 <span class="text-xs text-slate-500 sm:text-sm">Renseigne les URLs de tes reseaux</span>
@@ -120,21 +120,21 @@
 
                                             @if (!string.IsNullOrWhiteSpace(messageSocial))
                                             {
-                                                <p class="mb-4 rounded-lg bg-white px-4 py-2 text-sm text-slate-700">@messageSocial</p>
+                                                <p class="mb-4 rounded-lg bg-surface px-4 py-2 text-sm text-slate-700">@messageSocial</p>
                                             }
 
                                             <div class="space-y-3">
                                                 @foreach (var item in socialLinksEdit)
                                                 {
                                                     <div
-                                                        class="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
+                                                        class="flex flex-wrap items-center gap-2 rounded-lg   border-slate-200 bg-surface px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
                                                         <div class="text-xl sm:text-2xl md:text-3xl text-black w-8 text-center">
                                                             <i class="@GetIconeForPlatform(item.Platform)"></i>
                                                         </div>
                                                         <span
                                                         class="w-16 text-xs font-semibold text-slate-700 sm:w-20 sm:text-sm md:w-24">@item.Platform</span>
                                                         <input @bind="item.Url" placeholder="https://"
-                                                               class="flex-1 min-w-[120px] h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 focus:border-indigo-400 focus:outline-none sm:min-w-[200px] sm:h-10 sm:px-3 sm:text-sm" />
+                                                               class="flex-1 min-w-[120px] h-8 rounded-lg   border-slate-200 bg-surface px-2 text-xs text-slate-700 focus:border-indigo-400 focus:outline-none sm:min-w-[200px] sm:h-10 sm:px-3 sm:text-sm" />
                                                     </div>
                                                 }
                                             </div>
@@ -149,7 +149,7 @@
 
                                         <div class="flex flex-wrap items-center gap-2 pt-1 sm:gap-3">
                                             <a href="/admin/profile"
-                                               class="inline-flex h-10 items-center rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:h-12 sm:px-8 sm:text-base">
+                                               class="inline-flex h-10 items-center rounded-lg   border-slate-300 bg-surface px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 sm:h-12 sm:px-8 sm:text-base">
                                                 <i class="fa-solid fa-arrow-left mr-2"></i>Retour
                                             </a>
                                         </div>
@@ -162,7 +162,7 @@ else
                                     <AdminBreadcrumb />
 
                                     <div class="space-y-6">
-                                        <section class="rounded-lg border border-slate-200 bg-slate-100/80 p-6 shadow-sm md:p-8">
+                                        <section class="rounded-lg   border-slate-200 bg-slate-100/80 p-6 shadow-sm md:p-8">
                                             <div class="mb-5">
                                                 <Skeleton Type="SkeletonType.Title" Class="w-1/3" />
                                             </div>

@@ -5,17 +5,18 @@
 @inject IToastService ToastService
 @inject IJSRuntime JS
 
-<div class="group rounded-lg bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5 p-5">
+<div class="group rounded-lg bg-surface shadow-md p-5">
     <div class="mb-3 flex items-start justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0">
             <div class="h-10 w-10 flex-shrink-0 overflow-hidden rounded-full bg-gray-100">
                 @if (!string.IsNullOrWhiteSpace(Comment?.AuthorAvatar))
                 {
-                    <ResolvedImage Src="@Comment.AuthorAvatar" alt="@Comment.AuthorName" class="h-full w-full object-cover" />
+                    <ResolvedImage Src="@Comment.AuthorAvatar" alt="@Comment.AuthorName"
+                                   class="h-full w-full object-cover" />
                 }
                 else
                 {
-                    <div class="flex h-full w-full items-center justify-center text-sm font-semibold text-gray-500">
+                    <div class="flex h-full w-full items-center justify-center text-sm font-semibold text-body">
                         @Comment?.AuthorName[..1].ToUpperInvariant()
                     </div>
                 }
@@ -27,10 +28,12 @@
         </div>
 
         <div class="flex flex-col items-end gap-1">
-            <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @GetStatusClass(Comment?.Status ?? "")">
+            <span
+                class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @GetStatusClass(Comment?.Status ?? "")">
                 @GetStatusLabel(Comment?.Status ?? "")
             </span>
-            <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @(Comment?.PostId != Guid.Empty ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700")">
+            <span
+                class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @(Comment?.PostId != Guid.Empty ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700")">
                 @(Comment?.PostId != Guid.Empty ? "Article" : "Événement")
             </span>
         </div>
@@ -57,7 +60,7 @@
             </button>
         }
         <button @onclick="() => DeleteComment(Comment?.Id ?? Guid.Empty)"
-                class="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-gray-500 transition hover:bg-gray-100">
+                class="inline-flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-body transition hover:bg-gray-100">
             <i class="fas fa-trash text-xs"></i>
             <span>Supprimer</span>
         </button>

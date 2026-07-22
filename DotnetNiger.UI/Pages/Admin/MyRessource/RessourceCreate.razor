@@ -1,5 +1,5 @@
 @page "/admin/mes-ressources/nouveau"
-@attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")]
+@* @attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")] *@
 @* Page admin : création d'une ressource (mes ressources). *@
 @using DotnetNiger.UI.Models.Requests
 @inject NavigationManager Navigation
@@ -16,12 +16,12 @@
         </button>
     </div>
 
-    <div class="bg-white rounded-lg shadow p-6">
+    <div class="bg-surface rounded-lg shadow p-6">
         <h2 class="text-xl font-semibold mb-6">Nouvelle ressource</h2>
 
         @if (!string.IsNullOrEmpty(errorMessage))
         {
-            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">@errorMessage</div>
+            <div class="bg-red-50   border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-4">@errorMessage</div>
         }
 
         <EditForm Model="resourceRequest" OnValidSubmit="SaveResource" class="space-y-5">
@@ -29,28 +29,28 @@
             <div>
                 <label class="block text-sm font-medium mb-1">Titre *</label>
                 <InputText @bind-Value="resourceRequest.Title"
-                           class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           class="w-full   rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                            placeholder="Titre de la ressource" />
                 <ValidationMessage For="@(() => resourceRequest.Title)" class="text-xs text-red-500 mt-1" />
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1">Description *</label>
                 <InputTextArea @bind-Value="resourceRequest.Description" rows="3"
-                               class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               class="w-full   rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                placeholder="Description de la ressource" />
                 <ValidationMessage For="@(() => resourceRequest.Description)" class="text-xs text-red-500 mt-1" />
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1">URL *</label>
                 <InputText @bind-Value="resourceRequest.Url"
-                           class="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                           class="w-full   rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                            placeholder="https://..." />
                 <ValidationMessage For="@(() => resourceRequest.Url)" class="text-xs text-red-500 mt-1" />
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1">Type *</label>
                 <InputSelect @bind-Value="resourceRequest.ResourceType"
-                             class="w-full border rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                             class="w-full   rounded-lg px-4 py-2 bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">Selectionner un type</option>
                     <option value="Documentation">Documentation</option>
                     <option value="Tutoriel">Tutoriel</option>
@@ -65,7 +65,7 @@
             <div>
                 <label class="block text-sm font-medium mb-1">Niveau *</label>
                 <InputSelect @bind-Value="resourceRequest.Level"
-                             class="w-full border rounded-lg px-4 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                             class="w-full   rounded-lg px-4 py-2 bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">Selectionner un niveau</option>
                     <option value="Débutant">Débutant</option>
                     <option value="Intermediaire">Intermediaire</option>

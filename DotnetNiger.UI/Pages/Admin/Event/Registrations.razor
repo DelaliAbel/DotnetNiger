@@ -1,5 +1,5 @@
 @page "/admin/events/{EventId:guid}/inscriptions"
-@attribute [Authorize(Roles = "Admin,SuperAdmin")]
+@* @attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")] *@
 @using System.Globalization
 @inject IEventService EventService
 @inject NavigationManager NavigationManager
@@ -18,7 +18,7 @@
             </nav>
 
             <button @onclick="GoBack"
-                    class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-black/5 transition hover:bg-gray-50">
+                    class="inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-black/5 transition hover:bg-gray-50">
                 <i class="fas fa-arrow-left text-sm"></i>
                 <span>Retour</span>
             </button>
@@ -26,7 +26,7 @@
 
         @if (IsLoading)
         {
-            <div class="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-black/5">
+            <div class="overflow-hidden rounded-lg bg-surface shadow-sm ring-1 ring-black/5">
                 <div class="border-b border-gray-100 px-6 py-5">
                     <Skeleton Type="SkeletonType.Title" Class="w-48" />
                     <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-72 mt-2" />
@@ -70,12 +70,12 @@
         }
         else if (RegistrationList is not null)
         {
-            <div class="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-black/5">
+            <div class="overflow-hidden rounded-lg bg-surface shadow-sm ring-1 ring-black/5">
                 <div class="border-b border-gray-100 px-6 py-5">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h1 class="text-xl font-bold text-gray-900">@EventTitle</h1>
-                            <p class="mt-1 text-sm text-gray-500">
+                            <h1 class="text-xl font-bold text-title">@EventTitle</h1>
+                            <p class="mt-1 text-sm text-body">
                                 @RegistrationList.Count inscrit@(RegistrationList.Count > 1 ? "s" : "")
                             </p>
                         </div>
@@ -93,8 +93,8 @@
                         <div class="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
                             <i class="fa-solid fa-users text-2xl text-gray-400"></i>
                         </div>
-                        <h3 class="mt-4 text-lg font-semibold text-gray-900">Aucun inscrit</h3>
-                        <p class="mt-1 text-sm text-gray-500">Personne ne s'est encore inscrit à cet événement.</p>
+                        <h3 class="mt-4 text-lg font-semibold text-title">Aucun inscrit</h3>
+                        <p class="mt-1 text-sm text-body">Personne ne s'est encore inscrit à cet événement.</p>
                     </div>
                 }
                 else
@@ -130,7 +130,7 @@
                                                     }
                                                 </div>
                                                 <div class="min-w-0">
-                                                    <p class="text-sm font-medium text-gray-900">@reg.UserName</p>
+                                                    <p class="text-sm font-medium text-title">@reg.UserName</p>
                                                 </div>
                                             </div>
                                         </td>

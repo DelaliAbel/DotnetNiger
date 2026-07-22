@@ -25,28 +25,40 @@
 
         <Skeleton Type="SkeletonType.Custom" Class="h-10 w-32 rounded-lg mb-6" />
 
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-surface rounded-lg shadow overflow-hidden">
             <table class="w-full">
                 <thead class="bg-gray-50 border-b">
                     <tr>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Titre</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Type</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Niveau</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">URL</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Vues</th>
-                        <th class="px-6 py-3 text-left text-sm font-semibold text-gray-700">Action</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-title">Titre</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-title">Type</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-title">Niveau</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-title">URL</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-title">Vues</th>
+                        <th class="px-6 py-3 text-left text-sm font-semibold text-title">Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     @for (int i = 0; i < 6; i++)
                     {
                         <tr class="border-b">
-                            <td class="px-6 py-4"><Skeleton Type="SkeletonType.Text" Lines="1" Class="w-36" /></td>
-                            <td class="px-6 py-4"><Skeleton Type="SkeletonType.Badge" Width="100px" /></td>
-                            <td class="px-6 py-4"><Skeleton Type="SkeletonType.Text" Lines="1" Class="w-20" /></td>
-                            <td class="px-6 py-4"><Skeleton Type="SkeletonType.Text" Lines="1" Class="w-40" /></td>
-                            <td class="px-6 py-4"><Skeleton Type="SkeletonType.Text" Lines="1" Class="w-12" /></td>
-                            <td class="px-6 py-4"><Skeleton Type="SkeletonType.Button" Width="32px" Class="h-8" /></td>
+                            <td class="px-6 py-4">
+                                <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-36" />
+                            </td>
+                            <td class="px-6 py-4">
+                                <Skeleton Type="SkeletonType.Badge" Width="100px" />
+                            </td>
+                            <td class="px-6 py-4">
+                                <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-20" />
+                            </td>
+                            <td class="px-6 py-4">
+                                <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-40" />
+                            </td>
+                            <td class="px-6 py-4">
+                                <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-12" />
+                            </td>
+                            <td class="px-6 py-4">
+                                <Skeleton Type="SkeletonType.Button" Width="32px" Class="h-8" />
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -71,11 +83,10 @@
         <div class="flex gap-4 mb-6">
             <div class="flex-1 relative">
                 <i class="fas fa-search absolute left-4 top-4 text-gray-400"></i>
-                <input type="text" placeholder="Rechercher une ressource..."
-                       @bind="searchQuery" @bind:event="oninput"
-                       class="w-full bg-white pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none" />
+                <input type="text" placeholder="Rechercher une ressource..." @bind="searchQuery" @bind:event="oninput"
+                       class="w-full bg-surface pl-10 pr-4 py-3   border-gray-300 rounded-lg focus:outline-none" />
             </div>
-            <select @bind="selectedType" class="bg-white px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+            <select @bind="selectedType" class="bg-surface px-4 py-3 text-body border-gray-300 rounded-lg focus:outline-none">
                 <option value="">Type</option>
                 <option value="Documentation">Documentation</option>
                 <option value="Tutoriel">Tutoriel</option>
@@ -85,7 +96,7 @@
                 <option value="Livre">Livre</option>
                 <option value="Outil">Outil</option>
             </select>
-            <select @bind="selectedLevel" class="bg-white px-4 py-3 border border-gray-300 rounded-lg focus:outline-none">
+            <select @bind="selectedLevel" class="bg-surface text-body px-4 py-3 border-gray-300 rounded-lg focus:outline-none">
                 <option value="">Niveau</option>
                 <option value="Débutant">Débutant</option>
                 <option value="Intermediaire">Intermediaire</option>
@@ -99,19 +110,14 @@
 
         @if (isListView)
         {
-            <RessourceTable Resources="pagedResources"
-                            OnEdit="NavigateToEdit"
-                            OnDelete="DeleteResource" />
+            <RessourceTable Resources="pagedResources" OnEdit="NavigateToEdit" OnDelete="DeleteResource" />
         }
         else
         {
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach (var resource in pagedResources)
                 {
-                    <RessourceCard Resource="resource"
-                                   AdminMode="true"
-                                   OnEdit="NavigateToEdit"
-                                   OnDelete="DeleteResource" />
+                    <RessourceCard Resource="resource" AdminMode="true" OnEdit="NavigateToEdit" OnDelete="DeleteResource" />
                 }
             </div>
         }

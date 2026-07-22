@@ -4,62 +4,59 @@
 @inject NavigationManager Navigation
 @inject IToastService ToastService
 
-<div class="rounded-lg bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
-        <table class="w-full">
-            <thead class="border-b border-gray-100 bg-gray-50">
+<div class="rounded-lg bg-surface shadow-md">
+    <table class="w-full">
+        <thead class="border-b border-gray-100 bg-gray-50">
+            <tr>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Titre</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Auteur</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Statut</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Date</th>
+                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Actions</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+            @if (Projects is null || Projects.Count == 0)
+            {
                 <tr>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Titre</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Auteur</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Statut</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
-                    <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                    <td colspan="5" class="px-6 py-10 text-center text-sm text-body">Aucun projet disponible.</td>
                 </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                @if (Projects is null || Projects.Count == 0)
+            }
+            else
+            {
+                @foreach (var project in Projects)
                 {
-                    <tr>
-                        <td colspan="5" class="px-6 py-10 text-center text-sm text-gray-500">Aucun projet disponible.</td>
+                    <tr @key="project.Id" class="transition hover:bg-gray-50/80">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div
+                                    class="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-fond_transparent flex items-center justify-center text-accent">
+                                    <i class="fas fa-code-branch text-lg"></i>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="truncate text-sm font-semibold text-title">@project.Title</p>
+                                    <p class="truncate text-xs text-muted">@project.Technologies</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-body">@project.AuthorName</td>
+                        <td class="px-6 py-4 text-sm">
+                            <span
+                                class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @(project.Status == "active" ? "bg-success-bg text-success" : "bg-gray-100 text-title")">
+                                @(project.Status == "active" ? "Actif" : "Archivé")
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-body whitespace-nowrap">@project.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td class="px-6 py-4 text-sm">
+                            <AdminActionDropdown ItemId="project.Id" Status="@(project.IsPublished ? "Published" : "Pending")"
+                                                 ViewLabel="Voir" EditLabel="Modifier" DeleteLabel="Supprimer" OnView="HandleView"
+                                                 OnEdit="HandleEdit" OnDelete="HandleDelete" />
+                        </td>
                     </tr>
                 }
-                else
-                {
-                    @foreach (var project in Projects)
-                    {
-                        <tr @key="project.Id" class="transition hover:bg-gray-50/80">
-                            <td class="px-6 py-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-fond_transparent flex items-center justify-center text-accent">
-                                        <i class="fas fa-code-branch text-lg"></i>
-                                    </div>
-                                    <div class="min-w-0">
-                                        <p class="truncate text-sm font-semibold text-title">@project.Title</p>
-                                        <p class="truncate text-xs text-muted">@project.Technologies</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-body">@project.AuthorName</td>
-                            <td class="px-6 py-4 text-sm">
-                                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @(project.Status == "active" ? "bg-success-bg text-success" : "bg-gray-100 text-gray-700")">
-                                    @(project.Status == "active" ? "Actif" : "Archivé")
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 text-sm text-body whitespace-nowrap">@project.CreatedAt.ToString("dd/MM/yyyy")</td>
-                            <td class="px-6 py-4 text-sm">
-                                <AdminActionDropdown ItemId="project.Id"
-                                                      Status="@(project.IsPublished ? "Published" : "Pending")"
-                                                      ViewLabel="Voir"
-                                                      EditLabel="Modifier"
-                                                      DeleteLabel="Supprimer"
-                                                      OnView="HandleView"
-                                                      OnEdit="HandleEdit"
-                                                      OnDelete="HandleDelete" />
-                            </td>
-                        </tr>
-                    }
-                }
-            </tbody>
-        </table>
+            }
+        </tbody>
+    </table>
 </div>
 
 @code {

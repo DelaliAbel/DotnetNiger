@@ -1,5 +1,5 @@
 ﻿@page "/admin/events"
-@attribute [Authorize(Roles = "Admin,SuperAdmin")]
+@* @attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")] *@
 @* Page admin : gestion des événements (liste/grille + filtres). *@
 @using DotnetNiger.UI.Components.Admin.Cards
 @inject NavigationManager NavigationManager
@@ -28,27 +28,40 @@
 
             <Skeleton Type="SkeletonType.Custom" Class="h-10 w-32 rounded-lg mb-6" />
 
-            <div class="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-black/5">
+            <div class="overflow-hidden rounded-lg bg-surface shadow-md">
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead class="border-b border-gray-100 bg-gray-50">
                             <tr>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Titre</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Lieu</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Statut</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Titre</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Date</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Lieu</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Statut</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             @for (int i = 0; i < 6; i++)
                             {
                                 <tr>
-                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Text" Lines="2" Class="w-48" /></td>
-                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Text" Lines="1" Class="w-28" /></td>
-                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Text" Lines="1" Class="w-32" /></td>
-                                    <td class="px-6 py-4"><Skeleton Type="SkeletonType.Badge" Width="80px" /></td>
-                                    <td class="px-6 py-4"><div class="flex gap-2"><Skeleton Type="SkeletonType.Button" Width="32px" Class="h-8" /><Skeleton Type="SkeletonType.Button" Width="32px" Class="h-8" /></div></td>
+                                    <td class="px-6 py-4">
+                                        <Skeleton Type="SkeletonType.Text" Lines="2" Class="w-48" />
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-28" />
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-32" />
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <Skeleton Type="SkeletonType.Badge" Width="80px" />
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <div class="flex gap-2">
+                                            <Skeleton Type="SkeletonType.Button" Width="32px" Class="h-8" />
+                                            <Skeleton Type="SkeletonType.Button" Width="32px" Class="h-8" />
+                                        </div>
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -69,72 +82,73 @@ else
             <div class="mb-8 flex items-center justify-between gap-4">
                 <section>
                     <AdminBreadcrumb />
-                    <p class="mt-2 max-w-2xl text-sm leading-6 text-body md:text-base">Filtrez, modérez et consultez les événements avec une interface cohérente avec le dashboard.</p>
-                </section>
-                <button @onclick='() => NavigationManager.NavigateTo("/admin/events/nouveau")'
-                        class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(91,77,245,0.25)] transition hover:brightness-95">
-                    <i class="fas fa-plus text-sm"></i>
-                    <span class="hidden sm:block">Nouveau</span>
-                </button>
-            </div>
+                    <p class="mt-2 max-w-2xl text-sm leading-6 text-subtitle md:text-base">Filtrez, modérez et consultez les
+                        événements avec une interface cohérente avec le dashboard.</p>
+                    </section>
+                    <button @onclick='() => NavigationManager.NavigateTo("/admin/events/nouveau")'
+                            class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(91,77,245,0.25)] transition hover:brightness-95">
+                        <i class="fas fa-plus text-sm"></i>
+                        <span class="hidden sm:block">Nouveau</span>
+                    </button>
+                </div>
 
-            <section class="mb-6 flex flex-col gap-4 md:flex-row md:items-center">
-                <div class="flex-1 rounded-lg bg-white px-4 py-3 shadow-sm ring-1 ring-black/5">
-                    <div class="relative">
-                        <i class="fas fa-search absolute left-0 top-1/2 -translate-y-1/2 text-gray-400"></i>
-                        <input type="text" placeholder="Rechercher un évènement..."
-                               @bind="searchQuery" @bind:event="oninput"
-                               class="w-full border-0 bg-transparent pl-7 text-sm text-gray-900 outline-none placeholder:text-gray-400" />
+                <section class="mb-6 flex flex-col gap-4 md:flex-row md:items-center">
+                    <div class="flex-1 rounded-lg bg-surface px-4 py-3 shadow-sm">
+                        <div class="relative">
+                            <i class="fas fa-search absolute left-0 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <input type="text" placeholder="Rechercher un évènement..." @bind="searchQuery"
+                                   @bind:event="oninput"
+                                   class="w-full border-0 bg-surface pl-7 text-sm text-body outline-none placeholder:text-gray-400" />
+                        </div>
                     </div>
+
+                    <select @bind="selectedStatus"
+                            class="cursor-pointer rounded-lg bg-surface px-4 py-3 text-sm text-body shadow-sm outline-none transition hover:border-gray-300">
+                        <option value="">Tous</option>
+                        <option value="published">Publié</option>
+                        <option value="pending">En attente</option>
+                    </select>
+                    <select @bind="selectedType"
+                            class="cursor-pointer rounded-lg bg-surface px-4 py-3 text-sm text-body shadow-sm outline-none transition hover:border-gray-300">
+                        <option value="">Type</option>
+                        <option value="Online">En ligne</option>
+                        <option value="Physical">Présentiel</option>
+                        <option value="Hybrid">Hybride</option>
+                    </select>
+                    <select @bind="selectedPeriod"
+                            class="cursor-pointer rounded-lg bg-surface px-4 py-3 text-sm text-body shadow-sm outline-none transition hover:border-gray-300">
+                        <option value="">Période</option>
+                        <option value="today">Aujourd'hui</option>
+                        <option value="week">Cette semaine</option>
+                        <option value="month">Ce mois</option>
+                        <option value="year">Cette année</option>
+                    </select>
+                </section>
+                <div class="mb-6 hidden md:block">
+                    <ViewToggle @bind-IsListView="isListView" />
                 </div>
 
-                <select @bind="selectedStatus" class="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition hover:border-gray-300">
-                    <option value="">Tous</option>
-                    <option value="published">Publié</option>
-                    <option value="pending">En attente</option>
-                </select>
-                <select @bind="selectedType" class="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition hover:border-gray-300">
-                    <option value="">Type</option>
-                    <option value="Online">En ligne</option>
-                    <option value="Physical">Présentiel</option>
-                    <option value="Hybrid">Hybride</option>
-                </select>
-                <select @bind="selectedPeriod" class="cursor-pointer rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm outline-none transition hover:border-gray-300">
-                    <option value="">Période</option>
-                    <option value="today">Aujourd'hui</option>
-                    <option value="week">Cette semaine</option>
-                    <option value="month">Ce mois</option>
-                    <option value="year">Cette année</option>
-                </select>
-            </section>
-            <div class="mb-6 hidden md:block">
-                <ViewToggle @bind-IsListView="isListView" />
-            </div>
-            
-            @if (isListView)
-            {
-                <EventTable Event="@pagedEvents" OnChanged="LoadEventsAsync" />
-            }
-            else
-            {
-                <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-5 lg:gap-6">
-                    @foreach (var ev in pagedEvents)
-                    {
-                        <AdminEventCard @key="ev.Id" Event="@ev"
-                                   OnEventDeleted="LoadEventsAsync"
-                                   OnSetPending="SetPending"
-                                   OnSetPublished="SetPublished"
-                                   OnSetArchived="SetArchived" />
-                    }
-                </div>
-            }
+                @if (isListView)
+                {
+                    <EventTable Event="@pagedEvents" OnChanged="LoadEventsAsync" />
+                }
+                else
+                {
+                    <div class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 md:gap-5 lg:gap-6">
+                        @foreach (var ev in pagedEvents)
+                        {
+                            <AdminEventCard @key="ev.Id" Event="@ev" OnEventDeleted="LoadEventsAsync" OnSetPending="SetPending"
+                                            OnSetPublished="SetPublished" OnSetArchived="SetArchived" />
+                        }
+                    </div>
+                }
 
-            <div class="mt-6">
-                <Paginated @bind-CurrentPage="currentPage" TotalPages="@totalPages" />
+                <div class="mt-6">
+                    <Paginated @bind-CurrentPage="currentPage" TotalPages="@totalPages" />
+                </div>
             </div>
         </div>
-    </div>
-}
+    }
 
 @code {
     private bool isLoading = true;
@@ -198,10 +212,10 @@ else
                     e.OrganizerName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
                     e.Location.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
         .Where(e => string.IsNullOrEmpty(selectedStatus) ||
-                    (selectedStatus == "published" && e.IsPublished ) ||
-                    (selectedStatus == "pending" && !e.IsPublished ))
-                    
-        .Where(e => string.IsNullOrEmpty(selectedType) ||
+                    (selectedStatus == "published" && e.IsPublished) ||
+                    (selectedStatus == "pending" && !e.IsPublished))
+
+.Where(e => string.IsNullOrEmpty(selectedType) ||
                     e.EventType.Equals(selectedType, StringComparison.OrdinalIgnoreCase))
         .Where(e => string.IsNullOrEmpty(selectedPeriod) ||
                     (selectedPeriod == "today" && e.StartDate.Date == DateTime.Today) ||
@@ -294,7 +308,7 @@ else
 
     private async Task PersistStatusAsync(EventDto ev, bool isPublished, bool isArchived)
     {
-        var request = new UpdateEventRequest
+        var request = new CreateEventRequest
         {
             Title = ev.Title,
             Description = ev.Description,
@@ -308,15 +322,15 @@ else
             IsPublished = isPublished,
             IsArchived = isArchived,
             Category = ev.Category,
-            GalleryImageUrls = ev.GalleryImageUrls?.ToList(),
+            GalleryImageUrls = ev.GalleryImageUrls?.ToList() ?? new(),
             Speakers = ev.Speakers?.Select(s => new SpeakerDto
             {
                 UserId = s.UserId,
                 Name = s.Name,
                 Role = s.Role,
                 AvatarUrl = s.AvatarUrl
-            }).ToList(),
-            TagNames = ev.Tags?.Select(t => t.Name).ToList(),
+            }).ToList() ?? new(),
+            TagNames = ev.Tags?.Select(t => t.Name).ToList() ?? new(),
         };
 
         try

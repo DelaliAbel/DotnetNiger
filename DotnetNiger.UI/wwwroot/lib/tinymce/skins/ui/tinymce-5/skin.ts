@@ -1,5 +1,5 @@
 export interface Classes {
-  tox: string;
+  "tox": string;
   "tox-tinymce": string;
   "tox-tinymce-aux": string;
   "tox-tinymce-inline": string;
@@ -44,8 +44,8 @@ export interface Classes {
   "tox-button--stretch": string;
   "tox-context-form__group": string;
   "tox-button--enabled": string;
-  "tox-button--primary": string;
-  "tox-button--primary--outline": string;
+  "tox-button--secondary": string;
+  "tox-button--secondary--outline": string;
   "tox-checkbox": string;
   "tox-checkbox__input": string;
   "tox-checkbox__icons": string;
@@ -337,7 +337,7 @@ export interface Classes {
   "tox-platform-touch": string;
   "tox-skeleton": string;
   "tox-skeleton__line": string;
-  wave: string;
+  "wave": string;
   "tox-skeleton__circle": string;
   "tox-slider": string;
   "tox-slider__rail": string;
@@ -382,8 +382,8 @@ export interface Classes {
   "tox-label--context-toolbar": string;
   "tox-number-input": string;
   "tox-input-wrapper": string;
-  minus: string;
-  plus: string;
+  "minus": string;
+  "plus": string;
   "tox-tbtn--select": string;
   "tox-tbtn--bordered": string;
   "tox-tbtn__select-label": string;
@@ -505,4 +505,4 @@ export interface Classes {
   "tox-tab": string;
   "tox-dialog__content-js": string;
   "tox-split-button": string;
-}
+};

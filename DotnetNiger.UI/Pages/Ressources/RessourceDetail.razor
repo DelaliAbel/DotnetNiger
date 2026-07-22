@@ -38,8 +38,8 @@ else if (resource is null)
             <div class="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
                 <i class="fas fa-search text-2xl text-gray-400"></i>
             </div>
-            <h2 class="text-lg font-bold text-gray-900 mb-2">Ressource non trouvée</h2>
-            <p class="text-sm text-gray-500 mb-6">La ressource demandée n'existe pas ou a été retirée.</p>
+            <h2 class="text-lg font-bold text-title mb-2">Ressource non trouvée</h2>
+            <p class="text-sm text-body mb-6">La ressource demandée n'existe pas ou a été retirée.</p>
             <a href="/ressources"
                class="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white hover:brightness-110 transition">
                 <i class="fas fa-arrow-left"></i>
@@ -50,21 +50,21 @@ else if (resource is null)
 }
 else
 {
-    <section class="bg-gradient-to-b from-accent-bg to-white px-4 py-10 sm:py-14 lg:px-10">
+    <section class="px-4 py-10 sm:py-14 lg:px-10">
         <div class="mx-auto w-full max-w-4xl">
-            <nav class="mb-6 text-sm text-gray-500">
+            <nav class="mb-6 text-sm text-body">
                 <a href="/ressources" class="hover:text-primary transition">Ressources</a>
                 <span class="mx-2">/</span>
-                <span class="text-gray-900 font-medium">@resource.Title</span>
+                <span class="text-title font-medium">@resource.Title</span>
             </nav>
 
-            <div class="bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+            <div class="bg-surface rounded-lg shadow-sm border-gray-100 overflow-hidden">
                 <div class="@GradientClass h-44 sm:h-56 flex items-center justify-center relative">
-                    <div class="absolute inset-0 bg-white/10"></div>
+                    <div class="absolute inset-0 bg-surface/10"></div>
                     <div class="relative flex flex-col items-center gap-3">
                         <i class="@IconClass text-white text-5xl sm:text-6xl opacity-90"></i>
                         <span
-                        class="inline-flex rounded-full bg-white/20 backdrop-blur-sm px-4 py-1 text-sm font-semibold text-white">@resource.ResourceType</span>
+                        class="inline-flex rounded-full bg-surface/20 backdrop-blur-sm px-4 py-1 text-sm font-semibold text-white">@resource.ResourceType</span>
                     </div>
                 </div>
 
@@ -75,25 +75,25 @@ else
                             <i class="@LevelIconClass"></i>
                             @resource.Level
                         </span>
-                        <span class="inline-flex items-center gap-1.5 text-xs text-gray-500">
+                        <span class="inline-flex items-center gap-1.5 text-xs text-body">
                             <i class="fas fa-eye"></i>
                             @resource.ViewCount vue@(resource.ViewCount > 1 ? "s" : "")
                         </span>
                         @if (resource.CreatedAt != default)
                         {
-                            <span class="inline-flex items-center gap-1.5 text-xs text-gray-500">
+                            <span class="inline-flex items-center gap-1.5 text-xs text-body">
                                 <i class="fas fa-calendar"></i>
                                 @resource.CreatedAt.ToString("dd MMM yyyy")
                             </span>
                         }
                     </div>
 
-                    <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 mb-4 leading-tight">
+                    <h1 class="text-2xl sm:text-3xl md:text-4xl font-extrabold text-title mb-4 leading-tight">
                         @resource.Title</h1>
 
                         @if (!string.IsNullOrWhiteSpace(resource.Description))
                         {
-                            <p class="text-sm sm:text-base text-gray-600 leading-relaxed mb-6 break-words">@resource.Description</p>
+                            <p class="text-sm sm:text-base text-body leading-relaxed mb-6 break-words">@resource.Description</p>
                         }
 
                         @if (resource.Tags.Count > 0)
@@ -114,7 +114,7 @@ else
                                 <i class="fas fa-external-link-alt text-xs"></i>
                             </a>
                             <a href="/ressources"
-                               class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 text-gray-700 px-6 py-3 text-sm font-semibold hover:bg-gray-50 transition">
+                               class="inline-flex items-center justify-center gap-2 rounded-lg     text-gray-700 px-6 py-3 text-sm font-semibold hover:bg-gray-50 transition">
                                 <i class="fas fa-arrow-left text-xs"></i>
                                 Retour aux ressources
                             </a>

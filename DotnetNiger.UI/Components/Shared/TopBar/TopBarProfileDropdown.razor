@@ -20,7 +20,7 @@
         </button>
 
         <button type="button"
-                class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-gray-200 shadow-sm"
+                class="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full     shadow-sm"
                 @onclick="ToggleMenu" aria-expanded="@isMenuOpen" aria-haspopup="true" aria-label="Menu profil utilisateur"
                 title="@DisplayName">
             @if (!string.IsNullOrWhiteSpace(profile?.AvatarUrl))
@@ -42,10 +42,10 @@
                 @onclick="CloseMenu" aria-label="Fermer le menu"></button>
 
         <div
-            class="absolute right-0 top-[52px] z-30 hidden w-72 overflow-hidden rounded-lg border border-white bg-surface shadow-[0_14px_40px_rgba(15,23,42,0.12)] ring-1 ring-white/80 md:block">
-            <div class="border-b border-white px-4 py-4">
+            class="absolute right-0 top-[52px] z-30 hidden w-72 overflow-hidden rounded-lg      bg-surface shadow-[0_14px_40px_rgba(15,23,42,0.12)] ring-1 ring-white/80 md:block">
+            <div class="border-b    px-4 py-4">
                 <div class="flex items-center gap-3">
-                    <div class="h-11 w-11 overflow-hidden rounded-full border border-white bg-white shadow-sm">
+                    <div class="h-11 w-11 overflow-hidden rounded-full      bg-surface shadow-sm">
                         @if (!string.IsNullOrWhiteSpace(profile?.AvatarUrl))
                         {
                             <ResolvedImage Src="@profile.AvatarUrl" class="h-full w-full object-cover"
@@ -58,49 +58,49 @@
                         }
                     </div>
                     <div class="min-w-0">
-                        <p class="truncate text-sm font-bold text-gray-900">@DisplayName</p>
-                        <p class="truncate text-xs text-gray-500">Niger DotNet Core</p>
+                        <p class="truncate text-sm font-bold text-title">@DisplayName</p>
+                        <p class="truncate text-xs text-body">Niger DotNet Core</p>
                     </div>
                 </div>
             </div>
 
             <button type="button"
-                    class="flex w-full items-start gap-3 px-4 py-3 text-left text-sm text-gray-800 transition hover:bg-white"
+                    class="flex w-full items-start gap-3 px-4 py-3 text-left text-sm text-gray-800 transition hover:bg-surface"
                     @onclick="NavigateToProfileAsync">
-                <i class="far fa-user mt-0.5 text-base text-gray-700"></i>
+                <i class="far fa-user mt-0.5 text-base text-title"></i>
                 <span class="flex flex-col leading-tight">
-                    <span class="text-sm font-medium">Mon Profile</span>
-                    <span class="max-w-[160px] truncate text-xs text-gray-500">Gérer mon compte</span>
+                    <span class="text-sm font-medium text-title">Mon Profile</span>
+                    <span class="max-w-[160px] truncate text-xs text-body">Gérer mon compte</span>
                 </span>
             </button>
 
             @if (UserStateService.IsAdmin)
             {
-                <div class="h-px bg-white"></div>
+                <div class="h-px bg-surface"></div>
 
                 <button type="button"
-                        class="flex w-full items-start gap-3 px-4 py-3 text-left text-sm text-gray-800 transition hover:bg-white"
+                        class="flex w-full items-start gap-3 px-4 py-3 text-left text-sm transition hover:bg-surface"
                         @onclick="NavigateToAdminAsync">
-                    <i class="fas fa-shield-halved mt-0.5 text-base text-gray-700"></i>
+                    <i class="fas fa-shield-halved mt-0.5 text-base text-title"></i>
                     <span class="flex flex-col leading-tight">
-                        <span class="text-sm font-medium">Administration</span>
-                        <span class="max-w-[160px] truncate text-xs text-gray-500">Gérer le site</span>
+                        <span class="text-sm font-medium text-title">Administration</span>
+                        <span class="max-w-[160px] truncate text-xs text-body">Gérer le site</span>
                     </span>
                 </button>
             }
 
-            <div class="h-px bg-white"></div>
+            <div class="h-px bg-surface"></div>
 
             <button type="button"
-                    class="flex w-full items-center justify-between px-4 py-3 text-left text-sm text-gray-800 transition hover:bg-white">
+                    class="flex w-full items-center justify-between px-4 py-3 text-left text-sm transition hover:bg-surface">
                 <span class="flex items-center gap-2">
-                    <i class="fas fa-globe text-base text-gray-700"></i>
-                    <span>Langue</span>
+                    <i class="fas fa-globe text-base text-title"></i>
+                    <span class="text-title">Langue</span>
                 </span>
-                <span class="font-semibold">FR</span>
+                <span class="font-semibold text-body">FR</span>
             </button>
 
-            <div class="h-px bg-white"></div>
+            <div class="h-px bg-surface"></div>
 
             <button type="button"
                     class="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-medium text-danger transition hover:bg-danger-hover-bg"

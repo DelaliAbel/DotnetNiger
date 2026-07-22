@@ -1,5 +1,5 @@
 @page "/preview/blog"
-@attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")]
+@* @attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")] *@
 @using DotnetNiger.UI.Models.Responses
 @inject PreviewStateService PreviewState
 @inject NavigationManager Navigation
@@ -11,8 +11,8 @@
 {
     <div class="flex flex-col items-center justify-center py-20 text-center">
         <i class="fa-solid fa-eye-slash text-4xl text-gray-300 mb-4"></i>
-        <h1 class="text-2xl font-bold text-gray-900">Aucun aperçu disponible</h1>
-        <p class="mt-2 text-sm text-gray-500">Veuillez d'abord remplir le formulaire de création.</p>
+        <h1 class="text-2xl font-bold text-title">Aucun aperçu disponible</h1>
+        <p class="mt-2 text-sm text-body">Veuillez d'abord remplir le formulaire de création.</p>
         <button @onclick="GoBack"
                 class="mt-4 inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-white transition hover:brightness-110">
             <i class="fas fa-arrow-left"></i>
@@ -26,7 +26,7 @@ else
         <div class="mx-auto w-full max-w-6xl">
             <div class="mb-6 flex items-center justify-between">
                 <button @onclick="GoBack"
-                        class="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-black/5 transition hover:bg-gray-50">
+                        class="inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-black/5 transition hover:bg-gray-50">
                     <i class="fas fa-arrow-left text-sm"></i>
                     <span>Retour</span>
                 </button>
@@ -35,7 +35,7 @@ else
 
             <div class="lg:grid lg:grid-cols-3 lg:gap-6">
                 <div class="lg:col-span-2 space-y-6 sm:space-y-7">
-                    <div class="flex flex-wrap items-center gap-2 text-[11px] sm:text-[13px] text-gray-500">
+                    <div class="flex flex-wrap items-center gap-2 text-[11px] sm:text-[13px] text-body">
                         <div class="flex flex-wrap items-center gap-2">
                             @if (!string.IsNullOrWhiteSpace(post.PostType))
                             {
@@ -49,7 +49,7 @@ else
                     </div>
 
                     <h1
-                        class="text-2xl sm:text-3xl md:text-[2.8rem] font-extrabold leading-[1.1] tracking-[-0.03em] text-gray-900">
+                        class="text-2xl sm:text-3xl md:text-[2.8rem] font-extrabold leading-[1.1] tracking-[-0.03em] text-title">
                         @post.Title
                     </h1>
 
@@ -68,12 +68,12 @@ else
                                 }
                             </div>
                             <div>
-                                <p class="text-sm sm:text-[15px] font-semibold text-gray-900">@post.AuthorName</p>
-                                <p class="text-[11px] sm:text-xs text-gray-500">@post.PublishedAt?.ToString("dd MMM yyyy")</p>
+                                <p class="text-sm sm:text-[15px] font-semibold text-title">@post.AuthorName</p>
+                                <p class="text-[11px] sm:text-xs text-body">@post.PublishedAt?.ToString("dd MMM yyyy")</p>
                             </div>
                         </div>
 
-                        <hr class="border-gray-200" />
+                        <hr class=" " />
 
                         <div
                             class="overflow-hidden rounded-3xl bg-[#0b1220] shadow-[0_18px_40px_rgba(15,23,42,0.16)] aspect-video">
@@ -98,7 +98,7 @@ else
                             @if (post?.Tags?.Any() == true)
                             {
                                 <div class="space-y-3 pt-2">
-                                    <p class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500">
+                                    <p class="text-[10px] sm:text-[11px] font-semibold uppercase tracking-[0.2em] text-body">
                                         ÉTIQUETTES</p>
                                         <div class="flex flex-wrap gap-2">
                                             @foreach (var tag in post.Tags)

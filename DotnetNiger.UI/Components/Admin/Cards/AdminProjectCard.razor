@@ -4,11 +4,13 @@
 @inject IProjectService ProjectService
 @inject IToastService ToastService
 
-<div class="group rounded-lg bg-white shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
-    <div class="relative w-full overflow-hidden bg-gradient-to-br from-[#512BD4] to-[#3F1FB3] flex items-center justify-center aspect-video">
+<div class="group rounded-lg bg-surface shadow-md">
+    <div
+        class="relative w-full overflow-hidden bg-gradient-to-br from-[#512BD4] to-[#3F1FB3] flex items-center justify-center aspect-video">
         @if (!string.IsNullOrWhiteSpace(Project?.ImageUrl))
         {
-            <ResolvedImage Src="@Project.ImageUrl" class="h-full w-full object-cover transition duration-500 group-hover:scale-105" alt="@Project?.Title" />
+            <ResolvedImage Src="@Project.ImageUrl"
+                           class="h-full w-full object-cover transition duration-500 group-hover:scale-105" alt="@Project?.Title" />
         }
         else
         {
@@ -28,13 +30,8 @@
                 </div>
             </div>
 
-            <AdminActionDropdown ItemId="@(Project?.Id ?? Guid.Empty)"
-                                 Status="@(IsActive ? "Published" : "Pending")"
-                                 ViewLabel="Voir"
-                                 EditLabel="Modifier"
-                                 DeleteLabel="Supprimer"
-                                 OnView="EditProject"
-                                 OnEdit="EditProject"
+            <AdminActionDropdown ItemId="@(Project?.Id ?? Guid.Empty)" Status="@(IsActive ? "Published" : "Pending")"
+                                 ViewLabel="Voir" EditLabel="Modifier" DeleteLabel="Supprimer" OnView="EditProject" OnEdit="EditProject"
                                  OnDelete="DeleteProject" />
         </div>
 
@@ -43,31 +40,35 @@
         @if (!string.IsNullOrWhiteSpace(Project?.Technologies))
         {
             <div class="mb-4 flex flex-wrap gap-1">
-                @foreach (var tech in Project.Technologies.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Take(3))
+                @foreach (var tech in Project.Technologies.Split(',', StringSplitOptions.RemoveEmptyEntries |
+            StringSplitOptions.TrimEntries).Take(3))
                 {
                     <span class="rounded-lg bg-primary px-2 py-1 text-xs font-medium text-gray-700">@tech</span>
                 }
-                @if (Project.Technologies.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length > 3)
+                @if (Project.Technologies.Split(',', StringSplitOptions.RemoveEmptyEntries |
+            StringSplitOptions.TrimEntries).Length > 3)
                 {
-                    <span class="text-xs text-gray-400">+@(Project.Technologies.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length - 3)</span>
-                }
-            </div>
-        }
+                    <span class="text-xs text-gray-400">+@(Project.Technologies.Split(',', StringSplitOptions.RemoveEmptyEntries
+                                        | StringSplitOptions.TrimEntries).Length - 3)</span>
+                    }
+                </div>
+            }
 
-        <div class="flex items-center justify-between gap-3 border-t border-gray-100 pt-4 text-sm text-body">
-            <span class="truncate font-medium">@Project?.AuthorName</span>
-            <div class="flex items-center gap-2">
-                @if (!string.IsNullOrWhiteSpace(Project?.GithubUrl))
-                {
-                    <a href="@Project.GithubUrl" target="_blank" rel="noopener noreferrer" class="text-gray-400 transition hover:text-title" @onclick:stopPropagation>
-                        <i class="fab fa-github text-base"></i>
-                    </a>
-                }
-                <span class="whitespace-nowrap">@Project?.CreatedAt.ToString("dd/MM/yyyy")</span>
+            <div class="flex items-center justify-between gap-3 border-t border-gray-100 pt-4 text-sm text-body">
+                <span class="truncate font-medium">@Project?.AuthorName</span>
+                <div class="flex items-center gap-2">
+                    @if (!string.IsNullOrWhiteSpace(Project?.GithubUrl))
+                    {
+                        <a href="@Project.GithubUrl" target="_blank" rel="noopener noreferrer"
+                           class="text-gray-400 transition hover:text-title" @onclick:stopPropagation>
+                            <i class="fab fa-github text-base"></i>
+                        </a>
+                    }
+                    <span class="whitespace-nowrap">@Project?.CreatedAt.ToString("dd/MM/yyyy")</span>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 @code {
     [Parameter]
