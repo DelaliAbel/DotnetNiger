@@ -1,6 +1,7 @@
 ﻿@page "/register"
 @inject IAuthService Auth
 @inject IRegistrationService RegistrationService
+@inject IProfileService ProfileService
 @inject NavigationManager Navigation
 @inject IConfiguration Config
 
@@ -31,7 +32,14 @@
 
             @if (currentStep == 1)
             {
-                @if (isReturnedFromIdentity)
+                @if (isLoadingProfile)
+                {
+                    <div class="text-center py-8">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                        <p class="text-sm text-body">Chargement du profil...</p>
+                    </div>
+                }
+                else if (hasProfile)
                 {
                     <div class="text-center py-4">
                         <div class="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50">
@@ -127,32 +135,37 @@
     private int currentStep = 1;
     private Guid tempUserId;
     private string registeredName = string.Empty;
-    private string registeredEmail = string.Empty;
 
-    private bool isReturnedFromIdentity;
+    private bool hasProfile;
+    private bool isLoadingProfile;
     private bool isCertifSubmitted;
 
     private string? certifErrorMessage;
 
     private bool isCertifLoading;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        var uri = new Uri(Navigation.Uri);
-        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        isLoadingProfile = true;
 
-        var userIdStr = query["userId"];
-        var email = query["email"];
-        var fullName = query["fullName"];
-
-        if (!string.IsNullOrWhiteSpace(userIdStr) && Guid.TryParse(userIdStr, out var uid)
-            && !string.IsNullOrWhiteSpace(email))
+        try
         {
-            tempUserId = uid;
-            registeredEmail = email;
-            registeredName = fullName ?? email;
-            certifModel.UserId = uid;
-            isReturnedFromIdentity = true;
+            var profile = await ProfileService.GetProfileAsync();
+            if (profile.Id != Guid.Empty)
+            {
+                tempUserId = profile.Id;
+                registeredName = profile.FullName ?? profile.Email;
+                certifModel.UserId = profile.Id;
+                hasProfile = true;
+            }
+        }
+        catch
+        {
+            hasProfile = false;
+        }
+        finally
+        {
+            isLoadingProfile = false;
         }
     }
 
@@ -207,11 +220,6 @@
 
     private void NavigateToLogin()
     {
-        var returnUrl = $"{Navigation.BaseUri.TrimEnd('/')}/auth/external-callback";
-        var apiBase = Config["ApiBaseUrl"];
-        if (string.IsNullOrWhiteSpace(apiBase)) return;
-        var path = Config["IdentityEndpoints:Login"] ?? "/Account/Login";
-        var loginUrl = $"{apiBase}{path}?returnUrl={Uri.EscapeDataString(returnUrl)}";
-        Navigation.NavigateTo(loginUrl);
+        Navigation.NavigateTo("/login");
     }
 }

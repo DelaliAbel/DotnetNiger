@@ -62,7 +62,7 @@
                 await UserStateService.SetUserAsync(response.Data.User);
 
             var destination = "/";
-            if (!string.IsNullOrWhiteSpace(returnUrl) && returnUrl.StartsWith("/"))
+            if (!string.IsNullOrWhiteSpace(returnUrl) && returnUrl.StartsWith("/") && !returnUrl.StartsWith("//"))
                 destination = returnUrl;
 
             Navigation.NavigateTo(destination);

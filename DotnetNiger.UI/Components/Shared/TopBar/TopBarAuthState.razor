@@ -167,7 +167,7 @@
         new MobileNavItem(Href: "/propos", Label : "A propos", Icon: "fa-solid fa-circle-info"),
         new MobileNavItem("/ressources", "Ressources", "fa-solid fa-folder"),
         new MobileNavItem("/community", "Communauté", "fa-solid fa-users"),
-        new MobileNavItem("/blog", "blog", "fa-solid fa-newspaper"),
+        new MobileNavItem("/blog", "Blog", "fa-solid fa-newspaper"),
         new MobileNavItem("/evenements", "Événements", "fa-solid fa-calendar"),
         new MobileNavItem("/partners", "Partenaires", "fa-solid fa-handshake"),
         new MobileNavItem("/contact", "Contact", "fa-solid fa-envelope"),
@@ -237,7 +237,7 @@ NotificationCount.GetValueOrDefault();
         }
         else
         {
-            var returnUrl = $"{Navigation.BaseUri.TrimEnd('/')}/auth/callback-popup";
+            var returnUrl = $"{Navigation.BaseUri.TrimEnd('/')}/auth/external-callback";
             var apiBase = Config["ApiBaseUrl"];
             if (string.IsNullOrWhiteSpace(apiBase)) return;
             var loginUrl = $"/login?returnUrl={Uri.EscapeDataString(returnUrl)}";

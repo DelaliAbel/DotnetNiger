@@ -147,6 +147,7 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         {
             await _js.InvokeVoidAsync("localStorage.removeItem", AccessTokenKey);
             await _js.InvokeVoidAsync("localStorage.removeItem", RefreshTokenKey);
+            await _js.InvokeVoidAsync("localStorage.removeItem", "dn_wasm_runtime_registry_member");
         }
         catch
         {

@@ -255,7 +255,7 @@ public class AuthService : IAuthService
         await _userStateService.ClearUserAsync();
     }
 
-    private static readonly SemaphoreSlim _refreshLock = new(1, 1);
+    private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
     /// <summary>
     /// Renouvelle l'access token depuis le refresh token stocké.

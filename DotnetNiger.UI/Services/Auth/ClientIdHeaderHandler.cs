@@ -12,7 +12,7 @@ public class ClientIdHeaderHandler : DelegatingHandler
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<ClientIdHeaderHandler> _logger;
     private readonly NavigationManager _navigationManager;
-    private static readonly SemaphoreSlim _refreshLock = new(1, 1);
+    private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
     public ClientIdHeaderHandler(
         ClientIdentifierProvider clientIdentifierProvider,
