@@ -17,5 +17,7 @@ public class RegisterRequest
     [StringLength(100)]
     public string FullName { get; set; } = string.Empty;
 
+    public string? PhoneNumber { get; set; }
+
     public string Provider { get; set; } = "Email"; // "Email", "Google", "GitHub", "Microsoft"
 }

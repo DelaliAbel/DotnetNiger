@@ -26,7 +26,7 @@ public class AccountController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<object>> Register([FromBody] RegisterRequest request)
     {
-        var user = await _accountService.RegisterAsync(request.Email, request.Password, request.FirstName, request.LastName);
+        var user = await _accountService.RegisterAsync(request.Email, request.Password, request.FirstName, request.LastName, request.PhoneNumber);
         return Ok(new { message = "Compte créé. Un code de confirmation vous a été envoyé par email.", userId = user.Id, email = user.Email });
     }
 

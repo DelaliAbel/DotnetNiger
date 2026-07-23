@@ -1,4 +1,3 @@
-using System.IO.Compression;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
@@ -60,6 +59,9 @@ public class AuthService : IAuthService
             {
                 if (authDto.Token is not null)
                     await _authProvider.SaveTokensAsync(authDto.Token.AccessToken, authDto.Token.RefreshToken);
+                var apiUser = await TryGetUserInfoAsync();
+                if (apiUser is not null)
+                    authDto.User = apiUser;
                 if (authDto.User is not null)
                     await _userStateService.SetUserAsync(authDto.User);
                 await _permissionService.LoadPermissionsAsync();
@@ -148,6 +150,9 @@ public class AuthService : IAuthService
             {
                 if (authDto.Token is not null)
                     await _authProvider.SaveTokensAsync(authDto.Token.AccessToken, authDto.Token.RefreshToken);
+                var apiUser = await TryGetUserInfoAsync();
+                if (apiUser is not null)
+                    authDto.User = apiUser;
                 if (authDto.User is not null)
                     await _userStateService.SetUserAsync(authDto.User);
                 await _permissionService.LoadPermissionsAsync();
@@ -176,7 +181,8 @@ public class AuthService : IAuthService
                 email = request.Email,
                 password = request.Password,
                 firstName = names.Length > 0 ? names[0] : "",
-                lastName = names.Length > 1 ? names[1] : ""
+                lastName = names.Length > 1 ? names[1] : "",
+                phoneNumber = request.PhoneNumber
             };
 
             var response = await _http.PostAsJsonAsync(ApiEndpoints.Auth.Register, registerPayload);
@@ -193,9 +199,7 @@ public class AuthService : IAuthService
                 };
             }
 
-            var json = await response.Content.ReadAsStringAsync();
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
+            var root = await response.Content.ReadFromJsonAsync<JsonElement>();
 
             var userId = root.TryGetProperty("userId", out var uidProp)
                 && uidProp.ValueKind == JsonValueKind.String
@@ -206,6 +210,7 @@ public class AuthService : IAuthService
             var message = root.TryGetProperty("message", out var msgProp)
                 && msgProp.ValueKind == JsonValueKind.String
                 ? msgProp.GetString() : "Compte créé. Vérifiez votre email pour le confirmer.";
+
 
             return new ApiSuccessResponse<AuthDto>
             {
@@ -305,6 +310,10 @@ public class AuthService : IAuthService
 
 	public async Task<UserDto?> GetCurrentUserAsync()
 	{
+        var apiUser = await TryGetUserInfoAsync();
+        if (apiUser is not null)
+            return apiUser;
+
 		var token = await _authProvider.GetAccessTokenAsync();
 		if (string.IsNullOrWhiteSpace(token))
 			return null;
@@ -411,16 +420,74 @@ public class AuthService : IAuthService
     {
         try
         {
-            var rawBytes = await response.Content.ReadAsByteArrayAsync();
-            var json = DecompressAndDecode(rawBytes, response.Content.Headers.ContentType?.MediaType);
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
+            var raw = await response.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(raw))
+                return (null, "Réponse vide reçue depuis l'API d'authentification.");
 
-            var accessToken = root.GetProperty("access_token").GetString()!;
-            var refreshToken = root.TryGetProperty("refresh_token", out var rt) ? rt.GetString() : null;
-            var expiresIn = root.TryGetProperty("expires_in", out var exp) ? exp.GetInt32() : 3600;
+            var trimmed = raw.TrimStart();
+            if (trimmed.StartsWith("<", StringComparison.Ordinal))
+            {
+                return (null, "Réponse HTML reçue au lieu d'un token. Vérifie ApiBaseUrl du front et l'endpoint /connect/token.");
+            }
 
-            var claims = ParseClaimsFromJwt(accessToken).ToList();
+            string? accessToken = null;
+            string? refreshToken = null;
+            var expiresIn = 3600;
+
+            try
+            {
+                using var doc = JsonDocument.Parse(raw);
+                var result = doc.RootElement;
+
+                accessToken = result.TryGetProperty("access_token", out var at) && at.ValueKind == JsonValueKind.String
+                    ? at.GetString()
+                    : null;
+
+                refreshToken = result.TryGetProperty("refresh_token", out var rt) && rt.ValueKind == JsonValueKind.String
+                    ? rt.GetString()
+                    : null;
+
+                if (result.TryGetProperty("expires_in", out var exp))
+                {
+                    if (exp.ValueKind == JsonValueKind.Number && exp.TryGetInt32(out var numericExp))
+                        expiresIn = numericExp;
+                    else if (exp.ValueKind == JsonValueKind.String && int.TryParse(exp.GetString(), out var stringExp))
+                        expiresIn = stringExp;
+                }
+            }
+            catch (JsonException)
+            {
+                // Some OAuth servers return application/x-www-form-urlencoded.
+                // Only parse this shape if the payload actually looks like key=value pairs.
+                if (raw.Contains('='))
+                {
+                    var form = TryParseFormEncoded(raw);
+                    form.TryGetValue("access_token", out accessToken);
+                    form.TryGetValue("refresh_token", out refreshToken);
+                    if (form.TryGetValue("expires_in", out var expText) && int.TryParse(expText, out var expParsed))
+                        expiresIn = expParsed;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(accessToken))
+            {
+                var compact = raw.Length > 180 ? raw[..180] + "..." : raw;
+                return (null, $"Réponse token invalide reçue de l'API: {compact}");
+            }
+
+            var claims = new List<Claim>();
+            if (accessToken.Count(c => c == '.') >= 2)
+            {
+                try
+                {
+                    claims = ParseClaimsFromJwt(accessToken).ToList();
+                }
+                catch
+                {
+                    // Certains serveurs renvoient des tokens opaques/chiffrés: on hydrate l'utilisateur via /api/auth/userinfo.
+                }
+            }
+
 
             var userId = claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier || c.Type == "sub")?.Value ?? "";
             var email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email || c.Type == "email")?.Value ?? "";
@@ -455,6 +522,73 @@ public class AuthService : IAuthService
         }
     }
 
+    private async Task<UserDto?> TryGetUserInfoAsync()
+    {
+        try
+        {
+            var response = await _http.GetAsync(ApiEndpoints.UserInfo);
+            if (!response.IsSuccessStatusCode)
+                return null;
+
+            using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var root = doc.RootElement;
+
+            var id = root.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.String
+                && Guid.TryParse(idProp.GetString(), out var parsedId)
+                ? parsedId
+                : Guid.Empty;
+
+            var email = root.TryGetProperty("email", out var emailProp) && emailProp.ValueKind == JsonValueKind.String
+                ? emailProp.GetString() ?? string.Empty
+                : string.Empty;
+
+            var firstName = root.TryGetProperty("firstName", out var firstNameProp) && firstNameProp.ValueKind == JsonValueKind.String
+                ? firstNameProp.GetString() ?? string.Empty
+                : string.Empty;
+
+            var lastName = root.TryGetProperty("lastName", out var lastNameProp) && lastNameProp.ValueKind == JsonValueKind.String
+                ? lastNameProp.GetString() ?? string.Empty
+                : string.Empty;
+
+            var fullName = $"{firstName} {lastName}".Trim();
+
+            var avatarUrl = root.TryGetProperty("avatarUrl", out var avatarProp) && avatarProp.ValueKind == JsonValueKind.String
+                ? avatarProp.GetString() ?? string.Empty
+                : string.Empty;
+
+            var isActive = root.TryGetProperty("isActive", out var activeProp) && activeProp.ValueKind == JsonValueKind.True
+                || (root.TryGetProperty("isActive", out activeProp) && activeProp.ValueKind == JsonValueKind.False && activeProp.GetBoolean());
+
+            var roles = new List<string>();
+            if (root.TryGetProperty("roles", out var rolesProp) && rolesProp.ValueKind == JsonValueKind.Array)
+            {
+                roles = rolesProp.EnumerateArray()
+                    .Select(x => x.GetString())
+                    .Where(x => !string.IsNullOrWhiteSpace(x))
+                    .Select(x => x!)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+            }
+
+            return new UserDto
+            {
+                Id = id,
+                Email = email,
+                FirstName = firstName,
+                LastName = lastName,
+                FullName = string.IsNullOrWhiteSpace(fullName) ? email : fullName,
+                Username = string.IsNullOrWhiteSpace(fullName) ? email : fullName,
+                AvatarUrl = avatarUrl,
+                IsActive = isActive,
+                Roles = roles
+            };
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     private static string? TryReadOidcError(string json)
     {
         try
@@ -467,7 +601,26 @@ public class AuthService : IAuthService
                 return err.GetString();
         }
         catch { }
-        return null;
+
+        var text = (json ?? string.Empty).Trim();
+        return string.IsNullOrWhiteSpace(text) ? null : text;
+    }
+
+    private static Dictionary<string, string> TryParseFormEncoded(string raw)
+    {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var segment in raw.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var equalsIndex = segment.IndexOf('=');
+            if (equalsIndex <= 0)
+                continue;
+
+            var key = Uri.UnescapeDataString(segment[..equalsIndex].Replace("+", " "));
+            var value = Uri.UnescapeDataString(segment[(equalsIndex + 1)..].Replace("+", " "));
+            if (!string.IsNullOrWhiteSpace(key))
+                result[key] = value;
+        }
+        return result;
     }
 
     private static bool TryGetRoleValue(JsonElement root, string key, out string? role)
@@ -499,12 +652,10 @@ public class AuthService : IAuthService
     {
         try
         {
-            var json = await content.ReadAsStringAsync();
-            if (string.IsNullOrWhiteSpace(json))
+            if (content.Headers.ContentLength == 0)
                 return null;
 
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
+            var root = await content.ReadFromJsonAsync<JsonElement>();
 
             if (root.TryGetProperty("detail", out var detail) && detail.ValueKind == JsonValueKind.String)
                 return detail.GetString();
@@ -525,48 +676,4 @@ public class AuthService : IAuthService
 
     private static IEnumerable<Claim> ParseClaimsFromJwt(string jwt)
         => JwtParser.ParseClaimsFromJwt(jwt);
-
-    private static string DecompressAndDecode(byte[] data, string? contentType)
-    {
-        if (data.Length == 0) return string.Empty;
-
-        if (data.Length >= 2)
-        {
-            if (data[0] == 0x1F && data[1] == 0x8B)
-            {
-                using var ms = new MemoryStream(data);
-                using var gzip = new GZipStream(ms, CompressionMode.Decompress);
-                using var reader = new StreamReader(gzip, Encoding.UTF8);
-                return reader.ReadToEnd();
-            }
-
-            if (data[0] == 0x78)
-            {
-                try
-                {
-                    using var ms = new MemoryStream(data);
-                    using var deflate = new DeflateStream(ms, CompressionMode.Decompress);
-                    using var reader = new StreamReader(deflate, Encoding.UTF8);
-                    return reader.ReadToEnd();
-                }
-                catch { }
-            }
-        }
-
-#pragma warning disable CA1416
-        if (contentType != null && contentType.Contains("brotli"))
-        {
-            try
-            {
-                using var ms = new MemoryStream(data);
-                using var brotli = new BrotliStream(ms, CompressionMode.Decompress);
-                using var reader = new StreamReader(brotli, Encoding.UTF8);
-                return reader.ReadToEnd();
-            }
-            catch { }
-        }
-#pragma warning restore CA1416
-
-        return Encoding.UTF8.GetString(data);
-    }
 }

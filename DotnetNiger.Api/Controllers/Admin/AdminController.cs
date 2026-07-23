@@ -1,6 +1,5 @@
 using DotnetNiger.Api.DTOs.Responses;
 using ErrorResponse  = DotnetNiger.Api.DTOs.Responses.ErrorResponse;
-using DotnetNiger.Api.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -47,27 +46,6 @@ public class AdminController : BaseController
         var userId = GetUserId();
         var stats = await _dashboardService.GetMyStatsAsync(userId);
         return Ok(stats);
-    }
-
-    [HttpGet("login-history")]
-    public async Task<ActionResult> GetLoginHistory(
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-    {
-        var result = await _dashboardService.GetLoginHistoryAsync(
-            Math.Max(1, page), Math.Clamp(pageSize, 1, 100));
-        return Ok(result);
-    }
-
-    [HttpGet("audit-logs")]
-    public async Task<ActionResult<PaginatedResponse<AuditLog>>> GetAuditLogs(
-        [FromQuery] int page = 1, [FromQuery] int pageSize = 20,
-        [FromQuery] string? entityType = null, [FromQuery] string? action = null,
-        [FromQuery] DateTime? from = null, [FromQuery] DateTime? to = null)
-    {
-        var result = await _dashboardService.GetAuditLogsAsync(
-            Math.Max(1, page), Math.Clamp(pageSize, 1, 100),
-            entityType, action, from, to);
-        return Ok(result);
     }
 
     [HttpGet("users")]

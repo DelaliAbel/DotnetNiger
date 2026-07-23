@@ -74,15 +74,6 @@ public class ProfileController : ControllerBase
         return Ok(new { Success = true, Message = "Demande de suppression annulée." });
     }
 
-    [HttpGet("login-history")]
-    public async Task<ActionResult> GetLoginHistory([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
-    {
-        var userId = User.FindFirst(Claims.Subject)?.Value;
-        if (userId == null) return Unauthorized();
-        var result = await _authService.GetLoginHistoryAsync(Guid.Parse(userId), Math.Max(1, page), Math.Clamp(pageSize, 1, 100));
-        return Ok(result);
-    }
-
     [HttpPost("change-email")]
     public async Task<ActionResult> ChangeEmail([FromBody] ChangeEmailRequest request)
     {

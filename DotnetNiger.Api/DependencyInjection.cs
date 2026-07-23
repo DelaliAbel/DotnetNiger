@@ -19,17 +19,12 @@ public static class DependencyInjection
         services.AddScoped<TokenService>();
         services.AddScoped<OidcService>();
         services.AddScoped<OpenIddictManagementService>();
-        services.AddScoped<IUserService, UserService>();
-        services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<IPermissionService, PermissionService>();
-        services.AddScoped<OAuthClientService>();
         services.AddScoped<OpenIddictClientManager>();
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<DashboardService>();
         services.AddScoped<IEmailSender<ApplicationUser>, EmailSender>();
         services.AddScoped<EmailSender>();
-        services.AddScoped<GdprService>();
-        services.AddScoped<GdprExportService>();
         services.AddScoped<ISupportService, SupportService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
 

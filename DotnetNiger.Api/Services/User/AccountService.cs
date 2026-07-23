@@ -35,7 +35,7 @@ public partial class AccountService
     }
 
     public async Task<ApplicationUser> RegisterAsync(string email, string password,
-        string firstName, string lastName)
+        string firstName, string lastName, string? phoneNumber = null)
     {
         if (await _userManager.FindByEmailAsync(email) != null)
             throw new InvalidOperationException("Un compte avec cet email existe déjà");
@@ -43,6 +43,7 @@ public partial class AccountService
         var user = new ApplicationUser
         {
             UserName = email, Email = email, FirstName = firstName, LastName = lastName,
+            PhoneNumber = phoneNumber,
             IsActive = true, EmailConfirmed = false
         };
 

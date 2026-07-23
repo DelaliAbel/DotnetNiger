@@ -18,27 +18,64 @@ public static class JwtParser
 
     public static IEnumerable<Claim> ParseClaimsFromJwt(string jwt)
     {
-        var parts = jwt.Split('.');
-        if (parts.Length < 3)
-            return Enumerable.Empty<Claim>();
-
-        var payload = parts[1];
-        var jsonBytes = ParseBase64WithoutPadding(payload);
-        var kvs = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(jsonBytes)!;
-
-        return kvs.SelectMany(kv =>
+        try
         {
-            if (kv.Key is "roles" or "role")
+            var parts = jwt.Split('.');
+            if (parts.Length < 2) // On a besoin d'au moins Header et Payload
+                return Enumerable.Empty<Claim>();
+
+            var payload = parts[1];
+            var jsonBytes = ParseBase64WithoutPadding(payload);
+            
+            using var doc = JsonDocument.Parse(jsonBytes);
+            var root = doc.RootElement;
+            var claims = new List<Claim>();
+
+            foreach (var prop in root.EnumerateObject())
             {
-                if (kv.Value.ValueKind == JsonValueKind.Array)
-                    return kv.Value.EnumerateArray().Select(r => new Claim(ClaimTypes.Role, r.GetString()!));
-                return new[] { new Claim(ClaimTypes.Role, kv.Value.GetString()!) };
+                var key = prop.Name;
+                var value = prop.Value;
+
+                if (key is "roles" or "role" or "http://schemas.microsoft.com/ws/2008/06/identity/claims/role")
+                {
+                    if (value.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var r in value.EnumerateArray())
+                            claims.Add(new Claim(ClaimTypes.Role, r.GetString() ?? ""));
+                    }
+                    else
+                    {
+                        claims.Add(new Claim(ClaimTypes.Role, value.GetString() ?? ""));
+                    }
+                    continue;
+                }
+
+                var claimType = JwtToClaimTypeMap.GetValueOrDefault(key, key);
+                
+                // Extraire la valeur proprement selon son type
+                var valStr = value.ValueKind switch
+                {
+                    JsonValueKind.String => value.GetString(),
+                    JsonValueKind.Number => value.GetRawText(),
+                    JsonValueKind.True => "true",
+                    JsonValueKind.False => "false",
+                    JsonValueKind.Null => null,
+                    _ => value.GetRawText()
+                };
+
+                if (valStr != null)
+                    claims.Add(new Claim(claimType, valStr));
             }
 
-            var claimType = JwtToClaimTypeMap.GetValueOrDefault(kv.Key, kv.Key);
-            return new[] { new Claim(claimType, kv.Value.ToString()) };
-        });
+            return claims;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Erreur lors du parsing JWT: {ex.Message}");
+            return Enumerable.Empty<Claim>();
+        }
     }
+
 
     public static byte[] ParseBase64WithoutPadding(string base64)
     {

@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
+using System.Net.Http.Json;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -23,27 +25,19 @@ var clientId = builder.Configuration["ClientId"] ?? "web-ui";
 builder.Services.AddScoped<ClientIdentifierProvider>();
 builder.Services.AddSingleton(new ApiBaseUrlProvider(apiBaseUrl));
 
-// Client HTTP Gateway partagé — un seul HttpClient pour tous les services API
-builder.Services.AddScoped(sp =>
+// Client HTTP Gateway partagé
+builder.Services.AddTransient<ClientIdHeaderHandler>();
+builder.Services.AddHttpClient("DotnetNiger.Api", client =>
 {
-    var clientIdentifierProvider = sp.GetRequiredService<ClientIdentifierProvider>();
-    var authStateProvider = sp.GetRequiredService<CustomAuthStateProvider>();
-    var logger = sp.GetRequiredService<ILogger<ClientIdHeaderHandler>>();
-    var navigationManager = sp.GetRequiredService<NavigationManager>();
+    client.BaseAddress = new Uri(apiBaseUrl);
+})
+.AddHttpMessageHandler<ClientIdHeaderHandler>();
 
-    var headerHandler = new ClientIdHeaderHandler(clientIdentifierProvider, authStateProvider, sp, logger, navigationManager)
-    {
-        InnerHandler = new HttpClientHandler()
-    };
+builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("DotnetNiger.Api"));
 
-    return new HttpClient(headerHandler)
-    {
-        BaseAddress = new Uri(apiBaseUrl)
-    };
-});
 
 builder.Services.AddScoped<AuthService>(sp => new AuthService(
-    sp.GetRequiredService<HttpClient>(),
+    sp.GetRequiredService<IHttpClientFactory>().CreateClient("DotnetNiger.Api"),
     sp.GetRequiredService<CustomAuthStateProvider>(),
     sp.GetRequiredService<IUserStateService>(),
     sp.GetRequiredService<IPermissionService>(),

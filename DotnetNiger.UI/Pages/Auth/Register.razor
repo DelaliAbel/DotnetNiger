@@ -1,225 +1,515 @@
 ﻿@page "/register"
 @inject IAuthService Auth
-@inject IRegistrationService RegistrationService
-@inject IProfileService ProfileService
 @inject NavigationManager Navigation
 @inject IConfiguration Config
+@inject IJSRuntime JS
 
 <PageTitle>Inscription - .NET Niger</PageTitle>
 
 <div class="min-h-screen flex items-center justify-center px-4 py-12">
     <div class="w-full max-w-lg">
 
-        <div class="relative rounded-2xl bg-surface shadow-[0_8px_30px_rgb(0,0,0,0.06)]   border-gray-100 p-8 md:p-10">
+        <div class="relative rounded-2xl bg-surface shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-100 p-8 md:p-10">
 
             <a href="/" class="absolute left-6 top-6 inline-flex items-center gap-1.5 text-xs text-gray-400 transition hover:text-gray-600">
                 <i class="fas fa-arrow-left text-[10px]"></i>
                 Accueil
             </a>
 
-            @* Stepper *@
             <div class="flex items-center justify-center gap-3 mb-8">
-                <div class="flex items-center gap-2 @(currentStep >= 1 ? "text-purple-700" : "text-gray-300")">
-                    <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold @(currentStep >= 1 ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-400")">1</span>
-                    <span class="text-xs font-medium">Compte</span>
+                <div class="flex items-center gap-2 @(_currentStep >= 1 ? "text-purple-700" : "text-gray-300")">
+                    <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold @(_currentStep >= 1 ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-400")">1</span>
+                    <span class="text-xs font-medium">Infos</span>
                 </div>
-                <div class="w-10 h-px @(currentStep >= 2 ? "bg-purple-300" : "bg-gray-200")"></div>
-                <div class="flex items-center gap-2 @(currentStep >= 2 ? "text-purple-700" : "text-gray-300")">
-                    <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold @(currentStep >= 2 ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-400")">2</span>
-                    <span class="text-xs font-medium">Certificat</span>
+                <div class="w-8 h-px @(_currentStep >= 2 ? "bg-purple-300" : "bg-gray-200")"></div>
+                <div class="flex items-center gap-2 @(_currentStep >= 2 ? "text-purple-700" : "text-gray-300")">
+                    <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold @(_currentStep >= 2 ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-400")">2</span>
+                    <span class="text-xs font-medium">Mot de passe</span>
+                </div>
+                <div class="w-8 h-px @(_currentStep >= 3 ? "bg-purple-300" : "bg-gray-200")"></div>
+                <div class="flex items-center gap-2 @(_currentStep >= 3 ? "text-purple-700" : "text-gray-300")">
+                    <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold @(_currentStep >= 3 ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-400")">3</span>
+                    <span class="text-xs font-medium">Vérification</span>
+                </div>
+                <div class="w-8 h-px @(_currentStep >= 4 ? "bg-purple-300" : "bg-gray-200")"></div>
+                <div class="flex items-center gap-2 @(_currentStep >= 4 ? "text-purple-700" : "text-gray-300")">
+                    <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold @(_currentStep >= 4 ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-400")">4</span>
+                    <span class="text-xs font-medium">Bienvenue</span>
                 </div>
             </div>
 
-            @if (currentStep == 1)
+            @if (!string.IsNullOrEmpty(_errorMessage))
             {
-                @if (isLoadingProfile)
-                {
-                    <div class="text-center py-8">
-                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto mb-4"></div>
-                        <p class="text-sm text-body">Chargement du profil...</p>
-                    </div>
-                }
-                else if (hasProfile)
-                {
-                    <div class="text-center py-4">
-                        <div class="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50">
-                            <i class="fas fa-check-circle text-emerald-500 text-2xl"></i>
-                        </div>
-
-                        <h2 class="text-xl font-bold text-title">Bienvenue, @registeredName !</h2>
-
-                        <p class="mt-2 text-sm text-body max-w-sm mx-auto leading-relaxed">
-                            Votre compte a été créé. Pour terminer votre adhésion, il ne vous reste plus qu'à valider votre certificat.
-                        </p>
-
-                        <div class="mt-6 bg-amber-50   border-amber-100 rounded-xl p-4 text-left">
-                            <div class="flex items-start gap-3">
-                                <i class="fas fa-info-circle text-amber-500 mt-0.5"></i>
-                                <div class="text-sm text-amber-800">
-                                    <p class="font-medium">Action requise</p>
-                                    <p class="mt-1 text-amber-700">Vous devez détenir le certificat <strong>Foundational C# with Microsoft</strong> pour accéder aux fonctionnalités de contribution.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button type="button"
-                                class="mt-7 inline-flex items-center gap-2 rounded-xl bg-purple-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-purple-700 hover:shadow-md active:scale-[0.98]"
-                                @onclick="GoToStep2">
-                            Continuer
-                            <i class="fas fa-arrow-right text-xs"></i>
-                        </button>
-                    </div>
-                }
-                else
-                {
-                    <div class="text-center">
-                        <div class="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-purple-50">
-                            <i class="fas fa-user-plus text-purple-500 text-xl"></i>
-                        </div>
-
-                        <h1 class="text-xl font-bold text-title">Rejoindre la communauté</h1>
-                        <p class="mt-2 text-sm text-body leading-relaxed max-w-sm mx-auto">
-                            Créez votre compte pour participer aux événements, accéder aux ressources et contribuer à l'écosystème .NET au Niger.
-                        </p>
-
-                        <button type="button"
-                                class="mt-7 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-purple-700 hover:shadow-md active:scale-[0.98]"
-                                @onclick="RedirectToIdentityRegister">
-                            <i class="fas fa-graduation-cap"></i>
-                            Créer mon compte
-                        </button>
-
-                        <p class="mt-5 text-xs text-gray-400 leading-relaxed">
-                            En créant un compte, vous acceptez nos
-                            <a href="/conditions" class="text-purple-600 hover:text-purple-700 font-medium">conditions d'utilisation</a>.
-                        </p>
-
-                        <div class="mt-8 pt-6 border-t border-gray-100">
-                            <p class="text-xs text-gray-400">
-                                Déjà membre ?
-                                <a href="/login" class="text-purple-600 hover:text-purple-700 font-medium">Se connecter</a>
-                            </p>
-                        </div>
-                    </div>
-                }
+                <div class="mb-4 rounded-lg px-4 py-3 text-sm bg-red-50 border border-red-200 text-red-700">
+                    @_errorMessage
+                </div>
             }
 
-            @if (currentStep == 2)
+            @* ─── STEP 1: Infos perso ─── *@
+            @if (_currentStep == 1)
             {
-                <RegistrationStep3
-                    Model="certifModel"
-                    ErrorMessage="certifErrorMessage"
-                    IsLoading="isCertifLoading"
-                    IsSubmitted="isCertifSubmitted"
-                    Status="certifStatus"
-                    OnSubmit="HandleCertifSubmit"
-                    OnBack="GoToStep1"
-                    OnContinue="NavigateToLogin" />
+                <div class="text-center mb-6">
+                    <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-purple-50">
+                        <i class="fas fa-user-plus text-purple-500 text-xl"></i>
+                    </div>
+                    <h1 class="text-xl font-bold text-title">Créez votre compte</h1>
+                    <p class="mt-2 text-sm text-body leading-relaxed max-w-sm mx-auto">
+                        Rejoignez la communauté .NET au Niger.
+                    </p>
+                </div>
+
+                <EditForm Model="_step1" OnValidSubmit="GoToStep2">
+                    <DataAnnotationsValidator />
+
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
+                            <InputText @bind-Value="_step1.FirstName"
+                                       class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition"
+                                       placeholder="Ali" />
+                            <ValidationMessage For="@(() => _step1.FirstName)" class="text-xs text-red-500 mt-1" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                            <InputText @bind-Value="_step1.LastName"
+                                       class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition"
+                                       placeholder="Mahamane" />
+                            <ValidationMessage For="@(() => _step1.LastName)" class="text-xs text-red-500 mt-1" />
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Adresse e-mail</label>
+                        <InputText @bind-Value="_step1.Email" type="email"
+                                   class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition"
+                                   placeholder="vous@exemple.com" />
+                        <ValidationMessage For="@(() => _step1.Email)" class="text-xs text-red-500 mt-1" />
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Numéro de téléphone <span class="text-gray-400 font-normal">(optionnel)</span>
+                        </label>
+                        <InputText @bind-Value="_step1.PhoneNumber" type="tel"
+                                   class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition"
+                                   placeholder="+227 XX XX XX XX" />
+                    </div>
+
+                    <button type="submit"
+                            class="w-full rounded-lg bg-purple-600 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 transition active:scale-[0.98]">
+                        Continuer
+                        <i class="fas fa-arrow-right text-xs ml-1"></i>
+                    </button>
+                </EditForm>
+
+                <div class="relative my-6">
+                    <div class="absolute inset-0 flex items-center">
+                        <div class="w-full border-t border-gray-200"></div>
+                    </div>
+                    <div class="relative flex justify-center text-sm">
+                        <span class="px-3 bg-surface text-gray-400">ou s'inscrire avec</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <button type="button" @onclick="() => OAuthRegister(GoogleProvider)"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-surface px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                        Google
+                    </button>
+                    <button type="button" @onclick="() => OAuthRegister(GitHubProvider)"
+                            class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-surface px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                        GitHub
+                    </button>
+                </div>
+            }
+
+            @* ─── STEP 2: Mot de passe ─── *@
+            @if (_currentStep == 2)
+            {
+                <div class="text-center mb-6">
+                    <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-purple-50">
+                        <i class="fas fa-lock text-purple-500 text-xl"></i>
+                    </div>
+                    <h1 class="text-xl font-bold text-title">Choisissez votre mot de passe</h1>
+                    <p class="mt-2 text-sm text-body">Pour <strong>@_step1.Email</strong></p>
+                </div>
+
+                <EditForm Model="_step2" OnValidSubmit="SubmitRegister">
+                    <DataAnnotationsValidator />
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+                        <div class="relative">
+                            <InputText @bind-Value="_step2.Password" type="@(_showPassword ? "text" : "password")"
+                                       class="w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-10 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition"
+                                       placeholder="Minimum 8 caractères" />
+                            <button type="button" @onclick="TogglePasswordVisibility"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
+                                <i class="fas @(_showPassword ? "fa-eye-slash" : "fa-eye")"></i>
+                            </button>
+                        </div>
+                        <ValidationMessage For="@(() => _step2.Password)" class="text-xs text-red-500 mt-1" />
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Confirmer le mot de passe</label>
+                        <div class="relative">
+                            <InputText @bind-Value="_step2.ConfirmPassword" type="@(_showConfirmPassword ? "text" : "password")"
+                                       class="w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-10 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition"
+                                       placeholder="Retapez votre mot de passe" />
+                            <button type="button" @onclick="ToggleConfirmPasswordVisibility"
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
+                                <i class="fas @(_showConfirmPassword ? "fa-eye-slash" : "fa-eye")"></i>
+                            </button>
+                        </div>
+                        <ValidationMessage For="@(() => _step2.ConfirmPassword)" class="text-xs text-red-500 mt-1" />
+                    </div>
+
+                    <div class="mb-6 rounded-lg bg-gray-50 border border-gray-100 px-4 py-3">
+                        <p class="text-xs font-medium text-gray-500 mb-2">Le mot de passe doit contenir :</p>
+                        <ul class="space-y-1">
+                            <li class="flex items-center gap-2 text-xs @(_step2.Password.Length >= 8 ? "text-green-600" : "text-gray-400")">
+                                <i class="fas @(_step2.Password.Length >= 8 ? "fa-check-circle" : "fa-circle") text-[10px]"></i>
+                                Au moins 8 caractères
+                            </li>
+                            <li class="flex items-center gap-2 text-xs @(_step2.Password.Any(char.IsUpper) ? "text-green-600" : "text-gray-400")">
+                                <i class="fas @(_step2.Password.Any(char.IsUpper) ? "fa-check-circle" : "fa-circle") text-[10px]"></i>
+                                Au moins 1 majuscule (A-Z)
+                            </li>
+                            <li class="flex items-center gap-2 text-xs @(_step2.Password.Any(char.IsLower) ? "text-green-600" : "text-gray-400")">
+                                <i class="fas @(_step2.Password.Any(char.IsLower) ? "fa-check-circle" : "fa-circle") text-[10px]"></i>
+                                Au moins 1 minuscule (a-z)
+                            </li>
+                            <li class="flex items-center gap-2 text-xs @(_step2.Password.Any(char.IsDigit) ? "text-green-600" : "text-gray-400")">
+                                <i class="fas @(_step2.Password.Any(char.IsDigit) ? "fa-check-circle" : "fa-circle") text-[10px]"></i>
+                                Au moins 1 chiffre (0-9)
+                            </li>
+                            <li class="flex items-center gap-2 text-xs @(_step2.Password.Any(c => !char.IsLetterOrDigit(c) && !char.IsWhiteSpace(c)) ? "text-green-600" : "text-gray-400")">
+                                <i class="fas @(_step2.Password.Any(c => !char.IsLetterOrDigit(c) && !char.IsWhiteSpace(c)) ? "fa-check-circle" : "fa-circle") text-[10px]"></i>
+                                Au moins 1 caractère spécial (!&#64;#$%...)
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button type="button" @onclick="GoBackToStep1"
+                                class="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">
+                            <i class="fas fa-arrow-left text-xs mr-1"></i>
+                            Retour
+                        </button>
+                        <button type="submit" disabled="@_isLoading"
+                                class="flex-1 rounded-lg bg-purple-600 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 transition disabled:opacity-60">
+                            @(_isLoading ? "Création..." : "Créer mon compte")
+                        </button>
+                    </div>
+                </EditForm>
+            }
+
+            @* ─── STEP 3: Vérification email ─── *@
+            @if (_currentStep == 3)
+            {
+                <div class="text-center mb-6">
+                    <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-amber-50">
+                        <i class="fas fa-envelope-open-text text-amber-500 text-xl"></i>
+                    </div>
+                    <h1 class="text-xl font-bold text-title">Vérifiez votre email</h1>
+                    <p class="mt-2 text-sm text-body leading-relaxed">
+                        Un code à 6 chiffres a été envoyé à<br />
+                        <strong>@_step1.Email</strong>
+                    </p>
+                </div>
+
+                <EditForm Model="_step3" OnValidSubmit="SubmitVerifyCode">
+                    <DataAnnotationsValidator />
+
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Code de vérification</label>
+                        <InputText @bind-Value="_step3.Code"
+                                   class="w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-lg tracking-[0.5em] font-mono focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition"
+                                   placeholder="000000" maxlength="6" />
+                        <ValidationMessage For="@(() => _step3.Code)" class="text-xs text-red-500 mt-1" />
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button type="button" @onclick="GoBackToStep2"
+                                class="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">
+                            <i class="fas fa-arrow-left text-xs mr-1"></i>
+                            Retour
+                        </button>
+                        <button type="submit" disabled="@(_isLoading || _isResending)"
+                                class="flex-1 rounded-lg bg-purple-600 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 transition disabled:opacity-60">
+                            @(_isLoading ? "Vérification..." : "Vérifier")
+                        </button>
+                    </div>
+                </EditForm>
+
+                <div class="mt-4 text-center">
+                    <button type="button" disabled="@_isResending" @onclick="ResendCode"
+                            class="text-sm text-purple-600 hover:text-purple-700 font-medium disabled:opacity-60">
+                        @(_isResending ? "Renvoi en cours..." : "Renvoyer le code")
+                    </button>
+                </div>
+            }
+
+            @* ─── STEP 4: Succès ─── *@
+            @if (_currentStep == 4)
+            {
+                <div class="text-center py-4">
+                    <div class="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
+                        <i class="fas fa-check-circle text-green-500 text-3xl"></i>
+                    </div>
+
+                    <h1 class="text-xl font-bold text-title">Bienvenue, @_step1.FirstName !</h1>
+
+                    <p class="mt-3 text-sm text-body leading-relaxed max-w-sm mx-auto">
+                        Votre compte a été créé avec succès. Vous pouvez maintenant vous connecter.
+                    </p>
+
+                    <button type="button"
+                            class="mt-7 inline-flex items-center gap-2 rounded-xl bg-purple-600 px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-purple-700 hover:shadow-md active:scale-[0.98]"
+                            @onclick="GoToLogin">
+                        Se connecter
+                        <i class="fas fa-arrow-right text-xs"></i>
+                    </button>
+                </div>
             }
 
         </div>
 
-        <p class="mt-6 text-center text-xs text-gray-400">
-            <i class="fas fa-lock mr-1"></i>
-            Vos données sont protégées et jamais partagées.
-        </p>
+        @if (_currentStep < 4)
+        {
+            <p class="mt-6 text-center text-xs text-gray-400">
+                <i class="fas fa-lock mr-1"></i>
+                Vos données sont protégées et jamais partagées.
+            </p>
+        }
+
+        @if (_currentStep == 1)
+        {
+            <p class="mt-4 text-center text-xs text-gray-400">
+                Déjà membre ?
+                <a href="/login" class="text-purple-600 hover:text-purple-700 font-medium">Se connecter</a>
+            </p>
+        }
     </div>
 </div>
 
 @code {
-    private Uri IdentityRegisterUri => new($"{Config["ApiBaseUrl"] ?? Navigation.BaseUri.TrimEnd('/')}{Config["IdentityEndpoints:Register"] ?? "/Account/Register"}");
+    private const string GoogleProvider = "Google";
+    private const string GitHubProvider = "GitHub";
+    private const string SessionKey = "dotnetniger_register";
 
-    private readonly CertificateSubmissionDto certifModel = new();
-    private CertificateStatusDto? certifStatus;
+    private int _currentStep = 1;
+    private bool _isLoading;
+    private bool _isResending;
+    private bool _showPassword;
+    private bool _showConfirmPassword;
+    private string? _errorMessage;
 
-    private int currentStep = 1;
-    private Guid tempUserId;
-    private string registeredName = string.Empty;
+    private Step1Model _step1 = new();
+    private Step2Model _step2 = new();
+    private Step3Model _step3 = new();
 
-    private bool hasProfile;
-    private bool isLoadingProfile;
-    private bool isCertifSubmitted;
+    private void TogglePasswordVisibility() => _showPassword = !_showPassword;
+    private void ToggleConfirmPasswordVisibility() => _showConfirmPassword = !_showConfirmPassword;
 
-    private string? certifErrorMessage;
-
-    private bool isCertifLoading;
-
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        isLoadingProfile = true;
+        if (!firstRender) return;
+        await RestoreSessionAsync();
+    }
 
+    private async Task RestoreSessionAsync()
+    {
         try
         {
-            var profile = await ProfileService.GetProfileAsync();
-            if (profile.Id != Guid.Empty)
+            var json = await JS.InvokeAsync<string?>("sessionStorage.getItem", SessionKey);
+            if (!string.IsNullOrWhiteSpace(json))
             {
-                tempUserId = profile.Id;
-                registeredName = profile.FullName ?? profile.Email;
-                certifModel.UserId = profile.Id;
-                hasProfile = true;
+                var data = System.Text.Json.JsonSerializer.Deserialize<SessionData>(json);
+                if (data is not null)
+                {
+                    _step1.FirstName = data.FirstName ?? "";
+                    _step1.LastName = data.LastName ?? "";
+                    _step1.Email = data.Email ?? "";
+                    _step1.PhoneNumber = data.PhoneNumber ?? "";
+                    _currentStep = data.CurrentStep > 0 ? data.CurrentStep : 1;
+                    StateHasChanged();
+                }
             }
         }
-        catch
-        {
-            hasProfile = false;
-        }
-        finally
-        {
-            isLoadingProfile = false;
-        }
+        catch { }
     }
 
-    private void RedirectToIdentityRegister()
+    private async Task SaveSessionAsync()
     {
-        var returnUrl = $"{Navigation.BaseUri}register";
-        var redirectUrl = $"{IdentityRegisterUri}?returnUrl={Uri.EscapeDataString(returnUrl)}";
-        Navigation.NavigateTo(redirectUrl);
-    }
-
-    private async Task HandleCertifSubmit(CertificateSubmissionDto request)
-    {
-        isCertifLoading = true;
-        certifErrorMessage = null;
-
         try
         {
-            request.UserId = tempUserId;
-            var result = await RegistrationService.SubmitStep2Async(request);
-
-            if (result.Success && result.Data is not null)
+            var data = new SessionData
             {
-                certifStatus = result.Data;
-                isCertifSubmitted = true;
-            }
-            else
-            {
-                certifErrorMessage = result.Message ?? "Erreur lors de la soumission de la certification. Vérifiez que le lien est valide et réessayez.";
-            }
+                FirstName = _step1.FirstName,
+                LastName = _step1.LastName,
+                Email = _step1.Email,
+                PhoneNumber = _step1.PhoneNumber,
+                CurrentStep = _currentStep
+            };
+            var json = System.Text.Json.JsonSerializer.Serialize(data);
+            await JS.InvokeVoidAsync("sessionStorage.setItem", SessionKey, json);
         }
-        catch (Exception ex)
-        {
-            certifErrorMessage = $"Erreur inattendue : {ex.Message}";
-        }
-        finally
-        {
-            isCertifLoading = false;
-        }
+        catch { }
     }
 
-    private Task GoToStep1()
+    private async Task ClearSessionAsync()
     {
-        currentStep = 1;
-        return Task.CompletedTask;
+        try { await JS.InvokeVoidAsync("sessionStorage.removeItem", SessionKey); }
+        catch { }
     }
 
-    private Task GoToStep2()
+    private async Task GoToStep2()
     {
-        currentStep = 2;
-        return Task.CompletedTask;
+        _currentStep = 2;
+        await SaveSessionAsync();
     }
 
-    private void NavigateToLogin()
+    private async Task GoBackToStep1()
+    {
+        _currentStep = 1;
+        await SaveSessionAsync();
+    }
+
+    private async Task GoBackToStep2()
+    {
+        _currentStep = 2;
+        await SaveSessionAsync();
+    }
+
+    private async Task SubmitRegister()
+    {
+        if (_step2.Password != _step2.ConfirmPassword)
+        {
+            _errorMessage = "Les mots de passe ne correspondent pas.";
+            return;
+        }
+
+        _isLoading = true;
+        _errorMessage = null;
+
+        var fullName = $"{_step1.FirstName} {_step1.LastName}".Trim();
+        var result = await Auth.RegisterAsync(new RegisterRequest
+        {
+            Email = _step1.Email,
+            Password = _step2.Password,
+            FullName = fullName
+        });
+
+        _isLoading = false;
+
+        if (result.Success)
+        {
+            _currentStep = 3;
+            await SaveSessionAsync();
+        }
+        else
+        {
+            _errorMessage = result.Message ?? "Erreur lors de la création du compte.";
+        }
+    }
+
+    private async Task SubmitVerifyCode()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+
+        var verified = await Auth.VerifyEmailAsync(new VerifyEmailRequest
+        {
+            Email = _step1.Email,
+            Code = _step3.Code
+        });
+
+        _isLoading = false;
+
+        if (verified)
+        {
+            _currentStep = 4;
+            await ClearSessionAsync();
+        }
+        else
+        {
+            _errorMessage = "Code invalide ou expiré. Vérifiez votre email et réessayez.";
+        }
+    }
+
+    private async Task ResendCode()
+    {
+        _isResending = true;
+        var sent = await Auth.RequestEmailVerificationAsync(new RequestEmailVerificationRequest { Email = _step1.Email });
+        _isResending = false;
+
+        if (!sent)
+            _errorMessage = "Impossible de renvoyer le code. Réessayez plus tard.";
+    }
+
+    private void OAuthRegister(string provider)
+    {
+        var apiBase = Config["ApiBaseUrl"] ?? "http://localhost:5000";
+        var redirectUri = Navigation.BaseUri.TrimEnd('/') + "/auth/external-callback";
+        var clientId = Config["ClientId"] ?? "web-ui";
+
+        var authorizeUrl = $"{apiBase}/connect/authorize" +
+            $"?client_id={Uri.EscapeDataString(clientId)}" +
+            $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
+            $"&response_type=code" +
+            $"&scope={Uri.EscapeDataString("openid profile email roles offline_access")}" +
+            $"&identity_provider={Uri.EscapeDataString(provider)}";
+
+        Navigation.NavigateTo(authorizeUrl, forceLoad: true);
+    }
+
+    private void GoToLogin()
     {
         Navigation.NavigateTo("/login");
+    }
+
+    public class Step1Model
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Le prénom est requis.")]
+        public string FirstName { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Le nom est requis.")]
+        public string LastName { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "L'email est requis.")]
+        [System.ComponentModel.DataAnnotations.EmailAddress(ErrorMessage = "Email invalide.")]
+        public string Email { get; set; } = "";
+
+        public string? PhoneNumber { get; set; }
+    }
+
+    public class Step2Model
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Le mot de passe est requis.")]
+        [System.ComponentModel.DataAnnotations.StringLength(100, MinimumLength = 8, ErrorMessage = "Minimum 8 caractères.")]
+        public string Password { get; set; } = "";
+
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Confirmez votre mot de passe.")]
+        public string ConfirmPassword { get; set; } = "";
+    }
+
+    public class Step3Model
+    {
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Le code est requis.")]
+        [System.ComponentModel.DataAnnotations.StringLength(6, MinimumLength = 6, ErrorMessage = "Le code fait 6 chiffres.")]
+        public string Code { get; set; } = "";
+    }
+
+    private class SessionData
+    {
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+        public string? Email { get; set; }
+        public string? PhoneNumber { get; set; }
+        public int CurrentStep { get; set; }
     }
 }

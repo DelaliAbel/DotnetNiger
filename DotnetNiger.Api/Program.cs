@@ -101,6 +101,10 @@ builder.Services.AddOpenIddict()
         options.AcceptAnonymousClients();
         options.AddDevelopmentEncryptionCertificate()
                .AddDevelopmentSigningCertificate();
+        
+        // Désactiver le cryptage des tokens pour produire des JWT lisibles par le frontend
+        options.DisableAccessTokenEncryption();
+
         options.UseAspNetCore()
                .EnableTokenEndpointPassthrough()
                .EnableAuthorizationEndpointPassthrough()
