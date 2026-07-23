@@ -6,12 +6,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.Content;
 
+/// <summary>Service de création, modification et suppression des articles.</summary>
 public class PostCommandService : IPostCommandService
 {
     private readonly DotnetNigerDbContext _db;
 
     public PostCommandService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Crée un nouvel article avec ses tags et catégories.</summary>
     public async Task<PostResponse> CreateAsync(CreatePostRequest request, Guid authorId, string authorName, bool isAdmin, bool isCollaborator)
     {
         var post = new Post
@@ -34,6 +36,7 @@ public class PostCommandService : IPostCommandService
         return MapToResponse(post);
     }
 
+    /// <summary>Met à jour un article existant.</summary>
     public async Task<PostResponse?> UpdateAsync(Guid id, UpdatePostRequest request, Guid userId, bool isAdmin)
     {
         var post = await _db.Posts
@@ -63,6 +66,7 @@ public class PostCommandService : IPostCommandService
         return MapToResponse(post);
     }
 
+    /// <summary>Supprime un article (auteur ou admin uniquement).</summary>
     public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin)
     {
         var post = await _db.Posts.FindAsync(id);
@@ -74,6 +78,7 @@ public class PostCommandService : IPostCommandService
         return true;
     }
 
+    /// <summary>Incrémente le compteur de vues d'un article.</summary>
     public async Task<PostResponse?> IncrementViewCountAsync(Guid id)
     {
         var post = await _db.Posts.FindAsync(id);
@@ -84,6 +89,7 @@ public class PostCommandService : IPostCommandService
         return MapToResponse(post);
     }
 
+    /// <summary>Soumet un article pour modération.</summary>
     public async Task SubmitForReviewAsync(Guid id)
     {
         var post = await _db.Posts.FindAsync(id)
@@ -93,6 +99,7 @@ public class PostCommandService : IPostCommandService
         await _db.SaveChangesAsync();
     }
 
+    /// <summary>Publie un article.</summary>
     public async Task PublishAsync(Guid id)
     {
         var post = await _db.Posts.FindAsync(id)
@@ -103,6 +110,7 @@ public class PostCommandService : IPostCommandService
         await _db.SaveChangesAsync();
     }
 
+    /// <summary>Archive un article.</summary>
     public async Task ArchiveAsync(Guid id)
     {
         var post = await _db.Posts.FindAsync(id)

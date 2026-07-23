@@ -20,14 +20,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
 
-    <PackageReference Include="OpenIddict.Abstractions" Version="5.8.0" />
-    <PackageReference Include="OpenIddict.AspNetCore" Version="5.8.0" />
-    <PackageReference Include="OpenIddict.Server.AspNetCore" Version="5.8.0" />
-    <PackageReference Include="OpenIddict.EntityFrameworkCore" Version="5.8.0" />
-    <PackageReference Include="OpenIddict.Server.DataProtection" Version="5.8.0" />
-    <PackageReference Include="OpenIddict.Validation.DataProtection" Version="5.8.0" />
-    <PackageReference Include="OpenIddict.Validation.ServerIntegration" Version="5.8.0" />
-
     <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="9.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="9.0.0" />
 

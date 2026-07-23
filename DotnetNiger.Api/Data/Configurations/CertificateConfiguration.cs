@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité Certificate.
+/// </summary>
 public class CertificateConfiguration : IEntityTypeConfiguration<Certificate>
 {
+    /// <summary>
+    /// Configure les clés, relations et contraintes de la table des certificats.
+    /// </summary>
     public void Configure(EntityTypeBuilder<Certificate> builder)
     {
         builder.HasKey(c => c.Id);

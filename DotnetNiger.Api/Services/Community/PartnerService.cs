@@ -6,12 +6,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.Community;
 
+/// <summary>Service de gestion des partenaires de la communauté.</summary>
 public class PartnerService : IPartnerService
 {
     private readonly DotnetNigerDbContext _db;
 
     public PartnerService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Récupère les partenaires actifs, filtrés par type optionnel.</summary>
     public async Task<List<PartnerResponse>> GetAllActiveAsync(string? partnerType)
     {
         var q = _db.Set<Partner>().AsNoTracking().Where(p => p.IsActive);
@@ -21,12 +23,14 @@ public class PartnerService : IPartnerService
         return partners.Select(MapToResponse).ToList();
     }
 
+    /// <summary>Récupère un partenaire par identifiant.</summary>
     public async Task<PartnerResponse?> GetByIdAsync(Guid id)
     {
         var p = await _db.Set<Partner>().FindAsync(id);
         return p == null ? null : MapToResponse(p);
     }
 
+    /// <summary>Crée un nouveau partenaire.</summary>
     public async Task<PartnerResponse> CreateAsync(CreatePartnerRequest request)
     {
         var partner = new Partner
@@ -46,6 +50,7 @@ public class PartnerService : IPartnerService
         return MapToResponse(partner);
     }
 
+    /// <summary>Met à jour les informations d'un partenaire.</summary>
     public async Task<PartnerResponse?> UpdateAsync(Guid id, UpdatePartnerRequest request)
     {
         var partner = await _db.Set<Partner>().FindAsync(id);
@@ -63,6 +68,7 @@ public class PartnerService : IPartnerService
         return MapToResponse(partner);
     }
 
+    /// <summary>Supprime un partenaire.</summary>
     public async Task<bool> DeleteAsync(Guid id)
     {
         var partner = await _db.Set<Partner>().FindAsync(id);

@@ -6,12 +6,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.Content;
 
+/// <summary>Service de gestion des catégories de contenu.</summary>
 public class CategoryService : ICategoryService
 {
     private readonly DotnetNigerDbContext _db;
 
     public CategoryService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Crée une nouvelle catégorie.</summary>
     public async Task<CategoryResponse> CreateAsync(string name, string? description)
     {
         var category = new Category
@@ -25,6 +27,7 @@ public class CategoryService : ICategoryService
         return MapToResponse(category);
     }
 
+    /// <summary>Récupère toutes les catégories.</summary>
     public async Task<PaginatedResponse<CategoryResponse>> GetAllAsync()
     {
         var query = _db.Categories.AsNoTracking();
@@ -37,18 +40,21 @@ public class CategoryService : ICategoryService
             items.Select(MapToResponse).ToList(), totalCount, 1, totalCount);
     }
 
+    /// <summary>Récupère une catégorie par identifiant.</summary>
     public async Task<CategoryResponse?> GetByIdAsync(Guid id)
     {
         var category = await _db.Categories.FindAsync(id);
         return category == null ? null : MapToResponse(category);
     }
 
+    /// <summary>Récupère une catégorie par slug.</summary>
     public async Task<CategoryResponse?> GetBySlugAsync(string slug)
     {
         var category = await _db.Categories.FirstOrDefaultAsync(c => c.Slug == slug);
         return category == null ? null : MapToResponse(category);
     }
 
+    /// <summary>Met à jour le nom et la description d'une catégorie.</summary>
     public async Task<CategoryResponse?> UpdateAsync(Guid id, string name, string? description)
     {
         var category = await _db.Categories.FindAsync(id);
@@ -62,6 +68,7 @@ public class CategoryService : ICategoryService
         return MapToResponse(category);
     }
 
+    /// <summary>Supprime une catégorie.</summary>
     public async Task<bool> DeleteAsync(Guid id)
     {
         var category = await _db.Categories.FindAsync(id);

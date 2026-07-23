@@ -6,12 +6,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.Community;
 
+/// <summary>Service de gestion des projets communautaires.</summary>
 public class ProjectService : IProjectService
 {
     private readonly DotnetNigerDbContext _db;
 
     public ProjectService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Récupère la liste paginée des projets avec filtres.</summary>
     public async Task<PaginatedResponse<ProjectResponse>> GetAllAsync(string? status, string? query, int page, int pageSize)
     {
         var q = _db.Set<Project>().AsNoTracking().Where(p => !p.IsDeleted);
@@ -32,6 +34,7 @@ public class ProjectService : IProjectService
             items.Select(MapToResponse).ToList(), total, page, pageSize);
     }
 
+    /// <summary>Récupère les projets mis en avant.</summary>
     public async Task<List<ProjectResponse>> GetFeaturedAsync()
     {
         return await _db.Set<Project>().AsNoTracking()
@@ -41,18 +44,21 @@ public class ProjectService : IProjectService
             .ToListAsync();
     }
 
+    /// <summary>Récupère un projet par identifiant.</summary>
     public async Task<ProjectResponse?> GetByIdAsync(Guid id)
     {
         var p = await _db.Set<Project>().FindAsync(id);
         return p == null || p.IsDeleted ? null : MapToResponse(p);
     }
 
+    /// <summary>Récupère un projet par slug.</summary>
     public async Task<ProjectResponse?> GetBySlugAsync(string slug)
     {
         var p = await _db.Set<Project>().FirstOrDefaultAsync(pr => pr.Slug == slug && !pr.IsDeleted);
         return p == null ? null : MapToResponse(p);
     }
 
+    /// <summary>Crée un nouveau projet.</summary>
     public async Task<ProjectResponse> CreateAsync(CreateProjectRequest request, Guid userId, string authorName)
     {
         var project = new Project
@@ -76,6 +82,7 @@ public class ProjectService : IProjectService
         return MapToResponse(project);
     }
 
+    /// <summary>Met à jour un projet existant.</summary>
     public async Task<ProjectResponse?> UpdateAsync(Guid id, UpdateProjectRequest request, Guid userId, bool isAdmin)
     {
         var project = await _db.Set<Project>().FindAsync(id);
@@ -104,6 +111,7 @@ public class ProjectService : IProjectService
         return MapToResponse(project);
     }
 
+    /// <summary>Supprime un projet (suppression logique).</summary>
     public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin)
     {
         var project = await _db.Set<Project>().FindAsync(id);

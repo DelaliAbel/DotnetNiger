@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité MemberSkill.
+/// </summary>
 public class MemberSkillConfiguration : IEntityTypeConfiguration<MemberSkill>
 {
+    /// <summary>
+    /// Configure les clés et relations de la table des compétences de membres.
+    /// </summary>
     public void Configure(EntityTypeBuilder<MemberSkill> builder)
     {
         builder.HasKey(s => s.Id);

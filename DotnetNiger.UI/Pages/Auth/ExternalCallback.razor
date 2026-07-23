@@ -62,7 +62,7 @@
                 await UserStateService.SetUserAsync(response.Data.User);
 
             var destination = "/";
-            if (!string.IsNullOrWhiteSpace(returnUrl) && returnUrl.StartsWith("/") && !returnUrl.StartsWith("//"))
+            if (!string.IsNullOrWhiteSpace(returnUrl) && IsSafeReturnUrl(returnUrl))
                 destination = returnUrl;
 
             Navigation.NavigateTo(destination);
@@ -73,5 +73,17 @@
             await Task.Delay(3000);
             Navigation.NavigateTo("/login");
         }
+    }
+
+    /// <summary>
+    /// Vérifie que l'URL de retour est un chemin relatif sûr (pas de protocole externe).
+    /// Protège contre les attaques d'open-redirect.
+    /// </summary>
+    private static bool IsSafeReturnUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return false;
+        if (!url.StartsWith("/") || url.StartsWith("//")) return false;
+        if (url.Contains('\\') || url.Contains('\r') || url.Contains('\n')) return false;
+        return true;
     }
 }

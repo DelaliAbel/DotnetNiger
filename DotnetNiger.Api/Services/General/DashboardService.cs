@@ -6,6 +6,7 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.General;
 
+/// <summary>Service de tableau de bord fournissant les statistiques système et personnel.</summary>
 public class DashboardService
 {
     private readonly DotnetNigerDbContext _db;
@@ -18,6 +19,7 @@ public class DashboardService
         _cache = cache;
     }
 
+    /// <summary>Récupère les statistiques globales du système (mis en cache 5 min).</summary>
     public async Task<object> GetSystemStatsAsync()
     {
         var stats = await _cache.GetOrCreateAsync("SystemStats", async entry =>
@@ -27,23 +29,22 @@ public class DashboardService
             var totalUsers = await _db.Users.IgnoreQueryFilters().CountAsync();
             var totalRoles = await _db.Roles.IgnoreQueryFilters().CountAsync();
             var totalPermissions = await _db.Permissions.IgnoreQueryFilters().CountAsync();
-            var totalApiKeys = await _db.ApiKeys.IgnoreQueryFilters().CountAsync();
+            var totalRefreshTokens = await _db.RefreshTokens.IgnoreQueryFilters().CountAsync();
             var totalServices = await _db.ExternalServices.IgnoreQueryFilters().CountAsync();
-            var totalClients = await _db.OAuthClients.IgnoreQueryFilters().CountAsync();
 
             return new
             {
                 totalUsers,
                 totalRoles,
                 totalPermissions,
-                totalApiKeys,
-                totalServices,
-                totalClients
+                totalRefreshTokens,
+                totalServices
             };
         });
         return stats!;
     }
 
+    /// <summary>Récupère l'historique des connexions avec pagination.</summary>
     public async Task<PaginatedResponse<LoginHistory>> GetLoginHistoryAsync(
         int page, int pageSize)
     {
@@ -58,6 +59,7 @@ public class DashboardService
         return new PaginatedResponse<LoginHistory>(items, total, page, pageSize);
     }
 
+    /// <summary>Récupère les logs d'audit avec filtres et pagination.</summary>
     public async Task<PaginatedResponse<AuditLog>> GetAuditLogsAsync(
         int page, int pageSize,
         string? entityType = null, string? action = null,
@@ -84,6 +86,7 @@ public class DashboardService
         return new PaginatedResponse<AuditLog>(items, total, page, pageSize);
     }
 
+    /// <summary>Récupère les statistiques personnelles d'un utilisateur.</summary>
     public async Task<object> GetMyStatsAsync(Guid userId)
     {
         var myEvents = await _db.Events.CountAsync(e => e.OrganizerId == userId);

@@ -101,3 +101,28 @@ window.initAvatarDropZone = (dropZoneId, inputId) => {
 
 window.dotnetNigerIsMobile = () =>
   window.matchMedia("(max-width: 767px)").matches;
+
+// ============================================================
+// LOGIN EXTERNE — POPUP
+// ============================================================
+
+window.openExternalLoginPopup = (url, dotNetRef) => {
+  const popup = window.open(
+    url,
+    "external-login",
+    "width=500,height=700,left=200,top=100,popup=1"
+  );
+
+  const handler = (event) => {
+    if (event.data?.type === "external-login-success") {
+      window.removeEventListener("message", handler);
+      dotNetRef.invokeMethodAsync("OnExternalLoginSuccess", event.data.accessToken, event.data.refreshToken, event.data.expiresIn);
+    }
+    if (event.data?.type === "external-login-error") {
+      window.removeEventListener("message", handler);
+      dotNetRef.invokeMethodAsync("OnExternalLoginError", event.data.error);
+    }
+  };
+
+  window.addEventListener("message", handler);
+};

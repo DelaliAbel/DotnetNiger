@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace DotnetNiger.Api.Services.Community;
 
+/// <summary>Service de gestion des certifications membres (soumission, approbation, rejet).</summary>
 public class CertificateService : ICertificateService
 {
     private readonly DotnetNigerDbContext _db;
@@ -19,6 +20,7 @@ public class CertificateService : ICertificateService
         _userManager = userManager;
     }
 
+    /// <summary>Approuve un certificat et upgrade le rôle de l'utilisateur.</summary>
     public async Task<CertificateResponse?> ApproveCertificateAsync(Guid id)
     {
         var cert = await _db.Set<Certificate>().FindAsync(id);
@@ -41,6 +43,7 @@ public class CertificateService : ICertificateService
         return MapToResponse(cert);
     }
 
+    /// <summary>Rejette un certificat avec une raison.</summary>
     public async Task<CertificateResponse?> RejectCertificateAsync(Guid id, string reason)
     {
         var cert = await _db.Set<Certificate>().FindAsync(id);
@@ -52,6 +55,7 @@ public class CertificateService : ICertificateService
         return MapToResponse(cert);
     }
 
+    /// <summary>Récupère les certificats filtrés par statut.</summary>
     public async Task<List<CertificateResponse>> GetCertificatesAsync(string? status)
     {
         var q = _db.Set<Certificate>().AsNoTracking();
@@ -61,12 +65,14 @@ public class CertificateService : ICertificateService
         return certs.Select(MapToResponse).ToList();
     }
 
+    /// <summary>Récupère un certificat par identifiant.</summary>
     public async Task<CertificateResponse?> GetCertificateAsync(Guid id)
     {
         var cert = await _db.Set<Certificate>().FindAsync(id);
         return cert == null ? null : MapToResponse(cert);
     }
 
+    /// <summary>Récupère le dernier certificat d'un utilisateur.</summary>
     public async Task<CertificateResponse?> GetUserCertificateAsync(Guid userId)
     {
         var cert = await _db.Set<Certificate>()
@@ -77,6 +83,7 @@ public class CertificateService : ICertificateService
         return cert == null ? null : MapToResponse(cert);
     }
 
+    /// <summary>Soumet un nouveau certificat pour validation.</summary>
     public async Task<CertificateResponse> SubmitCertificateAsync(Guid userId, CertificateSubmissionRequest request)
     {
         var member = await _db.Set<Member>().FirstOrDefaultAsync(m => m.UserId == userId);

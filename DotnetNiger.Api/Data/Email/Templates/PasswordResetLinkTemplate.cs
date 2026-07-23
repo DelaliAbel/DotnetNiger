@@ -3,8 +3,14 @@ using DotnetNiger.Api.Entities;
 
 namespace DotnetNiger.Api.Data.Email.Templates;
 
+/// <summary>
+/// Template HTML pour l'email de lien de réinitialisation de mot de passe.
+/// </summary>
 public static class PasswordResetLinkTemplate
 {
+    /// <summary>
+    /// Génère le subject, titre et corps HTML du lien de réinitialisation.
+    /// </summary>
     public static (string subject, string title, string body) Render(ApplicationUser user, string resetLink, SmtpOptions smtp)
     {
         return (

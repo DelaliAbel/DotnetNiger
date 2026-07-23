@@ -220,7 +220,7 @@
                               </NavLink>
                         }
 
-                        @if (IsAdmin)
+                        @if (IsSuperAdmin)
                         {
                               <div class="border-t border-slate-700/40 my-2"></div>
 
@@ -427,7 +427,7 @@
                               </NavLink>
                         }
 
-                        @if (IsAdmin)
+                        @if (IsSuperAdmin)
                         {
                               <div class="border-t border-slate-700/40 my-2"></div>
 
@@ -460,6 +460,8 @@
 
       [Parameter]
       public bool IsOpen { get; set; }
+
+      private bool IsSuperAdmin => UserStateService.CurrentUser?.Roles.Any(r => RoleConstants.IsSuperAdminRole(r)) ?? false;
 
       private bool IsAdmin => UserStateService.CurrentUser?.Roles.Any(r => RoleConstants.IsAdminRole(r)) ?? false;
 

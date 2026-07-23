@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité Resource.
+/// </summary>
 public class ResourceConfiguration : IEntityTypeConfiguration<Resource>
 {
+    /// <summary>
+    /// Configure les clés, indexes et relations de la table des ressources.
+    /// </summary>
     public void Configure(EntityTypeBuilder<Resource> builder)
     {
         builder.HasKey(r => r.Id);

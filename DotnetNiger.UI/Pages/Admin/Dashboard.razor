@@ -467,6 +467,8 @@
 	private bool IsCurrentUserLoaded { get; set; }
 	private bool IsCurrentUserActive => CurrentUser?.IsActive ?? false;
 	private bool IsCurrentUserAdmin => UserStateService.IsAdmin;
+	private bool IsCurrentUserSuperAdmin => UserStateService.CurrentUser?.Roles?.Any(r =>
+		r == RoleConstants.SuperAdmin) ?? false;
 	private string CurrentUserDisplayName => string.IsNullOrWhiteSpace(CurrentUser?.FullName) ? UserStateService.UserName :
 CurrentUser!.FullName;
 	private string CurrentUserRoleLabel => string.IsNullOrWhiteSpace(UserStateService.UserRole) ? "Membre" :

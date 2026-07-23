@@ -7,17 +7,26 @@ using MimeKit;
 
 namespace DotnetNiger.Api.Data.Email;
 
+/// <summary>
+/// Classe de base pour l'envoi d'emails via SMTP avec template HTML intégré.
+/// </summary>
 public class EmailSenderBase
 {
     protected readonly SmtpOptions _smtp;
     protected readonly ILogger<EmailSenderBase> _logger;
 
+    /// <summary>
+    /// Initialise une nouvelle instance avec les options SMTP et le logger.
+    /// </summary>
     public EmailSenderBase(IOptions<SmtpOptions> smtp, ILogger<EmailSenderBase> logger)
     {
         _smtp = smtp.Value;
         _logger = logger;
     }
 
+    /// <summary>
+    /// Construit le template HTML complet avec en-tête, pied de page et bouton CTA optionnel.
+    /// </summary>
     protected string BuildTemplate(string title, string bodyHtml, string? ctaUrl = null, string? ctaText = null)
     {
         var ctaBlock = ctaUrl != null && ctaText != null
@@ -56,6 +65,9 @@ public class EmailSenderBase
 </html>";
     }
 
+    /// <summary>
+    /// Envoie un email à un seul destinataire via SMTP.
+    /// </summary>
     public async Task SendEmailAsync(string toEmail, string subject, string htmlBody, string? replyTo = null)
     {
         if (string.IsNullOrEmpty(_smtp.Host))
@@ -75,6 +87,9 @@ public class EmailSenderBase
         }
     }
 
+    /// <summary>
+    /// Envoie un email en masse à plusieurs destinataires.
+    /// </summary>
     public async Task SendBatchAsync(string[] toEmails, string subject, string htmlBody, string? replyTo = null)
     {
         if (toEmails.Length == 0) return;

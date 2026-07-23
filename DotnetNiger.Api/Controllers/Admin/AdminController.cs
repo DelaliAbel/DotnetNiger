@@ -10,6 +10,7 @@ using SuccessMessages  = DotnetNiger.Api.Constants.SuccessMessages;
 
 namespace DotnetNiger.Api.Controllers.Admin;
 
+/// <summary>Contrôleur d'administration pour la gestion des utilisateurs et du tableau de bord.</summary>
 [ApiController]
 [Route("api/admin")]
 [Authorize(Policy = "admin.dashboard.view")]
@@ -24,6 +25,7 @@ public class AdminController : BaseController
         _dashboardService = dashboardService;
     }
 
+    /// <summary>Envoie une invitation à un nouvel administrateur.</summary>
     [HttpPost("invite")]
     [Authorize(Policy = "admin.users.invite")]
     public async Task<ActionResult> Invite([FromBody] IdentityDTOs.InviteAdminRequest request)
@@ -32,6 +34,7 @@ public class AdminController : BaseController
         return Ok(new { message = SuccessMessages.InvitationSent });
     }
 
+    /// <summary>Récupère les statistiques globales du système.</summary>
     [HttpGet("stats")]
     public async Task<ActionResult<object>> GetStats()
     {
@@ -39,6 +42,7 @@ public class AdminController : BaseController
         return Ok(stats);
     }
 
+    /// <summary>Récupère les statistiques personnelles de l'utilisateur connecté.</summary>
     [HttpGet("stats/mine")]
     [Authorize]
     public async Task<ActionResult<object>> GetMyStats()
@@ -48,6 +52,7 @@ public class AdminController : BaseController
         return Ok(stats);
     }
 
+    /// <summary>Récupère la liste de tous les utilisateurs.</summary>
     [HttpGet("users")]
     public async Task<ActionResult<List<UserResponse>>> GetAllUsers()
     {
@@ -55,6 +60,7 @@ public class AdminController : BaseController
         return Ok(users);
     }
 
+    /// <summary>Récupère un utilisateur par son identifiant.</summary>
     [HttpGet("users/{id:guid}")]
     public async Task<ActionResult<UserResponse>> GetUserById(Guid id)
     {
@@ -64,6 +70,7 @@ public class AdminController : BaseController
         return Ok(user);
     }
 
+    /// <summary>Met à jour le statut (actif/inactif) d'un utilisateur.</summary>
     [HttpPatch("users/{id:guid}/status")]
     public async Task<ActionResult> UpdateUserStatus(Guid id, [FromBody] IdentityDTOs.UpdateUserRequest request)
     {
@@ -73,6 +80,7 @@ public class AdminController : BaseController
         return Ok(new { message = SuccessMessages.StatusUpdated });
     }
 
+    /// <summary>Met à jour le profil d'un utilisateur.</summary>
     [HttpPatch("users/{id:guid}/profile")]
     public async Task<ActionResult<UserResponse>> UpdateUserProfile(Guid id, [FromBody] IdentityDTOs.UpdateUserRequest request)
     {
@@ -82,6 +90,7 @@ public class AdminController : BaseController
         return Ok(user);
     }
 
+    /// <summary>Attribue un rôle à un utilisateur.</summary>
     [HttpPost("users/{id:guid}/roles")]
     [Authorize(Policy = "admin.roles.manage")]
     public async Task<ActionResult> AssignRoleToUser(Guid id, [FromBody] AssignRoleRequest request)
@@ -92,6 +101,7 @@ public class AdminController : BaseController
         return Ok(new { message = SuccessMessages.RoleAssigned });
     }
 
+    /// <summary>Supprime un rôle d'un utilisateur.</summary>
     [HttpDelete("users/{id:guid}/roles/{roleName}")]
     [Authorize(Policy = "admin.roles.manage")]
     public async Task<ActionResult> RemoveUserRole(Guid id, string roleName)
@@ -102,16 +112,26 @@ public class AdminController : BaseController
         return Ok(new { message = SuccessMessages.RoleRemoved });
     }
 
+    /// <summary>Supprime un utilisateur par son identifiant.</summary>
     [HttpDelete("users/{id:guid}")]
     [Authorize(Policy = "admin.users.delete")]
     public async Task<ActionResult> DeleteUser(Guid id)
     {
-        var deleted = await _adminService.DeleteUserAsync(id);
-        if (!deleted)
-            return NotFound(new ErrorResponse(ErrorMessages.UserNotFound));
-        return Ok(new { message = SuccessMessages.UserDeleted });
+        try
+        {
+            var callerId = GetUserId();
+            var deleted = await _adminService.DeleteUserAsync(id, callerId);
+            if (!deleted)
+                return NotFound(new ErrorResponse(ErrorMessages.UserNotFound));
+            return Ok(new { message = SuccessMessages.UserDeleted });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new ErrorResponse(ex.Message));
+        }
     }
 
+    /// <summary>Crée un nouvel utilisateur depuis le panneau admin.</summary>
     [HttpPost("users")]
     [Authorize(Policy = "admin.users.create")]
     public async Task<ActionResult<UserResponse>> CreateUser([FromBody] IdentityDTOs.AdminCreateUserRequest request)

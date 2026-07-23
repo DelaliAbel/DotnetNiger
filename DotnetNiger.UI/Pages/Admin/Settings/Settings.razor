@@ -1,7 +1,10 @@
 @page "/admin/settings"
 @* @attribute [Authorize(Roles = "Admin,SuperAdmin")] *@
+@using DotnetNiger.UI.Helpers
 @inject ISettingsService SettingsService
 @inject IToastService ToastService
+@inject IUserStateService UserStateService
+@inject NavigationManager Navigation
 
 @if (isLoading)
 {
@@ -269,6 +272,18 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        if (UserStateService.CurrentUser is null)
+            await UserStateService.LoadUserFromStorageAsync();
+
+        var isSuperAdmin = UserStateService.CurrentUser?.Roles?.Any(r =>
+            r == RoleConstants.SuperAdmin) ?? false;
+
+        if (!isSuperAdmin)
+        {
+            Navigation.NavigateTo("/admin");
+            return;
+        }
+
         await LoadSettingsAsync();
     }
 

@@ -1,7 +1,11 @@
 namespace DotnetNiger.Api.Constants;
 
+/// <summary>
+/// Définition des permissions et rôles de l'application.
+/// </summary>
 public static class Permissions
 {
+    /// <summary>Permissions liées à l'administration.</summary>
     public static class Admin
     {
         public const string DashboardView = "admin.dashboard.view";
@@ -16,12 +20,14 @@ public static class Permissions
         public const string ClientsManage = "admin.clients.manage";
     }
 
+    /// <summary>Permissions liées au contenu.</summary>
     public static class Content
     {
         public const string EventsApprove = "content.events.approve";
         public const string EventsModerate = "content.events.moderate";
     }
 
+    /// <summary>Permissions liées à la communauté.</summary>
     public static class Community
     {
         public const string CertificatesSubmit = "community.certificates.submit";
@@ -31,8 +37,10 @@ public static class Permissions
         public const string TagsManage = "community.tags.manage";
     }
 
+    /// <summary>Permission de gestion de la newsletter.</summary>
     public const string NewsletterManage = "newsletter.manage";
 
+    /// <summary>Liste de toutes les permissions disponibles.</summary>
     public static string[] All =>
     [
         Admin.DashboardView,
@@ -44,8 +52,10 @@ public static class Permissions
         NewsletterManage
     ];
 
+    /// <summary>Permissions du SuperAdmin (toutes).</summary>
     public static string[] SuperAdminPermissions => All;
 
+    /// <summary>Permissions de l'Admin standard.</summary>
     public static string[] AdminPermissions =>
     [
         Admin.DashboardView, Admin.UsersRead,
@@ -55,8 +65,14 @@ public static class Permissions
         NewsletterManage
     ];
 
-    public static string[] CollaboratorPermissions => [];
+    /// <summary>Permissions du Collaborator (contenu personnel + modération).</summary>
+    public static string[] CollaboratorPermissions =>
+    [
+        Community.CertificatesSubmit,
+        Content.EventsModerate
+    ];
 
+    /// <summary>Permissions de l'utilisateur standard.</summary>
     public static string[] UserPermissions =>
     [
         Community.CertificatesSubmit

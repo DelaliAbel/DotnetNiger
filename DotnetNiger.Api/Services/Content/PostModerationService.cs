@@ -4,12 +4,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.Content;
 
+/// <summary>Service de modération des articles (publication/retrait).</summary>
 public class PostModerationService : IPostModerationService
 {
     private readonly DotnetNigerDbContext _db;
 
     public PostModerationService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Publie un article (passe le statut à Published).</summary>
     public async Task<PostResponse?> PublishAsync(Guid id, Guid userId, bool isAdmin)
     {
         var post = await _db.Posts.FindAsync(id);
@@ -21,6 +23,7 @@ public class PostModerationService : IPostModerationService
         return MapToResponse(post);
     }
 
+    /// <summary>Retire un article de publication (passe le statut à Draft).</summary>
     public async Task<PostResponse?> UnpublishAsync(Guid id, Guid userId, bool isAdmin)
     {
         var post = await _db.Posts.FindAsync(id);

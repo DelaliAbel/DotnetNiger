@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Api.Controllers.Community;
 
+/// <summary>Contrôleur de gestion des certificats des membres.</summary>
 [Route("api/certificates")]
 public class CertificatesController : BaseController
 {
@@ -17,6 +18,7 @@ public class CertificatesController : BaseController
         _certificateService = certificateService;
     }
 
+    /// <summary>Soumet un nouveau certificat pour validation.</summary>
     [HttpPost]
     [Authorize(Policy = "community.certificates.submit")]
     public async Task<IActionResult> Submit([FromBody] CertificateSubmissionRequest request)
@@ -29,6 +31,7 @@ public class CertificatesController : BaseController
         return Ok(new { Success = true, Data = cert });
     }
 
+    /// <summary>Récupère le certificat de l'utilisateur connecté.</summary>
     [HttpGet("mine")]
     [Authorize]
     public async Task<IActionResult> GetMine()
@@ -38,6 +41,7 @@ public class CertificatesController : BaseController
         return Ok(new { Success = true, Data = cert });
     }
 
+    /// <summary>Récupère un certificat par son identifiant (admin).</summary>
     [HttpGet("{id:guid}")]
     [Authorize(Policy = "community.certificates.approve")]
     public async Task<IActionResult> GetById(Guid id)
@@ -48,6 +52,7 @@ public class CertificatesController : BaseController
         return Ok(new { Success = true, Data = cert });
     }
 
+    /// <summary>Récupère tous les certificats avec filtre par statut (admin).</summary>
     [HttpGet]
     [Authorize(Policy = "community.certificates.approve")]
     public async Task<IActionResult> GetAll([FromQuery] string? status)
@@ -56,6 +61,7 @@ public class CertificatesController : BaseController
         return Ok(new { Success = true, Data = certs });
     }
 
+    /// <summary>Approuve un certificat.</summary>
     [HttpPatch("{id:guid}/approve")]
     [Authorize(Policy = "community.certificates.approve")]
     public async Task<IActionResult> Approve(Guid id)
@@ -66,6 +72,7 @@ public class CertificatesController : BaseController
         return Ok(new { Success = true, Data = cert });
     }
 
+    /// <summary>Rejette un certificat avec une raison.</summary>
     [HttpPatch("{id:guid}/reject")]
     [Authorize(Policy = "community.certificates.approve")]
     public async Task<IActionResult> Reject(Guid id, [FromQuery] string reason)

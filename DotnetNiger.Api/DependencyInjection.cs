@@ -1,6 +1,6 @@
 using DotnetNiger.Api.Data.Email;
 using DotnetNiger.Api.Entities;
-using DotnetNiger.Api.Interfaces;
+using DotnetNiger.Api.Services.General;
 using DotnetNiger.Api.Data;
 using DotnetNiger.Api.Services.User;
 using Microsoft.AspNetCore.Identity;
@@ -8,26 +8,33 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace DotnetNiger.Api;
 
+/// <summary>
+/// Enregistre tous les services métier Identity dans le DI container.
+/// Plus de dépendance OpenIddict — tout est natif Microsoft Identity + JWT.
+/// </summary>
 public static class DependencyInjection
 {
-    /// <summary>Enregistre tous les services métier Identity (scoped) dans le DI container.</summary>
+    /// <summary>Services auth et identity (scoped).</summary>
     public static IServiceCollection AddIdentityServices(
         this IServiceCollection services)
     {
+        // --- Auth / Identity ---
+        services.AddScoped<TokenService>();
         services.AddScoped<AuthService>();
         services.AddScoped<AccountService>();
-        services.AddScoped<TokenService>();
-        services.AddScoped<OidcService>();
-        services.AddScoped<OpenIddictManagementService>();
         services.AddScoped<IPermissionService, PermissionService>();
-        services.AddScoped<OpenIddictClientManager>();
         services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<DashboardService>();
+
+        // --- Email ---
         services.AddScoped<IEmailSender<ApplicationUser>, EmailSender>();
         services.AddScoped<EmailSender>();
+
+        // --- Support ---
         services.AddScoped<ISupportService, SupportService>();
         services.AddScoped<IAuditLogService, AuditLogService>();
 
+        // --- Contenu ---
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<IMemberDirectoryService, MemberDirectoryService>();
         services.AddScoped<IPostCommandService, PostCommandService>();
@@ -52,6 +59,7 @@ public static class DependencyInjection
         services.AddScoped<IImageProcessingService, ImageProcessingService>();
         services.AddScoped<IUserNotificationService, UserNotificationService>();
 
+        // --- Background ---
         services.AddHostedService<DeletionProcessorService>();
 
         return services;

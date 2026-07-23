@@ -2,8 +2,14 @@ using DotnetNiger.Api.DTOs.Requests;
 
 namespace DotnetNiger.Api.Data.Email.Templates;
 
+/// <summary>
+/// Template HTML pour l'email de signalement de bug/Support.
+/// </summary>
 public static class SupportReportTemplate
 {
+    /// <summary>
+    /// Génère le subject et corps HTML du signalement de support.
+    /// </summary>
     public static (string subject, string body) Render(SupportReportRequest request, string userId, string userEmail)
     {
         return (

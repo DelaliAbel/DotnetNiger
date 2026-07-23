@@ -4,8 +4,14 @@ using Microsoft.Extensions.Configuration;
 
 namespace DotnetNiger.Api.Data;
 
+/// <summary>
+/// Fabrique de DbContext pour les migrations Entity Framework en mode design-time.
+/// </summary>
 public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<DotnetNigerDbContext>
 {
+    /// <summary>
+    /// Crée une instance de DotnetNigerDbContext pour les migrations EF Core.
+    /// </summary>
     public DotnetNigerDbContext CreateDbContext(string[] args)
     {
         var config = new ConfigurationBuilder()
@@ -19,7 +25,6 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<DotnetNige
 
         var optionsBuilder = new DbContextOptionsBuilder<DotnetNigerDbContext>();
         optionsBuilder.UseSqlServer(connectionString);
-        optionsBuilder.UseOpenIddict();
         return new DotnetNigerDbContext(optionsBuilder.Options);
     }
 }

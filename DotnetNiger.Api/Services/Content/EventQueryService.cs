@@ -5,12 +5,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.Content;
 
+/// <summary>Service de consultation des événements (requêtes en lecture seule).</summary>
 public class EventQueryService : IEventQueryService
 {
     private readonly DotnetNigerDbContext _db;
 
     public EventQueryService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Récupère la liste paginée des événements avec filtres.</summary>
     public async Task<PaginatedResponse<EventResponse>> GetAllAsync(
         string? status, string? query, string? location,
         string? category, string? tag, DateTime? from, DateTime? to,
@@ -42,17 +44,20 @@ public class EventQueryService : IEventQueryService
             items.Select(MapToResponse).ToList(), total, page, pageSize);
     }
 
+    /// <summary>Récupère un événement par identifiant.</summary>
     public async Task<EventResponse?> GetByIdAsync(Guid id)
     {
         var ev = await _db.Events.FindAsync(id);
         return ev == null ? null : MapToResponse(ev);
     }
 
+    /// <summary>Récupère les événements en attente de modération.</summary>
     public async Task<PaginatedResponse<EventResponse>> GetPendingEventsAsync(int page, int pageSize)
     {
         return await GetAllAsync("PendingReview", null, null, null, null, null, null, null, page, pageSize);
     }
 
+    /// <summary>Récupère les inscriptions d'un événement.</summary>
     public async Task<List<EventRegistrationResponse>> GetRegistrationsAsync(Guid eventId)
     {
         return await _db.EventRegistrations.AsNoTracking()

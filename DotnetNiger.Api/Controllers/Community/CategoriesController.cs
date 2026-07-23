@@ -6,10 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Api.Controllers.Community;
 
+/// <summary>Contrôleur de gestion des catégories.</summary>
 [ApiController]
 [Route("api/categories")]
 public class CategoriesController(ICategoryService categoryService) : ControllerBase
 {
+    /// <summary>Récupère la liste de toutes les catégories.</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -17,6 +19,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
         return Ok(new { Success = true, Data = categories });
     }
 
+    /// <summary>Récupère une catégorie par son identifiant.</summary>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -25,6 +28,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
         return Ok(new { Success = true, Data = c });
     }
 
+    /// <summary>Récupère une catégorie par son slug.</summary>
     [HttpGet("{slug}")]
     public async Task<IActionResult> GetBySlug(string slug)
     {
@@ -33,6 +37,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
         return Ok(new { Success = true, Data = c });
     }
 
+    /// <summary>Crée une nouvelle catégorie.</summary>
     [HttpPost]
     [Authorize(Policy = "community.categories.manage")]
     public async Task<IActionResult> Create([FromBody] CreateCategoryRequest request)
@@ -41,6 +46,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
         return CreatedAtAction(nameof(GetById), new { id = c.Id }, new { Success = true, Data = c });
     }
 
+    /// <summary>Met à jour une catégorie existante.</summary>
     [HttpPut("{id:guid}")]
     [Authorize(Policy = "community.categories.manage")]
     public async Task<IActionResult> Update(Guid id, [FromBody] CreateCategoryRequest request)
@@ -50,6 +56,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
         return Ok(new { Success = true, Data = c });
     }
 
+    /// <summary>Supprime une catégorie.</summary>
     [HttpDelete("{id:guid}")]
     [Authorize(Policy = "community.categories.manage")]
     public async Task<IActionResult> Delete(Guid id)

@@ -1,13 +1,20 @@
 using DotnetNiger.UI.Services.Contracts;
+using DotnetNiger.UI.Services.Auth;
+using System.Security.Claims;
 
 namespace DotnetNiger.UI.Services.Api;
 
+/// <summary>
+/// Service de permissions côté client.
+/// Les permissions sont maintenant extraites du JWT (claim "permission")
+/// au lieu d'appeler l'endpoint /api/auth/userinfo.
+/// </summary>
 public class PermissionService : IPermissionService
 {
-    private readonly HttpClient _http;
+    private readonly CustomAuthStateProvider _authStateProvider;
     private HashSet<string> _permissions = [];
 
-    public PermissionService(HttpClient http) => _http = http;
+    public PermissionService(CustomAuthStateProvider authStateProvider) => _authStateProvider = authStateProvider;
 
     public IReadOnlySet<string> Permissions => _permissions;
 
@@ -18,27 +25,19 @@ public class PermissionService : IPermissionService
     {
         try
         {
-            var response = await _http.GetAsync("api/auth/userinfo");
-            if (!response.IsSuccessStatusCode)
+            var token = await _authStateProvider.GetAccessTokenAsync();
+            if (string.IsNullOrWhiteSpace(token))
             {
                 _permissions = [];
                 return;
             }
 
-            using var doc = await System.Text.Json.JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
-            var root = doc.RootElement;
-
-            if (root.TryGetProperty("permissions", out var perms) && perms.ValueKind == System.Text.Json.JsonValueKind.Array)
-            {
-                _permissions = perms.EnumerateArray()
-                    .Select(p => p.GetString()!)
-                    .Where(p => !string.IsNullOrEmpty(p))
-                    .ToHashSet();
-            }
-            else
-            {
-                _permissions = [];
-            }
+            var claims = JwtParser.ParseClaimsFromJwt(token);
+            _permissions = claims
+                .Where(c => c.Type == "permission")
+                .Select(c => c.Value)
+                .Where(p => !string.IsNullOrEmpty(p))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
         }
         catch
         {

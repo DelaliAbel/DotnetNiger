@@ -49,7 +49,8 @@ public class ClientIdHeaderHandler : DelegatingHandler
         if (response.StatusCode == HttpStatusCode.Unauthorized
             && request.Headers.Authorization != null
             && request.RequestUri != null
-            && !request.RequestUri.AbsolutePath.Contains("connect/token"))
+            && !request.RequestUri.AbsolutePath.Contains("/api/auth/login")
+            && !request.RequestUri.AbsolutePath.Contains("/api/auth/refresh"))
         {
             // Acquire lock to prevent concurrent refresh attempts
             if (!await _refreshLock.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken))

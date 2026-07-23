@@ -6,12 +6,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.General;
 
+/// <summary>Service de gestion des inscriptions à la newsletter.</summary>
 public class NewsletterService : INewsletterService
 {
     private readonly DotnetNigerDbContext _db;
 
     public NewsletterService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Inscrit un email à la newsletter (réactive si désinscrit).</summary>
     public async Task<NewsletterSubscriptionResponse> SubscribeAsync(SubscribeRequest request)
     {
         var existing = await _db.Set<NewsletterSubscription>()
@@ -42,6 +44,7 @@ public class NewsletterService : INewsletterService
         return MapToResponse(sub);
     }
 
+    /// <summary>Désinscrit un email de la newsletter via un token.</summary>
     public async Task<bool> UnsubscribeAsync(UnsubscribeRequest request)
     {
         var sub = await _db.Set<NewsletterSubscription>()
@@ -53,6 +56,7 @@ public class NewsletterService : INewsletterService
         return true;
     }
 
+    /// <summary>Supprime définitivement une inscription par email.</summary>
     public async Task<bool> DeleteByEmailAsync(string email)
     {
         var sub = await _db.Set<NewsletterSubscription>()
@@ -63,6 +67,7 @@ public class NewsletterService : INewsletterService
         return true;
     }
 
+    /// <summary>Récupère la liste paginée des inscriptions.</summary>
     public async Task<PaginatedResponse<NewsletterSubscriptionResponse>> GetAllAsync(int page, int pageSize)
     {
         var q = _db.Set<NewsletterSubscription>().AsNoTracking();
@@ -76,6 +81,7 @@ public class NewsletterService : INewsletterService
             items.Select(MapToResponse).ToList(), total, page, pageSize);
     }
 
+    /// <summary>Retourne le nombre d'inscriptions actives.</summary>
     public async Task<int> GetActiveCountAsync()
     {
         return await _db.Set<NewsletterSubscription>().CountAsync(s => s.IsActive);

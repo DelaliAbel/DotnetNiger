@@ -5,11 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Api.Controllers.Admin;
 
+/// <summary>Contrôleur de gestion des paramètres du site.</summary>
 [ApiController]
 [Route("api/admin/settings")]
 [Authorize(Policy = "admin.settings.manage")]
 public class SettingsController(ISettingsService settingsService) : ControllerBase
 {
+    /// <summary>Récupère les paramètres publics du site.</summary>
     [HttpGet("public")]
     [AllowAnonymous]
     public async Task<IActionResult> GetPublic()
@@ -29,6 +31,7 @@ public class SettingsController(ISettingsService settingsService) : ControllerBa
         });
     }
 
+    /// <summary>Récupère tous les paramètres du site.</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -36,6 +39,7 @@ public class SettingsController(ISettingsService settingsService) : ControllerBa
         return Ok(new { Success = true, Data = settings });
     }
 
+    /// <summary>Récupère un paramètre par sa clé.</summary>
     [HttpGet("{key}")]
     public async Task<IActionResult> GetByKey(string key)
     {
@@ -45,6 +49,7 @@ public class SettingsController(ISettingsService settingsService) : ControllerBa
         return Ok(new { Success = true, Data = setting });
     }
 
+    /// <summary>Met à jour un paramètre par sa clé.</summary>
     [HttpPut("{key}")]
     public async Task<IActionResult> Update(string key, [FromBody] UpdateSiteSettingRequest request)
     {
@@ -52,6 +57,7 @@ public class SettingsController(ISettingsService settingsService) : ControllerBa
         return Ok(new { Success = true, Data = setting, Message = Messages.Setting.Updated });
     }
 
+    /// <summary>Met à jour plusieurs paramètres en une seule requête.</summary>
     [HttpPut]
     public async Task<IActionResult> UpdateBatch([FromBody] UpdateSiteSettingsRequest request)
     {
@@ -59,6 +65,7 @@ public class SettingsController(ISettingsService settingsService) : ControllerBa
         return Ok(new { Success = true, Message = Messages.Setting.BatchUpdated });
     }
 
+    /// <summary>Supprime un paramètre par sa clé.</summary>
     [HttpDelete("{key}")]
     public async Task<IActionResult> Delete(string key)
     {

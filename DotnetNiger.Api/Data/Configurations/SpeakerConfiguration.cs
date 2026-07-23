@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité Speaker.
+/// </summary>
 public class SpeakerConfiguration : IEntityTypeConfiguration<Speaker>
 {
+    /// <summary>
+    /// Configure les clés et relations de la table des intervenants.
+    /// </summary>
     public void Configure(EntityTypeBuilder<Speaker> builder)
     {
         builder.HasKey(s => s.Id);

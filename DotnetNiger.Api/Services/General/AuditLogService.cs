@@ -1,11 +1,11 @@
 using System.Security.Claims;
 using DotnetNiger.Api.Entities;
-using DotnetNiger.Api.Interfaces;
 using DotnetNiger.Api.Data;
 using Microsoft.AspNetCore.Http;
 
 namespace DotnetNiger.Api.Services.General;
 
+/// <summary>Service de journalisation des actions d'audit (qui a fait quoi et quand).</summary>
 public class AuditLogService : IAuditLogService
 {
     private readonly DotnetNigerDbContext _db;
@@ -17,6 +17,7 @@ public class AuditLogService : IAuditLogService
         _httpContextAccessor = httpContextAccessor;
     }
 
+    /// <summary>Enregistre une entrée d'audit avec les informations de contexte HTTP.</summary>
     public async Task LogAsync(string entityType, Guid entityId, string action, string? description = null)
     {
         var httpContext = _httpContextAccessor.HttpContext;
@@ -39,6 +40,7 @@ public class AuditLogService : IAuditLogService
         await _db.SaveChangesAsync();
     }
 
+    /// <summary>Enregistre une entrée d'audit pré-construite.</summary>
     public async Task LogAsync(AuditLog entry)
     {
         _db.AuditLogs.Add(entry);

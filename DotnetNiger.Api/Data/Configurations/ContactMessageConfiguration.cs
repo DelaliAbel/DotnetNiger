@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité ContactMessage.
+/// </summary>
 public class ContactMessageConfiguration : IEntityTypeConfiguration<ContactMessage>
 {
+    /// <summary>
+    /// Configure les clés et contraintes de la table des messages de contact.
+    /// </summary>
     public void Configure(EntityTypeBuilder<ContactMessage> builder)
     {
         builder.HasKey(c => c.Id);

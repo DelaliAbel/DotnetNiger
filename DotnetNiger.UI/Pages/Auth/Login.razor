@@ -3,7 +3,10 @@
 @inject IUserStateService UserStateService
 @inject NavigationManager Navigation
 @inject IConfiguration Config
+@inject IJSRuntime JS
+@inject CustomAuthStateProvider AuthProvider
 @using DotnetNiger.UI.Helpers
+@implements IDisposable
 
 <PageTitle>Connexion - .NET Niger</PageTitle>
 
@@ -189,8 +192,8 @@
             var returnUrl = GetReturnUrl();
             var isAdmin = result.Data.User.Roles.Any(r => RoleConstants.IsAdminRole(r));
 
-            if (!string.IsNullOrWhiteSpace(returnUrl) && !returnUrl.StartsWith("//"))
-                Navigation.NavigateTo(returnUrl, forceLoad: true);
+            if (IsSafeReturnUrl(returnUrl))
+                Navigation.NavigateTo(returnUrl!, forceLoad: true);
             else
                 Navigation.NavigateTo(isAdmin ? "/admin" : "/");
         }
@@ -203,21 +206,46 @@
     private void OAuthLogin(string provider)
     {
         var apiBase = Config["ApiBaseUrl"] ?? "http://localhost:5000";
-        var redirectUri = Navigation.BaseUri.TrimEnd('/') + "/auth/external-callback";
-        var clientId = Config["ClientId"] ?? "web-ui";
+        var externalLoginUrl = $"{apiBase.TrimEnd('/')}/api/auth/external-login?provider={Uri.EscapeDataString(provider)}";
+        _ = JS.InvokeVoidAsync("openExternalLoginPopup", externalLoginUrl, DotNetObjectReference.Create(this));
+    }
 
-        var returnUrl = GetReturnUrl();
-        if (!string.IsNullOrWhiteSpace(returnUrl))
-            redirectUri += $"?returnUrl={Uri.EscapeDataString(returnUrl)}";
+    /// <summary>
+    /// Callback JS invokable appelé par la popup quand le login externe réussit.
+    /// Recoit les tokens JWT et connecte l'utilisateur.
+    /// </summary>
+    [JSInvokable]
+    public async Task OnExternalLoginSuccess(string accessToken, string refreshToken, int expiresIn)
+    {
+        await AuthProvider.SaveTokensAsync(accessToken, refreshToken);
+        var user = await Auth.GetCurrentUserAsync();
+        if (user is not null)
+        {
+            await UserStateService.SetUserAsync(user);
+            var isAdmin = user.Roles?.Any(r => RoleConstants.IsAdminRole(r)) ?? false;
+            Navigation.NavigateTo(isAdmin ? "/admin" : "/");
+        }
+        else
+        {
+            Navigation.NavigateTo("/");
+        }
+        StateHasChanged();
+    }
 
-        var authorizeUrl = $"{apiBase}/connect/authorize" +
-            $"?client_id={Uri.EscapeDataString(clientId)}" +
-            $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
-            $"&response_type=code" +
-            $"&scope={Uri.EscapeDataString("openid profile email roles offline_access")}" +
-            $"&identity_provider={Uri.EscapeDataString(provider)}";
+    /// <summary>
+    /// Callback JS invokable appelé par la popup quand le login externe échoue.
+    /// </summary>
+    [JSInvokable]
+    public Task OnExternalLoginError(string error)
+    {
+        _errorMessage = error ?? "Erreur lors de la connexion externe.";
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
 
-        Navigation.NavigateTo(authorizeUrl, forceLoad: true);
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
     }
 
     private string? GetReturnUrl()
@@ -227,15 +255,28 @@
         return query["returnUrl"];
     }
 
+    /// <summary>
+    /// Vérifie que l'URL de retour est un chemin relatif sûr.
+    /// Protège contre les attaques d'open-redirect.
+    /// </summary>
+    private static bool IsSafeReturnUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return false;
+        if (!url.StartsWith("/") || url.StartsWith("//")) return false;
+        if (url.Contains('\\') || url.Contains('\r') || url.Contains('\n')) return false;
+        return true;
+    }
+
     private async Task LoginAs(string email)
     {
         _isLoading = true;
         _errorMessage = null;
 
+        // En mode mock, le mot de passe est défini dans la config
         var result = await Auth.LoginAsync(new LoginRequest
         {
             Email = email,
-            Password = "password123"
+            Password = Config["MockPassword"] ?? "Demo2024!"
         });
 
         _isLoading = false;

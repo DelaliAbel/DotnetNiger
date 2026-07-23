@@ -6,12 +6,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.Community;
 
+/// <summary>Service de gestion de l'annuaire des membres (profils, compétences, liens sociaux).</summary>
 public class MemberDirectoryService : IMemberDirectoryService
 {
     private readonly DotnetNigerDbContext _db;
 
     public MemberDirectoryService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Récupère le profil membre d'un utilisateur.</summary>
     public async Task<MemberResponse> GetProfileAsync(Guid userId)
     {
         var member = await _db.Members
@@ -22,6 +24,7 @@ public class MemberDirectoryService : IMemberDirectoryService
         return MapToResponse(member);
     }
 
+    /// <summary>Met à jour ou crée le profil membre d'un utilisateur.</summary>
     public async Task<MemberResponse> UpdateProfileAsync(Guid userId, UpdateMemberRequest request)
     {
         var member = await _db.Members
@@ -53,6 +56,7 @@ public class MemberDirectoryService : IMemberDirectoryService
         return MapToResponse(member);
     }
 
+    /// <summary>Crée un nouveau profil membre pour un utilisateur.</summary>
     public async Task<MemberResponse> CreateProfileAsync(Guid userId, CreateMemberRequest request)
     {
         var member = await _db.Members.FirstOrDefaultAsync(m => m.UserId == userId);
@@ -74,6 +78,7 @@ public class MemberDirectoryService : IMemberDirectoryService
         return MapToResponse(member);
     }
 
+    /// <summary>Supprime le profil membre d'un utilisateur.</summary>
     public async Task<bool> DeleteProfileAsync(Guid userId)
     {
         var member = await _db.Members.FirstOrDefaultAsync(m => m.UserId == userId);
@@ -84,6 +89,7 @@ public class MemberDirectoryService : IMemberDirectoryService
         return true;
     }
 
+    /// <summary>Récupère les membres paginés avec filtres.</summary>
     public async Task<PaginatedResponse<MemberResponse>> GetAllAsync(string? query, string? country, int page, int pageSize)
     {
         var queryable = _db.Members.AsNoTracking();
@@ -104,6 +110,7 @@ public class MemberDirectoryService : IMemberDirectoryService
             items.Select(MapToResponse).ToList(), totalCount, page, pageSize);
     }
 
+    /// <summary>Récupère les membres de l'équipe.</summary>
     public async Task<List<MemberResponse>> GetTeamMembersAsync()
     {
         var members = await _db.Members
@@ -115,6 +122,7 @@ public class MemberDirectoryService : IMemberDirectoryService
         return members.Select(MapToResponse).ToList();
     }
 
+    /// <summary>Récupère un membre par identifiant.</summary>
     public async Task<MemberResponse?> GetByIdAsync(Guid id)
     {
         var member = await _db.Members
@@ -123,6 +131,7 @@ public class MemberDirectoryService : IMemberDirectoryService
         return member == null ? null : MapToResponse(member);
     }
 
+    /// <summary>Recherche des membres par nom ou bio.</summary>
     public async Task<PaginatedResponse<MemberResponse>> SearchAsync(string? query, int page, int pageSize)
     {
         var queryable = _db.Members.AsNoTracking();
@@ -141,6 +150,7 @@ public class MemberDirectoryService : IMemberDirectoryService
             items.Select(MapToResponse).ToList(), totalCount, page, pageSize);
     }
 
+    /// <summary>Ajoute une compétence au profil d'un membre.</summary>
     public async Task AddSkillAsync(Guid userId, string skillName)
     {
         var member = await _db.Members.FirstOrDefaultAsync(m => m.UserId == userId)
@@ -160,6 +170,7 @@ public class MemberDirectoryService : IMemberDirectoryService
         }
     }
 
+    /// <summary>Retire une compétence du profil d'un membre.</summary>
     public async Task RemoveSkillAsync(Guid userId, string skillName)
     {
         var member = await _db.Members.FirstOrDefaultAsync(m => m.UserId == userId)
@@ -174,6 +185,7 @@ public class MemberDirectoryService : IMemberDirectoryService
         }
     }
 
+    /// <summary>Ajoute un lien social au profil d'un membre.</summary>
     public async Task AddSocialLinkAsync(Guid userId, SocialLinkRequest request)
     {
         var member = await _db.Members.FirstOrDefaultAsync(m => m.UserId == userId)
@@ -189,6 +201,7 @@ public class MemberDirectoryService : IMemberDirectoryService
         await _db.SaveChangesAsync();
     }
 
+    /// <summary>Retire un lien social du profil d'un membre.</summary>
     public async Task RemoveSocialLinkAsync(Guid userId, Guid linkId)
     {
         var member = await _db.Members.FirstOrDefaultAsync(m => m.UserId == userId)

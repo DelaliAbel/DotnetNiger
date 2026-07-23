@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité Event.
+/// </summary>
 public class EventConfiguration : IEntityTypeConfiguration<Event>
 {
+    /// <summary>
+    /// Configure les clés, indexes et relations de la table des événements.
+    /// </summary>
     public void Configure(EntityTypeBuilder<Event> builder)
     {
         builder.HasKey(e => e.Id);

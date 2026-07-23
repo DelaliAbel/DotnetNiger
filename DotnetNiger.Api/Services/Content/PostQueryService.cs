@@ -5,12 +5,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.Content;
 
+/// <summary>Service de consultation des articles (requêtes en lecture seule).</summary>
 public class PostQueryService : IPostQueryService
 {
     private readonly DotnetNigerDbContext _db;
 
     public PostQueryService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Récupère la liste paginée des articles avec filtres optionnels.</summary>
     public async Task<PaginatedResponse<PostResponse>> GetAllAsync(
         string? published, string? category, string? tag,
         string? query, int page, int pageSize, Guid? after = null, Guid? authorId = null)
@@ -35,12 +37,14 @@ public class PostQueryService : IPostQueryService
             items.Select(MapToResponse).ToList(), total, page, pageSize);
     }
 
+    /// <summary>Récupère un article par son identifiant.</summary>
     public async Task<PostResponse?> GetByIdAsync(Guid id)
     {
         var post = await _db.Posts.FindAsync(id);
         return post == null ? null : MapToResponse(post);
     }
 
+    /// <summary>Récupère un article par son slug.</summary>
     public async Task<PostResponse?> GetBySlugAsync(string slug)
     {
         var post = await _db.Posts.FirstOrDefaultAsync(p => p.Slug == slug);

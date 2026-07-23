@@ -6,10 +6,12 @@ using System.ComponentModel.DataAnnotations;
 
 namespace DotnetNiger.Api.Controllers.General;
 
+/// <summary>Contrôleur de formulaire de contact.</summary>
 [ApiController]
 [Route("api/contact")]
 public class ContactController(IContactService contactService) : ControllerBase
 {
+    /// <summary>Envoie un message de contact.</summary>
     [HttpPost]
     public async Task<IActionResult> Send([FromBody] ContactRequest request)
     {

@@ -6,10 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Api.Controllers.General;
 
+/// <summary>Contrôleur de gestion de la newsletter.</summary>
 [ApiController]
 [Route("api/newsletter")]
 public class NewsletterController(INewsletterService newsletterService) : ControllerBase
 {
+    /// <summary>Inscrit un abonné à la newsletter.</summary>
     [HttpPost("subscribe")]
     [AllowAnonymous]
     public async Task<IActionResult> Subscribe([FromBody] SubscribeRequest request)
@@ -25,6 +27,7 @@ public class NewsletterController(INewsletterService newsletterService) : Contro
         }
     }
 
+    /// <summary>Désabonne un abonné de la newsletter.</summary>
     [HttpPost("unsubscribe")]
     [AllowAnonymous]
     public async Task<IActionResult> Unsubscribe([FromBody] UnsubscribeRequest request)
@@ -35,6 +38,7 @@ public class NewsletterController(INewsletterService newsletterService) : Contro
         return Ok(new { Success = true, Message = Messages.Newsletter.Unsubscribed });
     }
 
+    /// <summary>Supprime un abonné par son adresse email (admin).</summary>
     [HttpDelete("{email}")]
     [Authorize(Policy = "newsletter.manage")]
     public async Task<IActionResult> DeleteByEmail(string email)
@@ -45,6 +49,7 @@ public class NewsletterController(INewsletterService newsletterService) : Contro
         return Ok(new { Success = true, Message = Messages.Newsletter.Unsubscribed });
     }
 
+    /// <summary>Récupère la liste paginée des abonnés (admin).</summary>
     [HttpGet]
     [Authorize(Policy = "newsletter.manage")]
     public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -55,6 +60,7 @@ public class NewsletterController(INewsletterService newsletterService) : Contro
         return Ok(new { Success = true, Data = result });
     }
 
+    /// <summary>Récupère le nombre d'abonnés actifs.</summary>
     [HttpGet("count")]
     public async Task<IActionResult> GetActiveCount()
     {

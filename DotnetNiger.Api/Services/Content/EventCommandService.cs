@@ -6,12 +6,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.Content;
 
+/// <summary>Service de création, modification et suppression des événements.</summary>
 public class EventCommandService : IEventCommandService
 {
     private readonly DotnetNigerDbContext _db;
 
     public EventCommandService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Crée un nouvel événement avec ses tags.</summary>
     public async Task<EventResponse> CreateAsync(CreateEventRequest request, Guid organizerId, bool isAdmin, bool isCollaborator)
     {
         var eventEntity = new Event
@@ -35,6 +37,7 @@ public class EventCommandService : IEventCommandService
         return MapToResponse(eventEntity);
     }
 
+    /// <summary>Met à jour un événement existant.</summary>
     public async Task<EventResponse?> UpdateAsync(Guid id, UpdateEventRequest request, Guid userId, bool isAdmin)
     {
         var eventEntity = await _db.Events
@@ -68,6 +71,7 @@ public class EventCommandService : IEventCommandService
         return MapToResponse(eventEntity);
     }
 
+    /// <summary>Supprime un événement (organisateur ou admin uniquement).</summary>
     public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin)
     {
         var eventEntity = await _db.Events.FindAsync(id);
@@ -79,6 +83,7 @@ public class EventCommandService : IEventCommandService
         return true;
     }
 
+    /// <summary>Soumet un événement pour modération.</summary>
     public async Task SubmitForReviewAsync(Guid id)
     {
         var eventEntity = await _db.Events.FindAsync(id)
@@ -88,6 +93,7 @@ public class EventCommandService : IEventCommandService
         await _db.SaveChangesAsync();
     }
 
+    /// <summary>Publie un événement.</summary>
     public async Task PublishAsync(Guid id)
     {
         var eventEntity = await _db.Events.FindAsync(id)
@@ -97,6 +103,7 @@ public class EventCommandService : IEventCommandService
         await _db.SaveChangesAsync();
     }
 
+    /// <summary>Annule un événement.</summary>
     public async Task CancelAsync(Guid id)
     {
         var eventEntity = await _db.Events.FindAsync(id)

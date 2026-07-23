@@ -7,9 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Api.Controllers.Content;
 
+/// <summary>Contrôleur de gestion des ressources éducatives.</summary>
 [Route("api/resources")]
 public class ResourcesController(IResourceQueryService resourceQuery, IResourceCommandService resourceCommand) : BaseController
 {
+    /// <summary>Récupère la liste paginée des ressources avec filtres optionnels.</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll(
         [FromQuery] string? resourceType, [FromQuery] string? level, [FromQuery] string? query,
@@ -23,6 +25,7 @@ public class ResourcesController(IResourceQueryService resourceQuery, IResourceC
         return Ok(new { Success = true, Data = result });
     }
 
+    /// <summary>Récupère les ressources de l'utilisateur connecté.</summary>
     [HttpGet("mine")]
     [Authorize]
     public async Task<IActionResult> GetMine([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -34,6 +37,7 @@ public class ResourcesController(IResourceQueryService resourceQuery, IResourceC
         return Ok(new { Success = true, Data = result });
     }
 
+    /// <summary>Récupère une ressource par son identifiant.</summary>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -42,6 +46,7 @@ public class ResourcesController(IResourceQueryService resourceQuery, IResourceC
         return Ok(new { Success = true, Data = resource });
     }
 
+    /// <summary>Récupère une ressource par son slug.</summary>
     [HttpGet("{slug}")]
     public async Task<IActionResult> GetBySlug(string slug)
     {
@@ -50,6 +55,7 @@ public class ResourcesController(IResourceQueryService resourceQuery, IResourceC
         return Ok(new { Success = true, Data = resource });
     }
 
+    /// <summary>Récupère les métadonnées Open Graph d'une ressource par son slug.</summary>
     [HttpGet("by-slug/{slug}")]
     public async Task<ActionResult<OGMetadata>> GetOGBySlug(string slug)
     {
@@ -68,6 +74,7 @@ public class ResourcesController(IResourceQueryService resourceQuery, IResourceC
         });
     }
 
+    /// <summary>Récupère la liste des types de ressources disponibles.</summary>
     [HttpGet("types")]
     public async Task<IActionResult> GetTypes()
     {
@@ -75,6 +82,7 @@ public class ResourcesController(IResourceQueryService resourceQuery, IResourceC
         return Ok(new { Success = true, Data = types });
     }
 
+    /// <summary>Récupère la liste des niveaux de difficulté disponibles.</summary>
     [HttpGet("levels")]
     public async Task<IActionResult> GetLevels()
     {
@@ -82,6 +90,7 @@ public class ResourcesController(IResourceQueryService resourceQuery, IResourceC
         return Ok(new { Success = true, Data = levels });
     }
 
+    /// <summary>Crée une nouvelle ressource.</summary>
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> Create([FromBody] CreateResourceRequest request)
@@ -98,6 +107,7 @@ public class ResourcesController(IResourceQueryService resourceQuery, IResourceC
         }
     }
 
+    /// <summary>Met à jour une ressource existante.</summary>
     [HttpPut("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateResourceRequest request)
@@ -119,6 +129,7 @@ public class ResourcesController(IResourceQueryService resourceQuery, IResourceC
         }
     }
 
+    /// <summary>Supprime une ressource.</summary>
     [HttpDelete("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Delete(Guid id)
@@ -129,6 +140,7 @@ public class ResourcesController(IResourceQueryService resourceQuery, IResourceC
         return Ok(new { Success = true, Message = Messages.Resource.Deleted });
     }
 
+    /// <summary>Incrémente le compteur de vues d'une ressource.</summary>
     [HttpPost("{id:guid}/views")]
     public async Task<IActionResult> IncrementViewCount(Guid id)
     {

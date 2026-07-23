@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace DotnetNiger.Api.Services.Auth;
 
+/// <summary>Exigence d'autorisation basée sur une permission spécifique.</summary>
 public class PermissionRequirement : IAuthorizationRequirement
 {
     public string Permission { get; }
@@ -9,8 +10,10 @@ public class PermissionRequirement : IAuthorizationRequirement
     public PermissionRequirement(string permission) => Permission = permission;
 }
 
+/// <summary>Gestionnaire d'autorisation vérifiant les permissions via les claims.</summary>
 public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionRequirement>
 {
+    /// <summary>Vérifie si l'utilisateur possède la permission requise.</summary>
     protected override Task HandleRequirementAsync(
         AuthorizationHandlerContext context,
         PermissionRequirement requirement)

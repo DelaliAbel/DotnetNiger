@@ -37,7 +37,8 @@ public static class ApiEndpoints
 
     public static class Auth
     {
-        public const string Token = "connect/token";
+        public const string Token = "api/auth/login";
+        public const string Refresh = "api/auth/refresh";
         public const string Register = "api/auth/register";
         public const string Logout = "api/auth/logout";
         public const string ForgotPassword = "api/auth/forgot-password";
@@ -54,8 +55,6 @@ public static class ApiEndpoints
         public const string UserRoles = "api/admin/users/{0}/roles";
         public const string UserRole = "api/admin/users/{0}/roles/{1}";
         public const string Stats = "api/admin/stats";
-        public const string LoginHistory = "api/admin/login-history";
-        public const string AuditLogs = "api/admin/audit-logs";
         public const string Settings = "api/admin/settings";
     }
 }

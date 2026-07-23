@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Api.Seed;
 
+/// <summary>
+/// Seeder du contenu exemple (catégories, tags, événements, projets, etc.).
+/// </summary>
 public static class SampleContent
 {
+    /// <summary>
+    /// Insère le contenu exemple dans la base de données.
+    /// </summary>
     public static async Task SeedAsync(DotnetNigerDbContext db, Guid adminId)
     {
         var now = DateTime.UtcNow;

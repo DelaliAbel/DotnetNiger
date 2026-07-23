@@ -6,10 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Api.Controllers.Community;
 
+/// <summary>Contrôleur de gestion des tags.</summary>
 [ApiController]
 [Route("api/tags")]
 public class TagsController(ITagService tagService) : ControllerBase
 {
+    /// <summary>Récupère la liste de tous les tags.</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -17,6 +19,7 @@ public class TagsController(ITagService tagService) : ControllerBase
         return Ok(new { Success = true, Data = tags });
     }
 
+    /// <summary>Récupère un tag par son identifiant.</summary>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -25,6 +28,7 @@ public class TagsController(ITagService tagService) : ControllerBase
         return Ok(new { Success = true, Data = t });
     }
 
+    /// <summary>Récupère un tag par son slug.</summary>
     [HttpGet("{slug}")]
     public async Task<IActionResult> GetBySlug(string slug)
     {
@@ -33,6 +37,7 @@ public class TagsController(ITagService tagService) : ControllerBase
         return Ok(new { Success = true, Data = t });
     }
 
+    /// <summary>Crée un nouveau tag.</summary>
     [HttpPost]
     [Authorize(Policy = "community.tags.manage")]
     public async Task<IActionResult> Create([FromBody] CreateTagRequest request)
@@ -41,6 +46,7 @@ public class TagsController(ITagService tagService) : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = t.Id }, new { Success = true, Data = t });
     }
 
+    /// <summary>Met à jour un tag existant.</summary>
     [HttpPut("{id:guid}")]
     [Authorize(Policy = "community.tags.manage")]
     public async Task<IActionResult> Update(Guid id, [FromBody] CreateTagRequest request)
@@ -50,6 +56,7 @@ public class TagsController(ITagService tagService) : ControllerBase
         return Ok(new { Success = true, Data = t });
     }
 
+    /// <summary>Supprime un tag.</summary>
     [HttpDelete("{id:guid}")]
     [Authorize(Policy = "community.tags.manage")]
     public async Task<IActionResult> Delete(Guid id)

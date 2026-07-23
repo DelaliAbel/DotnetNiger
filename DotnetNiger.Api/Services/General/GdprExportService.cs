@@ -93,7 +93,7 @@ public class GdprExportService
             .ExecuteUpdateAsync(setters => setters
                 .SetProperty(a => a.Description, "[anonymized]")
                 .SetProperty(a => a.IpAddress, (string?)null));
-
+                          
         var oldConsents = await _db.UserConsents
             .Where(c => c.UserId == userId && c.CreatedAt < DateTime.UtcNow.AddDays(-30))
             .ToListAsync();

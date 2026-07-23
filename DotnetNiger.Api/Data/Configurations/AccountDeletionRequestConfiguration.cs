@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité AccountDeletionRequest.
+/// </summary>
 public class AccountDeletionRequestConfiguration : IEntityTypeConfiguration<AccountDeletionRequest>
 {
+    /// <summary>
+    /// Configure les clés, indexes et relations de la table des demandes de suppression.
+    /// </summary>
     public void Configure(EntityTypeBuilder<AccountDeletionRequest> builder)
     {
         builder.HasKey(d => d.Id);

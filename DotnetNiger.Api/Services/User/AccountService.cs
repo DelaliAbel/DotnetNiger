@@ -8,32 +8,42 @@ using DotnetNiger.Api.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace DotnetNiger.Api.Services.User;
 
-public partial class AccountService
+/// <summary>Service de gestion de compte utilisateur (inscription, profil, suppression, email).</summary>
+public class AccountService
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly DotnetNigerDbContext _db;
     private readonly IEmailSender<ApplicationUser> _emailSender;
     private readonly SmtpOptions _smtp;
     private readonly IMemoryCache _cache;
+    private readonly ILogger<AccountService> _logger;
     private static readonly TimeSpan ProfileCacheDuration = TimeSpan.FromSeconds(60);
 
     public AccountService(UserManager<ApplicationUser> userManager,
         DotnetNigerDbContext db,
         IEmailSender<ApplicationUser> emailSender,
         IOptions<SmtpOptions> smtp,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        ILogger<AccountService> logger)
     {
         _userManager = userManager;
         _db = db;
         _emailSender = emailSender;
         _smtp = smtp.Value;
         _cache = cache;
+        _logger = logger;
     }
 
+    // ============================================================
+    // INSCRIPTION
+    // ============================================================
+
+    /// <summary>Inscrit un nouvel utilisateur et envoie la confirmation par email.</summary>
     public async Task<ApplicationUser> RegisterAsync(string email, string password,
         string firstName, string lastName, string? phoneNumber = null)
     {
@@ -60,6 +70,11 @@ public partial class AccountService
         return user;
     }
 
+    // ============================================================
+    // CONFIRMATION EMAIL
+    // ============================================================
+
+    /// <summary>Confirme l'adresse email avec le code de confirmation.</summary>
     public async Task ConfirmEmailAsync(string email, string code)
     {
         var user = await _userManager.FindByEmailAsync(email);
@@ -80,6 +95,7 @@ public partial class AccountService
         await _userManager.UpdateAsync(user);
     }
 
+    /// <summary>Renvoie le code de confirmation email.</summary>
     public async Task ResendConfirmationCodeAsync(string email)
     {
         var user = await _userManager.FindByEmailAsync(email);
@@ -93,6 +109,67 @@ public partial class AccountService
         await SendConfirmationEmailAsync(user, code);
     }
 
+    // ============================================================
+    // CHANGEMENT D'EMAIL
+    // ============================================================
+
+    /// <summary>Initie le changement d'email avec envoi d'un code de confirmation.</summary>
+    public async Task ChangeEmailAsync(Guid userId, string newEmail)
+    {
+        var user = await FindUserOrThrowAsync(userId);
+        if (string.Equals(user.Email, newEmail, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Le nouvel email est identique à l'email actuel");
+
+        var existing = await _userManager.FindByEmailAsync(newEmail);
+        if (existing != null && existing.Id != userId)
+            throw new InvalidOperationException("Cet email est déjà utilisé par un autre compte");
+
+        var code = CodeGenerator.Generate();
+        user.EmailConfirmationCode = HashCode(code);
+        user.EmailConfirmationCodeExpiry = DateTime.UtcNow.AddMinutes(15);
+        user.PendingEmail = newEmail;
+        await _userManager.UpdateAsync(user);
+
+        if (!string.IsNullOrEmpty(_smtp.Host))
+        {
+            var confirmUrl = $"{_smtp.AppBaseUrl}/api/v1/profile/confirm-change-email?email={Uri.EscapeDataString(newEmail)}&code={Uri.EscapeDataString(code)}";
+            if (_emailSender is EmailSender typed)
+                await typed.SendConfirmationCodeAsync(user, user.Email!, code, confirmUrl);
+        }
+    }
+
+    /// <summary>Confirme le changement d'email avec le code de validation.</summary>
+    public async Task ConfirmChangeEmailAsync(Guid userId, string code)
+    {
+        var user = await FindUserOrThrowAsync(userId);
+        if (user.PendingEmail == null)
+            throw new InvalidOperationException("Aucun changement d'email en attente");
+        if (user.EmailConfirmationCode == null || user.EmailConfirmationCodeExpiry == null)
+            throw new InvalidOperationException("Aucun code de confirmation trouvé");
+        if (user.EmailConfirmationCodeExpiry < DateTime.UtcNow)
+            throw new InvalidOperationException("Code de confirmation expiré");
+
+        var hashedCode = HashCode(code);
+        if (!string.Equals(user.EmailConfirmationCode, hashedCode, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("Code de confirmation invalide");
+
+        var newEmail = user.PendingEmail;
+        user.Email = newEmail;
+        user.UserName = newEmail;
+        user.NormalizedEmail = _userManager.NormalizeEmail(newEmail);
+        user.NormalizedUserName = _userManager.NormalizeName(newEmail);
+        user.PendingEmail = null;
+        user.EmailConfirmationCode = null;
+        user.EmailConfirmationCodeExpiry = null;
+        user.EmailConfirmed = true;
+        await _userManager.UpdateAsync(user);
+    }
+
+    // ============================================================
+    // MOT DE PASSE OUBLIÉ / RÉINITIALISATION
+    // ============================================================
+
+    /// <summary>Envoie un lien de réinitialisation de mot de passe.</summary>
     public async Task ForgotPasswordAsync(string email)
     {
         var user = await _userManager.FindByEmailAsync(email);
@@ -103,6 +180,7 @@ public partial class AccountService
         await _emailSender.SendPasswordResetLinkAsync(user, email, resetLink);
     }
 
+    /// <summary>Réinitialise le mot de passe avec un token.</summary>
     public async Task<string?> ResetPasswordAsync(string email, string token, string newPassword)
     {
         var user = await _userManager.FindByEmailAsync(email);
@@ -114,15 +192,20 @@ public partial class AccountService
         return null;
     }
 
-    private static string HashCode(string code) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(code)));
-
-    private async Task<ApplicationUser> FindUserOrThrowAsync(Guid userId)
+    /// <summary>Change le mot de passe de l'utilisateur.</summary>
+    public async Task ChangePasswordAsync(Guid userId, string currentPassword, string newPassword)
     {
-        var user = await _userManager.FindByIdAsync(userId.ToString());
-        return user ?? throw new InvalidOperationException("Utilisateur non trouvé");
+        var user = await FindUserOrThrowAsync(userId);
+        var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+        if (!result.Succeeded)
+            throw new InvalidOperationException(string.Join("; ", result.Errors.Select(e => e.Description)));
     }
 
+    // ============================================================
+    // PROFIL
+    // ============================================================
+
+    /// <summary>Récupère le profil utilisateur avec mise en cache.</summary>
     public async Task<UserProfileResponse> GetProfileAsync(Guid userId)
     {
         var cacheKey = $"profile_{userId}";
@@ -139,6 +222,7 @@ public partial class AccountService
         return profile;
     }
 
+    /// <summary>Met à jour le profil utilisateur et invalide le cache.</summary>
     public async Task<UserProfileResponse> UpdateProfileAsync(Guid userId, UpdateUserRequest request)
     {
         var user = await FindUserOrThrowAsync(userId);
@@ -155,12 +239,18 @@ public partial class AccountService
             roles);
     }
 
+    /// <summary>Supprime le profil utilisateur.</summary>
     public async Task DeleteProfileAsync(Guid userId)
     {
         var user = await FindUserOrThrowAsync(userId);
         await _userManager.DeleteAsync(user);
     }
 
+    // ============================================================
+    // DEMANDE DE SUPPRESSION
+    // ============================================================
+
+    /// <summary>Crée une demande de suppression de compte planifiée à 7 jours.</summary>
     public async Task<AccountDeletionRequest> RequestDeletionAsync(Guid userId)
     {
         var existing = await _db.AccountDeletionRequests
@@ -180,6 +270,7 @@ public partial class AccountService
         return request;
     }
 
+    /// <summary>Annule une demande de suppression en cours.</summary>
     public async Task<bool> CancelDeletionAsync(Guid userId)
     {
         var request = await _db.AccountDeletionRequests
@@ -191,6 +282,7 @@ public partial class AccountService
         return true;
     }
 
+    /// <summary>Traite les demandes de suppression dont la date est dépassée.</summary>
     public async Task ProcessPendingDeletionsAsync()
     {
         var now = DateTime.UtcNow;
@@ -208,13 +300,41 @@ public partial class AccountService
         await _db.SaveChangesAsync();
     }
 
-    public async Task ChangePasswordAsync(Guid userId, string currentPassword, string newPassword)
+    // ============================================================
+    // UTILITAIRES
+    // ============================================================
+
+    private static string HashCode(string code) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(code)));
+
+    private async Task<ApplicationUser> FindUserOrThrowAsync(Guid userId)
     {
-        var user = await FindUserOrThrowAsync(userId);
-        var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
-        if (!result.Succeeded)
-            throw new InvalidOperationException(string.Join("; ", result.Errors.Select(e => e.Description)));
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        return user ?? throw new InvalidOperationException("Utilisateur non trouvé");
     }
 
+    private async Task SendConfirmationEmailAsync(ApplicationUser user, string code)
+    {
+        if (string.IsNullOrEmpty(_smtp.Host))
+        {
+            _logger.LogWarning("[DEV] CODE DE CONFIRMATION EMAIL | Email: {Email} | Code: {Code}", user.Email, code);
+            Console.WriteLine($"[DEV] CODE DE CONFIRMATION EMAIL | Email: {user.Email} | Code: {code}");
+            return;
+        }
 
+        _logger.LogWarning("[DEV] CODE DE CONFIRMATION EMAIL | Email: {Email} | Code: {Code}", user.Email, code);
+        Console.WriteLine($"[DEV] CODE DE CONFIRMATION EMAIL | Email: {user.Email} | Code: {code}");
+
+        var confirmUrl = $"{_smtp.AppBaseUrl}/api/auth/confirm-email?email={Uri.EscapeDataString(user.Email!)}&code={Uri.EscapeDataString(code)}";
+
+        if (_emailSender is EmailSender typed)
+        {
+            await typed.SendConfirmationLinkAsync(user, user.Email!, confirmUrl);
+            await typed.SendConfirmationCodeAsync(user, user.Email!, code, confirmUrl);
+        }
+        else
+        {
+            await _emailSender.SendConfirmationLinkAsync(user, user.Email!, confirmUrl);
+        }
+    }
 }

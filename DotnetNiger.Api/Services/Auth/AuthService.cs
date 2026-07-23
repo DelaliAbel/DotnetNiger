@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 
 namespace DotnetNiger.Api.Services.Auth;
 
+/// <summary>Service principal d'authentification gérant la connexion et les sessions utilisateur.</summary>
 public partial class AuthService
 {
     private readonly UserManager<ApplicationUser> _userManager;

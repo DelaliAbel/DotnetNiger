@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité EventMedia.
+/// </summary>
 public class EventMediaConfiguration : IEntityTypeConfiguration<EventMedia>
 {
+    /// <summary>
+    /// Configure les clés, relations et contraintes de la table des médias d'événements.
+    /// </summary>
     public void Configure(EntityTypeBuilder<EventMedia> builder)
     {
         builder.HasKey(e => e.Id);

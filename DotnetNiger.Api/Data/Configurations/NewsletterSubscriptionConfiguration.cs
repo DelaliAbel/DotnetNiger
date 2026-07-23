@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité NewsletterSubscription.
+/// </summary>
 public class NewsletterSubscriptionConfiguration : IEntityTypeConfiguration<NewsletterSubscription>
 {
+    /// <summary>
+    /// Configure les clés et indexes de la table des abonnements newsletter.
+    /// </summary>
     public void Configure(EntityTypeBuilder<NewsletterSubscription> builder)
     {
         builder.HasKey(n => n.Id);

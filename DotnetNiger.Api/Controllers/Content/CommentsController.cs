@@ -6,10 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Api.Controllers.Content;
 
+/// <summary>Contrôleur de gestion des commentaires sur les publications.</summary>
 [ApiController]
 [Route("api/comments")]
 public class CommentsController(ICommentService commentService) : BaseController
 {
+    /// <summary>Récupère les commentaires d'un article par son identifiant.</summary>
     [HttpGet("post/{postId:guid}")]
     public async Task<IActionResult> GetByPostId(Guid postId)
     {
@@ -17,6 +19,7 @@ public class CommentsController(ICommentService commentService) : BaseController
         return Ok(new { Success = true, Data = comments });
     }
 
+    /// <summary>Récupère les commentaires d'un événement par son identifiant.</summary>
     [HttpGet("event/{eventId:guid}")]
     public async Task<IActionResult> GetByEventId(Guid eventId)
     {
@@ -24,6 +27,7 @@ public class CommentsController(ICommentService commentService) : BaseController
         return Ok(new { Success = true, Data = comments });
     }
 
+    /// <summary>Récupère un commentaire par son identifiant.</summary>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -32,6 +36,7 @@ public class CommentsController(ICommentService commentService) : BaseController
         return Ok(new { Success = true, Data = comment });
     }
 
+    /// <summary>Crée un nouveau commentaire.</summary>
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> Create([FromBody] CreateCommentRequest request)
@@ -43,6 +48,7 @@ public class CommentsController(ICommentService commentService) : BaseController
         return Ok(new { Success = true, Data = comment });
     }
 
+    /// <summary>Met à jour un commentaire existant.</summary>
     [HttpPut("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCommentRequest request)
@@ -53,6 +59,7 @@ public class CommentsController(ICommentService commentService) : BaseController
         return Ok(new { Success = true, Data = comment });
     }
 
+    /// <summary>Supprime un commentaire, optionnellement avec toutes ses réponses.</summary>
     [HttpDelete("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Delete(Guid id, [FromQuery] bool deleteAllReplies = false)

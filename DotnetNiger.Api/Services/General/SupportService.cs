@@ -1,13 +1,13 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using DotnetNiger.Api.Data.Email;
-using DotnetNiger.Api.Data.Email;
 using DotnetNiger.Api.Data.Email.Templates;
 using DotnetNiger.Api.DTOs.Requests;
 using DotnetNiger.Api.DTOs.Responses;
 
 namespace DotnetNiger.Api.Services.General;
 
+/// <summary>Service de gestion des signalements utilisateur envoyés par email.</summary>
 public class SupportService : ISupportService
 {
     private readonly EmailSender _emailSender;
@@ -21,6 +21,7 @@ public class SupportService : ISupportService
         _logger = logger;
     }
 
+    /// <summary>Envoie un signalement de support par email.</summary>
     public async Task<SupportReportResult> ReportAsync(SupportReportRequest request, string userId, string userEmail)
     {
         if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Description))

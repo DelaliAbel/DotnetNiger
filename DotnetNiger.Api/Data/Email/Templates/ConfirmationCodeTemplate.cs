@@ -3,8 +3,14 @@ using DotnetNiger.Api.Entities;
 
 namespace DotnetNiger.Api.Data.Email.Templates;
 
+/// <summary>
+/// Template HTML pour l'email de code de confirmation d'inscription.
+/// </summary>
 public static class ConfirmationCodeTemplate
 {
+    /// <summary>
+    /// Génère le subject, titre et corps HTML du code de confirmation.
+    /// </summary>
     public static (string subject, string title, string body) Render(ApplicationUser user, string code, SmtpOptions smtp, string? confirmationLink = null)
     {
         var linkHtml = confirmationLink != null

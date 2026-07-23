@@ -2,8 +2,14 @@ using DotnetNiger.Api.Data.Email;
 
 namespace DotnetNiger.Api.Data.Email.Templates;
 
+/// <summary>
+/// Template HTML pour l'email d'invitation à rejoindre l'application.
+/// </summary>
 public static class InviteEmailTemplate
 {
+    /// <summary>
+    /// Génère le subject, titre et corps HTML de l'invitation.
+    /// </summary>
     public static (string subject, string title, string body) Render(string inviteUrl, string role, SmtpOptions smtp)
     {
         return (

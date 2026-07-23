@@ -6,12 +6,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.General;
 
+/// <summary>Service de recherche global dans les articles, événements et ressources.</summary>
 public class SearchService : ISearchService
 {
     private readonly DotnetNigerDbContext _db;
 
     public SearchService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Recherche parmi les contenus publiés selon la requête et le type.</summary>
     public async Task<SearchResultResponse> SearchAsync(SearchQueryRequest request)
     {
         var query = (request.Query ?? "").ToLower().Trim();

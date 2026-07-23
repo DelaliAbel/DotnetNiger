@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité PostTag.
+/// </summary>
 public class PostTagConfiguration : IEntityTypeConfiguration<PostTag>
 {
+    /// <summary>
+    /// Configure la clé composite et les relations de la table de liaison articles-tags.
+    /// </summary>
     public void Configure(EntityTypeBuilder<PostTag> builder)
     {
         builder.HasKey(pt => new { pt.PostId, pt.TagId });

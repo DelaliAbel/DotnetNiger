@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+using System.Text;
 using DotnetNiger.Api.Constants;
 using DotnetNiger.Api.Data.Email;
 using DotnetNiger.Api.Entities;
@@ -7,23 +7,30 @@ using DotnetNiger.Api;
 using DotnetNiger.Api.Data;
 using DotnetNiger.Api.Seed;
 using DotnetNiger.Api.Services.Auth;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.OAuth;
-using OpenIddict.Abstractions;
-using OpenIddict.Server.AspNetCore;
-using OpenIddict.Validation.AspNetCore;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+
+// ============================================================
+// BUILD
+// ============================================================
 
 var builder = WebApplication.CreateBuilder(args);
 
+// --- Configuration JWT ---
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
+var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()!;
+
+// --- Controllers + Swagger ---
 builder.Services.AddControllers()
     .AddApplicationPart(typeof(DependencyInjection).Assembly)
-    .AddJsonOptions(options =>
+    .AddJsonOptions(o =>
     {
-        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
-        options.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
+        o.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        o.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
 
 builder.Services.AddEndpointsApiExplorer();
@@ -40,28 +47,21 @@ builder.Services.AddSwaggerGen(options =>
     });
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
+        { new OpenApiSecurityScheme
+          { Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" } },
+          Array.Empty<string>() }
     });
 });
+
 builder.Services.AddMemoryCache();
 
+// --- Base de données ---
 builder.Services.AddDbContext<DotnetNigerDbContext>(options =>
 {
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection"));
-    options.UseOpenIddict();
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
+// --- ASP.NET Core Identity (Rôles natifs Microsoft) ---
 builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
 {
     options.Password.RequireDigit = true;
@@ -72,72 +72,46 @@ builder.Services.AddIdentity<ApplicationUser, ApplicationRole>(options =>
     options.User.RequireUniqueEmail = true;
     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
     options.Lockout.MaxFailedAccessAttempts = 5;
+    options.ClaimsIdentity.RoleClaimType = ClaimTypes.Role;
+    options.ClaimsIdentity.UserNameClaimType = ClaimTypes.Name;
+    options.ClaimsIdentity.EmailClaimType = ClaimTypes.Email;
 })
 .AddEntityFrameworkStores<DotnetNigerDbContext>()
 .AddDefaultTokenProviders();
 
-builder.Services.Configure<SmtpOptions>(
-    builder.Configuration.GetSection("Smtp"));
+// --- SMTP ---
+builder.Services.Configure<SmtpOptions>(builder.Configuration.GetSection("Smtp"));
 
-builder.Services.AddOpenIddict()
-    .AddCore(options =>
-    {
-        options.UseEntityFrameworkCore()
-               .UseDbContext<DotnetNigerDbContext>();
-    })
-    .AddServer(options =>
-    {
-        options.SetTokenEndpointUris("/connect/token");
-        options.SetAuthorizationEndpointUris("/connect/authorize");
-        options.AllowPasswordFlow();
-        options.AllowRefreshTokenFlow();
-        options.AllowAuthorizationCodeFlow();
-        options.RegisterScopes(
-            OpenIddictConstants.Scopes.OpenId,
-            OpenIddictConstants.Scopes.Email,
-            OpenIddictConstants.Scopes.Profile,
-            OpenIddictConstants.Scopes.Roles,
-            OpenIddictConstants.Scopes.OfflineAccess);
-        options.AcceptAnonymousClients();
-        options.AddDevelopmentEncryptionCertificate()
-               .AddDevelopmentSigningCertificate();
-        
-        // Désactiver le cryptage des tokens pour produire des JWT lisibles par le frontend
-        options.DisableAccessTokenEncryption();
-
-        options.UseAspNetCore()
-               .EnableTokenEndpointPassthrough()
-               .EnableAuthorizationEndpointPassthrough()
-               .DisableTransportSecurityRequirement();
-
-    })
-    .AddValidation(options =>
-    {
-        options.UseLocalServer();
-        options.UseAspNetCore();
-        options.Configure(opt =>
-        {
-            opt.TokenValidationParameters.RoleClaimType = "role";
-        });
-    });
-
-builder.Services.AddIdentityServices();
-
-builder.Services.Configure<AuthenticationOptions>(options =>
+// --- Authentification JWT Bearer (remplace OpenIddict Validation) ---
+builder.Services.AddAuthentication(options =>
 {
-    options.DefaultAuthenticateScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings.Issuer,
+        ValidAudience = jwtSettings.Audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
+        RoleClaimType = ClaimTypes.Role,
+        NameClaimType = ClaimTypes.Name
+    };
 });
 
+// --- Google / GitHub / Microsoft OAuth ---
 var googleSection = builder.Configuration.GetSection("Authentication:Google");
-var googleClientId = googleSection["ClientId"];
-var googleClientSecret = googleSection["ClientSecret"];
-if (!string.IsNullOrEmpty(googleClientId) && googleClientId != "__SET_VIA_USER_SECRETS__" && googleClientSecret != null)
+if (!string.IsNullOrEmpty(googleSection["ClientId"]) && googleSection["ClientId"] != "__SET_VIA_USER_SECRETS__")
 {
     builder.Services.AddAuthentication().AddGoogle("Google", options =>
     {
-        options.ClientId = googleClientId;
-        options.ClientSecret = googleClientSecret;
+        options.ClientId = googleSection["ClientId"]!;
+        options.ClientSecret = googleSection["ClientSecret"]!;
         options.SignInScheme = IdentityConstants.ExternalScheme;
         options.Scope.Add("profile");
         options.Scope.Add("email");
@@ -145,40 +119,49 @@ if (!string.IsNullOrEmpty(googleClientId) && googleClientId != "__SET_VIA_USER_S
 }
 
 var githubSection = builder.Configuration.GetSection("Authentication:GitHub");
-var githubClientId = githubSection["ClientId"];
-var githubClientSecret = githubSection["ClientSecret"];
-if (!string.IsNullOrEmpty(githubClientId) && githubClientId != "__SET_VIA_USER_SECRETS__" && githubClientSecret != null)
+if (!string.IsNullOrEmpty(githubSection["ClientId"]) && githubSection["ClientId"] != "__SET_VIA_USER_SECRETS__")
 {
     builder.Services.AddAuthentication().AddOAuth("GitHub", options =>
     {
-        options.ClientId = githubClientId;
-        options.ClientSecret = githubClientSecret;
+        options.ClientId = githubSection["ClientId"]!;
+        options.ClientSecret = githubSection["ClientSecret"]!;
         options.CallbackPath = "/signin-github";
         options.AuthorizationEndpoint = "https://github.com/login/oauth/authorize";
         options.TokenEndpoint = "https://github.com/login/oauth/access_token";
         options.UserInformationEndpoint = "https://api.github.com/user";
         options.SignInScheme = IdentityConstants.ExternalScheme;
         options.Scope.Add("user:email");
-        options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "id");
-        options.ClaimActions.MapJsonKey(ClaimTypes.Name, "login");
-        options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
+
+        options.Events.OnCreatingTicket = async context =>
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", context.AccessToken);
+            using var response = await context.Backchannel.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+            var user = System.Text.Json.JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            if (user.RootElement.TryGetProperty("id", out var id))
+                context.Identity?.AddClaim(new Claim(ClaimTypes.NameIdentifier, id.ToString() ?? ""));
+            if (user.RootElement.TryGetProperty("login", out var login))
+                context.Identity?.AddClaim(new Claim(ClaimTypes.Name, login.ToString() ?? ""));
+            if (user.RootElement.TryGetProperty("email", out var email) && !email.ValueKind.Equals(System.Text.Json.JsonValueKind.Null))
+                context.Identity?.AddClaim(new Claim(ClaimTypes.Email, email.ToString() ?? ""));
+        };
     });
 }
 
 var microsoftSection = builder.Configuration.GetSection("Authentication:Microsoft");
-var microsoftClientId = microsoftSection["ClientId"];
-var microsoftClientSecret = microsoftSection["ClientSecret"];
-if (!string.IsNullOrEmpty(microsoftClientId) && microsoftClientId != "__SET_VIA_USER_SECRETS__" && microsoftClientSecret != null)
+if (!string.IsNullOrEmpty(microsoftSection["ClientId"]) && microsoftSection["ClientId"] != "__SET_VIA_USER_SECRETS__")
 {
     builder.Services.AddAuthentication().AddMicrosoftAccount("Microsoft", options =>
     {
-        options.ClientId = microsoftClientId;
-        options.ClientSecret = microsoftClientSecret;
+        options.ClientId = microsoftSection["ClientId"]!;
+        options.ClientSecret = microsoftSection["ClientSecret"]!;
         options.SignInScheme = IdentityConstants.ExternalScheme;
         options.Scope.Add("https://graph.microsoft.com/User.Read");
     });
 }
 
+// --- Cookie auth pour le scheme externe (Google/GitHub) ---
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Events.OnRedirectToLogin = context =>
@@ -194,8 +177,9 @@ builder.Services.ConfigureApplicationCookie(options =>
         return context.Response.WriteAsJsonAsync(new { error = "Accès refusé" });
     };
 });
-builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
+// --- Authorization (Rôles natifs + Permissions custom) ---
+builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 builder.Services.AddAuthorization(options =>
 {
     foreach (var permission in Permissions.All)
@@ -203,6 +187,7 @@ builder.Services.AddAuthorization(options =>
             policy.Requirements.Add(new PermissionRequirement(permission)));
 });
 
+// --- CORS ---
 builder.Services.AddCors(options =>
 {
     var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Value;
@@ -213,15 +198,18 @@ builder.Services.AddCors(options =>
     options.AddDefaultPolicy(policy =>
     {
         if (origins.Length != 0)
-            policy.WithOrigins(origins)
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
+            policy.WithOrigins(origins).AllowAnyMethod().AllowAnyHeader().AllowCredentials();
         else
-            policy.AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
+            policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
     });
 });
+
+// --- Services métier ---
+builder.Services.AddIdentityServices();
+
+// ============================================================
+// PIPELINE
+// ============================================================
 
 var app = builder.Build();
 
@@ -231,9 +219,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
     await SeedData.InitializeAsync(app.Services);
-    await SeedData.BootstrapOpenIddictAsync(app.Services);
 }
 
+// Middleware d'erreur JSON pour les codes HTTP non gérés
 app.Use(async (context, next) =>
 {
     await next();
@@ -256,7 +244,6 @@ app.Use(async (context, next) =>
 app.UseStaticFiles();
 app.UseHttpsRedirection();
 app.UseCors();
-
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

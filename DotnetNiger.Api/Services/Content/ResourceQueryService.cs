@@ -5,12 +5,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.Content;
 
+/// <summary>Service de consultation des ressources (requêtes en lecture seule).</summary>
 public class ResourceQueryService : IResourceQueryService
 {
     private readonly DotnetNigerDbContext _db;
 
     public ResourceQueryService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Récupère la liste paginée des ressources avec filtres.</summary>
     public async Task<PaginatedResponse<ResourceResponse>> GetAllAsync(
         string? resourceType, string? level, string? query,
         string? tag, Guid? categoryId, int page, int pageSize, Guid? after = null, Guid? authorId = null)
@@ -32,18 +34,21 @@ public class ResourceQueryService : IResourceQueryService
             items.Select(MapToResponse).ToList(), total, page, pageSize);
     }
 
+    /// <summary>Récupère une ressource par identifiant.</summary>
     public async Task<ResourceResponse?> GetByIdAsync(Guid id)
     {
         var r = await _db.Resources.FindAsync(id);
         return r == null ? null : MapToResponse(r);
     }
 
+    /// <summary>Récupère une ressource par slug.</summary>
     public async Task<ResourceResponse?> GetBySlugAsync(string slug)
     {
         var r = await _db.Resources.FirstOrDefaultAsync(res => res.Slug == slug);
         return r == null ? null : MapToResponse(r);
     }
 
+    /// <summary>Récupère la liste des types de ressources disponibles.</summary>
     public async Task<List<string>> GetResourceTypesAsync()
     {
         return await _db.Resources.AsNoTracking()
@@ -54,6 +59,7 @@ public class ResourceQueryService : IResourceQueryService
             .ToListAsync();
     }
 
+    /// <summary>Récupère la liste des niveaux de difficulté disponibles.</summary>
     public async Task<List<string>> GetLevelsAsync()
     {
         return await _db.Resources.AsNoTracking()

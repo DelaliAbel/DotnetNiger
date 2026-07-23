@@ -6,12 +6,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.Content;
 
+/// <summary>Service de création, modification et suppression des ressources.</summary>
 public class ResourceCommandService : IResourceCommandService
 {
     private readonly DotnetNigerDbContext _db;
 
     public ResourceCommandService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Crée une nouvelle ressource avec ses tags et catégories.</summary>
     public async Task<ResourceResponse> CreateAsync(CreateResourceRequest request, Guid authorId, bool isAdmin, bool isCollaborator)
     {
         var resource = new Resource
@@ -35,6 +37,7 @@ public class ResourceCommandService : IResourceCommandService
         return MapToResponse(resource);
     }
 
+    /// <summary>Met à jour une ressource existante.</summary>
     public async Task<ResourceResponse?> UpdateAsync(Guid id, UpdateResourceRequest request, Guid userId, bool isAdmin)
     {
         var resource = await _db.Resources
@@ -65,6 +68,7 @@ public class ResourceCommandService : IResourceCommandService
         return MapToResponse(resource);
     }
 
+    /// <summary>Supprime une ressource (auteur ou admin uniquement).</summary>
     public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin)
     {
         var resource = await _db.Resources.FindAsync(id);
@@ -76,6 +80,7 @@ public class ResourceCommandService : IResourceCommandService
         return true;
     }
 
+    /// <summary>Incrémente le compteur de vues d'une ressource.</summary>
     public async Task<ResourceResponse?> IncrementViewCountAsync(Guid id)
     {
         var resource = await _db.Resources.FindAsync(id);
@@ -86,6 +91,7 @@ public class ResourceCommandService : IResourceCommandService
         return MapToResponse(resource);
     }
 
+    /// <summary>Soumet une ressource pour modération.</summary>
     public async Task SubmitForReviewAsync(Guid id)
     {
         var resource = await _db.Resources.FindAsync(id)
@@ -95,6 +101,7 @@ public class ResourceCommandService : IResourceCommandService
         await _db.SaveChangesAsync();
     }
 
+    /// <summary>Publie une ressource.</summary>
     public async Task PublishAsync(Guid id)
     {
         var resource = await _db.Resources.FindAsync(id)

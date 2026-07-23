@@ -6,12 +6,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.Admin;
 
+/// <summary>Service de gestion des permissions et de leur assignation aux rôles.</summary>
 public class PermissionService : IPermissionService
 {
     private readonly DotnetNigerDbContext _db;
 
     public PermissionService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Crée une nouvelle permission.</summary>
     public async Task<PermissionResponse> CreateAsync(CreatePermissionRequest request)
     {
         var permission = new Permission
@@ -25,6 +27,7 @@ public class PermissionService : IPermissionService
         return MapToResponse(permission);
     }
 
+    /// <summary>Récupère la liste paginée des permissions.</summary>
     public async Task<PaginatedResponse<PermissionResponse>> GetAllAsync(PaginationQuery pagination)
     {
         var query = _db.Permissions.AsNoTracking();
@@ -41,6 +44,7 @@ public class PermissionService : IPermissionService
         return new PaginatedResponse<PermissionResponse>(items, totalCount, pagination.EnsurePage, pagination.EnsurePageSize);
     }
 
+    /// <summary>Récupère les permissions groupées par catégorie.</summary>
     public async Task<List<PermissionGroupResponse>> GetGroupedAsync(int page = 1, int pageSize = 200)
     {
         var query = _db.Permissions.AsNoTracking();
@@ -60,12 +64,14 @@ public class PermissionService : IPermissionService
             .ToList();
     }
 
+    /// <summary>Récupère une permission par son identifiant.</summary>
     public async Task<PermissionResponse?> GetByIdAsync(Guid id)
     {
         var permission = await _db.Permissions.FindAsync(id);
         return permission == null ? null : MapToResponse(permission);
     }
 
+    /// <summary>Supprime une permission par son identifiant.</summary>
     public async Task DeleteAsync(Guid id)
     {
         var permission = await _db.Permissions.FindAsync(id);
@@ -76,6 +82,7 @@ public class PermissionService : IPermissionService
         }
     }
 
+    /// <summary>Assigne des permissions à un rôle en remplaçant les existantes.</summary>
     public async Task AssignToRoleAsync(Guid roleId, List<Guid> permissionIds)
     {
         var role = await _db.Roles.FindAsync(roleId);
@@ -98,6 +105,7 @@ public class PermissionService : IPermissionService
         await _db.SaveChangesAsync();
     }
 
+    /// <summary>Récupère les noms des permissions d'un utilisateur via ses rôles.</summary>
     public async Task<List<string>> GetUserPermissionsAsync(Guid userId)
     {
         var roleIds = await _db.UserRoles

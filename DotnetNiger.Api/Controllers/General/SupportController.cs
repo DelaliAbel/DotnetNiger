@@ -5,11 +5,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Api.Controllers.General;
 
+/// <summary>Contrôleur de support technique pour les signalements.</summary>
 [ApiController]
 [Route("api/support")]
 [Authorize]
 public class SupportController(ISupportService supportService) : ControllerBase
 {
+    /// <summary>Envoie un signalement de support.</summary>
     [HttpPost("report")]
     public async Task<IActionResult> Report([FromBody] SupportReportRequest request)
     {

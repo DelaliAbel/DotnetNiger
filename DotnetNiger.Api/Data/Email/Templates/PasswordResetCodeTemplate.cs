@@ -3,8 +3,14 @@ using DotnetNiger.Api.Entities;
 
 namespace DotnetNiger.Api.Data.Email.Templates;
 
+/// <summary>
+/// Template HTML pour l'email de code de réinitialisation de mot de passe.
+/// </summary>
 public static class PasswordResetCodeTemplate
 {
+    /// <summary>
+    /// Génère le subject, titre et corps HTML du code de réinitialisation.
+    /// </summary>
     public static (string subject, string title, string body) Render(ApplicationUser user, string resetCode, SmtpOptions smtp)
     {
         return (

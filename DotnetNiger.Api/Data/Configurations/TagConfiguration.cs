@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité Tag.
+/// </summary>
 public class TagConfiguration : IEntityTypeConfiguration<Tag>
 {
+    /// <summary>
+    /// Configure les clés et indexes de la table des tags.
+    /// </summary>
     public void Configure(EntityTypeBuilder<Tag> builder)
     {
         builder.HasKey(t => t.Id);

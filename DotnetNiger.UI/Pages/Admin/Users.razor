@@ -4,9 +4,11 @@
 @using DotnetNiger.UI.Components.Admin.Cards
 @using DotnetNiger.UI.Components.Admin.Shared
 @using DotnetNiger.UI.Services.Contracts
+@using DotnetNiger.UI.Helpers
 @inject IUserService UserService
 @inject ICertificateAdminService CertificateAdminService
 @inject INotificationService NotificationService
+@inject IUserStateService UserStateService
 @inject NavigationManager Navigation
 @inject IToastService ToastService
 @inject IUploadService UploadService
@@ -21,11 +23,14 @@
                 <h3 class="mt-2 font-bold text-subtitle">Comptes, demandes en attente et actions d'administration.</h3>
             </div>
 
-            <button @onclick="OpenCreateAsync"
-                    class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(91,77,245,0.25)] transition hover:brightness-95">
-                <i class="fas fa-plus text-sm"></i>
-                <span class="hidden sm:block">Nouveau</span>
-            </button>
+            @if (isSuperAdmin)
+            {
+                <button @onclick="OpenCreateAsync"
+                        class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(91,77,245,0.25)] transition hover:brightness-95">
+                    <i class="fas fa-plus text-sm"></i>
+                    <span class="hidden sm:block">Nouveau</span>
+                </button>
+            }
         </div>
 
         <div class="mb-6 grid gap-4 sm:grid-cols-3">
@@ -302,6 +307,7 @@
     private string searchQuery = string.Empty;
     private string selectedRole = string.Empty;
     private string editPrimaryRole = "User";
+    private bool isSuperAdmin;
 
     private List<UserDto> allUsers = new();
     private List<UserDto> filteredUsers = new();
@@ -326,6 +332,12 @@
 
     protected override async Task OnInitializedAsync()
     {
+        if (UserStateService.CurrentUser is null)
+            await UserStateService.LoadUserFromStorageAsync();
+
+        isSuperAdmin = UserStateService.CurrentUser?.Roles?.Any(r =>
+            r == RoleConstants.SuperAdmin) ?? false;
+
         await ReloadAsync();
     }
 

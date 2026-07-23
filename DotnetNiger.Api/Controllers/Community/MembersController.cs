@@ -6,10 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Api.Controllers.Community;
 
+/// <summary>Contrôleur de gestion des membres de la communauté.</summary>
 [ApiController]
 [Route("api/members")]
 public class MembersController(IMemberDirectoryService memberService) : BaseController
 {
+    /// <summary>Récupère la liste paginée des membres avec filtres optionnels.</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] string? query, [FromQuery] string? country, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
@@ -19,6 +21,7 @@ public class MembersController(IMemberDirectoryService memberService) : BaseCont
         return Ok(new { Success = true, Data = result });
     }
 
+    /// <summary>Récupère les membres de l'équipe.</summary>
     [HttpGet("team")]
     public async Task<IActionResult> GetTeam()
     {
@@ -26,6 +29,7 @@ public class MembersController(IMemberDirectoryService memberService) : BaseCont
         return Ok(new { Success = true, Data = members });
     }
 
+    /// <summary>Récupère un membre par son identifiant.</summary>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -34,6 +38,7 @@ public class MembersController(IMemberDirectoryService memberService) : BaseCont
         return Ok(new { Success = true, Data = member });
     }
 
+    /// <summary>Crée le profil de membre de l'utilisateur connecté.</summary>
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> Create([FromBody] CreateMemberRequest request)
@@ -50,6 +55,7 @@ public class MembersController(IMemberDirectoryService memberService) : BaseCont
         }
     }
 
+    /// <summary>Met à jour le profil de membre de l'utilisateur connecté.</summary>
     [HttpPut("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateMemberRequest request)
@@ -65,6 +71,7 @@ public class MembersController(IMemberDirectoryService memberService) : BaseCont
         }
     }
 
+    /// <summary>Supprime le profil de membre de l'utilisateur connecté.</summary>
     [HttpDelete("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Delete(Guid id)

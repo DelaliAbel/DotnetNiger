@@ -7,6 +7,7 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.Admin;
 
+/// <summary>Service de gestion des rôles et de leur assignation aux utilisateurs.</summary>
 public class RoleService : IRoleService
 {
     private readonly RoleManager<ApplicationRole> _roleManager;
@@ -21,6 +22,7 @@ public class RoleService : IRoleService
         _db = db;
     }
 
+    /// <summary>Crée un nouveau rôle.</summary>
     public async Task<RoleResponse> CreateAsync(CreateRoleRequest request)
     {
         var role = new ApplicationRole
@@ -34,6 +36,7 @@ public class RoleService : IRoleService
         return new RoleResponse(role.Id, role.Name!, role.Description, 0);
     }
 
+    /// <summary>Récupère la liste paginée des rôles avec le nombre d'utilisateurs.</summary>
     public async Task<PaginatedResponse<RoleResponse>> GetAllAsync(PaginationQuery pagination)
     {
         var query = _db.Roles.AsNoTracking();
@@ -62,6 +65,7 @@ public class RoleService : IRoleService
         return new PaginatedResponse<RoleResponse>(items, totalCount, pagination.EnsurePage, pagination.EnsurePageSize);
     }
 
+    /// <summary>Met à jour la description d'un rôle.</summary>
     public async Task<RoleResponse> UpdateAsync(Guid id, UpdateRoleRequest request)
     {
         var role = await _roleManager.FindByIdAsync(id.ToString());
@@ -76,12 +80,14 @@ public class RoleService : IRoleService
         return new RoleResponse(role.Id, role.Name!, role.Description, count);
     }
 
+    /// <summary>Supprime un rôle par son identifiant.</summary>
     public async Task DeleteAsync(Guid id)
     {
         var role = await _roleManager.FindByIdAsync(id.ToString());
         if (role != null) await _roleManager.DeleteAsync(role);
     }
 
+    /// <summary>Récupère un rôle par son identifiant avec le nombre d'utilisateurs.</summary>
     public async Task<RoleResponse?> GetByIdAsync(Guid id)
     {
         var role = await _roleManager.FindByIdAsync(id.ToString());
@@ -90,6 +96,7 @@ public class RoleService : IRoleService
         return new RoleResponse(role.Id, role.Name!, role.Description, count);
     }
 
+    /// <summary>Assigne un rôle à un utilisateur en remplaçant les rôles existants.</summary>
     public async Task AssignToUserAsync(Guid userId, Guid roleId)
     {
         var user = await _userManager.FindByIdAsync(userId.ToString());
@@ -102,6 +109,7 @@ public class RoleService : IRoleService
         await _userManager.AddToRoleAsync(user, role.Name!);
     }
 
+    /// <summary>Retire un rôle à un utilisateur.</summary>
     public async Task RemoveFromUserAsync(Guid userId, Guid roleId)
     {
         var user = await _userManager.FindByIdAsync(userId.ToString());
@@ -111,6 +119,7 @@ public class RoleService : IRoleService
         await _userManager.RemoveFromRoleAsync(user, role.Name!);
     }
 
+    /// <summary>Récupère les rôles assignés à un utilisateur.</summary>
     public async Task<List<RoleResponse>> GetUserRolesAsync(Guid userId)
     {
         var user = await _userManager.FindByIdAsync(userId.ToString());

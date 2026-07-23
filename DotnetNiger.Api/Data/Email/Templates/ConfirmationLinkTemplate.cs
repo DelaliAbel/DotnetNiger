@@ -3,8 +3,14 @@ using DotnetNiger.Api.Entities;
 
 namespace DotnetNiger.Api.Data.Email.Templates;
 
+/// <summary>
+/// Template HTML pour l'email de confirmation par lien.
+/// </summary>
 public static class ConfirmationLinkTemplate
 {
+    /// <summary>
+    /// Génère le subject, titre et corps HTML du lien de confirmation.
+    /// </summary>
     public static (string subject, string title, string body) Render(ApplicationUser user, string confirmationLink, SmtpOptions smtp)
     {
         return (

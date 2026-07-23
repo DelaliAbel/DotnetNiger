@@ -5,12 +5,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.Content;
 
+/// <summary>Service de gestion des inscriptions aux événements.</summary>
 public class EventRegistrationService : IEventRegistrationService
 {
     private readonly DotnetNigerDbContext _db;
 
     public EventRegistrationService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Inscrit un utilisateur à un événement publié.</summary>
     public async Task<EventRegistrationResponse?> RegisterAsync(Guid eventId, Guid userId, string userName, string? avatarUrl)
     {
         var ev = await _db.Events.FindAsync(eventId);
@@ -44,6 +46,7 @@ public class EventRegistrationService : IEventRegistrationService
         };
     }
 
+    /// <summary>Annule l'inscription d'un utilisateur à un événement.</summary>
     public async Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId)
     {
         var registration = await _db.EventRegistrations

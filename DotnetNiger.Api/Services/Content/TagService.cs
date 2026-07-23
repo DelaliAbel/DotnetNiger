@@ -5,12 +5,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.Content;
 
+/// <summary>Service de gestion des tags pour le contenu.</summary>
 public class TagService : ITagService
 {
     private readonly DotnetNigerDbContext _db;
 
     public TagService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Récupère la liste de tous les tags.</summary>
     public async Task<List<TagResponse>> GetAllAsync()
     {
         return await _db.Tags.AsNoTracking()
@@ -25,18 +27,21 @@ public class TagService : ITagService
             .ToListAsync();
     }
 
+    /// <summary>Récupère un tag par identifiant.</summary>
     public async Task<TagResponse?> GetByIdAsync(Guid id)
     {
         var tag = await _db.Tags.FindAsync(id);
         return tag == null ? null : MapToResponse(tag);
     }
 
+    /// <summary>Récupère un tag par slug.</summary>
     public async Task<TagResponse?> GetBySlugAsync(string slug)
     {
         var tag = await _db.Tags.FirstOrDefaultAsync(t => t.Slug == slug);
         return tag == null ? null : MapToResponse(tag);
     }
 
+    /// <summary>Crée un nouveau tag.</summary>
     public async Task<TagResponse> CreateAsync(string name)
     {
         var tag = new Tag
@@ -50,6 +55,7 @@ public class TagService : ITagService
         return MapToResponse(tag);
     }
 
+    /// <summary>Met à jour le nom d'un tag.</summary>
     public async Task<TagResponse?> UpdateAsync(Guid id, string name)
     {
         var tag = await _db.Tags.FindAsync(id);
@@ -60,6 +66,7 @@ public class TagService : ITagService
         return MapToResponse(tag);
     }
 
+    /// <summary>Supprime un tag.</summary>
     public async Task<bool> DeleteAsync(Guid id)
     {
         var tag = await _db.Tags.FindAsync(id);

@@ -4,10 +4,12 @@ using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Api.Services.Auth;
 
+/// <summary>Générateur de codes aléatoires pour les confirmations.</summary>
 internal static class CodeGenerator
 {
     private static readonly char[] CodeChars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".ToCharArray();
 
+    /// <summary>Génère un code aléatoire de 6 caractères.</summary>
     public static string Generate()
     {
         var bytes = System.Security.Cryptography.RandomNumberGenerator.GetBytes(6);
@@ -18,8 +20,10 @@ internal static class CodeGenerator
     }
 }
 
+/// <summary>Gestion de l'historique des connexions utilisateur.</summary>
 public partial class AuthService
 {
+    /// <summary>Enregistre une tentative de connexion dans l'historique.</summary>
     public async Task RecordLoginAsync(Guid userId, string ipAddress, string userAgent, bool success, string? failureReason = null)
     {
         var entry = new LoginHistory
@@ -35,6 +39,7 @@ public partial class AuthService
         await _db.SaveChangesAsync();
     }
 
+    /// <summary>Récupère l'historique des connexions d'un utilisateur avec pagination.</summary>
     public async Task<object> GetLoginHistoryAsync(Guid userId, int page, int pageSize)
     {
         var query = _db.LoginHistories.Where(h => h.UserId == userId);

@@ -5,12 +5,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.General;
 
+/// <summary>Service de gestion des paramètres du site (CRUD clé/valeur).</summary>
 public class SettingsService : ISettingsService
 {
     private readonly DotnetNigerDbContext _db;
 
     public SettingsService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Récupère tous les paramètres du site.</summary>
     public async Task<List<SiteSettingResponse>> GetAllAsync()
     {
         return await _db.SiteSettings.AsNoTracking()
@@ -25,12 +27,14 @@ public class SettingsService : ISettingsService
             .ToListAsync();
     }
 
+    /// <summary>Récupère un paramètre par sa clé.</summary>
     public async Task<SiteSettingResponse?> GetByKeyAsync(string key)
     {
         var setting = await _db.SiteSettings.FindAsync(key);
         return setting == null ? null : MapToResponse(setting);
     }
 
+    /// <summary>Définit ou met à jour un paramètre par clé/valeur.</summary>
     public async Task<SiteSettingResponse> SetAsync(string key, string value)
     {
         var setting = await _db.SiteSettings.FindAsync(key);
@@ -54,12 +58,14 @@ public class SettingsService : ISettingsService
         return MapToResponse(setting);
     }
 
+    /// <summary>Définit plusieurs paramètres en une seule opération.</summary>
     public async Task SetBatchAsync(Dictionary<string, string> settings)
     {
         foreach (var (key, value) in settings)
             await SetAsync(key, value);
     }
 
+    /// <summary>Supprime un paramètre par sa clé.</summary>
     public async Task<bool> DeleteAsync(string key)
     {
         var setting = await _db.SiteSettings.FindAsync(key);

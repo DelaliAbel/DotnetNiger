@@ -112,7 +112,7 @@ else
     builder.Services.AddScoped<IStatsService>(sp => new ApiStatsService(sp.GetRequiredService<HttpClient>()));
     builder.Services.AddScoped<ISettingsService>(sp => new ApiSettingsService(sp.GetRequiredService<HttpClient>()));
     builder.Services.AddScoped<ICertificateAdminService>(sp => new ApiCertificateAdminService(sp.GetRequiredService<HttpClient>()));
-    builder.Services.AddScoped<IPermissionService>(sp => new PermissionService(sp.GetRequiredService<HttpClient>()));
+    builder.Services.AddScoped<IPermissionService>(sp => new PermissionService(sp.GetRequiredService<CustomAuthStateProvider>()));
 }
 
 await builder.Build().RunAsync();

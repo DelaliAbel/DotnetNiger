@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DotnetNiger.Api.Services.User;
 
+/// <summary>Service en arrière-plan traitant périodiquement les suppressions de compte différées.</summary>
 public class DeletionProcessorService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
@@ -15,6 +16,7 @@ public class DeletionProcessorService : BackgroundService
         _logger = logger;
     }
 
+    /// <summary>Boucle principale exécutant le traitement des suppressions chaque heure.</summary>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested)

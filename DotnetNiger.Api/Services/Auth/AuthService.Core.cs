@@ -5,8 +5,10 @@ using Microsoft.AspNetCore.Identity;
 
 namespace DotnetNiger.Api.Services.Auth;
 
+/// <summary>Validation des identifiants et gestion de la connexion utilisateur.</summary>
 public partial class AuthService
 {
+    /// <summary>Valide les identifiants de connexion et retourne l'utilisateur avec ses rôles.</summary>
     public async Task<(ApplicationUser user, IList<string> roles)> ValidateCredentialsAsync(
         string email, string password)
     {

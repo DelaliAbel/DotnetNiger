@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité Category.
+/// </summary>
 public class CategoryConfiguration : IEntityTypeConfiguration<Category>
 {
+    /// <summary>
+    /// Configure les clés, indexes et contraintes de la table des catégories.
+    /// </summary>
     public void Configure(EntityTypeBuilder<Category> builder)
     {
         builder.HasKey(c => c.Id);

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Api.Controllers.Content;
 
+/// <summary>Contrôleur de gestion des événements.</summary>
 [ApiController]
 [Route("api/events")]
 public class EventsController(
@@ -14,6 +15,7 @@ public class EventsController(
     IEventRegistrationService eventRegistration,
     IEventModerationService eventModeration) : BaseController
 {
+    /// <summary>Récupère la liste paginée des événements avec filtres optionnels.</summary>
     [HttpGet]
     [AllowAnonymous]
     public async Task<IActionResult> GetAll([FromQuery] string? status, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -24,6 +26,7 @@ public class EventsController(
         return Ok(new { Success = true, Data = result });
     }
 
+    /// <summary>Récupère un événement par son identifiant.</summary>
     [HttpGet("{id:guid}")]
     [AllowAnonymous]
     public async Task<IActionResult> GetById(Guid id)
@@ -33,6 +36,7 @@ public class EventsController(
         return Ok(new { Success = true, Data = ev });
     }
 
+    /// <summary>Crée un nouvel événement.</summary>
     [HttpPost]
     [Authorize]
     public async Task<IActionResult> Create([FromBody] CreateEventRequest request)
@@ -49,6 +53,7 @@ public class EventsController(
         }
     }
 
+    /// <summary>Met à jour un événement existant.</summary>
     [HttpPut("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateEventRequest request)
@@ -69,6 +74,7 @@ public class EventsController(
         }
     }
 
+    /// <summary>Supprime un événement.</summary>
     [HttpDelete("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Delete(Guid id)
@@ -78,6 +84,7 @@ public class EventsController(
         return Ok(new { Success = true, Message = Messages.Event.Deleted });
     }
 
+    /// <summary>Inscrit un utilisateur à un événement.</summary>
     [HttpPost("registrations")]
     [Authorize]
     public async Task<IActionResult> Register([FromBody] RegisterEventRequest request)
@@ -88,6 +95,7 @@ public class EventsController(
         return Ok(new { Success = true, Data = result });
     }
 
+    /// <summary>Annule l'inscription d'un utilisateur à un événement.</summary>
     [HttpDelete("{eventId:guid}/registrations")]
     [Authorize]
     public async Task<IActionResult> CancelRegistration(Guid eventId)
@@ -97,6 +105,7 @@ public class EventsController(
         return Ok(new { Success = true, Message = Messages.Event.RegistrationCancelled });
     }
 
+    /// <summary>Récupère les inscriptions d'un événement.</summary>
     [HttpGet("{eventId:guid}/registrations")]
     [Authorize]
     public async Task<IActionResult> GetRegistrations(Guid eventId)
@@ -105,6 +114,7 @@ public class EventsController(
         return Ok(new { Success = true, Data = registrations });
     }
 
+    /// <summary>Récupère les événements en attente de modération.</summary>
     [HttpGet("pending")]
     [Authorize(Policy = "content.events.moderate")]
     public async Task<IActionResult> GetPending([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -114,6 +124,7 @@ public class EventsController(
         return Ok(new { Success = true, Data = await eventQuery.GetPendingEventsAsync(page, pageSize) });
     }
 
+    /// <summary>Publie un événement (le rend visible).</summary>
     [HttpPatch("{id:guid}/publish")]
     [Authorize(Policy = "content.events.moderate")]
     public async Task<IActionResult> Publish(Guid id)
@@ -123,6 +134,7 @@ public class EventsController(
         return Ok(new { Success = true, Data = ev });
     }
 
+    /// <summary>Dépublie un événement (le rend invisible).</summary>
     [HttpPatch("{id:guid}/unpublish")]
     [Authorize(Policy = "content.events.moderate")]
     public async Task<IActionResult> Unpublish(Guid id)
@@ -132,6 +144,7 @@ public class EventsController(
         return Ok(new { Success = true, Data = ev });
     }
 
+    /// <summary>Approuve un événement soumis.</summary>
     [HttpPatch("{id:guid}/approve")]
     [Authorize(Policy = "content.events.approve")]
     public async Task<IActionResult> Approve(Guid id)
@@ -141,6 +154,7 @@ public class EventsController(
         return Ok(new { Success = true, Data = ev });
     }
 
+    /// <summary>Rejette un événement soumis avec une raison.</summary>
     [HttpPatch("{id:guid}/reject")]
     [Authorize(Policy = "content.events.approve")]
     public async Task<IActionResult> Reject(Guid id, [FromQuery] string reason)

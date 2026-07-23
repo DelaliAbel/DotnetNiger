@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité Comment.
+/// </summary>
 public class CommentConfiguration : IEntityTypeConfiguration<Comment>
 {
+    /// <summary>
+    /// Configure les clés, relations et contraintes de la table des commentaires.
+    /// </summary>
     public void Configure(EntityTypeBuilder<Comment> builder)
     {
         builder.HasKey(c => c.Id);

@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité Post.
+/// </summary>
 public class PostConfiguration : IEntityTypeConfiguration<Post>
 {
+    /// <summary>
+    /// Configure les clés, indexes et relations de la table des articles.
+    /// </summary>
     public void Configure(EntityTypeBuilder<Post> builder)
     {
         builder.HasKey(p => p.Id);

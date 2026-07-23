@@ -6,12 +6,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.Content;
 
+/// <summary>Service de gestion des commentaires sur les articles et événements.</summary>
 public class CommentService : ICommentService
 {
     private readonly DotnetNigerDbContext _db;
 
     public CommentService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Récupère les commentaires racines d'un article.</summary>
     public async Task<List<CommentResponse>> GetByPostIdAsync(Guid postId)
     {
         var comments = await _db.Comments.AsNoTracking()
@@ -21,6 +23,7 @@ public class CommentService : ICommentService
         return comments.Select(MapToResponse).ToList();
     }
 
+    /// <summary>Récupère les commentaires racines d'un événement.</summary>
     public async Task<List<CommentResponse>> GetByEventIdAsync(Guid eventId)
     {
         var comments = await _db.Comments.AsNoTracking()
@@ -30,12 +33,14 @@ public class CommentService : ICommentService
         return comments.Select(MapToResponse).ToList();
     }
 
+    /// <summary>Récupère un commentaire par identifiant.</summary>
     public async Task<CommentResponse?> GetByIdAsync(Guid id)
     {
         var comment = await _db.Comments.FindAsync(id);
         return comment == null ? null : MapToResponse(comment);
     }
 
+    /// <summary>Crée un commentaire sur un article ou un événement.</summary>
     public async Task<CommentResponse> CreateAsync(CreateCommentRequest request, Guid userId, string userName, string? avatar)
     {
         var comment = new Comment
@@ -56,6 +61,7 @@ public class CommentService : ICommentService
         return MapToResponse(comment);
     }
 
+    /// <summary>Met à jour le contenu d'un commentaire (auteur uniquement).</summary>
     public async Task<CommentResponse?> UpdateAsync(Guid id, UpdateCommentRequest request, Guid userId)
     {
         var comment = await _db.Comments.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
@@ -66,6 +72,7 @@ public class CommentService : ICommentService
         return MapToResponse(comment);
     }
 
+    /// <summary>Supprime un commentaire (auteur ou admin).</summary>
     public async Task<bool> DeleteAsync(Guid id, Guid userId, bool deleteAllReplies)
     {
         var comment = await _db.Comments.FirstOrDefaultAsync(c => c.Id == id && (c.UserId == userId || deleteAllReplies));
@@ -75,6 +82,7 @@ public class CommentService : ICommentService
         return true;
     }
 
+    /// <summary>Récupère tous les commentaires de la plateforme.</summary>
     public async Task<List<CommentResponse>> GetAllAsync()
     {
         var comments = await _db.Comments.AsNoTracking()

@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité Partner.
+/// </summary>
 public class PartnerConfiguration : IEntityTypeConfiguration<Partner>
 {
+    /// <summary>
+    /// Configure les clés et contraintes de la table des partenaires.
+    /// </summary>
     public void Configure(EntityTypeBuilder<Partner> builder)
     {
         builder.HasKey(p => p.Id);

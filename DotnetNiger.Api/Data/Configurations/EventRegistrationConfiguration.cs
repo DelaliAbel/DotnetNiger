@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité EventRegistration.
+/// </summary>
 public class EventRegistrationConfiguration : IEntityTypeConfiguration<EventRegistration>
 {
+    /// <summary>
+    /// Configure les clés et relations de la table des inscriptions aux événements.
+    /// </summary>
     public void Configure(EntityTypeBuilder<EventRegistration> builder)
     {
         builder.HasKey(e => e.Id);

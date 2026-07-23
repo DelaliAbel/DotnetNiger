@@ -4,15 +4,15 @@ using Microsoft.Extensions.Options;
 using DotnetNiger.Api.Constants;
 using DotnetNiger.Api.DTOs.Responses;
 using DotnetNiger.Api.Data.Email;
-using DotnetNiger.Api.Data.Email;
 using DotnetNiger.Api.Entities;
-using DotnetNiger.Api.Interfaces;
+using DotnetNiger.Api.Services.General;
 using DotnetNiger.Api.Data;
 using DotnetNiger.Api.DTOs.Requests;
 
 namespace DotnetNiger.Api.Services.Admin;
 
-public partial class AdminService : IAdminService
+/// <summary>Service d'administration pour la gestion des utilisateurs, rôles, équipes et tableau de bord.</summary>
+public class AdminService : IAdminService
 {
     private readonly DotnetNigerDbContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
@@ -31,6 +31,11 @@ public partial class AdminService : IAdminService
         _auditLog = auditLog;
     }
 
+    // ============================================================
+    // INVITATION
+    // ============================================================
+
+    /// <summary>Envoie une invitation par email avec un rôle assigné.</summary>
     public async Task InviteAsync(string email, string role)
     {
         var existing = await _userManager.FindByEmailAsync(email);
@@ -67,6 +72,11 @@ public partial class AdminService : IAdminService
         return new string(data.Select(b => chars[b % chars.Length]).ToArray()) + "Aa1!";
     }
 
+    // ============================================================
+    // GESTION DES UTILISATEURS
+    // ============================================================
+
+    /// <summary>Met à jour le statut actif/inactif d'un utilisateur.</summary>
     public async Task<bool> UpdateUserStatusAsync(Guid id, bool isActive)
     {
         var user = await _userManager.FindByIdAsync(id.ToString());
@@ -79,6 +89,7 @@ public partial class AdminService : IAdminService
         return result.Succeeded;
     }
 
+    /// <summary>Récupère la liste de tous les utilisateurs avec leurs rôles.</summary>
     public async Task<List<UserResponse>> GetAllUsersAsync()
     {
         var users = await _db.Users.AsNoTracking()
@@ -101,10 +112,13 @@ public partial class AdminService : IAdminService
             u.CreatedAt, rolesByUser.GetValueOrDefault(u.Id, []))).ToList();
     }
 
+    /// <summary>Récupère la liste des utilisateurs (alias de GetAllUsers).</summary>
     public Task<List<UserResponse>> GetUsersAsync() => GetAllUsersAsync();
 
+    /// <summary>Récupère un utilisateur par son identifiant.</summary>
     public Task<UserResponse?> GetUserAsync(Guid id) => GetUserByIdAsync(id);
 
+    /// <summary>Crée un utilisateur avec le rôle admin par défaut.</summary>
     public async Task<UserResponse?> CreateUserAsync(CreateAdminUserRequest request)
     {
         var user = new ApplicationUser
@@ -130,10 +144,24 @@ public partial class AdminService : IAdminService
             user.CreatedAt, roles.ToList());
     }
 
-    public async Task<bool> DeleteUserAsync(Guid id)
+    /// <summary>Supprime un utilisateur. Un admin ne peut pas supprimer un autre admin.
+    /// Un utilisateur ne peut pas se supprimer lui-même.</summary>
+    public async Task<bool> DeleteUserAsync(Guid id, Guid? callerId = null)
     {
         var user = await _userManager.FindByIdAsync(id.ToString());
         if (user is null) return false;
+
+        if (callerId.HasValue && callerId.Value == id)
+            throw new InvalidOperationException("Vous ne pouvez pas supprimer votre propre compte.");
+
+        var targetRoles = await _userManager.GetRolesAsync(user);
+        var isTargetAdmin = targetRoles.Any(r =>
+            r == RoleConstants.Admin || r == RoleConstants.SuperAdmin);
+
+        if (isTargetAdmin)
+            throw new InvalidOperationException(
+                "Un administrateur ne peut pas supprimer un autre administrateur. Seul le SuperAdmin peut effectuer cette action.");
+
         var email = user.Email;
         var result = await _userManager.DeleteAsync(user);
         if (result.Succeeded)
@@ -196,5 +224,143 @@ public partial class AdminService : IAdminService
         return new UserResponse(user.Id, user.Email!, user.FirstName, user.LastName,
             user.AvatarUrl, user.IsActive, user.EmailConfirmed,
             user.CreatedAt, roles.ToList());
+    }
+
+    // ============================================================
+    // ÉQUIPES ET RÔLES
+    // ============================================================
+
+    /// <summary>Met à jour le statut d'appartenance à l'équipe d'un utilisateur.</summary>
+    public async Task<bool> UpdateUserTeamAsync(Guid id, bool isTeamMember, string position)
+    {
+        var user = await _userManager.FindByIdAsync(id.ToString());
+        if (user is null) return false;
+
+        var member = await _db.Members.FirstOrDefaultAsync(m => m.UserId == id);
+        if (member == null)
+        {
+            member = new Member
+            {
+                Id = Guid.NewGuid(),
+                UserId = id,
+                DisplayName = user.FirstName ?? user.Email ?? "",
+                IsTeamMember = isTeamMember,
+                Position = position
+            };
+            _db.Members.Add(member);
+        }
+        else
+        {
+            member.IsTeamMember = isTeamMember;
+            member.Position = position;
+        }
+
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
+    /// <summary>Remplace tous les rôles d'un utilisateur par un nouveau rôle.</summary>
+    public async Task<bool> ReplaceUserRolesAsync(Guid userId, string roleName)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null) return false;
+
+        var currentRoles = await _userManager.GetRolesAsync(user);
+        await _userManager.RemoveFromRolesAsync(user, currentRoles);
+        var result = await _userManager.AddToRoleAsync(user, roleName);
+        return result.Succeeded;
+    }
+
+    /// <summary>Assigne un rôle à un utilisateur en remplaçant les rôles existants.</summary>
+    public async Task<bool> AssignRoleToUserAsync(Guid userId, string roleName)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null) return false;
+
+        var roleExists = await _db.Roles.AnyAsync(r => r.Name == roleName);
+        if (!roleExists) return false;
+
+        var currentRoles = await _userManager.GetRolesAsync(user);
+        if (currentRoles.Contains(roleName)) return true;
+
+        if (currentRoles.Count != 0)
+            await _userManager.RemoveFromRolesAsync(user, currentRoles);
+        var result = await _userManager.AddToRoleAsync(user, roleName);
+        if (result.Succeeded)
+            await _auditLog.LogAsync("User", userId, "AssignRole", $"Rôle {roleName} assigné (remplace {string.Join(", ", currentRoles)})");
+        return result.Succeeded;
+    }
+
+    /// <summary>Retire un rôle spécifique à un utilisateur.</summary>
+    public async Task<bool> RemoveUserRoleAsync(Guid userId, string roleName)
+    {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user is null) return false;
+
+        var roleExists = await _db.Roles.AnyAsync(r => r.Name == roleName);
+        if (!roleExists) return false;
+
+        var result = await _userManager.RemoveFromRoleAsync(user, roleName);
+        if (result.Succeeded)
+            await _auditLog.LogAsync("User", userId, "RemoveRole", $"Rôle {roleName} retiré");
+        return result.Succeeded;
+    }
+
+    // ============================================================
+    // TABLEAU DE BORD
+    // ============================================================
+
+    /// <summary>Récupère les statistiques globales du tableau de bord.</summary>
+    public async Task<DashboardStats> GetDashboardAsync()
+    {
+        var now = DateTime.UtcNow;
+
+        var totalPosts = await _db.Posts.IgnoreQueryFilters().CountAsync();
+        var publishedPosts = await _db.Posts.IgnoreQueryFilters().CountAsync(p => p.Status == PostStatus.Published);
+        var draftPosts = await _db.Posts.IgnoreQueryFilters().CountAsync(p => p.Status == PostStatus.Draft);
+        var totalEvents = await _db.Events.IgnoreQueryFilters().CountAsync();
+        var upcomingEvents = await _db.Events.IgnoreQueryFilters().CountAsync(e => e.StartDate > now);
+        var pastEvents = await _db.Events.IgnoreQueryFilters().CountAsync(e => e.EndDate < now);
+        var pendingEvents = await _db.Events.IgnoreQueryFilters().CountAsync(e => e.Status == EventStatus.PendingReview);
+        var totalResources = await _db.Resources.IgnoreQueryFilters().CountAsync();
+        var totalResourceViews = await _db.Resources.IgnoreQueryFilters().SumAsync(r => r.ViewCount);
+        var membersCount = await _db.Members.IgnoreQueryFilters().CountAsync();
+        var activeNewsletter = await _db.NewsletterSubscriptions.IgnoreQueryFilters().CountAsync(s => s.IsActive);
+        var commentsCount = await _db.Comments.IgnoreQueryFilters().CountAsync();
+        var projectsCount = await _db.Projects.IgnoreQueryFilters().CountAsync();
+        var partnersCount = await _db.Partners.IgnoreQueryFilters().CountAsync();
+        var pendingCertificates = await _db.Certificates.IgnoreQueryFilters().CountAsync(c => c.Status == "Pending");
+
+        return new DashboardStats(
+            totalPosts, publishedPosts, draftPosts,
+            totalEvents, upcomingEvents, pastEvents, pendingEvents,
+            totalResources, totalResourceViews,
+            membersCount, activeNewsletter, commentsCount,
+            projectsCount, partnersCount, pendingCertificates);
+    }
+
+    /// <summary>Récupère les statistiques personnelles d'un collaborateur.</summary>
+    public async Task<DashboardStats> GetCollaboratorDashboardAsync(Guid userId)
+    {
+        var now = DateTime.UtcNow;
+
+        var myPosts = await _db.Posts.CountAsync(p => p.AuthorId == userId);
+        var myPublishedPosts = await _db.Posts.CountAsync(p => p.AuthorId == userId && p.Status == PostStatus.Published);
+        var myDraftPosts = await _db.Posts.CountAsync(p => p.AuthorId == userId && p.Status == PostStatus.Draft);
+        var myEvents = await _db.Events.CountAsync(e => e.OrganizerId == userId);
+        var myUpcomingEvents = await _db.Events.CountAsync(e => e.OrganizerId == userId && e.StartDate > now);
+        var myPastEvents = await _db.Events.CountAsync(e => e.OrganizerId == userId && e.EndDate < now);
+        var myPendingEvents = await _db.Events.CountAsync(e => e.OrganizerId == userId && e.Status == EventStatus.PendingReview);
+        var myResources = await _db.Resources.CountAsync(r => r.AuthorId == userId);
+        var myResourceViews = await _db.Resources.Where(r => r.AuthorId == userId).SumAsync(r => r.ViewCount);
+        var myProjects = await _db.Projects.CountAsync(p => p.CreatedBy == userId);
+        var myPendingCertificates = await _db.Certificates.CountAsync(c => c.UserId == userId && c.Status == "Pending");
+
+        return new DashboardStats(
+            myPosts, myPublishedPosts, myDraftPosts,
+            myEvents, myUpcomingEvents, myPastEvents, myPendingEvents,
+            myResources, myResourceViews,
+            0, 0, 0,
+            myProjects, 0, myPendingCertificates);
     }
 }

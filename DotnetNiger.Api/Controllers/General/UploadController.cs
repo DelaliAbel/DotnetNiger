@@ -5,12 +5,14 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Api.Controllers.General;
 
+/// <summary>Contrôleur d'upload et de gestion des images.</summary>
 [ApiController]
 [Route("api/upload")]
 public class UploadController(IImageProcessingService imageService) : ControllerBase
 {
     private const long MaxFileSize = 4 * 1024 * 1024;
 
+    /// <summary>Upload un fichier image via un formulaire multipart.</summary>
     [HttpPost]
     [RequestSizeLimit(MaxFileSize)]
     public async Task<IActionResult> Upload(IFormFile file, [FromQuery] string type = "Blog")
@@ -31,6 +33,7 @@ public class UploadController(IImageProcessingService imageService) : Controller
         }
     }
 
+    /// <summary>Upload une image encodée en Base64.</summary>
     [HttpPost("base64")]
     [RequestSizeLimit(MaxFileSize)]
     public async Task<IActionResult> UploadBase64([FromBody] UploadBase64Request request)
@@ -60,6 +63,7 @@ public class UploadController(IImageProcessingService imageService) : Controller
         }
     }
 
+    /// <summary>Supprime une image par son chemin.</summary>
     [HttpDelete]
     public IActionResult Delete([FromQuery] string path)
     {

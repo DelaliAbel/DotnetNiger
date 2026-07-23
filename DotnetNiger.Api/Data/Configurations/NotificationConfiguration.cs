@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité Notification.
+/// </summary>
 public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
 {
+    /// <summary>
+    /// Configure les clés et relations de la table des notifications.
+    /// </summary>
     public void Configure(EntityTypeBuilder<Notification> builder)
     {
         builder.HasKey(n => n.Id);

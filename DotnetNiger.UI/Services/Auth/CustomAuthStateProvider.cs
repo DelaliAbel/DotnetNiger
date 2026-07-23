@@ -10,9 +10,10 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
 {
     private readonly IJSRuntime _js;
     private readonly IServiceProvider _serviceProvider;
-    private static readonly AuthenticationState Anonymous =
+    private static AuthenticationState Anonymous =
         new(new ClaimsPrincipal(new ClaimsIdentity()));
 
+    private static readonly SemaphoreSlim _refreshLock = new(1, 1);
     private static Task<AuthDto?>? _pendingRefresh;
 
     private const string AccessTokenKey = "dn_wasm_runtime_registry_key";
@@ -43,7 +44,7 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         var claims = JwtParser.ParseClaimsFromJwt(token);
         var expClaim = claims.FirstOrDefault(c => c.Type == "exp")?.Value;
 
-        if (expClaim != null && long.TryParse(expClaim, out var expUnix))
+                if (expClaim != null && long.TryParse(expClaim, out var expUnix))
         {
             var expDate = DateTimeOffset.FromUnixTimeSeconds(expUnix);
             if (expDate <= DateTimeOffset.UtcNow)
@@ -51,10 +52,15 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
                 var authService = _serviceProvider.GetRequiredService<IAuthService>();
                 AuthDto? refreshed;
 
-                lock (this)
+                await _refreshLock.WaitAsync();
+                try
                 {
                     if (_pendingRefresh is null || _pendingRefresh.IsCompleted)
                         _pendingRefresh = authService.RefreshTokenAsync();
+                }
+                finally
+                {
+                    _refreshLock.Release();
                 }
 
                 try
@@ -67,10 +73,15 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
                     return Anonymous;
                 }
 
-                lock (this)
+                await _refreshLock.WaitAsync();
+                try
                 {
                     if (_pendingRefresh?.IsCompleted == true)
                         _pendingRefresh = null;
+                }
+                finally
+                {
+                    _refreshLock.Release();
                 }
 
                 if (refreshed?.Token?.AccessToken is not null)

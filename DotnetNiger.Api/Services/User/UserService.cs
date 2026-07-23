@@ -9,6 +9,7 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.User;
 
+/// <summary>Service de gestion des utilisateurs (CRUD, mots de passe, rôles).</summary>
 public class UserService : IUserService
 {
     private readonly UserManager<ApplicationUser> _userManager;
@@ -25,6 +26,7 @@ public class UserService : IUserService
         _smtp = smtp.Value;
     }
 
+    /// <summary>Crée un nouvel utilisateur avec un mot de passe et un rôle optionnel.</summary>
     public async Task<UserResponse> CreateAsync(CreateUserRequest request)
     {
         var user = new ApplicationUser
@@ -48,6 +50,7 @@ public class UserService : IUserService
         return MapToResponse(user, roles);
     }
 
+    /// <summary>Récupère un utilisateur par son identifiant avec ses rôles.</summary>
     public async Task<UserResponse?> GetByIdAsync(Guid id)
     {
         var user = await _userManager.FindByIdAsync(id.ToString());
@@ -56,6 +59,7 @@ public class UserService : IUserService
         return MapToResponse(user, roles);
     }
 
+    /// <summary>Récupère la liste paginée des utilisateurs.</summary>
     public async Task<PaginatedResponse<UserResponse>> GetAllAsync(PaginationQuery pagination)
     {
         var query = _db.Users.AsNoTracking();
@@ -83,6 +87,7 @@ public class UserService : IUserService
             total, pagination.EnsurePage, pagination.EnsurePageSize);
     }
 
+    /// <summary>Met à jour le profil d'un utilisateur.</summary>
     public async Task<UserResponse> UpdateAsync(Guid id, UpdateUserRequest request)
     {
         var user = await _userManager.FindByIdAsync(id.ToString());
@@ -101,12 +106,14 @@ public class UserService : IUserService
         return MapToResponse(user, roles);
     }
 
+    /// <summary>Supprime un utilisateur par son identifiant.</summary>
     public async Task DeleteAsync(Guid id)
     {
         var user = await _userManager.FindByIdAsync(id.ToString());
         if (user != null) await _userManager.DeleteAsync(user);
     }
 
+    /// <summary>Change le mot de passe d'un utilisateur.</summary>
     public async Task<UserResponse> ChangePasswordAsync(Guid id, ChangePasswordRequest request)
     {
         var user = await _userManager.FindByIdAsync(id.ToString());
@@ -120,6 +127,7 @@ public class UserService : IUserService
         return MapToResponse(user, roles);
     }
 
+    /// <summary>Envoie un email de réinitialisation de mot de passe.</summary>
     public async Task ForgotPasswordAsync(string email)
     {
         var user = await _userManager.FindByEmailAsync(email);
@@ -132,6 +140,7 @@ public class UserService : IUserService
         await _emailSender.SendPasswordResetLinkAsync(user, email, resetLink);
     }
 
+    /// <summary>Réinitialise le mot de passe avec un token de confirmation.</summary>
     public async Task ResetPasswordAsync(string email, string token, string newPassword)
     {
         var user = await _userManager.FindByEmailAsync(email);

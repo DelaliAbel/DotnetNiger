@@ -6,8 +6,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Seed;
 
+/// <summary>
+/// Seeder des permissions et de leur assignation aux rôles.
+/// </summary>
 public static class PermissionsSeeder
 {
+    /// <summary>
+    /// Insère les permissions et les associe aux rôles correspondants.
+    /// </summary>
     public static async Task SeedAsync(DotnetNigerDbContext db, RoleManager<ApplicationRole> roleManager)
     {
         var existingCount = await db.Permissions.CountAsync();

@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité ResourceTag.
+/// </summary>
 public class ResourceTagConfiguration : IEntityTypeConfiguration<ResourceTag>
 {
+    /// <summary>
+    /// Configure la clé composite et les relations de la table de liaison ressources-tags.
+    /// </summary>
     public void Configure(EntityTypeBuilder<ResourceTag> builder)
     {
         builder.HasKey(rt => new { rt.ResourceId, rt.TagId });

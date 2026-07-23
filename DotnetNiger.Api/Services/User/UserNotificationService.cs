@@ -5,12 +5,14 @@ using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.User;
 
+/// <summary>Service de gestion des notifications utilisateur.</summary>
 public class UserNotificationService : IUserNotificationService
 {
     private readonly DotnetNigerDbContext _db;
 
     public UserNotificationService(DotnetNigerDbContext db) => _db = db;
 
+    /// <summary>Récupère toutes les notifications d'un utilisateur.</summary>
     public async Task<List<NotificationResponse>> GetNotificationsAsync(Guid userId)
     {
         return await _db.Set<Notification>().AsNoTracking()
@@ -26,11 +28,13 @@ public class UserNotificationService : IUserNotificationService
             .ToListAsync();
     }
 
+    /// <summary>Retourne le nombre de notifications non lues.</summary>
     public async Task<int> GetUnreadCountAsync(Guid userId)
     {
         return await _db.Set<Notification>().CountAsync(n => n.UserId == userId && !n.IsRead);
     }
 
+    /// <summary>Crée et envoie une notification à un utilisateur.</summary>
     public async Task SendNotificationAsync(Guid userId, string message)
     {
         var notification = new Notification
@@ -45,6 +49,7 @@ public class UserNotificationService : IUserNotificationService
         await _db.SaveChangesAsync();
     }
 
+    /// <summary>Marque une notification comme lue.</summary>
     public async Task<bool> MarkAsReadAsync(Guid userId, Guid notificationId)
     {
         var notification = await _db.Set<Notification>()
@@ -55,6 +60,7 @@ public class UserNotificationService : IUserNotificationService
         return true;
     }
 
+    /// <summary>Marque toutes les notifications comme lues.</summary>
     public async Task MarkAllAsReadAsync(Guid userId)
     {
         await _db.Set<Notification>()

@@ -31,16 +31,8 @@ public class AuthService : IAuthService
     {
         try
         {
-            var formData = new Dictionary<string, string>
-            {
-                ["grant_type"] = "password",
-                ["username"] = request.Email,
-                ["password"] = request.Password,
-                ["scope"] = "openid profile email roles offline_access",
-                ["client_id"] = _clientId
-            };
-
-            var response = await _http.PostAsync(ApiEndpoints.Auth.Token, new FormUrlEncodedContent(formData));
+            var loginPayload = new { email = request.Email, password = request.Password, rememberMe = false };
+            var response = await _http.PostAsJsonAsync(ApiEndpoints.Auth.Token, loginPayload);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -124,15 +116,8 @@ public class AuthService : IAuthService
     {
         try
         {
-            var formData = new Dictionary<string, string>
-            {
-                ["grant_type"] = "external_login",
-                ["ticket"] = ticket,
-                ["client_id"] = _clientId,
-                ["scope"] = "openid profile email roles offline_access"
-            };
-
-            var response = await _http.PostAsync(ApiEndpoints.Auth.Token, new FormUrlEncodedContent(formData));
+            var loginPayload = new { provider = "external", ticket = ticket };
+            var response = await _http.PostAsJsonAsync(ApiEndpoints.Auth.Token, loginPayload);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -253,7 +238,7 @@ public class AuthService : IAuthService
         if (!string.IsNullOrWhiteSpace(refreshToken))
         {
             await _http.PostAsJsonAsync(ApiEndpoints.Auth.Logout,
-                new RefreshTokenRequest { RefreshToken = refreshToken, ClientId = _clientId });
+                new { refreshToken = refreshToken });
         }
 
         await _authProvider.ClearTokensAsync();
@@ -277,15 +262,8 @@ public class AuthService : IAuthService
             if (string.IsNullOrWhiteSpace(refreshToken))
                 return null;
 
-            var formData = new Dictionary<string, string>
-            {
-                ["grant_type"] = "refresh_token",
-                ["refresh_token"] = refreshToken,
-                ["scope"] = "openid profile email roles offline_access",
-                ["client_id"] = _clientId
-            };
-
-            var response = await _http.PostAsync(ApiEndpoints.Auth.Token, new FormUrlEncodedContent(formData));
+            var refreshPayload = new { refreshToken = refreshToken };
+            var response = await _http.PostAsJsonAsync(ApiEndpoints.Auth.Refresh, refreshPayload);
 
             if (!response.IsSuccessStatusCode)
             {
@@ -427,7 +405,7 @@ public class AuthService : IAuthService
             var trimmed = raw.TrimStart();
             if (trimmed.StartsWith("<", StringComparison.Ordinal))
             {
-                return (null, "Réponse HTML reçue au lieu d'un token. Vérifie ApiBaseUrl du front et l'endpoint /connect/token.");
+                return (null, "Réponse HTML reçue au lieu d'un token. Vérifie ApiBaseUrl du front et l'endpoint /api/auth/login.");
             }
 
             string? accessToken = null;
@@ -439,13 +417,20 @@ public class AuthService : IAuthService
                 using var doc = JsonDocument.Parse(raw);
                 var result = doc.RootElement;
 
-                accessToken = result.TryGetProperty("access_token", out var at) && at.ValueKind == JsonValueKind.String
-                    ? at.GetString()
-                    : null;
-
-                refreshToken = result.TryGetProperty("refresh_token", out var rt) && rt.ValueKind == JsonValueKind.String
-                    ? rt.GetString()
-                    : null;
+                // Nouveau format JSON natif (camelCase)
+                if (result.TryGetProperty("accessToken", out var at) && at.ValueKind == JsonValueKind.String)
+                {
+                    accessToken = at.GetString();
+                    if (result.TryGetProperty("refreshToken", out var rt) && rt.ValueKind == JsonValueKind.String)
+                        refreshToken = rt.GetString();
+                }
+                // Ancien format OpenIddict (snake_case) pour compatibilité
+                else if (result.TryGetProperty("access_token", out var at2) && at2.ValueKind == JsonValueKind.String)
+                {
+                    accessToken = at2.GetString();
+                    if (result.TryGetProperty("refresh_token", out var rt2) && rt2.ValueKind == JsonValueKind.String)
+                        refreshToken = rt2.GetString();
+                }
 
                 if (result.TryGetProperty("expires_in", out var exp))
                 {
@@ -458,11 +443,12 @@ public class AuthService : IAuthService
             catch (JsonException)
             {
                 // Some OAuth servers return application/x-www-form-urlencoded.
-                // Only parse this shape if the payload actually looks like key=value pairs.
                 if (raw.Contains('='))
                 {
                     var form = TryParseFormEncoded(raw);
+                    form.TryGetValue("accessToken", out accessToken);
                     form.TryGetValue("access_token", out accessToken);
+                    form.TryGetValue("refreshToken", out refreshToken);
                     form.TryGetValue("refresh_token", out refreshToken);
                     if (form.TryGetValue("expires_in", out var expText) && int.TryParse(expText, out var expParsed))
                         expiresIn = expParsed;

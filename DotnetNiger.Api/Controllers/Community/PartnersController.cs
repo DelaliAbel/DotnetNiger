@@ -6,10 +6,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Api.Controllers.Community;
 
+/// <summary>Contrôleur de gestion des partenaires.</summary>
 [ApiController]
 [Route("api/partners")]
 public class PartnersController(IPartnerService partnerService) : ControllerBase
 {
+    /// <summary>Récupère tous les partenaires actifs, optionnellement filtrés par type.</summary>
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] string? partnerType)
     {
@@ -17,6 +19,7 @@ public class PartnersController(IPartnerService partnerService) : ControllerBase
         return Ok(new { Success = true, Data = partners });
     }
 
+    /// <summary>Récupère un partenaire par son identifiant.</summary>
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -25,6 +28,7 @@ public class PartnersController(IPartnerService partnerService) : ControllerBase
         return Ok(new { Success = true, Data = p });
     }
 
+    /// <summary>Crée un nouveau partenaire.</summary>
     [HttpPost]
     [Authorize(Policy = "community.partners.manage")]
     public async Task<IActionResult> Create([FromBody] CreatePartnerRequest request)
@@ -33,6 +37,7 @@ public class PartnersController(IPartnerService partnerService) : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = partner.Id }, new { Success = true, Data = partner });
     }
 
+    /// <summary>Met à jour un partenaire existant.</summary>
     [HttpPut("{id:guid}")]
     [Authorize(Policy = "community.partners.manage")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePartnerRequest request)
@@ -42,6 +47,7 @@ public class PartnersController(IPartnerService partnerService) : ControllerBase
         return Ok(new { Success = true, Data = p });
     }
 
+    /// <summary>Supprime un partenaire.</summary>
     [HttpDelete("{id:guid}")]
     [Authorize(Policy = "community.partners.manage")]
     public async Task<IActionResult> Delete(Guid id)

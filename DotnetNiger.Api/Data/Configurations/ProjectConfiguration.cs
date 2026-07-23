@@ -4,8 +4,14 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace DotnetNiger.Api.Data.Configurations;
 
+/// <summary>
+/// Configuration EF Core pour l'entité Project.
+/// </summary>
 public class ProjectConfiguration : IEntityTypeConfiguration<Project>
 {
+    /// <summary>
+    /// Configure les clés et contraintes de la table des projets.
+    /// </summary>
     public void Configure(EntityTypeBuilder<Project> builder)
     {
         builder.HasKey(p => p.Id);
