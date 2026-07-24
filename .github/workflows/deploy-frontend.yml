@@ -1,4 +1,4 @@
-name: Deploy Frontend to Vercel
+name: Deploy Frontend to GitHub Pages
 
 on:
   push:
@@ -6,22 +6,25 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
-  group: deploy-frontend
-  cancel-in-progress: true
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
-    name: Build & Push Frontend
+    name: Build & Deploy to Pages
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v4
@@ -32,14 +35,24 @@ jobs:
         run: dotnet restore DotnetNiger.UI/DotnetNiger.UI.csproj
 
       - name: Publish
-        run: dotnet publish DotnetNiger.UI/DotnetNiger.UI.csproj -c Release -o publish/frontend
-
-      - name: Push to deploy/frontend
         run: |
-          cd publish/frontend
-          git init
-          git checkout -b deploy/frontend
-          git add -A
-          git -c user.name=github-actions -c user.email=actions@github.com commit -m "Deploy Frontend from ${GITHUB_SHA}"
-          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          git push origin deploy/frontend --force
+          cat > DotnetNiger.UI/wwwroot/appsettings.Production.json << 'EOF'
+          {
+            "ApiBaseUrl": "http://dotnetnigerdeploytest.runasp.net",
+            "UseMockServices": false,
+            "ClientId": "web-ui"
+          }
+          EOF
+          dotnet publish DotnetNiger.UI/DotnetNiger.UI.csproj -c Release -o publish
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: publish/wwwroot
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
