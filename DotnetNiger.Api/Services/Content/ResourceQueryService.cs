@@ -72,5 +72,5 @@ public class ResourceQueryService : IResourceQueryService
 
     private static ResourceResponse MapToResponse(Resource r) =>
         new(r.Id, r.Title, r.Slug, r.Description, r.Url, r.DownloadUrl, r.ThumbnailUrl,
-            r.AuthorId, r.Status.ToString(), r.CreatedAt, r.UpdatedAt);
+            r.CreatedBy, r.Status.ToString(), r.CreatedAt, r.UpdatedAt);
 }

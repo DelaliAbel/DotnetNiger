@@ -141,4 +141,15 @@ public class AdminController : BaseController
             return BadRequest(new ErrorResponse(ErrorMessages.UserNotFound));
         return Ok(user);
     }
+
+    /// <summary>Met à jour le statut d'appartenance à l'équipe d'un utilisateur.</summary>
+    [HttpPatch("users/{id:guid}/team")]
+    [Authorize(Policy = "admin.users.create")]
+    public async Task<ActionResult> UpdateUserTeam(Guid id, [FromBody] IdentityDTOs.UpdateTeamRequest request)
+    {
+        var updated = await _adminService.UpdateUserTeamAsync(id, request.IsTeamMember, request.Position ?? string.Empty);
+        if (!updated)
+            return NotFound(new ErrorResponse(ErrorMessages.UserNotFound));
+        return Ok(new { message = "Statut d'équipe mis à jour" });
+    }
 }

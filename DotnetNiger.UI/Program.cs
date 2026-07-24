@@ -103,7 +103,7 @@ else
     builder.Services.AddScoped<IMemberDirectoryService>(sp => new ApiMemberDirectoryService(sp.GetRequiredService<HttpClient>()));
     builder.Services.AddScoped<ISearchService>(sp => new ApiSearchService(sp.GetRequiredService<HttpClient>()));
     builder.Services.AddScoped<IUserStateService, UserStateService>();
-    builder.Services.AddScoped<IUploadService>(sp => new ApiUploadService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiUploadService>>()));
+    builder.Services.AddScoped<IUploadService>(sp => new ApiUploadService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiUploadService>>(), sp.GetRequiredService<ApiBaseUrlProvider>()));
     builder.Services.AddScoped<ICategoryService>(sp => new ApiCategoryService(sp.GetRequiredService<HttpClient>()));
     builder.Services.AddScoped<ITagService>(sp => new ApiTagService(sp.GetRequiredService<HttpClient>()));
     builder.Services.AddScoped<IStatsService>(sp => new ApiStatsService(sp.GetRequiredService<HttpClient>()));

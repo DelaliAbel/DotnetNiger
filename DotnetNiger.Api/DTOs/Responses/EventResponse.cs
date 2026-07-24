@@ -18,8 +18,8 @@ public record EventResponse(
     string Location,
     // <summary>URL de l'image de couverture.</summary>
     string? CoverImageUrl,
-    // <summary>Identifiant de l'organisateur.</summary>
-    Guid OrganizerId,
+    // <summary>Identifiant du créateur.</summary>
+    Guid CreatedBy,
     // <summary>Statut de l'événement.</summary>
     string Status,
     // <summary>Indique si l'événement est publié.</summary>

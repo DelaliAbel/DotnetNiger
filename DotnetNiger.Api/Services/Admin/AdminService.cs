@@ -218,6 +218,21 @@ public class AdminService : IAdminService
                 string.Join(", ", result.Errors.Select(e => e.Description)));
 
         await _userManager.AddToRoleAsync(user, request.Role ?? RoleConstants.User);
+
+        if (request.IsTeamMember)
+        {
+            var member = new Member
+            {
+                Id = Guid.NewGuid(),
+                UserId = user.Id,
+                DisplayName = request.FirstName ?? request.Email,
+                IsTeamMember = true,
+                Position = request.Position ?? string.Empty
+            };
+            _db.Members.Add(member);
+            await _db.SaveChangesAsync();
+        }
+
         await _auditLog.LogAsync("User", user.Id, "Create", $"Utilisateur {request.Email} créé par admin");
 
         var roles = await _userManager.GetRolesAsync(user);
