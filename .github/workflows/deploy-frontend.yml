@@ -34,7 +34,7 @@ jobs:
       - name: Restore
         run: dotnet restore DotnetNiger.UI/DotnetNiger.UI.csproj
 
-      - name: Publish
+      - name: Inject production config
         run: |
           cat > DotnetNiger.UI/wwwroot/appsettings.Production.json << 'EOF'
           {
@@ -43,7 +43,10 @@ jobs:
             "ClientId": "web-ui"
           }
           EOF
-          dotnet publish DotnetNiger.UI/DotnetNiger.UI.csproj -c Release -o publish
+          sed -i 's|<base href="/" />|<base href="/DotnetNiger/" />|' DotnetNiger.UI/wwwroot/index.html
+
+      - name: Publish
+        run: dotnet publish DotnetNiger.UI/DotnetNiger.UI.csproj -c Release -o publish
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
