@@ -369,7 +369,12 @@ else
             Url = updatedLinks.FirstOrDefault(sl => sl.Platform == p)?.Url ?? ""
         }).ToList();
 
+        var profil = await ProfileService.GetProfileAsync();
+        if (profil.Id != Guid.Empty)
+            await UserStateService.UpdateUserAsync(profil);
+
         messageSocial = "Liens sociaux mis a jour avec succes.";
+        ToastService.ShowToast("Liens sociaux mis à jour avec succès.", ToastLevel.Success);
     }
 
 
