@@ -187,13 +187,6 @@ public class ApiUserService : ApiServiceBase, IUserService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<bool> RemoveRoleAsync(Guid userId, string roleName)
-    {
-        var response = await Http.DeleteAsync(
-            string.Format(ApiEndpoints.AdminUserRole, userId, roleName));
-        return response.IsSuccessStatusCode;
-    }
-
     public async Task<bool> AddToTeamAsync(Guid userId, string position)
     {
         var content = JsonContent.Create(new UpdateTeamRequest

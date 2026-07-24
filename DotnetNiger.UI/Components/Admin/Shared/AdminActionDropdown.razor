@@ -31,15 +31,21 @@
 
                     <div class="my-2 border-t border-gray-100"></div>
 
-                    @foreach (var role in AllRoles)
+                    @if (AvailableRoles.Count == 0)
                     {
-                        var isAssigned = UserRoles.Any(r => r.Equals(role.Key, StringComparison.OrdinalIgnoreCase));
-                        <button type="button"
-                                class="flex w-full items-center gap-3 px-4 py-3 text-left transition @(isAssigned ? "text-rose-600 hover:bg-rose-50" : "text-title hover:bg-gray-50")"
-                                @onclick="() => ToggleRoleAsync(role.Key, isAssigned)" @onclick:stopPropagation="true">
-                            <i class="fas @(isAssigned ? "fa-user-minus text-rose-500" : "fa-user-plus text-title") text-base"></i>
-                            <span class="text-sm font-medium">@(isAssigned ? "Retirer " : "Ajouter ")@role.Value</span>
-                        </button>
+                        <p class="px-4 py-3 text-xs text-gray-400 italic">Tous les rôles sont assignés.</p>
+                    }
+                    else
+                    {
+                        @foreach (var role in AvailableRoles)
+                        {
+                            <button type="button"
+                                    class="flex w-full items-center gap-3 px-4 py-3 text-left text-title transition hover:bg-gray-50"
+                                    @onclick="() => ShowConfirmModal(role.Key)" @onclick:stopPropagation="true">
+                                <i class="fas fa-user-plus text-base text-title"></i>
+                                <span class="text-sm font-medium">Ajouter @role.Value</span>
+                            </button>
+                        }
                     }
                 }
                 else if (IsReviewState)
@@ -93,7 +99,7 @@
                         </button>
                     }
 
-                    @if (OnChangeRole.HasDelegate)
+                    @if (OnChangeRole.HasDelegate && AvailableRoles.Count > 0)
                     {
                         <button type="button"
                                 class="flex w-full items-center gap-3 px-4 py-3 text-left text-title transition hover:bg-gray-50"
@@ -135,6 +141,27 @@
         </div>
     }
 </div>
+
+@if (showConfirmModal)
+{
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        <div class="absolute inset-0 bg-black/40" @onclick="CancelConfirm"></div>
+        <div class="relative w-full max-w-sm rounded-lg bg-surface p-4 sm:p-6 shadow-lg">
+            <h3 class="text-base font-semibold text-title">Changement de rôle</h3>
+            <p class="mt-2 text-sm text-gray-600">
+                Voulez-vous assigner le rôle <strong class="text-title">@AllRoles.GetValueOrDefault(pendingRoleName, pendingRoleName)</strong> à cet utilisateur ?
+            </p>
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button"
+                        class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-title transition hover:bg-gray-50"
+                        @onclick="CancelConfirm">Annuler</button>
+                <button type="button"
+                        class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-hover"
+                        @onclick="ConfirmRoleAsync">Confirmer</button>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     [Parameter]
@@ -205,6 +232,8 @@
     private readonly Guid _instanceId = Guid.NewGuid();
     private bool isOpen;
     private bool showChangeRoleView;
+    private bool showConfirmModal;
+    private string pendingRoleName = string.Empty;
 
     private static readonly Dictionary<string, string> AllRoles = new()
     {
@@ -213,6 +242,9 @@
         { "Collaborator", "Collaborateur" },
         { "User", "Utilisateur" }
     };
+
+    private List<KeyValuePair<string, string>> AvailableRoles =>
+        AllRoles.Where(r => !UserRoles.Any(ur => ur.Equals(r.Key, StringComparison.OrdinalIgnoreCase))).ToList();
 
     private bool IsReviewState => string.Equals(Status, ReviewStatusValue, StringComparison.OrdinalIgnoreCase);
 
@@ -237,6 +269,8 @@
     {
         isOpen = false;
         showChangeRoleView = false;
+        showConfirmModal = false;
+        pendingRoleName = string.Empty;
     }
 
     private void HandleOtherMenuOpened(Guid openedInstanceId)
@@ -272,25 +306,35 @@
         showChangeRoleView = false;
     }
 
-    private async Task ToggleRoleAsync(string role, bool isCurrentlyAssigned)
+    private void ShowConfirmModal(string roleName)
     {
-        if (ItemId == Guid.Empty || !OnChangeRole.HasDelegate)
-            return;
+        pendingRoleName = roleName;
+        showConfirmModal = true;
+    }
 
-        var action = isCurrentlyAssigned ? "retirer" : "ajouter";
-        bool confirmed = await ConfirmAsync($"Voulez-vous {action} le rôle \"{role}\" ?");
-        if (!confirmed)
+    private void CancelConfirm()
+    {
+        showConfirmModal = false;
+        pendingRoleName = string.Empty;
+    }
+
+    private async Task ConfirmRoleAsync()
+    {
+        if (ItemId == Guid.Empty || !OnChangeRole.HasDelegate || string.IsNullOrEmpty(pendingRoleName))
             return;
 
         var request = new ChangeRoleRequest
         {
             UserId = ItemId,
-            NewRole = role,
-            IsRemove = isCurrentlyAssigned
+            NewRole = pendingRoleName
         };
-        await OnChangeRole.InvokeAsync(request);
+
+        showConfirmModal = false;
+        pendingRoleName = string.Empty;
         isOpen = false;
         showChangeRoleView = false;
+
+        await OnChangeRole.InvokeAsync(request);
     }
 
     private async Task AddToTeamAsync()
@@ -313,19 +357,10 @@
     {
         if (ItemId != Guid.Empty && OnRemoveFromTeam.HasDelegate)
         {
-            bool confirmed = await ConfirmAsync("Retirer cet utilisateur de l'équipe ?");
-            if (!confirmed)
-                return;
-
             await OnRemoveFromTeam.InvokeAsync(ItemId);
         }
 
         isOpen = false;
-    }
-
-    private async Task<bool> ConfirmAsync(string message)
-    {
-        return await JS.InvokeAsync<bool>("confirm", message);
     }
 
     private async Task InvokeAndCloseAsync(EventCallback<Guid> callback)

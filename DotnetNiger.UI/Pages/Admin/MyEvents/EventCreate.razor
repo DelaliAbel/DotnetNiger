@@ -104,7 +104,7 @@
                             <div>
                                 <label class="block text-sm font-semibold mb-2 text-title">Titre</label>
                                 <InputText @bind-Value="eventRequest.Title"
-                                           class="w-full px-4 py-2 text-title border-gray-300 rounded-lg focus:outline-none"
+                                           class="w-full px-4 py-2 text-title bg-surface border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                                            placeholder="Titre de l'événement" />
                                 <ValidationMessage For="@(() => eventRequest.Title)" class="text-red-500 text-sm mt-1" />
                             </div>
@@ -112,9 +112,9 @@
                             <!-- Capacité -->
                             <div>
                                 <label class="block text-sm font-semibold mb-2 text-title">Capacité</label>
-                                <InputNumber @bind-Value="eventRequest.Capacity"
-                                             class="w-full px-4 py-2 text-title border-gray-300 rounded-lg focus:outline-none"
-                                             placeholder="100" />
+                                 <InputNumber @bind-Value="eventRequest.Capacity"
+                                              class="w-full px-4 py-2 text-title bg-surface border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                                              placeholder="100" />
                             </div>
                         </div>
 
@@ -122,7 +122,7 @@
                         <div>
                             <label class="block text-sm font-semibold mb-2 text-title">Auteur</label>
                             <InputText @bind-Value="organizerName"
-                                       class="w-full px-4 py-2 text-body border-gray-300 rounded-lg focus:outline-none"
+                                       class="w-full px-4 py-2 text-body bg-surface border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                                        placeholder="Nom de l'organisateur" />
                         </div>
 
@@ -130,7 +130,7 @@
                         <div>
                             <label class="block text-sm font-semibold mb-2 text-title">Catégorie</label>
                             <InputSelect @bind-Value="eventRequest.Category"
-                                         class="w-full px-4 py-2 text-body border-gray-300 rounded-lg focus:outline-none bg-surface">
+                                         class="w-full px-4 py-2 text-body bg-surface border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
                                 <option value="">Sélectionner une catégorie</option>
                                 <option value="Présentation">Présentation</option>
                                 <option value="Meeting">Meeting</option>
@@ -149,7 +149,7 @@
                                 <label class="block text-sm font-semibold mb-2 text-title">Date du début</label>
                                 <div class="relative">
                                     <InputDate @bind-Value="eventRequest.StartDate" Type="InputDateType.DateTimeLocal"
-                                               class="w-full px-4 py-2 text-body border-gray-300 rounded-lg focus:outline-none" />
+                                               class="w-full px-4 py-2 text-body bg-surface border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
                                     <i
                                     class="fas fa-calendar-alt absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                                 </div>
@@ -162,7 +162,7 @@
                                 <label class="block text-sm font-semibold mb-2 text-title">Date de fin</label>
                                 <div class="relative">
                                     <InputDate @bind-Value="eventRequest.EndDate" Type="InputDateType.DateTimeLocal"
-                                               class="w-full px-4 py-2 text-body border-gray-300 rounded-lg focus:outline-none" />
+                                               class="w-full px-4 py-2 text-body bg-surface border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
                                     <i
                                     class="fas fa-calendar-alt absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                                 </div>
@@ -197,8 +197,8 @@
                                         </div>
                                         <div class="flex-1">
                                             <p class="text-sm font-semibold text-title">@speakers[i].Name</p>
-                                            <input @bind="speakers[i].Role"
-                                                   class="w-full px-3 py-1.5 text-body border-gray-300 rounded-lg text-sm focus:outline-none mt-1"
+                                             <input @bind="speakers[i].Role"
+                                                   class="w-full px-3 py-1.5 text-body bg-surface border-input rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary mt-1"
                                                    placeholder="Rôle (ex: Intervenant)" />
                                         </div>
                                         <button type="button" @onclick="() => RemoveSpeaker(i)"
@@ -214,7 +214,7 @@
                             {
                                 <div class="relative">
                                     <input value="@memberSearchQuery" @oninput="OnMemberSearchChanged"
-                                           class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none text-sm"
+                                           class="w-full px-4 py-2 bg-surface border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                                            placeholder="Rechercher un membre..." />
                                     @if (filteredMembers.Count > 0)
                                     {
@@ -376,15 +376,15 @@
                                     <!-- Champs dynamiques selon le mode -->
                                     <div class='@((eventMode == "online") ? "hidden" : "")'>
                                         <label class="block text-sm font-semibold mb-2 text-title">Lieu</label>
-                                        <InputText @bind-Value="eventRequest.Location"
-                                                   class="w-full px-4 py-2 text-body border-gray-300 rounded-lg focus:outline-none"
+                                         <InputText @bind-Value="eventRequest.Location"
+                                                   class="w-full px-4 py-2 text-body bg-surface border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                                                    placeholder="Adresse du lieu" />
                                     </div>
 
                                     <div class='@((eventMode == "physical") ? "hidden" : "")'>
                                         <label class="block text-sm font-semibold mb-2">Lien de visioconférence</label>
-                                        <InputText @bind-Value="eventRequest.MeetupLink"
-                                                   class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none"
+                                         <InputText @bind-Value="eventRequest.MeetupLink"
+                                                   class="w-full px-4 py-2 bg-surface border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                                                    placeholder="https://meet.example.com/..." />
                                     </div>
                                 </div>

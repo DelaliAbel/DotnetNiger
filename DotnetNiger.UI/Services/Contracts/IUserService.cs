@@ -20,7 +20,6 @@ public interface IUserService
     Task<bool> RejectUserAsync(Guid userId);
     Task<List<UserDto>> GetTeamMembersAsync();
     Task<bool> AssignRoleAsync(Guid userId, string roleName);
-    Task<bool> RemoveRoleAsync(Guid userId, string roleName);
     Task<bool> AddToTeamAsync(Guid userId, string position);
     Task<bool> RemoveFromTeamAsync(Guid userId);
 }

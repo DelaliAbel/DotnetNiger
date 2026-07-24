@@ -172,17 +172,8 @@ public class MockUserService : IUserService
         var user = Users.FirstOrDefault(u => u.Id == userId);
         if (user is null) return Task.FromResult(false);
 
-        if (!user.Roles.Contains(roleName))
-            user.Roles.Add(roleName);
-        return Task.FromResult(true);
-    }
-
-    public Task<bool> RemoveRoleAsync(Guid userId, string roleName)
-    {
-        var user = Users.FirstOrDefault(u => u.Id == userId);
-        if (user is null) return Task.FromResult(false);
-
-        user.Roles.RemoveAll(r => r.Equals(roleName, StringComparison.OrdinalIgnoreCase));
+        user.Roles.Clear();
+        user.Roles.Add(roleName);
         return Task.FromResult(true);
     }
 
