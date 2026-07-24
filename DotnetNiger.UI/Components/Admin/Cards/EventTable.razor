@@ -52,7 +52,7 @@
                         </td>
                         <td class="px-6 py-4 text-sm text-body">@ev.RegisteredCount / @ev.Capacity</td>
                         <td class="px-6 py-4 text-sm">
-                            <AdminActionDropdown ItemId="ev.Id" Status="@(IsPending(ev) ? "Pending" : "Published")"
+                            <AdminActionDropdown ItemId="ev.Id" Status="@(ev.Status)" ReviewStatusValue="PendingReview"
                                                  ViewLabel="Voir l'événement" EditLabel="Modifier" DeleteLabel="Supprimer" ApproveLabel="Publier"
                                                  RejectLabel="Rejeter" OnView="OpenEvent" OnEdit="EditEvent" OnDelete="DeleteEvent"
                                                  OnApprove="PublishEvent" OnReject="DeleteEvent" />
@@ -69,18 +69,31 @@
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private static bool IsPublished(EventDto ev) => ev.IsPublished;
-    private static bool IsPending(EventDto ev) => !ev.IsPublished;
+    private static bool IsPending(EventDto ev) => ev.Status == "PendingReview";
 
 
     private static string GetStatusLabel(EventDto ev)
     {
-
-        return IsPublished(ev) ? "Publié" : "En attente";
+        return ev.Status switch
+        {
+            "Published" => "Publié",
+            "PendingReview" => "En cours de validation",
+            "Archived" => "Archivé",
+            "Cancelled" => "Annulé",
+            _ => "Brouillon"
+        };
     }
 
     private static string GetStatusClass(EventDto ev)
     {
-        return IsPublished(ev) ? "bg-success-bg text-success" : "bg-amber-100 text-amber-700";
+        return ev.Status switch
+        {
+            "Published" => "bg-success-bg text-success",
+            "PendingReview" => "bg-amber-100 text-amber-700",
+            "Archived" => "bg-gray-100 text-gray-700",
+            "Cancelled" => "bg-red-100 text-red-700",
+            _ => "bg-blue-100 text-blue-700"
+        };
     }
 
     private Task OpenEvent(Guid id)
