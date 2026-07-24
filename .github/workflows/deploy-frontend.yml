@@ -1,0 +1,45 @@
+name: Deploy Frontend to Vercel
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    name: Build & Push Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore DotnetNiger.UI/DotnetNiger.UI.csproj
+
+      - name: Publish
+        run: dotnet publish DotnetNiger.UI/DotnetNiger.UI.csproj -c Release -o publish/frontend
+
+      - name: Push to deploy/frontend
+        run: |
+          cd publish/frontend
+          git init
+          git checkout -b deploy/frontend
+          git add -A
+          git -c user.name=github-actions -c user.email=actions@github.com commit -m "Deploy Frontend from ${GITHUB_SHA}"
+          git remote add origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git push origin deploy/frontend --force
