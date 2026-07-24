@@ -288,11 +288,16 @@ else
 
     private async Task SetPublished(Guid id)
     {
-        var ev = allEvents.FirstOrDefault(e => e.Id == id);
-        if (ev is null)
-            return;
-
-        await PersistStatusAsync(ev, isPublished: true, isArchived: false);
+        try
+        {
+            await EventService.ApproveEventAsync(id);
+            ToastService.ShowToast("Événement publié.", ToastLevel.Success);
+            allEvents = await EventService.GetMyEventsAsync();
+        }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors de la publication.", ToastLevel.Error);
+        }
     }
 
     private async Task SetArchived(Guid id)

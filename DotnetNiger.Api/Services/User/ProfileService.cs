@@ -137,6 +137,17 @@ public class ProfileService : IProfileService
         return await GetAsync(userId);
     }
 
+    /// <summary>Récupère les liens sociaux du profil du membre.</summary>
+    public async Task<List<SocialLinkResponse>> GetSocialLinksAsync(Guid userId)
+    {
+        var member = await _db.Members.FirstOrDefaultAsync(m => m.UserId == userId);
+        if (member == null) return [];
+        return await _db.SocialLinks.AsNoTracking()
+            .Where(l => l.MemberId == member.Id)
+            .Select(l => new SocialLinkResponse { Id = l.Id, Platform = l.Platform, Url = l.Url })
+            .ToListAsync();
+    }
+
     /// <summary>Ajoute un lien social au profil du membre.</summary>
     public async Task<SocialLinkResponse> AddSocialLinkAsync(Guid userId, AddSocialLinkRequest request)
     {

@@ -31,7 +31,7 @@ public class ProfileController : ControllerBase
         if (userId is null) return Unauthorized();
         var profile = await _profileService.GetAsync(userId.Value);
         if (profile is null) return NotFound();
-        return Ok(profile);
+        return Ok(new { Success = true, Data = profile });
     }
 
     /// <summary>Met à jour le profil de l'utilisateur connecté.</summary>
@@ -42,7 +42,7 @@ public class ProfileController : ControllerBase
         if (userId is null) return Unauthorized();
         var profile = await _profileService.UpdateAsync(userId.Value, request);
         if (profile is null) return NotFound();
-        return Ok(profile);
+        return Ok(new { Success = true, Data = profile });
     }
 
     /// <summary>Supprime le profil de l'utilisateur connecté.</summary>
@@ -123,6 +123,23 @@ public class ProfileController : ControllerBase
         }
     }
 
+    /// <summary>Récupère les liens sociaux du profil.</summary>
+    [HttpGet("social-links")]
+    public async Task<ActionResult<List<SocialLinkResponse>>> GetSocialLinks()
+    {
+        var userId = GetUserIdFromClaims();
+        if (userId is null) return Unauthorized();
+        try
+        {
+            var links = await _profileService.GetSocialLinksAsync(userId.Value);
+            return Ok(new { Success = true, Data = links });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new ErrorResponse("Profil membre non trouvé."));
+        }
+    }
+
     /// <summary>Ajoute un lien social au profil.</summary>
     [HttpPost("social-links")]
     public async Task<ActionResult<SocialLinkResponse>> AddSocialLink([FromBody] AddSocialLinkRequest request)
@@ -132,7 +149,7 @@ public class ProfileController : ControllerBase
         try
         {
             var link = await _profileService.AddSocialLinkAsync(userId.Value, request);
-            return Ok(link);
+            return Ok(new { Success = true, Data = link });
         }
         catch (KeyNotFoundException)
         {
