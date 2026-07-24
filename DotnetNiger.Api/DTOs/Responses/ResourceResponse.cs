@@ -16,8 +16,8 @@ public record ResourceResponse(
     string? DownloadUrl,
     // <summary>URL de l'aperçu visuel.</summary>
     string? ThumbnailUrl,
-    // <summary>Identifiant de l'auteur.</summary>
-    Guid AuthorId,
+    // <summary>Identifiant du créateur.</summary>
+    Guid CreatedBy,
     // <summary>Statut de la ressource.</summary>
     string Status,
     // <summary>Date de création.</summary>

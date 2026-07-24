@@ -15,10 +15,12 @@ public class ApiUploadService : ApiServiceBase, IUploadService
         ".jpg", ".jpeg", ".png", ".webp", ".gif"
     };
     private readonly ILogger<ApiUploadService> _logger;
+    private readonly ApiBaseUrlProvider _baseUrlProvider;
 
-    public ApiUploadService(HttpClient http, ILogger<ApiUploadService> logger) : base(http)
+    public ApiUploadService(HttpClient http, ILogger<ApiUploadService> logger, ApiBaseUrlProvider baseUrlProvider) : base(http)
     {
         _logger = logger;
+        _baseUrlProvider = baseUrlProvider;
     }
 
     private static async Task<byte[]> ReadFileBytesAsync(IBrowserFile file)
@@ -105,10 +107,16 @@ public class ApiUploadService : ApiServiceBase, IUploadService
         if (string.IsNullOrWhiteSpace(imageUrl))
             return Task.FromResult<string?>(null);
 
-        if (Uri.TryCreate(imageUrl, UriKind.Absolute, out _))
-            return Task.FromResult<string?>(imageUrl);
+        if (Uri.TryCreate(imageUrl, UriKind.Absolute, out var uri))
+        {
+            var apiHost = new Uri(_baseUrlProvider.BaseUrl);
+            if (uri.Host == apiHost.Host && uri.Port == apiHost.Port)
+                return Task.FromResult<string?>(imageUrl);
 
-        var baseUri = Http.BaseAddress?.ToString().TrimEnd('/');
+            return Task.FromResult<string?>($"{apiHost.Scheme}://{apiHost.Host}:{apiHost.Port}{uri.PathAndQuery}");
+        }
+
+        var baseUri = _baseUrlProvider.BaseUrl;
         return Task.FromResult<string?>($"{baseUri}{imageUrl}");
     }
 

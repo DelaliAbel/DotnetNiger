@@ -83,8 +83,16 @@
                         @onclick="NavigateToAdminAsync">
                     <i class="fas fa-shield-halved mt-0.5 text-base text-title"></i>
                     <span class="flex flex-col leading-tight">
-                        <span class="text-sm font-medium text-title">Tableau de Bord</span>
-                        <span class="max-w-[160px] truncate text-xs text-body">Gérer mon compte</span>
+                        @if (UserStateService.IsCollaborator && !UserStateService.IsAdmin)
+                        {
+                            <span class="text-sm font-medium text-title">Tableau de Bord</span>
+                            <span class="max-w-[160px] truncate text-xs text-body">Gérer mon compte</span>
+                        }
+                        else
+                        {
+                            <span class="text-sm font-medium text-title">Administration</span>
+                            <span class="max-w-[160px] truncate text-xs text-body">Gérer le site</span>
+                        }
                     </span>
                 </button>
             }

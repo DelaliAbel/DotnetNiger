@@ -111,7 +111,8 @@ public class ApiUserService : ApiServiceBase, IUserService
         if (teamChanged)
         {
             var teamContent = JsonContent.Create(new UpdateTeamRequest { IsTeamMember = user.IsTeamMember, Position = user.Position });
-            var teamResponse = await Http.PatchAsync($"{ApiEndpoints.AdminUsers}/{user.Id}/profile", teamContent);
+            var teamResponse = await Http.PatchAsync(
+                string.Format(ApiEndpoints.AdminUserTeam, user.Id), teamContent);
             if (!teamResponse.IsSuccessStatusCode)
                 return null;
         }
@@ -202,7 +203,7 @@ public class ApiUserService : ApiServiceBase, IUserService
             Position = position
         });
         var response = await Http.PatchAsync(
-            $"{ApiEndpoints.AdminUsers}/{userId}/profile", content);
+            string.Format(ApiEndpoints.AdminUserTeam, userId), content);
         return response.IsSuccessStatusCode;
     }
 
@@ -214,7 +215,7 @@ public class ApiUserService : ApiServiceBase, IUserService
             Position = string.Empty
         });
         var response = await Http.PatchAsync(
-            $"{ApiEndpoints.AdminUsers}/{userId}/profile", content);
+            string.Format(ApiEndpoints.AdminUserTeam, userId), content);
         return response.IsSuccessStatusCode;
     }
 }

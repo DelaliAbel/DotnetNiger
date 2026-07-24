@@ -39,4 +39,15 @@ public record AdminCreateUserRequest(
     // <summary>Nom de famille.</summary>
     string? LastName,
     // <summary>Rôle à attribuer.</summary>
-    string? Role);
+    string? Role,
+    // <summary>Indique si l'utilisateur fait partie de l'équipe.</summary>
+    bool IsTeamMember = false,
+    // <summary>Poste ou titre du membre.</summary>
+    string? Position = null);
+
+/// <summary>Requête de mise à jour du statut d'équipe d'un utilisateur.</summary>
+public record UpdateTeamRequest(
+    // <summary>Indique si l'utilisateur fait partie de l'équipe.</summary>
+    bool IsTeamMember,
+    // <summary>Poste ou titre du membre.</summary>
+    string? Position);
