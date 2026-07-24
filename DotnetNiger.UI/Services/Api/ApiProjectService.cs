@@ -69,7 +69,7 @@ public class ApiProjectService : ApiServiceBase, IProjectService
 
     public async Task<List<ProjectResponse>> GetMyProjectsAsync()
     {
-        var response = await Http.GetAsync(ApiEndpoints.Projects);
+        var response = await Http.GetAsync($"{ApiEndpoints.Projects}/mine");
         if (!response.IsSuccessStatusCode)
             return new List<ProjectResponse>();
         return await ApiResponseReader.ReadCollectionAsync<ProjectResponse>(response);

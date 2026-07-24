@@ -14,7 +14,7 @@ public class ProjectService : IProjectService
     public ProjectService(DotnetNigerDbContext db) => _db = db;
 
     /// <summary>Récupère la liste paginée des projets avec filtres.</summary>
-    public async Task<PaginatedResponse<ProjectResponse>> GetAllAsync(string? status, string? query, int page, int pageSize)
+    public async Task<PaginatedResponse<ProjectResponse>> GetAllAsync(string? status, string? query, int page, int pageSize, Guid? createdBy = null)
     {
         var q = _db.Set<Project>().AsNoTracking().Where(p => !p.IsDeleted);
 
@@ -22,6 +22,8 @@ public class ProjectService : IProjectService
             q = q.Where(p => p.Status == status);
         if (!string.IsNullOrWhiteSpace(query))
             q = q.Where(p => p.Title.Contains(query) || p.Description.Contains(query));
+        if (createdBy.HasValue)
+            q = q.Where(p => p.CreatedBy == createdBy.Value);
 
         var total = await q.CountAsync();
         var items = await q
