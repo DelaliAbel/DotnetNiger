@@ -70,8 +70,8 @@ local.settings.json
 *.db-wal
 
 # Uploads
-wwwroot/uploads/*
-!wwwroot/uploads/.gitkeep
+**/wwwroot/uploads/*
+!**/wwwroot/uploads/.gitkeep
 
 # Logs
 *.log
