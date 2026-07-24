@@ -50,7 +50,7 @@
                 <nav class="flex-1 space-y-1 overflow-y-auto p-4">
                     @foreach (var item in MobileNavigationItems)
                     {
-                        if (item.Href == "/admin" && !UserStateService.IsAdmin) { continue; }
+                        if (item.Href == "/admin" && !UserStateService.IsAdmin && !UserStateService.IsCollaborator) { continue; }
                         <NavLink href="@item.Href" Match="@item.Match"
                                  class="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-title transition hover:bg-gray-100"
                                  ActiveClass="bg-active" @onclick="CloseOverlay">

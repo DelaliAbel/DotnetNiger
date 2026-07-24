@@ -16,7 +16,7 @@ public class EventQueryService : IEventQueryService
     public async Task<PaginatedResponse<EventResponse>> GetAllAsync(
         string? status, string? query, string? location,
         string? category, string? tag, DateTime? from, DateTime? to,
-        Guid? organizerId, int page, int pageSize)
+        Guid? organizerId, int page, int pageSize, Guid? createdBy = null)
     {
         var q = _db.Events.AsNoTracking();
 
@@ -32,6 +32,7 @@ public class EventQueryService : IEventQueryService
         if (from.HasValue) q = q.Where(e => e.StartDate >= from.Value);
         if (to.HasValue) q = q.Where(e => e.EndDate <= to.Value);
         if (organizerId.HasValue) q = q.Where(e => e.OrganizerId == organizerId.Value);
+        if (createdBy.HasValue) q = q.Where(e => e.CreatedBy == createdBy.Value);
 
         var total = await q.CountAsync();
         var items = await q

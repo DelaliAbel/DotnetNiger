@@ -468,8 +468,7 @@
       private bool IsCollaborator => UserStateService.CurrentUser?.Roles.Any(r => string.Equals(r, RoleConstants.Collaborator,
 StringComparison.OrdinalIgnoreCase)) ?? false;
 
-      private bool CanAccessMesSections => IsAdmin || (IsCollaborator && UserStateService.CurrentUser?.IsCertificateValidated
-== true);
+      private bool CanAccessMesSections => IsAdmin || IsCollaborator;
 
       private string GetBackLinkClass() => $"flex items-center gap-2 text-gray-300 transition-colors hover:text-white {(IsCollapsed ? "justify-center" : "")}";
 

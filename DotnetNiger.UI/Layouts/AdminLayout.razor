@@ -40,6 +40,17 @@
       if (UserStateService.CurrentUser is null)
           await UserStateService.LoadUserFromStorageAsync();
 
+      var roles = UserStateService.CurrentUser?.Roles ?? [];
+      var hasAccess = roles.Any(r =>
+          RoleConstants.IsAdminRole(r) ||
+          string.Equals(r, RoleConstants.Collaborator, StringComparison.OrdinalIgnoreCase));
+
+      if (!hasAccess)
+      {
+          Navigation.NavigateTo("/", forceLoad: true);
+          return;
+      }
+
       _authorized = true;
   }
 
