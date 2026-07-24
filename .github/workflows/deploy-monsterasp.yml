@@ -1,0 +1,89 @@
+name: Deploy Backend to MonsterASP.NET
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-monsterasp
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-and-deploy:
+    name: Build & Deploy Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore DotnetNiger.Api/DotnetNiger.Api.csproj
+
+      - name: Build
+        run: dotnet build DotnetNiger.Api/DotnetNiger.Api.csproj --configuration Release --no-restore
+
+      - name: Publish
+        run: dotnet publish DotnetNiger.Api/DotnetNiger.Api.csproj -c Release -o ./publish --no-restore
+
+      - name: Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
+      - name: Take application offline
+        env:
+          SFTP_PASSWORD: ${{ secrets.MONSTERASP_FTP_PASSWORD }}
+          SFTP_USER: ${{ secrets.MONSTERASP_FTP_USERNAME }}
+          SFTP_HOST: ${{ secrets.MONSTERASP_FTP_HOST }}
+          SFTP_DIR: ${{ secrets.MONSTERASP_FTP_DIR || '/wwwroot' }}
+        run: |
+          cat > ./app_offline.htm <<'HTML'
+          <!DOCTYPE html>
+          <html><head><meta charset="utf-8"><title>Deploying...</title></head>
+          <body style="display:grid;place-items:center;min-height:100vh;font-family:system-ui;margin:0;background:#07080d;color:#e7e9f0;">
+          <div style="text-align:center;padding:2rem;">
+          <h1>Deploying...</h1>
+          <p>DotnetNiger API is briefly offline. Refresh in a few seconds.</p>
+          </div></body></html>
+          HTML
+          lftp -c "set sftp:auto-confirm yes; \
+            open -u $SFTP_USER,$SFTP_PASSWORD sftp://$SFTP_HOST:22; \
+            put -O $SFTP_DIR ./app_offline.htm"
+          sleep 5
+
+      - name: Deploy via SFTP
+        env:
+          SFTP_PASSWORD: ${{ secrets.MONSTERASP_FTP_PASSWORD }}
+          SFTP_USER: ${{ secrets.MONSTERASP_FTP_USERNAME }}
+          SFTP_HOST: ${{ secrets.MONSTERASP_FTP_HOST }}
+          SFTP_DIR: ${{ secrets.MONSTERASP_FTP_DIR || '/wwwroot' }}
+        run: |
+          cd ./publish
+          lftp -c "set sftp:auto-confirm yes; \
+            set mirror:set-permissions no; \
+            open -u $SFTP_USER,$SFTP_PASSWORD sftp://$SFTP_HOST:22; \
+            mirror -R --transfer-all --verbose --exclude-glob app_offline.htm . $SFTP_DIR"
+
+      - name: Bring application online
+        if: always()
+        env:
+          SFTP_PASSWORD: ${{ secrets.MONSTERASP_FTP_PASSWORD }}
+          SFTP_USER: ${{ secrets.MONSTERASP_FTP_USERNAME }}
+          SFTP_HOST: ${{ secrets.MONSTERASP_FTP_HOST }}
+          SFTP_DIR: ${{ secrets.MONSTERASP_FTP_DIR || '/wwwroot' }}
+        run: |
+          lftp -c "set sftp:auto-confirm yes; \
+            open -u $SFTP_USER,$SFTP_PASSWORD sftp://$SFTP_HOST:22; \
+            rm -f $SFTP_DIR/app_offline.htm"
