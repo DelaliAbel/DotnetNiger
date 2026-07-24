@@ -118,11 +118,6 @@
                                                 <span class="text-xs text-slate-500 sm:text-sm">Renseigne les URLs de tes reseaux</span>
                                             </div>
 
-                                            @if (!string.IsNullOrWhiteSpace(messageSocial))
-                                            {
-                                                <p class="mb-4 rounded-lg bg-surface px-4 py-2 text-sm text-slate-700">@messageSocial</p>
-                                            }
-
                                             <div class="space-y-3">
                                                 @foreach (var item in socialLinksEdit)
                                                 {
@@ -203,7 +198,6 @@ else
     private Editor EditorRef { get; set; } = default!;
     private UpdateProfileRequest model = new();
     private List<SocialLinkEditModel> socialLinksEdit = [];
-    private string? messageSocial;
     private string displayEmail = string.Empty;
     private bool isLoading = true;
 
@@ -334,47 +328,52 @@ else
 
     private async Task SaveSocialLinksAsync()
     {
-        messageSocial = null;
-        var currentLinks = await ProfileService.GetSocialLinksAsync();
-
-        foreach (var edit in socialLinksEdit)
+        try
         {
-            var existing = currentLinks.FirstOrDefault(sl => sl.Platform == edit.Platform);
+            var currentLinks = await ProfileService.GetSocialLinksAsync();
 
-            if (string.IsNullOrWhiteSpace(edit.Url))
+            foreach (var edit in socialLinksEdit)
             {
-                if (existing is not null)
-                    await ProfileService.DeleteSocialLinkAsync(existing.Id);
-            }
-            else
-            {
-                if (existing is null || existing.Url != edit.Url)
+                var existing = currentLinks.FirstOrDefault(sl => sl.Platform == edit.Platform);
+
+                if (string.IsNullOrWhiteSpace(edit.Url))
                 {
                     if (existing is not null)
                         await ProfileService.DeleteSocialLinkAsync(existing.Id);
-
-                    await ProfileService.AddSocialLinkAsync(new AddSocialLinkRequest
+                }
+                else
+                {
+                    if (existing is null || existing.Url != edit.Url)
                     {
-                        Platform = edit.Platform,
-                        Url = edit.Url
-                    });
+                        if (existing is not null)
+                            await ProfileService.DeleteSocialLinkAsync(existing.Id);
+
+                        await ProfileService.AddSocialLinkAsync(new AddSocialLinkRequest
+                        {
+                            Platform = edit.Platform,
+                            Url = edit.Url
+                        });
+                    }
                 }
             }
+
+            var updatedLinks = await ProfileService.GetSocialLinksAsync();
+            socialLinksEdit = SocialPlatforms.Select(p => new SocialLinkEditModel
+            {
+                Platform = p,
+                Url = updatedLinks.FirstOrDefault(sl => sl.Platform == p)?.Url ?? ""
+            }).ToList();
+
+            var profil = await ProfileService.GetProfileAsync();
+            if (profil.Id != Guid.Empty)
+                await UserStateService.UpdateUserAsync(profil);
+
+            ToastService.ShowToast("Liens sociaux mis à jour avec succès.", ToastLevel.Success);
         }
-
-        var updatedLinks = await ProfileService.GetSocialLinksAsync();
-        socialLinksEdit = SocialPlatforms.Select(p => new SocialLinkEditModel
+        catch
         {
-            Platform = p,
-            Url = updatedLinks.FirstOrDefault(sl => sl.Platform == p)?.Url ?? ""
-        }).ToList();
-
-        var profil = await ProfileService.GetProfileAsync();
-        if (profil.Id != Guid.Empty)
-            await UserStateService.UpdateUserAsync(profil);
-
-        messageSocial = "Liens sociaux mis a jour avec succes.";
-        ToastService.ShowToast("Liens sociaux mis à jour avec succès.", ToastLevel.Success);
+            ToastService.ShowToast("Erreur lors de la sauvegarde des liens sociaux.", ToastLevel.Error);
+        }
     }
 
 
