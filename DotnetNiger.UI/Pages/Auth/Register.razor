@@ -1,8 +1,10 @@
 ﻿@page "/register"
 @inject IAuthService Auth
+@inject IUserStateService UserStateService
 @inject NavigationManager Navigation
 @inject IConfiguration Config
 @inject IJSRuntime JS
+@inject CustomAuthStateProvider AuthProvider
 
 <PageTitle>Inscription - .NET Niger</PageTitle>
 
@@ -454,17 +456,33 @@
     private void OAuthRegister(string provider)
     {
         var apiBase = Config["ApiBaseUrl"] ?? "http://localhost:5000";
-        var redirectUri = Navigation.BaseUri.TrimEnd('/') + "/auth/external-callback";
-        var clientId = Config["ClientId"] ?? "web-ui";
+        var externalLoginUrl = $"{apiBase.TrimEnd('/')}/api/auth/external-login?provider={Uri.EscapeDataString(provider)}";
+        _ = JS.InvokeVoidAsync("openExternalLoginPopup", externalLoginUrl, DotNetObjectReference.Create(this));
+    }
 
-        var authorizeUrl = $"{apiBase}/connect/authorize" +
-            $"?client_id={Uri.EscapeDataString(clientId)}" +
-            $"&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
-            $"&response_type=code" +
-            $"&scope={Uri.EscapeDataString("openid profile email roles offline_access")}" +
-            $"&identity_provider={Uri.EscapeDataString(provider)}";
+    [JSInvokable]
+    public async Task OnExternalLoginSuccess(string accessToken, string refreshToken, int expiresIn)
+    {
+        await AuthProvider.SaveTokensAsync(accessToken, refreshToken);
+        var user = await Auth.GetCurrentUserAsync();
+        if (user is not null)
+        {
+            await UserStateService.SetUserAsync(user);
+            var isAdmin = user.Roles?.Any(r => RoleConstants.IsAdminRole(r)) ?? false;
+            Navigation.NavigateTo(isAdmin ? "/admin" : "/");
+        }
+        else
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
 
-        Navigation.NavigateTo(authorizeUrl, forceLoad: true);
+    [JSInvokable]
+    public Task OnExternalLoginError(string error)
+    {
+        _errorMessage = error ?? "Erreur lors de l'inscription externe.";
+        StateHasChanged();
+        return Task.CompletedTask;
     }
 
     private void GoToLogin()

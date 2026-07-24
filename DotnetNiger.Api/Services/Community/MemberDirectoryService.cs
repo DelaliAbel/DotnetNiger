@@ -115,6 +115,8 @@ public class MemberDirectoryService : IMemberDirectoryService
     {
         var members = await _db.Members
             .AsNoTracking()
+            .Include(m => m.SocialLinks)
+            .Include(m => m.User)
             .Where(m => m.IsTeamMember)
             .OrderBy(m => m.DisplayName)
             .ToListAsync();
@@ -217,6 +219,24 @@ public class MemberDirectoryService : IMemberDirectoryService
     }
 
     private static MemberResponse MapToResponse(Member m) =>
-        new(m.Id, m.UserId, m.DisplayName, m.Bio, m.Location, m.WebsiteUrl,
-            m.CreatedAt, m.UpdatedAt);
+        new()
+        {
+            Id = m.Id,
+            UserId = m.UserId,
+            DisplayName = m.DisplayName,
+            FullName = !string.IsNullOrWhiteSpace(m.FullName) ? m.FullName : m.DisplayName,
+            Bio = m.Bio,
+            AvatarUrl = m.AvatarUrl,
+            Position = m.Position,
+            Location = m.Location,
+            WebsiteUrl = m.WebsiteUrl,
+            SocialLinks = m.SocialLinks?.Select(l => new SocialLinkResponse
+            {
+                Id = l.Id,
+                Platform = l.Platform,
+                Url = l.Url
+            }).ToList() ?? [],
+            CreatedAt = m.CreatedAt,
+            UpdatedAt = m.UpdatedAt
+        };
 }

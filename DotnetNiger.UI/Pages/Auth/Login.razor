@@ -32,6 +32,55 @@
                 </div>
             }
 
+            @if (_emailNotConfirmed)
+            {
+                <div class="mb-4 rounded-lg px-4 py-3 text-sm bg-amber-50 border border-amber-200 text-amber-700">
+                    <p class="font-semibold mb-1">Email non vérifié</p>
+                    <p>Votre adresse email n'a pas encore été confirmée. Vérifiez votre boîte de réception ou demandez un nouveau code.</p>
+                </div>
+
+                @if (_verifySuccess)
+                {
+                    <div class="mb-4 rounded-lg px-4 py-3 text-sm bg-green-50 border border-green-200 text-green-700">
+                        Email vérifié avec succès ! Vous pouvez maintenant vous connecter.
+                    </div>
+                }
+                else if (_isVerifyStep)
+                {
+                    <div class="mb-4 rounded-lg bg-gray-50 border border-gray-100 p-4">
+                        <p class="text-sm font-medium text-gray-700 mb-2">Code envoyé à <strong>@_verifyEmail</strong></p>
+                        <div class="mb-3">
+                            <input @bind="_verifyCode" maxlength="6" placeholder="000000"
+                                   class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-center text-lg tracking-[0.5em] font-mono focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition" />
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="button" disabled="@(_isLoading || _isResending)" @onclick="SubmitVerifyEmailCode"
+                                    class="flex-1 rounded-lg bg-purple-600 py-2 text-sm font-semibold text-white hover:bg-purple-700 transition disabled:opacity-60">
+                                @(_isLoading ? "Vérification..." : "Vérifier")
+                            </button>
+                            <button type="button" disabled="@_isResending" @onclick="ResendVerificationCode"
+                                    class="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 transition disabled:opacity-60">
+                                @(_isResending ? "Renvoi..." : "Renvoyer")
+                            </button>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="mb-4 flex flex-col sm:flex-row gap-2">
+                        <button type="button" disabled="@_isResending" @onclick="SendVerificationCode"
+                                class="flex-1 rounded-lg bg-purple-600 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 transition disabled:opacity-60">
+                            <i class="fas fa-envelope mr-1"></i>
+                            @(_isResending ? "Envoi en cours..." : "Recevoir un code de vérification")
+                        </button>
+                        <button type="button" @onclick="() => { _emailNotConfirmed = false; _errorMessage = null; }"
+                                class="rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50 transition">
+                            Ignorer
+                        </button>
+                    </div>
+                }
+            }
+
             @if (_resetSuccessMessage)
             {
                 <div class="mb-4 rounded-lg px-4 py-3 text-sm bg-green-50 border border-green-200 text-green-700">
@@ -163,6 +212,12 @@
     private string? _errorMessage;
     private bool _resetSuccessMessage;
     private bool _isMock;
+    private bool _emailNotConfirmed;
+    private string _verifyEmail = "";
+    private string _verifyCode = "";
+    private bool _isVerifyStep;
+    private bool _isResending;
+    private bool _verifySuccess;
 
     private void TogglePasswordVisibility() => _showPassword = !_showPassword;
 
@@ -199,7 +254,17 @@
         }
         else
         {
-            _errorMessage = result.Message ?? "Erreur de connexion.";
+            var msg = result.Message ?? "Erreur de connexion.";
+            if (msg.Contains("non confirmé", StringComparison.OrdinalIgnoreCase))
+            {
+                _emailNotConfirmed = true;
+                _verifyEmail = _loginModel.Email;
+                _errorMessage = null;
+            }
+            else
+            {
+                _errorMessage = msg;
+            }
         }
     }
 
@@ -290,6 +355,48 @@
         else
         {
             _errorMessage = result.Message ?? "Erreur de connexion.";
+        }
+    }
+
+    private async Task SendVerificationCode()
+    {
+        _isResending = true;
+        var sent = await Auth.RequestEmailVerificationAsync(new RequestEmailVerificationRequest { Email = _verifyEmail });
+        _isResending = false;
+        if (sent)
+            _isVerifyStep = true;
+        else
+            _errorMessage = "Impossible d'envoyer le code. Réessayez plus tard.";
+    }
+
+    private async Task ResendVerificationCode()
+    {
+        _isResending = true;
+        var sent = await Auth.RequestEmailVerificationAsync(new RequestEmailVerificationRequest { Email = _verifyEmail });
+        _isResending = false;
+        if (!sent)
+            _errorMessage = "Impossible de renvoyer le code. Réessayez plus tard.";
+    }
+
+    private async Task SubmitVerifyEmailCode()
+    {
+        _isLoading = true;
+        _errorMessage = null;
+        var verified = await Auth.VerifyEmailAsync(new VerifyEmailRequest
+        {
+            Email = _verifyEmail,
+            Code = _verifyCode
+        });
+        _isLoading = false;
+
+        if (verified)
+        {
+            _verifySuccess = true;
+            _isVerifyStep = false;
+        }
+        else
+        {
+            _errorMessage = "Code invalide ou expiré. Réessayez.";
         }
     }
 }

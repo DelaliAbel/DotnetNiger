@@ -16,7 +16,7 @@ public static class ApiEndpoints
     public const string Upload = "api/upload";
     public const string UploadBase64 = "api/upload/base64";
     public const string Profile = "api/profile";
-    public const string SocialLinks = "api/profile";
+    public const string SocialLinks = "api/profile/social-links";
     public const string Certificates = "api/certificates";
     public const string Comments = "api/comments";
     public const string Categories = "api/categories";

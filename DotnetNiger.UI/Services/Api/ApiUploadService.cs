@@ -114,9 +114,11 @@ public class ApiUploadService : ApiServiceBase, IUploadService
 
     public string GetFolderPath(UploadType type) => type switch
     {
-        UploadType.User => "/uploads/users",
-        UploadType.Event => "/uploads/events",
-        UploadType.Blog => "/uploads/blog",
-        _ => "/uploads"
+        UploadType.User => "/uploads/avatars",
+        UploadType.Event => "/uploads/covers",
+        UploadType.Blog => "/uploads/posts/blog",
+        UploadType.Resource => "/uploads/resources",
+        UploadType.Certificate => "/uploads/certificates",
+        _ => "/uploads/files"
     };
 }

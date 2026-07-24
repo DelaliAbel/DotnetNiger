@@ -115,6 +115,24 @@ public class ProfileService : IProfileService
             member.UpdatedAt = DateTime.UtcNow;
         }
 
+        if (request.Skills != null && member != null)
+        {
+            var existingSkills = await _db.MemberSkills
+                .Where(s => s.MemberId == member.Id)
+                .ToListAsync();
+            _db.MemberSkills.RemoveRange(existingSkills);
+
+            foreach (var skill in request.Skills.Where(s => !string.IsNullOrWhiteSpace(s)))
+            {
+                _db.MemberSkills.Add(new MemberSkill
+                {
+                    Id = Guid.NewGuid(),
+                    MemberId = member.Id,
+                    SkillName = skill.Trim()
+                });
+            }
+        }
+
         await _db.SaveChangesAsync();
         return await GetAsync(userId);
     }
