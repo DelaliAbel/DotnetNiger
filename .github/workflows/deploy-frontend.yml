@@ -34,19 +34,19 @@ jobs:
       - name: Restore
         run: dotnet restore DotnetNiger.UI/DotnetNiger.UI.csproj
 
-      - name: Publish
-        run: dotnet publish DotnetNiger.UI/DotnetNiger.UI.csproj -c Release -o publish
-
       - name: Inject production config
         run: |
-          cat > publish/wwwroot/appsettings.Production.json << 'EOF'
+          cat > DotnetNiger.UI/wwwroot/appsettings.json << 'EOF'
           {
             "ApiBaseUrl": "http://dotnetnigerdeploytest.runasp.net",
             "UseMockServices": false,
             "ClientId": "web-ui"
           }
           EOF
-          sed -i 's|<base href="/" />|<base href="/DotnetNiger/" />|' publish/wwwroot/index.html
+          sed -i 's|<base href="/" />|<base href="/DotnetNiger/" />|' DotnetNiger.UI/wwwroot/index.html
+
+      - name: Publish
+        run: dotnet publish DotnetNiger.UI/DotnetNiger.UI.csproj -c Release -o publish
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
