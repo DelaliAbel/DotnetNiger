@@ -9,7 +9,7 @@
 @using DotnetNiger.UI.Components.Admin.Shared
 @using DotnetNiger.UI.Components.Cards
 
-<div class="p-6 bg-primary">
+<div class="p-6">
     @if (isLoading)
     {
         <div class="flex justify-between items-center mb-6">
@@ -74,7 +74,7 @@
         <div class="flex justify-between items-center mb-6">
             <AdminBreadcrumb />
             <button @onclick="OpenDrawer"
-                    class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(91,77,245,0.25)] transition hover:brightness-95">
+                    class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white">
                 <i class="fas fa-plus text-sm"></i>
                 <span class="hidden sm:block">Nouveau</span>
             </button>
@@ -94,20 +94,20 @@
                     <div class="flex-1 overflow-y-auto px-6 py-6 space-y-5">
                         @if (!string.IsNullOrEmpty(drawerError))
                         {
-                            <div class="bg-red-50   border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">@drawerError
+                            <div class="bg-red-50 border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">@drawerError
                             </div>
                         }
                         <EditForm Model="resourceRequest" OnValidSubmit="SaveResource">
                             <DataAnnotationsValidator />
                             <div>
-                                <label class="block text-sm font-medium mb-1">Titre *</label>
+                                <label class="block text-sm font-medium mb-1 text-title">Titre *</label>
                                 <InputText @bind-Value="resourceRequest.Title"
-                                           class="w-full rounded-lg px-4 py-2 focus:outline-none"
+                                           class="w-full rounded-lg text-body bg-surface px-4 py-2 focus:outline-none"
                                            placeholder="Titre de la ressource" />
                                 <ValidationMessage For="@(() => resourceRequest.Title)" class="text-xs text-red-500 mt-1" />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium mb-1">Description *</label>
+                                <label class="block text-sm font-medium mb-1 text-title">Description *</label>
                                 <InputTextArea @bind-Value="resourceRequest.Description" rows="3"
                                                class="w-full text-body bg-surface rounded-lg px-4 py-2 focus:outline-none"
                                                placeholder="Description de la ressource" />
@@ -115,16 +115,16 @@
                                                    class="text-xs text-red-500 mt-1" />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium mb-1">URL *</label>
+                                <label class="block text-sm font-medium mb-1 text-title">URL *</label>
                                 <InputText @bind-Value="resourceRequest.Url"
                                            class="w-full text-body bg-surface rounded-lg px-4 py-2 focus:outline-none"
                                            placeholder="https://..." />
                                 <ValidationMessage For="@(() => resourceRequest.Url)" class="text-xs text-red-500 mt-1" />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium mb-1">Type *</label>
+                                <label class="block text-sm font-medium mb-1 text-title">Type *</label>
                                 <InputSelect @bind-Value="resourceRequest.ResourceType"
-                                             class="w-full text-body  rounded-lg px-4 py-2 bg-surface focus:outline-none">
+                                             class="w-full text-body rounded-lg px-4 py-2 bg-surface focus:outline-none">
                                     <option value="">Selectionner un type</option>
                                     <option value="Documentation">Documentation</option>
                                     <option value="Tutoriel">Tutoriel</option>
@@ -138,7 +138,7 @@
                                                    class="text-xs text-red-500 mt-1" />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium mb-1">Niveau *</label>
+                                <label class="block text-sm font-medium mb-1 text-title">Niveau *</label>
                                 <InputSelect @bind-Value="resourceRequest.Level"
                                              class="w-full text-body  rounded-lg px-4 py-2 bg-surface focus:outline-none">
                                     <option value="">Selectionner un niveau</option>

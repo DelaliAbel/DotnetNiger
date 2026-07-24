@@ -43,13 +43,13 @@
                 @foreach (var tech in Project.Technologies.Split(',', StringSplitOptions.RemoveEmptyEntries |
             StringSplitOptions.TrimEntries).Take(3))
                 {
-                    <span class="rounded-lg bg-primary px-2 py-1 text-xs font-medium text-gray-700">@tech</span>
+                    <span class="rounded-lg bg-primary px-2 py-1 text-xs font-medium text-title">@tech</span>
                 }
                 @if (Project.Technologies.Split(',', StringSplitOptions.RemoveEmptyEntries |
             StringSplitOptions.TrimEntries).Length > 3)
                 {
                     <span class="text-xs text-gray-400">+@(Project.Technologies.Split(',', StringSplitOptions.RemoveEmptyEntries
-                                        | StringSplitOptions.TrimEntries).Length - 3)</span>
+                                                                | StringSplitOptions.TrimEntries).Length - 3)</span>
                     }
                 </div>
             }
@@ -83,7 +83,7 @@
 
     private string StatusCssClass => IsActive
         ? "bg-green-100 text-green-700"
-        : "bg-gray-100 text-gray-700";
+        : "bg-gray-100 text-title";
 
     private string StatusDotCssClass => IsActive
         ? "bg-green-500"

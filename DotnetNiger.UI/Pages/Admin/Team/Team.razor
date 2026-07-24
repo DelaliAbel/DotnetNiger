@@ -21,10 +21,10 @@
                 </div>
                 <Skeleton Type="SkeletonType.Button" Width="160px" />
             </div>
-            <div class="overflow-hidden rounded-lg bg-surface shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
+            <div class="overflow-hidden rounded-lg bg-surface">
                 <div class="overflow-x-auto">
                     <table class="w-full">
-                        <thead class="border-b border-gray-100 bg-gray-50">
+                        <thead class="border-b border-gray-100">
                             <tr>
                                 <th class="px-6 py-4 text-left text-sm font-semibold text-title">Membre</th>
                                 <th class="px-6 py-4 text-left text-sm font-semibold text-title">Position</th>
@@ -80,9 +80,9 @@ else
                     </section>
                     <div class="flex items-center gap-3">
                         <button @onclick="NavigateToUsers"
-                                class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(91,77,245,0.25)] transition hover:brightness-95">
+                                class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white">
                             <i class="fas fa-plus text-sm"></i>
-                            <span class="hidden sm:block">Nouveau membre</span>
+                            <span class="hidden sm:block">Nouveau</span>
                         </button>
                     </div>
                 </div>

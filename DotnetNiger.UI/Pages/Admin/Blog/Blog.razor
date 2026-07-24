@@ -1,5 +1,4 @@
 ﻿@page "/admin/blog"
-@* @attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")] *@
 @* Page admin : gestion des articles (recherche, filtres, vue liste/grille). *@
 @using DotnetNiger.UI.Components.Admin.Cards
 @inject NavigationManager NavigationManager
@@ -17,7 +16,7 @@
                         articles dans une interface plus claire et plus rapide.</p>
                     </section>
                     <button @onclick='() => NavigationManager.NavigateTo("/admin/blog/create")'
-                            class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(91,77,245,0.25)] transition hover:brightness-95">
+                            class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white">
                         <i class="fas fa-plus text-sm"></i>
                         <span class="hidden sm:block">Nouveau</span>
                     </button>

@@ -20,7 +20,7 @@
 
         <div class="rounded-lg bg-surface p-6 shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5 md:p-8">
             <h1 class="text-2xl font-bold text-title">Modifier le projet</h1>
-            <p class="mt-1 text-sm text-muted">Modifiez les informations du projet.</p>
+            <p class="mt-1 text-sm text-subtitle">Modifiez les informations du projet.</p>
 
             @if (isLoading)
             {
@@ -78,7 +78,7 @@
                         <div>
                             <label class="block text-sm font-semibold text-title">Titre *</label>
                             <InputText @bind-Value="updateRequest.Title"
-                                       class="mt-1 w-full rounded-lg     px-4 py-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+                                       class="mt-1 w-full rounded-lg text-body px-4 py-3 text-sm transition focus:outline-none"
                                        placeholder="Nom du projet" />
                             <ValidationMessage For="@(() => updateRequest.Title)" class="mt-1 text-xs text-red-500" />
                         </div>
@@ -86,7 +86,7 @@
                         <div>
                             <label class="block text-sm font-semibold text-title">Statut</label>
                             <InputSelect @bind-Value="updateRequest.Status"
-                                         class="mt-1 w-full rounded-lg     bg-surface px-4 py-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20">
+                                         class="mt-1 w-full rounded-lg text-body bg-surface px-4 py-3 text-sm transition focus:outline-none">
                                 <option value="active">Actif</option>
                                 <option value="archived">Archivé</option>
                             </InputSelect>
@@ -96,7 +96,7 @@
                     <div>
                         <label class="block text-sm font-semibold text-title">Description *</label>
                         <InputTextArea @bind-Value="updateRequest.Description" rows="5"
-                                       class="mt-1 w-full rounded-lg     px-4 py-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+                                       class="mt-1 w-full rounded-lg text-body px-4 py-3 text-sm transition focus:outline-none"
                                        placeholder="Décrivez le projet..." />
                         <ValidationMessage For="@(() => updateRequest.Description)" class="mt-1 text-xs text-red-500" />
                     </div>
@@ -104,21 +104,21 @@
                     <div>
                         <label class="block text-sm font-semibold text-title">URL GitHub</label>
                         <InputText @bind-Value="updateRequest.GithubUrl"
-                                   class="mt-1 w-full rounded-lg     px-4 py-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+                                   class="mt-1 w-full rounded-lg text-body px-4 py-3 text-sm transition focus:outline-none"
                                    placeholder="https://github.com/..." />
                     </div>
 
                     <div>
                         <label class="block text-sm font-semibold text-title">Technologies</label>
                         <InputText @bind-Value="updateRequest.Technologies"
-                                   class="mt-1 w-full rounded-lg     px-4 py-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+                                   class="mt-1 w-full rounded-lg text-body px-4 py-3 text-sm transition focus:outline-none"
                                    placeholder="ASP.NET Core, Blazor, PostgreSQL..." />
                     </div>
 
                     <div>
                         <label class="block text-sm font-semibold text-title">Image URL</label>
                         <InputText @bind-Value="updateRequest.ImageUrl"
-                                   class="mt-1 w-full rounded-lg     px-4 py-3 text-sm outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20"
+                                   class="mt-1 w-full rounded-lg text-body px-4 py-3 text-sm transition focus:outline-none"
                                    placeholder="https://..." />
                     </div>
 
@@ -145,7 +145,7 @@
                             Enregistrer
                         </button>
                         <button type="button" @onclick="GoBack"
-                                class="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-6 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-300">
+                                class="inline-flex items-center gap-2 rounded-lg bg-gray-200 px-6 py-3 text-sm font-semibold text-title transition hover:bg-gray-300">
                             Annuler
                         </button>
                     </div>

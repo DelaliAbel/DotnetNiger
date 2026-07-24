@@ -3,7 +3,7 @@
 
 <div class="bg-surface rounded-lg shadow-md">
     <table class="w-full">
-        <thead class="bg-gray-50 border-b">
+        <thead class="border-b">
             <tr>
                 <th class="px-6 py-3 text-left text-sm font-semibold text-title">Titre</th>
                 <th class="px-6 py-3 text-left text-sm font-semibold text-title">Type</th>
@@ -24,8 +24,8 @@
             {
                 @foreach (var resource in Resources)
                 {
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="px-6 py-4 text-sm font-medium">@resource.Title</td>
+                    <tr class="border-b hover:bg-gray-50/80">
+                        <td class="px-6 py-4 text-sm font-medium text-title">@resource.Title</td>
                         <td class="px-6 py-4 text-sm">
                             <span class="rounded-full bg-blue-100 text-blue-800 px-2 py-1 text-xs">@resource.ResourceType</span>
                         </td>
@@ -36,7 +36,7 @@
                                 @(resource.Url.Length > 40 ? resource.Url[..40] + "..." : resource.Url)
                             </a>
                         </td>
-                        <td class="px-6 py-4 text-sm">@resource.ViewCount</td>
+                        <td class="px-6 py-4 text-sm text-title">@resource.ViewCount</td>
                         <td class="px-6 py-4 text-sm">
                             <AdminActionDropdown ItemId="resource.Id" EditLabel="Modifier" DeleteLabel="Supprimer"
                                                  OnEdit="HandleEdit" OnDelete="HandleDelete" />

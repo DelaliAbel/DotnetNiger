@@ -1,5 +1,4 @@
 @page "/admin/users/{UserId:guid}"
-@* @attribute [Authorize(Roles = "Admin,SuperAdmin")] *@
 @using DotnetNiger.UI.Models.Requests
 @using DotnetNiger.UI.Components.Admin.Shared
 @using DotnetNiger.UI.Services.Contracts
@@ -34,7 +33,7 @@
                 </section>
             </div>
             <div class="space-y-6">
-                <section class="rounded-lg   border-slate-200 bg-surface p-8 shadow-sm">
+                <section class="rounded-lg border-slate-200 bg-surface p-8 shadow-sm">
                     <Skeleton Type="SkeletonType.Title" Class="w-1/4 mb-4" />
                     <Skeleton Type="SkeletonType.Text" Lines="3" />
                 </section>
@@ -85,7 +84,7 @@ else
                     </div>
 
                     <div class="space-y-2 text-center">
-                        <h2 class="text-xl sm:text-4xl font-semibold tracking-tight text-slate-800">
+                        <h2 class="text-xl sm:text-4xl font-semibold tracking-tight text-title">
                             @DisplayOrFallback(user.FullName, user.Username)</h2>
                             <p class="text-lg text-slate-500">@DisplayPrimaryRole(user.Roles)</p>
                         </div>

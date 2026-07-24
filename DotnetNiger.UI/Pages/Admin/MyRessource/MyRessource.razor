@@ -9,7 +9,7 @@
 @using DotnetNiger.UI.Components.Admin.Shared
 @using DotnetNiger.UI.Components.Cards
 
-<div class="p-6 bg-primary">
+<div class="p-6">
     @if (isLoading)
     {
         <div class="flex justify-between items-center mb-6">
@@ -27,7 +27,7 @@
 
         <div class="bg-surface rounded-lg shadow overflow-hidden">
             <table class="w-full">
-                <thead class="bg-gray-50 border-b">
+                <thead class="border-b">
                     <tr>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-title">Titre</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-title">Type</th>
@@ -74,7 +74,7 @@
         <div class="flex justify-between items-center mb-6">
             <AdminBreadcrumb />
             <button @onclick='() => Navigation.NavigateTo("/admin/mes-ressources/nouveau")'
-                    class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(91,77,245,0.25)] transition hover:brightness-95">
+                    class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white">
                 <i class="fas fa-plus text-sm"></i>
                 <span class="hidden sm:block">Nouveau</span>
             </button>

@@ -16,7 +16,7 @@
                 </div>
                 <Skeleton Type="SkeletonType.Button" Width="140px" />
             </div>
-            <div class="overflow-hidden rounded-lg bg-surface shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
+            <div class="overflow-hidden rounded-lg bg-surface">
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead class="border-b border-gray-100 bg-gray-50">
@@ -63,7 +63,7 @@ else
                         abonné@(subscribers.Count > 1 ? "s" : "") à la newsletter.</p>
                     </section>
                     <button @onclick="ExportCsv"
-                            class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(91,77,245,0.25)] transition hover:brightness-95">
+                            class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white">
                         <i class="fas fa-download text-sm"></i>
                         <span class="hidden sm:block">Export CSV</span>
                     </button>

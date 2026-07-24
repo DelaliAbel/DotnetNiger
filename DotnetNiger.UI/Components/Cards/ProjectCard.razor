@@ -39,7 +39,7 @@ else
                         @foreach (var tech in Project.Technologies.Split(',', StringSplitOptions.RemoveEmptyEntries |
                 StringSplitOptions.TrimEntries))
                         {
-                            <span class="text-[10px] sm:text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">@tech</span>
+                            <span class="text-[10px] sm:text-xs bg-gray-100 text-title px-2 py-1 rounded">@tech</span>
                         }
                     </div>
                 }
@@ -47,7 +47,7 @@ else
                 <div class="mt-3 sm:mt-4 flex items-center justify-between text-[10px] sm:text-xs text-body">
                     <span>Par @Project.AuthorName</span>
                     <span>@Project.CreatedAt.ToString("dd MMM. yyyy",
-                                                                                                                                        System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
+                                                                                                                                                                System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</span>
                     </div>
 
                     <div class="mt-4 sm:mt-6 flex items-center space-x-2 sm:space-x-3">

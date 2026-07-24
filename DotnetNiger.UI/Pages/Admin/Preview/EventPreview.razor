@@ -31,7 +31,7 @@ else
         <div class="mx-auto w-full max-w-6xl space-y-4">
             <div class="flex items-center justify-between">
                 <button @onclick="GoBack"
-                        class="inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-black/5 transition hover:bg-gray-50">
+                        class="inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2.5 text-sm font-semibold text-title shadow-sm ring-1 ring-black/5 transition hover:bg-gray-50">
                     <i class="fas fa-arrow-left text-sm"></i>
                     <span>Retour</span>
                 </button>
@@ -55,7 +55,7 @@ else
                                 </span>
                             </div>
 
-                            <h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold leading-tight text-gray-700">
+                            <h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold leading-tight text-title">
                                 @(CurrentEvent?.Title ?? "")
                             </h1>
 
@@ -84,7 +84,7 @@ else
                             <div class="flex flex-wrap items-center gap-3 rounded-lg bg-gray-50 px-4 py-3">
                                 <div class="flex items-center gap-2 ml-auto">
                                     <div>
-                                        <p class="text-xs sm:text-sm font-semibold text-gray-700">
+                                        <p class="text-xs sm:text-sm font-semibold text-title">
                                             @(CurrentEvent?.RegisteredCount) inscrits
                                         </p>
                                         <p class="text-[11px] sm:text-xs text-body">
@@ -97,7 +97,7 @@ else
                     </article>
 
                     <article class="rounded-lg bg-surface p-4 sm:p-6 shadow-sm">
-                        <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-gray-700">
+                        <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-title">
                             À propos de l'événement
                         </h2>
                         @if (!string.IsNullOrWhiteSpace(CurrentEvent?.Description))
@@ -112,7 +112,7 @@ else
                     {
                         <article class="rounded-lg bg-surface p-4 sm:p-6 shadow-sm">
                             <div class="text-center">
-                                <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-gray-700">Intervenants</h2>
+                                <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-title">Intervenants</h2>
                                 <p class="mt-2 text-xs  text-body sm:text-base">
                                     Des experts passionnés partageant leur savoir.
                                 </p>
@@ -133,7 +133,7 @@ else
                                                 <span>@(speaker.Name.Length > 0 ? speaker.Name[..1].ToUpper() : "?")</span>
                                             }
                                         </div>
-                                        <h3 class="mt-2 sm:mt-3 text-xs sm:text-sm font-semibold text-gray-700">
+                                        <h3 class="mt-2 sm:mt-3 text-xs sm:text-sm font-semibold text-title">
                                             @speaker.Name
                                         </h3>
                                         <p class="text-[10px] sm:text-xs text-body">@speaker.Role</p>
@@ -146,7 +146,7 @@ else
                     @if (CurrentEvent?.GalleryImageUrls?.Count > 0)
                     {
                         <article class="rounded-lg bg-surface p-4 sm:p-6 shadow-sm">
-                            <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-gray-700">Galerie photos</h2>
+                            <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-title">Galerie photos</h2>
                             <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                                 @for (var i = 0; i < CurrentEvent!.GalleryImageUrls.Count; i++)
                                 {

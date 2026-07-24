@@ -1,5 +1,4 @@
 @page "/admin/Users"
-@* @attribute [Authorize(Roles = "Admin,SuperAdmin")] *@
 @using DotnetNiger.UI.Models.Requests
 @using DotnetNiger.UI.Components.Admin.Cards
 @using DotnetNiger.UI.Components.Admin.Shared
@@ -26,7 +25,7 @@
             @if (isSuperAdmin)
             {
                 <button @onclick="OpenCreateAsync"
-                        class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white shadow-[0_10px_20px_rgba(91,77,245,0.25)] transition hover:brightness-95">
+                        class="inline-flex items-center gap-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white">
                     <i class="fas fa-plus text-sm"></i>
                     <span class="hidden sm:block">Nouveau</span>
                 </button>
@@ -34,15 +33,15 @@
         </div>
 
         <div class="mb-6 grid gap-4 sm:grid-cols-3">
-            <article class="rounded-lg bg-surface p-5 shadow-sm ring-1 ring-gray-100">
+            <article class="rounded-lg bg-surface p-5 shadow-sm">
                 <p class="text-sm text-body">Total utilisateurs</p>
                 <p class="mt-2 text-3xl font-bold text-title">@totalUsers</p>
             </article>
-            <article class="rounded-lg bg-surface p-5 shadow-sm ring-1 ring-gray-100">
+            <article class="rounded-lg bg-surface p-5 shadow-sm">
                 <p class="text-sm text-body">Actifs</p>
                 <p class="mt-2 text-3xl font-bold text-emerald-600">@activeUsers</p>
             </article>
-            <article class="rounded-lg bg-surface p-5 shadow-sm ring-1 ring-gray-100">
+            <article class="rounded-lg bg-surface p-5 shadow-sm">
                 <p class="text-sm text-body">En attente</p>
                 <p class="mt-2 text-3xl font-bold text-amber-600">@pendingUsers.Count</p>
             </article>
@@ -149,7 +148,7 @@
             <div class="mb-6 grid gap-4 sm:grid-cols-3">
                 @for (int i = 0; i < 3; i++)
                 {
-                    <article class="rounded-lg bg-surface p-5 shadow-sm ring-1 ring-gray-100">
+                    <article class="rounded-lg bg-surface p-5 shadow-sm">
                         <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-20" />
                         <Skeleton Type="SkeletonType.Title" Class="h-8 w-16 mt-2" />
                     </article>
@@ -164,7 +163,7 @@
                 <Skeleton Type="SkeletonType.Custom" Class="h-12 w-24 rounded-lg" />
             </div>
 
-            <section class="mb-8 rounded-lg bg-surface p-5 shadow-sm ring-1 ring-gray-100">
+            <section class="mb-8 rounded-lg bg-surface p-5 shadow-sm">
                 <div class="mb-4 flex items-center justify-between gap-3">
                     <div>
                         <Skeleton Type="SkeletonType.Title" Class="h-6 w-48" />
@@ -192,7 +191,7 @@
                 </div>
             </section>
 
-            <div class="rounded-lg bg-surface ring-1 ring-gray-100 overflow-hidden">
+            <div class="rounded-lg bg-surface overflow-hidden">
                 <div class="divide-y divide-gray-100">
                     @for (int i = 0; i < 6; i++)
                     {

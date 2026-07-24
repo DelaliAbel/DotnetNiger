@@ -1,5 +1,4 @@
 @page "/admin/comments"
-@* @attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")] *@
 @using DotnetNiger.UI.Components.Admin.Cards
 @inject ICommentService CommentService
 @inject IToastService ToastService
@@ -21,17 +20,17 @@
                 <Skeleton Type="SkeletonType.Button" Width="120px" />
                 <Skeleton Type="SkeletonType.Button" Width="100px" />
             </div>
-            <div class="overflow-hidden rounded-lg bg-surface shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
+            <div class="overflow-hidden rounded-lg bg-surface">
                 <div class="overflow-x-auto">
                     <table class="w-full">
-                        <thead class="border-b border-gray-100 bg-gray-50">
+                        <thead class="border-b border-gray-100">
                             <tr>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Auteur</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Contenu</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Type</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Date</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Statut</th>
-                                <th class="px-6 py-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Auteur</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Contenu</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Type</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Date</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Statut</th>
+                                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Actions</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-gray-100">
@@ -80,19 +79,19 @@ else
                 <section class="mb-6 flex flex-wrap items-center gap-3">
                     <div class="flex flex-wrap gap-2">
                         <button @onclick='() => SetFilter("all")'
-                                class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "all" ? "bg-black text-white" : "bg-surface text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50")">
+                                class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "all" ? "bg-black text-white" : "bg-surface text-title ring-1 ring-gray-200 hover:bg-gray-50")">
                             Tous (@allComments.Count)
                         </button>
                         <button @onclick='() => SetFilter("pending")'
-                                class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "pending" ? "bg-amber-500 text-white" : "bg-surface text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50")">
+                                class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "pending" ? "bg-amber-500 text-white" : "bg-surface text-title ring-1 ring-gray-200 hover:bg-gray-50")">
                             En attente (@pendingCount)
                         </button>
                         <button @onclick='() => SetFilter("approved")'
-                                class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "approved" ? "bg-green-600 text-white" : "bg-surface text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50")">
+                                class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "approved" ? "bg-green-600 text-white" : "bg-surface text-title ring-1 ring-gray-200 hover:bg-gray-50")">
                             Approuvés (@approvedCount)
                         </button>
                         <button @onclick='() => SetFilter("rejected")'
-                                class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "rejected" ? "bg-red-600 text-white" : "bg-surface text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50")">
+                                class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "rejected" ? "bg-red-600 text-white" : "bg-surface text-title ring-1 ring-gray-200 hover:bg-gray-50")">
                             Rejetés (@rejectedCount)
                         </button>
                     </div>

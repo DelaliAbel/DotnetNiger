@@ -6,7 +6,7 @@
 @inject IResourceService ResourceService
 @inject IToastService ToastService
 
-<div class="p-6 bg-primary">
+<div class="p-6">
     <div class="flex justify-between items-center mb-6">
         <AdminBreadcrumb />
         <button @onclick="GoBack"
@@ -19,7 +19,7 @@
     @if (!isLoading)
     {
         <div class="bg-surface rounded-lg shadow p-6">
-            <h2 class="text-xl font-semibold mb-6">Modifier la ressource</h2>
+            <h2 class="text-xl font-semibold mb-6 text-title">Modifier la ressource</h2>
 
             @if (!string.IsNullOrEmpty(errorMessage))
             {
@@ -29,30 +29,30 @@
             <EditForm Model="resourceRequest" OnValidSubmit="UpdateResource" class="space-y-5">
                 <DataAnnotationsValidator />
                 <div>
-                    <label class="block text-sm font-medium mb-1">Titre *</label>
+                    <label class="block text-sm font-medium mb-1 text-title">Titre *</label>
                     <InputText @bind-Value="resourceRequest.Title"
-                               class="w-full   rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               class="w-full text-body rounded-lg px-4 py-2 focus:outline-none"
                                placeholder="Titre de la ressource" />
                     <ValidationMessage For="@(() => resourceRequest.Title)" class="text-xs text-red-500 mt-1" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium mb-1">Description *</label>
+                    <label class="block text-sm font-medium mb-1 text-title">Description *</label>
                     <InputTextArea @bind-Value="resourceRequest.Description" rows="3"
-                                   class="w-full   rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   class="w-full text-body rounded-lg px-4 py-2 focus:outline-none"
                                    placeholder="Description de la ressource" />
                     <ValidationMessage For="@(() => resourceRequest.Description)" class="text-xs text-red-500 mt-1" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium mb-1">URL *</label>
+                    <label class="block text-sm font-medium mb-1 text-title">URL *</label>
                     <InputText @bind-Value="resourceRequest.Url"
-                               class="w-full   rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                               class="w-full text-body rounded-lg px-4 py-2 focus:outline-none"
                                placeholder="https://..." />
                     <ValidationMessage For="@(() => resourceRequest.Url)" class="text-xs text-red-500 mt-1" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Type *</label>
                     <InputSelect @bind-Value="resourceRequest.ResourceType"
-                                 class="w-full   rounded-lg px-4 py-2 bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                 class="w-full text-body rounded-lg px-4 py-2 bg-surface focus:outline-none">
                         <option value="">Selectionner un type</option>
                         <option value="Documentation">Documentation</option>
                         <option value="Tutoriel">Tutoriel</option>
@@ -65,9 +65,9 @@
                     <ValidationMessage For="@(() => resourceRequest.ResourceType)" class="text-xs text-red-500 mt-1" />
                 </div>
                 <div>
-                    <label class="block text-sm font-medium mb-1">Niveau *</label>
+                    <label class="block text-sm font-medium mb-1 text-title">Niveau *</label>
                     <InputSelect @bind-Value="resourceRequest.Level"
-                                 class="w-full   rounded-lg px-4 py-2 bg-surface focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                 class="w-full text-body rounded-lg px-4 py-2 bg-surface focus:outline-none">
                         <option value="">Selectionner un niveau</option>
                         <option value="Débutant">Débutant</option>
                         <option value="Intermediaire">Intermediaire</option>

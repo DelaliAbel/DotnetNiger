@@ -5,10 +5,9 @@
 
 <div class="rounded-lg bg-surface shadow-md">
       <table class="w-full">
-            <thead class="border-b bg-gray-100">
+            <thead class="border-b">
                   <tr>
                         <th class="Button px-6 py-4 text-left text-title">Avatar</th>
-                        <th class="Button px-6 py-4 text-left text-title">ID</th>
                         <th class="Button px-6 py-4 text-left text-title">Nom</th>
                         <th class="Button px-6 py-4 text-left text-title">Email</th>
                         <th class="Button px-6 py-4 text-left text-title">Role</th>
@@ -28,22 +27,21 @@
                         {
                               @foreach (var user in Users)
                               {
-                                    <tr @key="user.Id" class="transition hover:bg-gray-50">
+                                    <tr @key="user.Id" class="transition hover:bg-gray-50/80">
                                           <td class="px-6 py-4 text-sm font-medium text-text">
                                                 <ResolvedImage Src="@user.AvatarUrl" Icon="fa-user" class="h-10 w-10 rounded-full" />
                                           </td>
-                                          <td class="px-6 py-4 text-sm text-text">@user.Id.ToString()[..8]</td>
-                                          <td class="px-6 py-4 text-sm text-text">@user.FullName</td>
-                                          <td class="px-6 py-4 text-sm text-text">
+                                          <td class="px-6 py-4 text-sm text-title">@user.FullName</td>
+                                          <td class="px-6 py-4 text-sm text-title">
                                                 <span
-                                                class="rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">@user.Email</span>
+                                                class="rounded-full bg-fondTransparent px-2 py-1 text-xs font-medium">@user.Email</span>
                                           </td>
                                           <td class="px-6 py-4 text-sm">
                                                 <div class="flex items-center gap-2">
                                                       <div
                                                             class="h-3 w-3 rounded-full @(user.IsActive ? "bg-emerald-500" : "bg-amber-500")">
                                                       </div>
-                                                      <span class="text-gray-700">@GetPrimaryRole(user)</span>
+                                                      <span class="text-subtitle">@GetPrimaryRole(user)</span>
                                                 </div>
                                           </td>
                                           <td class="px-6 py-4 text-sm text-text">@user.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>

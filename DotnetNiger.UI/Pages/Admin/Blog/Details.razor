@@ -28,7 +28,7 @@
 				</ol>
 			</nav>
 			<button @onclick="GoBack"
-					class="inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-black/5 transition hover:bg-gray-50">
+					class="inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2.5 text-sm font-semibold text-title shadow-sm ring-1 ring-black/5 transition hover:bg-gray-50">
 				<i class="fas fa-arrow-left text-sm"></i>
 				<span>Retour</span>
 			</button>
@@ -125,10 +125,10 @@
 					<div class="space-y-2">
 						<div class="flex flex-wrap items-center gap-2">
 							<span
-							class="rounded-full bg-primary px-3 py-1 text-[10px] sm:text-xs font-semibold text-gray-700">@GetPostTypeLabel()</span>
+							class="rounded-full bg-primary px-3 py-1 text-[10px] sm:text-xs font-semibold text-title">@GetPostTypeLabel()</span>
 							<span
 								class="rounded-full px-3 py-1 text-[10px] sm:text-xs font-semibold @(IsPublished ? "bg-success-bg text-success" : "bg-amber-100 text-amber-700")">@(IsPublished
-																																															? "Publié" : "Brouillon")</span>
+																																																							? "Publié" : "Brouillon")</span>
 							</div>
 
 							<h1
@@ -139,7 +139,7 @@
 
 						<div class="flex flex-wrap gap-2">
 							<button @onclick="() => EditPost(post.Id)"
-									class="inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-black/5 transition hover:bg-gray-50">
+									class="inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-sm font-semibold text-title shadow-sm ring-1 ring-black/5 transition hover:bg-gray-50">
 								<i class="fas fa-pen text-xs"></i>
 								Modifier
 							</button>
@@ -217,7 +217,7 @@
 											@foreach (var tag in post.Tags)
 											{
 												<span
-													class="rounded-full bg-tag-bg px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold text-gray-700 shadow-sm cursor-pointer hover:bg-info-bg transition">
+													class="rounded-full bg-tag-bg px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold text-title shadow-sm cursor-pointer hover:bg-info-bg transition">
 													#@tag.Name
 												</span>
 											}

@@ -66,7 +66,7 @@
             <div class="flex items-center justify-between gap-4">
                 <span></span>
                 <button @onclick="GoBack"
-                        class="inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm ring-1 ring-black/5 transition hover:bg-gray-50">
+                        class="inline-flex items-center gap-2 rounded-full bg-surface px-4 py-2.5 text-sm font-semibold text-title shadow-sm ring-1 ring-black/5 transition hover:bg-gray-50">
                     <i class="fas fa-arrow-left text-sm"></i>
                     <span>Retour</span>
                 </button>
@@ -95,7 +95,7 @@
                                 </span>
                             </div>
 
-                            <h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold leading-tight text-gray-700">
+                            <h1 class="text-xl sm:text-2xl md:text-3xl font-extrabold leading-tight text-title">
                                 @CurrentEvent?.Title
                             </h1>
 
@@ -114,7 +114,7 @@
                             @* Admin action buttons *@
                             <div class="flex flex-wrap items-center gap-2 pt-2">
                                 <button @onclick="EditEvent"
-                                        class="inline-flex h-10 items-center justify-center rounded-lg bg-surface px-4 text-xs sm:text-sm font-semibold text-gray-700 ring-1 ring-gray-200 transition hover:bg-gray-50">
+                                        class="inline-flex h-10 items-center justify-center rounded-lg bg-surface px-4 text-xs sm:text-sm font-semibold text-title ring-1 ring-gray-200 transition hover:bg-gray-50">
                                     Modifier
                                 </button>
                                 <button @onclick="ViewRegistrations"
@@ -157,7 +157,7 @@
                             <div class="flex flex-wrap items-center gap-3 rounded-lg bg-gray-50 px-4 py-3">
                                 <div class="flex items-center gap-2 ml-auto">
                                     <div>
-                                        <p class="text-xs sm:text-sm font-semibold text-gray-700">
+                                        <p class="text-xs sm:text-sm font-semibold text-title">
                                             @(CurrentEvent?.RegisteredCount) inscrits
                                         </p>
                                         <p class="text-[11px] sm:text-xs text-body">
@@ -171,7 +171,7 @@
 
                     @* --- À propos --- *@
                     <article class="rounded-lg bg-surface p-4 sm:p-6 shadow-sm">
-                        <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-gray-700">
+                        <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-title">
                             À propos de l'événement
                         </h2>
                         <p class="prose prose-sm max-w-none break-words mt-3">
@@ -185,7 +185,7 @@
                     {
                         <article class="rounded-lg bg-surface p-4 sm:p-6 shadow-sm">
                             <div class="text-center">
-                                <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-gray-700">Intervenants</h2>
+                                <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-title">Intervenants</h2>
                                 <p class="mt-2 text-xs text-body sm:text-base">
                                     Des experts passionnés partageant leur savoir.
                                 </p>
@@ -206,7 +206,7 @@
                                                 <span>@(speaker.Name.Length > 0 ? speaker.Name[..1].ToUpper() : "?")</span>
                                             }
                                         </div>
-                                        <h3 class="mt-2 sm:mt-3 text-xs sm:text-sm font-semibold text-gray-700">
+                                        <h3 class="mt-2 sm:mt-3 text-xs sm:text-sm font-semibold text-title">
                                             @speaker.Name
                                         </h3>
                                         <p class="text-[10px] sm:text-xs text-body">@speaker.Role</p>
@@ -220,7 +220,7 @@
                     @if (galleryImages.Count > 0)
                     {
                         <article class="rounded-lg bg-surface p-4 sm:p-6 shadow-sm">
-                            <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-gray-700">Galerie photos</h2>
+                            <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-title">Galerie photos</h2>
                             <div class="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                                 @for (var i = 0; i < galleryImages.Count; i++)
                                 {
@@ -237,7 +237,7 @@
                     else if (CurrentEvent?.Medias?.Any() == true)
                     {
                         <article class="rounded-lg bg-surface p-4 sm:p-6 shadow-sm">
-                            <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-gray-700">Médias</h2>
+                            <h2 class="text-lg sm:text-xl md:text-3xl font-bold text-title">Médias</h2>
                             <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                                 @foreach (var media in CurrentEvent.Medias)
                                 {
@@ -280,12 +280,12 @@
                             <div class="flex items-center justify-between gap-3 border-b border-gray-100 pb-2">
                                 <span>Début</span>
                                 <span class="font-mono text-title">@(CurrentEvent?.StartDate is DateTime startDt ?
-                                                                                                                                                                                                                                                        startDt.ToString("dd/MM/yyyy HH:mm") : "-")</span>
+                                                                                                                                                                                                                                                                                            startDt.ToString("dd/MM/yyyy HH:mm") : "-")</span>
                                 </div>
                                 <div class="flex items-center justify-between gap-3 border-b border-gray-100 pb-2">
                                     <span>Fin</span>
                                     <span class="font-mono text-title">@(CurrentEvent?.EndDate is DateTime ed ?
-                                                                                                                                                                                                                                                                                ed.ToString("dd/MM/yyyy HH:mm") : "-")</span>
+                                                                                                                                                                                                                                                                                                                        ed.ToString("dd/MM/yyyy HH:mm") : "-")</span>
                                     </div>
                                     <div class="flex items-center justify-between gap-3 border-b border-gray-100 pb-2">
                                         <span>Type</span>
@@ -298,7 +298,7 @@
                                     <div class="flex items-center justify-between gap-3">
                                         <span>État</span>
                                         <span class="font-mono text-title">@((CurrentEvent?.IsPublished ?? false) ? "Publié" :
-                                                                                                                                                                                                                                                                                               "En attente")</span>
+                                                                                                                                                                                                                                                                                                                                           "En attente")</span>
                                         </div>
                                     </div>
                                 </aside>

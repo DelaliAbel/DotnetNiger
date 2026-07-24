@@ -14,7 +14,7 @@
 @inject IJSRuntime JS
 @inject PreviewStateService PreviewState
 
-<div class="p-6 bg-primary">
+<div class="p-6">
     @if (isLoading)
     {
         <div class="flex justify-between items-center mb-6">
@@ -96,32 +96,32 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-sm font-semibold mb-2">Titre</label>
+                                <label class="block text-sm font-semibold mb-2 text-title">Titre</label>
                                 <InputText @bind-Value="eventRequest.Title"
-                                           class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                           class="w-full px-4 py-2 text-body border-gray-300 rounded-lg focus:outline-none"
                                            placeholder="Titre de l'événement" />
                                 <ValidationMessage For="@(() => eventRequest.Title)" class="text-red-500 text-sm mt-1" />
                             </div>
 
                             <div>
-                                <label class="block text-sm font-semibold mb-2">Capacité</label>
+                                <label class="block text-sm font-semibold mb-2 text-title">Capacité</label>
                                 <InputNumber @bind-Value="eventRequest.Capacity"
-                                             class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                             class="w-full px-4 py-2 text-body border-gray-300 rounded-lg focus:outline-none"
                                              placeholder="100" />
                             </div>
                         </div>
 
                         <div>
-                            <label class="block text-sm font-semibold mb-2">Auteur</label>
+                            <label class="block text-sm font-semibold mb-2 text-title">Auteur</label>
                             <InputText @bind-Value="organizerName"
-                                       class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                       class="w-full px-4 py-2 text-body border-gray-300 rounded-lg focus:outline-none"
                                        placeholder="Nom de l'organisateur" />
                         </div>
 
                         <div>
-                            <label class="block text-sm font-semibold mb-2">Catégorie</label>
+                            <label class="block text-sm font-semibold mb-2 text-title">Catégorie</label>
                             <InputSelect @bind-Value="eventRequest.Category"
-                                         class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-surface">
+                                         class="w-full px-4 py-2 text-title border-gray-300 rounded-lg focus:outline-none bg-surface">
                                 <option value="">Sélectionner une catégorie</option>
                                 <option value="Présentation">Présentation</option>
                                 <option value="Meeting">Meeting</option>
@@ -136,10 +136,10 @@
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-sm font-semibold mb-2">Date du début</label>
+                                <label class="block text-sm font-semibold mb-2 text-title">Date du début</label>
                                 <div class="relative">
                                     <InputDate @bind-Value="eventRequest.StartDate" Type="InputDateType.DateTimeLocal"
-                                               class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                               class="w-full px-4 py-2 text-title border-gray-300 rounded-lg focus:outline-none" />
                                     <i
                                     class="fas fa-calendar-alt absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                                 </div>
@@ -148,10 +148,10 @@
                             </div>
 
                             <div>
-                                <label class="block text-sm font-semibold mb-2">Date de fin</label>
+                                <label class="block text-sm font-semibold mb-2 text-title">Date de fin</label>
                                 <div class="relative">
                                     <InputDate @bind-Value="eventRequest.EndDate" Type="InputDateType.DateTimeLocal"
-                                               class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                                               class="w-full px-4 py-2 text-title border-gray-300 rounded-lg focus:outline-none" />
                                     <i
                                     class="fas fa-calendar-alt absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none"></i>
                                 </div>
@@ -160,7 +160,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-semibold mb-2">Description</label>
+                            <label class="block text-sm font-semibold mb-2 text-title">Description</label>
                             <Editor @ref="EditorRef" EditorId="eventDescriptionEdit"
                                     InitialContent="@(eventRequest.Description ?? string.Empty)" />
                             @if (showDescriptionError)
@@ -171,7 +171,7 @@
 
                         @* Galerie photos *@
                         <div>
-                            <label class="block text-sm font-semibold mb-2">Galerie photos</label>
+                            <label class="block text-sm font-semibold mb-2 text-title">Galerie photos</label>
                             <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
                                 @foreach (var (url, index) in galleryImageUrls.Select((u, i) => (u, i)))
                                 {
@@ -225,7 +225,7 @@
 
                         @* Intervenants *@
                         <div>
-                            <label class="block text-sm font-semibold mb-3">Intervenants</label>
+                            <label class="block text-sm font-semibold mb-3 text-title">Intervenants</label>
 
                             <div class="space-y-3 mb-4">
                                 @for (int i = 0; i < speakers.Count; i++)
@@ -238,9 +238,9 @@
                                                            fallback="@(speakers[i].Name.Length > 0 ? speakers[i].Name[..1].ToUpper() : "?")" />
                                         </div>
                                         <div class="flex-1">
-                                            <p class="text-sm font-semibold text-gray-800">@speakers[i].Name</p>
+                                            <p class="text-sm font-semibold text-title">@speakers[i].Name</p>
                                             <input @bind="speakers[i].Role"
-                                                   class="w-full px-3 py-1.5   border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 mt-1"
+                                                   class="w-full px-3 py-1.5 text-body border-gray-300 rounded-lg text-sm focus:outline-none mt-1"
                                                    placeholder="Rôle (ex: Intervenant)" />
                                         </div>
                                         <button type="button" @onclick="() => RemoveSpeaker(i)"
@@ -255,7 +255,7 @@
                             {
                                 <div class="relative">
                                     <input value="@memberSearchQuery" @oninput="OnMemberSearchChanged"
-                                           class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                           class="w-full px-4 py-2 text-body border-gray-300 rounded-lg focus:outline-none text-sm"
                                            placeholder="Rechercher un membre..." />
                                     @if (filteredMembers.Count > 0)
                                     {
@@ -272,8 +272,8 @@
                                                                        fallback="@(string.IsNullOrWhiteSpace(member.FullName) ? "?" : member.FullName[..1].ToUpper())" />
                                                     </div>
                                                     <div>
-                                                        <p class="text-sm font-semibold text-gray-800">@member.FullName</p>
-                                                        <p class="text-xs text-body">@@@member.Username</p>
+                                                        <p class="text-sm font-semibold text-title">@member.FullName</p>
+                                                        <p class="text-xs text-subtitle">@member.Username</p>
                                                     </div>
                                                 </button>
                                             }
@@ -361,14 +361,14 @@
                                     <div class='@((eventMode == "online") ? "hidden" : "")'>
                                         <label class="block text-sm font-semibold mb-2">Lieu</label>
                                         <InputText @bind-Value="eventRequest.Location"
-                                                   class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none"
+                                                   class="w-full px-4 py-2 text-body border-gray-300 rounded-lg focus:outline-none"
                                                    placeholder="Adresse du lieu" />
                                     </div>
 
                                     <div class='@((eventMode == "physical") ? "hidden" : "")'>
                                         <label class="block text-sm font-semibold mb-2">Lien de visioconférence</label>
                                         <InputText @bind-Value="eventRequest.MeetupLink"
-                                                   class="w-full px-4 py-2   border-gray-300 rounded-lg focus:outline-none"
+                                                   class="w-full px-4 py-2 text-body border-gray-300 rounded-lg focus:outline-none"
                                                    placeholder="https://meet.example.com/..." />
                                     </div>
                                 </div>

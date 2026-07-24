@@ -77,9 +77,9 @@
 							class="flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-lg bg-gradient-to-br @value.IconBackground text-base sm:text-lg @value.IconColor shadow-sm">
 							<i class="@value.Icon"></i>
 						</div>
-						<h3 class="mt-4 sm:mt-5 text-sm sm:text-base md:text-lg font-bold text-slate-900">
+						<h3 class="mt-4 sm:mt-5 text-sm sm:text-base md:text-lg font-bold text-subtitle">
 							@value.Title</h3>
-							<p class="mt-2 sm:mt-3 text-xs sm:text-sm leading-6 sm:leading-7 text-slate-600">
+							<p class="mt-2 sm:mt-3 text-xs sm:text-sm leading-6 sm:leading-7 text-body">
 								@value.Description</p>
 							</article>
 						}
@@ -117,7 +117,7 @@
 								</div>
 								<h3 class="mt-4 sm:mt-5 text-sm sm:text-base md:text-lg font-bold @milestone.TitleColor">
 									@milestone.Title</h3>
-									<p class="mt-2 sm:mt-3 text-xs sm:text-sm leading-6 sm:leading-7 text-slate-600">
+									<p class="mt-2 sm:mt-3 text-xs sm:text-sm leading-6 sm:leading-7 text-body">
 										@milestone.Description</p>
 									</article>
 								}
@@ -195,9 +195,9 @@
 
 	private readonly IReadOnlyList<MilestoneItem> milestones = new[]
 	{
-		new MilestoneItem("2024", "La Fondation", "fa-solid fa-rocket", "bg-primary", "text-accent", Description: "Un petit groupe de passionnés se réunit à Niamey pour poser les jalons de l'écosystème .NET au Niger, avec l'ambition de créer un pont vers l'innovation mondiale."),
-		new MilestoneItem("2025", "L'Expansion", "fa-solid fa-users", "bg-primary", "text-info", "Lancement du premier grand meetup communautaire réunissant plus de 100 développeurs et étudiants, marquant le début d'une dynamique de partage sans précédent."),
-		new MilestoneItem("2026", "La Reconnaissance", "fa-solid fa-award", "bg-primary", "text-info", "Signature de partenariats stratégiques avec des institutions locales et intégration officielle dans le réseau global des communautés .NET.")
+		new MilestoneItem("2024", "La Fondation", "fa-solid fa-rocket", "bg-primary", "text-subtitle", Description: "Un petit groupe de passionnés se réunit à Niamey pour poser les jalons de l'écosystème .NET au Niger, avec l'ambition de créer un pont vers l'innovation mondiale."),
+		new MilestoneItem("2025", "L'Expansion", "fa-solid fa-users", "bg-primary", "text-subtitle", "Lancement du premier grand meetup communautaire réunissant plus de 100 développeurs et étudiants, marquant le début d'une dynamique de partage sans précédent."),
+		new MilestoneItem("2026", "La Reconnaissance", "fa-solid fa-award", "bg-primary", "text-subtitle", "Signature de partenariats stratégiques avec des institutions locales et intégration officielle dans le réseau global des communautés .NET.")
 	};
 
 	private List<TeamMemberResponse> teamMembers = [];
