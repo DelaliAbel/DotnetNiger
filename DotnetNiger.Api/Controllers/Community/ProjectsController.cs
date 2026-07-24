@@ -20,6 +20,18 @@ public class ProjectsController(IProjectService projectService) : BaseController
         return Ok(new { Success = true, Data = result });
     }
 
+    /// <summary>Récupère les projets de l'utilisateur connecté.</summary>
+    [HttpGet("mine")]
+    [Authorize]
+    public async Task<IActionResult> GetMine([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
+        var userId = GetUserId();
+        var result = await projectService.GetAllAsync(null, null, page, pageSize, userId);
+        return Ok(new { Success = true, Data = result });
+    }
+
     /// <summary>Récupère les projets mis en avant.</summary>
     [HttpGet("featured")]
     public async Task<IActionResult> GetFeatured()

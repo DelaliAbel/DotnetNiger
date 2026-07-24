@@ -115,8 +115,37 @@ public class ProfileService : IProfileService
             member.UpdatedAt = DateTime.UtcNow;
         }
 
+        if (request.Skills != null && member != null)
+        {
+            var existingSkills = await _db.MemberSkills
+                .Where(s => s.MemberId == member.Id)
+                .ToListAsync();
+            _db.MemberSkills.RemoveRange(existingSkills);
+
+            foreach (var skill in request.Skills.Where(s => !string.IsNullOrWhiteSpace(s)))
+            {
+                _db.MemberSkills.Add(new MemberSkill
+                {
+                    Id = Guid.NewGuid(),
+                    MemberId = member.Id,
+                    SkillName = skill.Trim()
+                });
+            }
+        }
+
         await _db.SaveChangesAsync();
         return await GetAsync(userId);
+    }
+
+    /// <summary>Récupère les liens sociaux du profil du membre.</summary>
+    public async Task<List<SocialLinkResponse>> GetSocialLinksAsync(Guid userId)
+    {
+        var member = await _db.Members.FirstOrDefaultAsync(m => m.UserId == userId);
+        if (member == null) return [];
+        return await _db.SocialLinks.AsNoTracking()
+            .Where(l => l.MemberId == member.Id)
+            .Select(l => new SocialLinkResponse { Id = l.Id, Platform = l.Platform, Url = l.Url })
+            .ToListAsync();
     }
 
     /// <summary>Ajoute un lien social au profil du membre.</summary>

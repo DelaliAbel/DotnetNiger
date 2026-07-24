@@ -9,7 +9,7 @@ public interface IEventQueryService
     Task<PaginatedResponse<EventResponse>> GetAllAsync(
         string? status, string? query, string? location,
         string? category, string? tag, DateTime? from, DateTime? to,
-        Guid? organizerId, int page, int pageSize);
+        Guid? organizerId, int page, int pageSize, Guid? createdBy = null);
     /// <summary>Récupère un événement par identifiant.</summary>
     Task<EventResponse?> GetByIdAsync(Guid id);
     /// <summary>Récupère les événements en attente de modération.</summary>

@@ -24,6 +24,7 @@ public class UserStateService : IUserStateService
     public Guid UserId => _currentUser?.Id ?? Guid.Empty;
     public string UserName => _currentUser?.FullName ?? string.Empty;
     public bool IsAdmin => _currentUser?.Roles.Any(r => RoleConstants.IsAdminRole(r)) ?? false;
+    public bool IsCollaborator => _currentUser?.Roles.Any(r => string.Equals(r, RoleConstants.Collaborator, StringComparison.OrdinalIgnoreCase)) ?? false;
     public string? UserRole => _currentUser?.Roles.FirstOrDefault();
     public List<string> Roles => _currentUser?.Roles ?? [];
 

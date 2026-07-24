@@ -7,7 +7,7 @@ namespace DotnetNiger.Api.Services.Community;
 public interface IProjectService
 {
     /// <summary>Récupère les projets paginés.</summary>
-    Task<PaginatedResponse<ProjectResponse>> GetAllAsync(string? status, string? query, int page, int pageSize);
+    Task<PaginatedResponse<ProjectResponse>> GetAllAsync(string? status, string? query, int page, int pageSize, Guid? createdBy = null);
     /// <summary>Récupère les projets mis en avant.</summary>
     Task<List<ProjectResponse>> GetFeaturedAsync();
     /// <summary>Récupère un projet par identifiant.</summary>

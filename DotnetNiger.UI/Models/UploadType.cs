@@ -4,5 +4,7 @@ public enum UploadType
 {
     User,
     Event,
-    Blog
+    Blog,
+    Resource,
+    Certificate
 }

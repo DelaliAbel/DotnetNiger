@@ -40,6 +40,48 @@
       if (UserStateService.CurrentUser is null)
           await UserStateService.LoadUserFromStorageAsync();
 
+      var roles = UserStateService.CurrentUser?.Roles ?? [];
+      var isAdmin = roles.Any(r => RoleConstants.IsAdminRole(r));
+      var isSuperAdmin = roles.Any(r => RoleConstants.IsSuperAdminRole(r));
+      var isCollaborator = roles.Any(r => RoleConstants.IsCollaboratorRole(r));
+      var hasAccess = isAdmin || isCollaborator;
+
+      if (!hasAccess)
+      {
+          Navigation.NavigateTo("/", forceLoad: true);
+          return;
+      }
+
+      var path = new Uri(Navigation.Uri).AbsolutePath.TrimEnd('/');
+
+      if (isCollaborator && !isAdmin)
+      {
+          var redirect = path switch
+          {
+              "/admin/users" => "/admin",
+              "/admin/blog" => "/admin/mes-articles",
+              "/admin/events" => "/admin/mes-evenements",
+              "/admin/ressources" => "/admin/mes-ressources",
+              "/admin/projects" => "/admin/mes-projets",
+              "/admin/team" => "/admin",
+              "/admin/partners" => "/admin",
+              "/admin/comments" => "/admin",
+              "/admin/newsletter" => "/admin",
+              _ => null
+          };
+          if (redirect is not null)
+          {
+              Navigation.NavigateTo(redirect, forceLoad: true);
+              return;
+          }
+      }
+
+      if (!isSuperAdmin && path == "/admin/settings")
+      {
+          Navigation.NavigateTo("/admin", forceLoad: true);
+          return;
+      }
+
       _authorized = true;
   }
 

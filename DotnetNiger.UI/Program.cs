@@ -16,16 +16,13 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// Client HTTP pour les ressources statiques de l'application
-builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
-
 // Client HTTP dédié pour AuthService — configurez ApiBaseUrl dans wwwroot/appsettings.json
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? builder.HostEnvironment.BaseAddress;
 var clientId = builder.Configuration["ClientId"] ?? "web-ui";
 builder.Services.AddScoped<ClientIdentifierProvider>();
 builder.Services.AddSingleton(new ApiBaseUrlProvider(apiBaseUrl));
 
-// Client HTTP Gateway partagé
+// Client HTTP Gateway partagé — BaseAddress pointe vers l'API
 builder.Services.AddTransient<ClientIdHeaderHandler>();
 builder.Services.AddHttpClient("DotnetNiger.Api", client =>
 {

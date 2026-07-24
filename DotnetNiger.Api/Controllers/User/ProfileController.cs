@@ -31,7 +31,7 @@ public class ProfileController : ControllerBase
         if (userId is null) return Unauthorized();
         var profile = await _profileService.GetAsync(userId.Value);
         if (profile is null) return NotFound();
-        return Ok(profile);
+        return Ok(new { Success = true, Data = profile });
     }
 
     /// <summary>Met à jour le profil de l'utilisateur connecté.</summary>
@@ -42,7 +42,7 @@ public class ProfileController : ControllerBase
         if (userId is null) return Unauthorized();
         var profile = await _profileService.UpdateAsync(userId.Value, request);
         if (profile is null) return NotFound();
-        return Ok(profile);
+        return Ok(new { Success = true, Data = profile });
     }
 
     /// <summary>Supprime le profil de l'utilisateur connecté.</summary>
@@ -121,6 +121,51 @@ public class ProfileController : ControllerBase
         {
             return BadRequest(new ErrorResponse(ex.Message));
         }
+    }
+
+    /// <summary>Récupère les liens sociaux du profil.</summary>
+    [HttpGet("social-links")]
+    public async Task<ActionResult<List<SocialLinkResponse>>> GetSocialLinks()
+    {
+        var userId = GetUserIdFromClaims();
+        if (userId is null) return Unauthorized();
+        try
+        {
+            var links = await _profileService.GetSocialLinksAsync(userId.Value);
+            return Ok(new { Success = true, Data = links });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new ErrorResponse("Profil membre non trouvé."));
+        }
+    }
+
+    /// <summary>Ajoute un lien social au profil.</summary>
+    [HttpPost("social-links")]
+    public async Task<ActionResult<SocialLinkResponse>> AddSocialLink([FromBody] AddSocialLinkRequest request)
+    {
+        var userId = GetUserIdFromClaims();
+        if (userId is null) return Unauthorized();
+        try
+        {
+            var link = await _profileService.AddSocialLinkAsync(userId.Value, request);
+            return Ok(new { Success = true, Data = link });
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound(new ErrorResponse("Profil membre non trouvé. Créez d'abord votre profil."));
+        }
+    }
+
+    /// <summary>Supprime un lien social du profil.</summary>
+    [HttpDelete("social-links/{linkId:guid}")]
+    public async Task<IActionResult> DeleteSocialLink(Guid linkId)
+    {
+        var userId = GetUserIdFromClaims();
+        if (userId is null) return Unauthorized();
+        var deleted = await _profileService.DeleteSocialLinkAsync(userId.Value, linkId);
+        if (!deleted) return NotFound(new ErrorResponse("Lien social non trouvé."));
+        return NoContent();
     }
 
     /// <summary>Extrait l'ID utilisateur du claim JWT.</summary>

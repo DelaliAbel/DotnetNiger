@@ -22,7 +22,7 @@ public class ImageProcessingService : IImageProcessingService
         {
             "avatar" or "Avatar" or "User" => "avatars",
             "cover" or "Cover" or "Event" => "covers",
-            "Blog" or "blog" => "blog",
+            "Blog" or "blog" => "posts/blog",
             "Resource" or "resource" => "resources",
             "Certificate" or "certificate" => "certificates",
             _ => "files"

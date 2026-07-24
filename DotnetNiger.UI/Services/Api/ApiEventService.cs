@@ -172,7 +172,7 @@ public class ApiEventService : ApiServiceBase, IEventService
 
     public async Task<List<EventDto>> GetMyEventsAsync()
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Events}");
+        var response = await Http.GetAsync($"{ApiEndpoints.Events}/mine");
         if (!response.IsSuccessStatusCode)
             return new List<EventDto>();
 

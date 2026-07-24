@@ -105,8 +105,8 @@ else
                     <select @bind="selectedStatus"
                             class="cursor-pointer rounded-lg bg-surface px-4 py-3 text-sm text-body shadow-sm outline-none transition hover:border-gray-300">
                         <option value="">Tous</option>
-                        <option value="published">Publié</option>
-                        <option value="pending">En attente</option>
+                        <option value="Published">Publié</option>
+                        <option value="PendingReview">En cours de validation</option>
                     </select>
                     <select @bind="selectedType"
                             class="cursor-pointer rounded-lg bg-surface px-4 py-3 text-sm text-body shadow-sm outline-none transition hover:border-gray-300">
@@ -212,8 +212,7 @@ else
                     e.OrganizerName.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
                     e.Location.Contains(searchQuery, StringComparison.OrdinalIgnoreCase))
         .Where(e => string.IsNullOrEmpty(selectedStatus) ||
-                    (selectedStatus == "published" && e.IsPublished) ||
-                    (selectedStatus == "pending" && !e.IsPublished))
+                    e.Status.Equals(selectedStatus, StringComparison.OrdinalIgnoreCase))
 
 .Where(e => string.IsNullOrEmpty(selectedType) ||
                     e.EventType.Equals(selectedType, StringComparison.OrdinalIgnoreCase))
@@ -290,11 +289,16 @@ else
 
     private async Task SetPublished(Guid id)
     {
-        var ev = allEvents.FirstOrDefault(e => e.Id == id);
-        if (ev is null)
-            return;
-
-        await PersistStatusAsync(ev, isPublished: true, isArchived: false);
+        try
+        {
+            await EventService.ApproveEventAsync(id);
+            ToastService.ShowToast("Événement publié.", ToastLevel.Success);
+            await LoadEventsAsync();
+        }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors de la publication.", ToastLevel.Error);
+        }
     }
 
     private async Task SetArchived(Guid id)

@@ -27,6 +27,7 @@ public class EventCommandService : IEventCommandService
             Location = request.Location,
             CoverImageUrl = request.CoverImageUrl,
             OrganizerId = organizerId,
+            CreatedBy = organizerId,
             Status = isAdmin ? EventStatus.Published : EventStatus.PendingReview
         };
 

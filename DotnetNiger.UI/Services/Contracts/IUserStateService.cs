@@ -13,6 +13,7 @@ public interface IUserStateService
     Guid UserId { get; }
     string UserName { get; }
     bool IsAdmin { get; }
+    bool IsCollaborator { get; }
     string? UserRole { get; }
     List<string> Roles { get; }
     
