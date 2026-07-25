@@ -12,33 +12,33 @@
 <div class="min-h-screen flex items-center justify-center px-4 py-12">
     <div class="w-full max-w-lg">
 
-        <div class="relative rounded-2xl bg-surface shadow-[0_8px_30px_rgb(0,0,0,0.06)] border border-gray-100 p-8 md:p-10">
+        <div class="relative rounded-lg bg-fondTransparent shadow-md p-8 md:p-10">
 
-            <a href="/" class="absolute left-6 top-6 inline-flex items-center gap-1.5 text-xs text-gray-400 transition hover:text-gray-600">
+            <a href="/" class="absolute left-6 top-6 inline-flex items-center gap-1.5 text-xs text-muted transition hover:text-gray-600">
                 <i class="fas fa-arrow-left text-[10px]"></i>
                 Accueil
             </a>
 
             <div class="flex items-center justify-center gap-3 mb-8">
-                <div class="flex items-center gap-2 @(_currentStep >= 1 ? "text-purple-700" : "text-gray-300")">
-                    <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold @(_currentStep >= 1 ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-400")">1</span>
+                <div class="flex items-center gap-2 @(_currentStep >= 1 ? "text-blue-900" : "text-muted")">
+                    <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold @(_currentStep >= 1 ? "bg-primary text-white" : "bg-gray-100 text-gray-400")">1</span>
                     <span class="text-xs font-medium">Compte</span>
                 </div>
-                <div class="w-8 h-px @(_currentStep >= 2 ? "bg-purple-300" : "bg-gray-200")"></div>
-                <div class="flex items-center gap-2 @(_currentStep >= 2 ? "text-purple-700" : "text-gray-300")">
-                    <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold @(_currentStep >= 2 ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-400")">2</span>
+                <div class="w-8 h-px @(_currentStep >= 2 ? "bg-blue-300" : "bg-gray-200")"></div>
+                <div class="flex items-center gap-2 @(_currentStep >= 2 ? "text-blue-900" : "text-gray-300")">
+                    <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold @(_currentStep >= 2 ? "bg-primary text-white" : "bg-gray-100 text-gray-400")">2</span>
                     <span class="text-xs font-medium">Email</span>
                 </div>
-                <div class="w-8 h-px @(_currentStep >= 3 ? "bg-purple-300" : "bg-gray-200")"></div>
-                <div class="flex items-center gap-2 @(_currentStep >= 3 ? "text-purple-700" : "text-gray-300")">
-                    <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold @(_currentStep >= 3 ? "bg-purple-600 text-white" : "bg-gray-100 text-gray-400")">3</span>
+                <div class="w-8 h-px @(_currentStep >= 3 ? "bg-blue-300" : "bg-gray-200")"></div>
+                <div class="flex items-center gap-2 @(_currentStep >= 3 ? "text-blue-900" : "text-gray-300")">
+                    <span class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold @(_currentStep >= 3 ? "bg-primary text-white" : "bg-gray-100 text-gray-400")">3</span>
                     <span class="text-xs font-medium">Certificat</span>
                 </div>
             </div>
 
             @if (!string.IsNullOrEmpty(_errorMessage))
             {
-                <div class="mb-4 rounded-lg px-4 py-3 text-sm bg-red-50 border border-red-200 text-red-700">
+                <div class="mb-4 rounded-lg px-4 py-3 text-sm bg-red-50 border border-red-200 text-red-900">
                     @_errorMessage
                 </div>
             }
@@ -47,8 +47,8 @@
             @if (_currentStep == 1)
             {
                 <div class="text-center mb-6">
-                    <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-purple-50">
-                        <i class="fas fa-user-plus text-purple-500 text-xl"></i>
+                    <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-blue-50">
+                        <i class="fas fa-user-plus text-blue-500 text-xl"></i>
                     </div>
                     <h1 class="text-xl font-bold text-title">Créez votre compte</h1>
                     <p class="mt-2 text-sm text-body leading-relaxed max-w-sm mx-auto">
@@ -61,46 +61,46 @@
 
                     <div class="grid grid-cols-2 gap-3 mb-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Prénom</label>
+                            <label class="block text-sm font-medium text-title mb-1">Prénom</label>
                             <InputText @bind-Value="_step1.FirstName"
-                                       class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition"
+                                       class="w-full rounded-lg text-body bg-surface px-4 py-2.5 text-sm focus:outline-none shadow-md transition"
                                        placeholder="Ali" />
                             <ValidationMessage For="@(() => _step1.FirstName)" class="text-xs text-red-500 mt-1" />
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Nom</label>
+                            <label class="block text-sm font-medium text-title mb-1">Nom</label>
                             <InputText @bind-Value="_step1.LastName"
-                                       class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition"
+                                       class="w-full rounded-lg text-body bg-surface px-4 py-2.5 text-sm focus:outline-none shadow-md transition"
                                        placeholder="Mahamane" />
                             <ValidationMessage For="@(() => _step1.LastName)" class="text-xs text-red-500 mt-1" />
                         </div>
                     </div>
 
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Adresse e-mail</label>
+                        <label class="block text-sm font-medium text-title mb-1">Adresse e-mail</label>
                         <InputText @bind-Value="_step1.Email" type="email"
-                                   class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition"
+                                   class="w-full rounded-lg text-body bg-surface px-4 py-2.5 text-sm focus:outline-none shadow-md transition"
                                    placeholder="vous@exemple.com" />
                         <ValidationMessage For="@(() => _step1.Email)" class="text-xs text-red-500 mt-1" />
                     </div>
 
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                        <label class="block text-sm font-medium text-title mb-1">
                             Numéro de téléphone <span class="text-gray-400 font-normal">(optionnel)</span>
                         </label>
                         <InputText @bind-Value="_step1.PhoneNumber" type="tel"
-                                   class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition"
+                                   class="w-full rounded-lg text-body bg-surface px-4 py-2.5 text-sm focus:outline-none shadow-md transition"
                                    placeholder="+227 XX XX XX XX" />
                     </div>
 
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+                        <label class="block text-sm font-medium text-title mb-1">Mot de passe</label>
                         <div class="relative">
                             <InputText @bind-Value="_step1.Password" type="@(_showPassword ? "text" : "password")"
-                                       class="w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-10 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition"
+                                       class="w-full rounded-lg text-body bg-surface px-4 py-2.5 pr-10 text-sm focus:outline-none shadow-md transition"
                                        placeholder="Minimum 8 caractères" />
                             <button type="button" @onclick="TogglePasswordVisibility"
-                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-body hover:text-gray-600 transition">
                                 <i class="fas @(_showPassword ? "fa-eye-slash" : "fa-eye")"></i>
                             </button>
                         </div>
@@ -108,21 +108,21 @@
                     </div>
 
                     <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Confirmer le mot de passe</label>
+                        <label class="block text-sm font-medium text-title mb-1">Confirmer le mot de passe</label>
                         <div class="relative">
                             <InputText @bind-Value="_step1.ConfirmPassword" type="@(_showConfirmPassword ? "text" : "password")"
-                                       class="w-full rounded-lg border border-gray-300 px-4 py-2.5 pr-10 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition"
+                                       class="w-full rounded-lg text-body bg-surface px-4 py-2.5 pr-10 text-sm focus:outline-none shadow-md transition"
                                        placeholder="Retapez votre mot de passe" />
                             <button type="button" @onclick="ToggleConfirmPasswordVisibility"
-                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
+                                    class="absolute right-3 top-1/2 -translate-y-1/2 text-body hover:text-gray-600 transition">
                                 <i class="fas @(_showConfirmPassword ? "fa-eye-slash" : "fa-eye")"></i>
                             </button>
                         </div>
                         <ValidationMessage For="@(() => _step1.ConfirmPassword)" class="text-xs text-red-500 mt-1" />
                     </div>
 
-                    <div class="mb-6 rounded-lg bg-gray-50 border border-gray-100 px-4 py-3">
-                        <p class="text-xs font-medium text-gray-500 mb-2">Le mot de passe doit contenir :</p>
+                    <div class="mb-6 rounded-lg bg-surface px-4 py-3">
+                        <p class="text-xs font-medium text-subtitle mb-2">Le mot de passe doit contenir :</p>
                         <ul class="space-y-1">
                             <li class="flex items-center gap-2 text-xs @(_step1.Password.Length >= 8 ? "text-green-600" : "text-gray-400")">
                                 <i class="fas @(_step1.Password.Length >= 8 ? "fa-check-circle" : "fa-circle") text-[10px]"></i>
@@ -148,7 +148,7 @@
                     </div>
 
                     <button type="submit" disabled="@_isLoading"
-                            class="w-full rounded-lg bg-purple-600 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 transition disabled:opacity-60">
+                            class="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-white hover:bg-blue-900 transition disabled:opacity-60">
                         @(_isLoading ? "Création..." : "Créer mon compte")
                         @if (!_isLoading)
                         {
@@ -159,21 +159,21 @@
 
                 <div class="relative my-6">
                     <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t border-gray-200"></div>
+                        <div class="w-full border-t border-muted"></div>
                     </div>
                     <div class="relative flex justify-center text-sm">
-                        <span class="px-3 bg-surface text-gray-400">ou s'inscrire avec</span>
+                        <span class="px-3 bg-fondTransparent text-muted">ou s'inscrire avec</span>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <button type="button" @onclick="() => OAuthRegister(GoogleProvider)"
-                            class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-surface px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50">
+                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-surface px-4 py-2.5 text-sm font-medium text-title shadow-sm transition hover:bg-gray-50">
                         <svg class="w-5 h-5" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
                         Google
                     </button>
                     <button type="button" @onclick="() => OAuthRegister(GitHubProvider)"
-                            class="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-200 bg-surface px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50">
+                            class="inline-flex items-center justify-center gap-2 rounded-lg bg-surface px-4 py-2.5 text-sm font-medium text-title shadow-sm transition hover:bg-gray-50">
                         <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
                         GitHub
                     </button>
@@ -198,21 +198,21 @@
                     <DataAnnotationsValidator />
 
                     <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Code de vérification</label>
+                        <label class="block text-sm font-medium text-title mb-1">Code de vérification</label>
                         <InputText @bind-Value="_step2.Code"
-                                   class="w-full rounded-lg border border-gray-300 px-4 py-3 text-center text-lg tracking-[0.5em] font-mono focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition"
+                                   class="w-full rounded-lg text-body bg-surface px-4 py-3 text-center text-lg tracking-[0.5em] font-mono focus:outline-none shadow-md transition"
                                    placeholder="000000" maxlength="6" />
                         <ValidationMessage For="@(() => _step2.Code)" class="text-xs text-red-500 mt-1" />
                     </div>
 
                     <div class="flex gap-3">
                         <button type="button" @onclick="GoBackToStep1"
-                                class="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">
+                                class="flex-1 rounded-lg py-2.5 text-sm font-semibold text-title hover:bg-gray-50 transition">
                             <i class="fas fa-arrow-left text-xs mr-1"></i>
                             Retour
                         </button>
                         <button type="submit" disabled="@(_isLoading || _isResending)"
-                                class="flex-1 rounded-lg bg-purple-600 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 transition disabled:opacity-60">
+                                class="flex-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-white hover:bg-blue-900 transition disabled:opacity-60">
                             @(_isLoading ? "Vérification..." : "Vérifier")
                         </button>
                     </div>
@@ -220,7 +220,7 @@
 
                 <div class="mt-4 text-center">
                     <button type="button" disabled="@_isResending" @onclick="ResendCode"
-                            class="text-sm text-purple-600 hover:text-purple-700 font-medium disabled:opacity-60">
+                            class="text-sm text-primary hover:text-blue-900 font-medium disabled:opacity-60">
                         @(_isResending ? "Renvoi en cours..." : "Renvoyer le code")
                     </button>
                 </div>
@@ -245,17 +245,17 @@
                         <DataAnnotationsValidator />
 
                         <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">URL de la certification</label>
+                            <label class="block text-sm font-medium text-title mb-1">URL de la certification</label>
                             <InputText @bind-Value="_step3.CertificateUrl"
-                                       class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition"
+                                       class="w-full rounded-lg text-body bg-surface px-4 py-2.5 text-sm focus:outline-none shadow-md transition"
                                        placeholder="https://www.freecodecamp.org/certification/..." />
                             <ValidationMessage For="@(() => _step3.CertificateUrl)" class="text-xs text-red-500 mt-1" />
                         </div>
 
                         <div class="mb-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">Type de certificat</label>
+                            <label class="block text-sm font-medium text-title mb-1">Type de certificat</label>
                             <InputSelect @bind-Value="_step3.CertificateType"
-                                         class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition">
+                                         class="w-full rounded-lg text-body bg-surface px-4 py-2.5 text-sm focus:outline-none shadow-md transition">
                                 <option value="">Sélectionnez un type</option>
                                 <option value="Foundational C# with Microsoft">Foundational C# with Microsoft</option>
                                 <option value="C# Data and Web">C# Data and Web</option>
@@ -266,11 +266,11 @@
 
                         <div class="flex gap-3">
                             <button type="button" @onclick="SkipCertificate"
-                                    class="flex-1 rounded-lg border border-gray-200 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition">
+                                    class="flex-1 rounded-lg py-2.5 text-sm font-semibold text-title hover:bg-gray-50 transition">
                                 Passer
                             </button>
                             <button type="submit" disabled="@_isLoading"
-                                    class="flex-1 rounded-lg bg-purple-600 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 transition disabled:opacity-60">
+                                    class="flex-1 rounded-lg bg-primary py-2.5 text-sm font-semibold text-white hover:bg-blue-900 transition disabled:opacity-60">
                                 @(_isLoading ? "Envoi..." : "Soumettre")
                             </button>
                         </div>
@@ -286,7 +286,7 @@
                     </div>
 
                     <button type="button"
-                            class="w-full rounded-lg bg-purple-600 py-2.5 text-sm font-semibold text-white hover:bg-purple-700 transition"
+                            class="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-white hover:bg-blue-900 transition"
                             @onclick="GoToLogin">
                         Se connecter
                         <i class="fas fa-arrow-right text-xs ml-1"></i>
@@ -298,7 +298,7 @@
 
         @if (_currentStep < 3)
         {
-            <p class="mt-6 text-center text-xs text-gray-400">
+            <p class="mt-6 text-center text-xs text-muted">
                 <i class="fas fa-lock mr-1"></i>
                 Vos données sont protégées et jamais partagées.
             </p>
@@ -308,7 +308,7 @@
         {
             <p class="mt-4 text-center text-xs text-gray-400">
                 Déjà membre ?
-                <a href="/login" class="text-purple-600 hover:text-purple-700 font-medium">Se connecter</a>
+                <a href="/login" class="text-primary hover:text-blue-900 font-medium">Se connecter</a>
             </p>
         }
     </div>

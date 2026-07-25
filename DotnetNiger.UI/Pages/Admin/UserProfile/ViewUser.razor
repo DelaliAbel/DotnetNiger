@@ -55,7 +55,7 @@ else if (user is null)
         <AdminBreadcrumb />
         <div class="flex flex-col items-center justify-center py-20">
             <i class="fas fa-user-slash text-5xl text-slate-300 mb-4"></i>
-            <p class="text-lg text-slate-500">Utilisateur introuvable.</p>
+            <p class="text-lg text-subtitle">Utilisateur introuvable.</p>
             <button @onclick='() => Navigation.NavigateTo("/admin/Users")'
                     class="mt-4 inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-500">
                 <i class="fas fa-arrow-left"></i> Retour
@@ -70,7 +70,7 @@ else
 
         <div class="mb-6">
             <button @onclick='() => Navigation.NavigateTo("/admin/Users")'
-                    class="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-indigo-600">
+                    class="inline-flex items-center gap-2 text-sm font-semibold text-body transition hover:text-indigo-600">
                 <i class="fas fa-arrow-left"></i> Retour aux utilisateurs
             </button>
         </div>
@@ -86,35 +86,35 @@ else
                     <div class="space-y-2 text-center">
                         <h2 class="text-xl sm:text-4xl font-semibold tracking-tight text-title">
                             @DisplayOrFallback(user.FullName, user.Username)</h2>
-                            <p class="text-lg text-slate-500">@DisplayPrimaryRole(user.Roles)</p>
+                            <p class="text-lg text-subtitle">@DisplayPrimaryRole(user.Roles)</p>
                         </div>
 
                         <div class="mt-7 space-y-3 text-sm text-slate-700">
                             <div
                                 class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 px-4 py-2">
-                                <i class="fas fa-map-marker-alt text-slate-500"></i>
-                                <span>@BuildLocation(user.City, user.Country)</span>
+                                <i class="fas fa-map-marker-alt text-subtitle"></i>
+                                <span class="text-subtitle">@BuildLocation(user.City, user.Country)</span>
                             </div>
                             <div
                                 class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 px-4 py-2">
-                                <i class="fas fa-envelope text-slate-500"></i>
-                                <span>@DisplayOrFallback(user.Email, "Email non renseigne")</span>
+                                <i class="fas fa-envelope text-subtitle"></i>
+                                <span class="text-subtitle">@DisplayOrFallback(user.Email, "Email non renseigne")</span>
                             </div>
                             <div
                                 class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 px-4 py-2">
-                                <i class="fas fa-phone text-slate-500"></i>
-                                <span>@DisplayOrFallback(user.PhoneNumber, "Telephone non renseigne")</span>
+                                <i class="fas fa-phone text-subtitle"></i>
+                                <span class="text-subtitle">@DisplayOrFallback(user.PhoneNumber, "Telephone non renseigne")</span>
                             </div>
                             <div
                                 class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 px-4 py-2">
-                                <i class="fas fa-calendar-alt text-slate-500"></i>
-                                <span>Membre depuis @FormatMemberSince(user.CreatedAt)</span>
+                                <i class="fas fa-calendar-alt text-subtitle"></i>
+                                <span class="text-subtitle">Membre depuis @FormatMemberSince(user.CreatedAt)</span>
                             </div>
                             <div
-                                class="inline-flex w-full items-center justify-center gap-2 rounded-full @(user.IsActive ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600") px-4 py-2">
+                                class="inline-flex w-full items-center justify-center gap-2 rounded-full @(user.IsActive ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-body") px-4 py-2">
                                 <span
                                 class="h-2.5 w-2.5 rounded-full @(user.IsActive ? "bg-emerald-500" : "bg-slate-400")"></span>
-                                <span>@(user.IsActive ? "En ligne" : "Hors ligne")</span>
+                                <span class="text-subtitle">@(user.IsActive ? "En ligne" : "Hors ligne")</span>
                             </div>
                         </div>
                     </section>
@@ -124,7 +124,7 @@ else
 
                         @if (SocialLinks.Count == 0)
                         {
-                            <p class="text-sm text-slate-500">Aucun lien social enregistré.</p>
+                            <p class="text-sm text-subtitle">Aucun lien social enregistré.</p>
                         }
                         else
                         {
@@ -143,21 +143,21 @@ else
                 </div>
 
                 <div class="space-y-6">
-                    <section class="rounded-lg   border-slate-200 bg-surface p-8 shadow-sm">
-                        <h2 class="mb-4 text-lg font-semibold tracking-tight text-slate-800">A propos</h2>
+                    <section class="rounded-lg border-slate-200 bg-surface p-8 shadow-sm">
+                        <h2 class="mb-4 text-lg font-semibold tracking-tight text-title">A propos</h2>
                         @if (!string.IsNullOrWhiteSpace(user.Bio))
                         {
-                            <div class="break-words text-lg leading-relaxed text-slate-600 prose prose-slate max-w-none">@(new
+                            <div class="break-words text-lg leading-relaxed text-body prose prose-slate max-w-none">@(new
                                                                                                                     MarkupString(HtmlSanitizer.Sanitize(user.Bio)))</div>
                             }
                     else
                             {
-                                <p class="max-w-4xl text-lg leading-relaxed text-slate-600">Aucune biographie renseignée.</p>
+                                <p class="max-w-4xl text-lg leading-relaxed text-body">Aucune biographie renseignée.</p>
                             }
                         </section>
 
                         <section class="rounded-lg   border-slate-200 bg-surface p-8 shadow-sm">
-                            <h2 class="mb-4 text-lg font-semibold tracking-tight text-slate-800">Competences et technologies</h2>
+                            <h2 class="mb-4 text-lg font-semibold tracking-tight text-title">Competences et technologies</h2>
                             @if (user.Skills is { Count: > 0 })
                             {
                                 <div class="flex flex-wrap gap-3">
@@ -169,11 +169,11 @@ else
                             }
                             else
                             {
-                                <p class="text-sm text-slate-500">Aucune compétence renseignée.</p>
+                                <p class="text-sm text-subtitle">Aucune compétence renseignée.</p>
                             }
                         </section>
 
-                        <section class="rounded-lg   border-slate-200 bg-surface p-6 shadow-sm">
+                        <section class="rounded-lg border-slate-200 bg-surface p-6 shadow-sm">
                             <h3 class="mb-4 text-lg font-semibold text-slate-700">Actions administrateur</h3>
                             <div class="flex flex-wrap gap-3">
                                 <button @onclick="ToggleStatusAsync"

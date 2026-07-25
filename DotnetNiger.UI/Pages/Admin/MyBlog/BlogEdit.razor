@@ -29,13 +29,13 @@
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-title">Titre</label>
                         <input @bind="postRequest.Title" type="text"
-                               class="w-full rounded-lg   bg-surface border-input px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary" />
+                               class="w-full rounded-lg bg-surface text-body px-4 py-3 focus:outline-none shadow-md" />
                     </div>
 
                     <div>
                         <label class="mb-2 block text-sm font-semibold text-title">Type d'article</label>
                         <select @bind="postRequest.PostType"
-                                class="w-full rounded-lg   border-input bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary">
+                                class="w-full rounded-lg text-body bg-surface px-4 py-3 focus:outline-none shadow-md">
                             <option value="">Sélectionner</option>
                             <option value="Tutorial">Tutorial</option>
                             <option value="Article">Article</option>
@@ -68,7 +68,7 @@
 
             <div class="mt-6 flex flex-wrap gap-4">
                 <button @onclick="Cancel"
-                        class="flex items-center gap-2 rounded-lg bg-blue-500 px-6 py-3 text-white transition hover:bg-blue-600">
+                        class="flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-white transition hover:bg-blue-600">
                     Annuler
                 </button>
                 <button type="button" @onclick="HandlePreview"
@@ -88,7 +88,7 @@
                 <label class="mb-2 block text-sm font-semibold text-title">Tags</label>
                 <div class="flex gap-2">
                     <input @bind="tagInput" @onkeydown="HandleTagKeyDown" type="text"
-                           class="flex-1 rounded-lg   bg-surface border-input px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
+                           class="flex-1 rounded-lg text-body  bg-surface  px-4 py-3 focus:outline-none shadow-md"
                            placeholder="Saisir un tag puis Entrée" />
                     <button type="button" @onclick="AddTag"
                             class="rounded-lg bg-primary px-4 text-sm font-semibold text-white transition hover:brightness-110">

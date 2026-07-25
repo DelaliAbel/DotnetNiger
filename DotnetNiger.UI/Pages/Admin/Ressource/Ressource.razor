@@ -27,7 +27,7 @@
 
         <div class="bg-surface rounded-lg shadow overflow-hidden">
             <table class="w-full">
-                <thead class="bg-gray-50 border-b">
+                <thead class="bg-surface border-b">
                     <tr>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-title">Titre</th>
                         <th class="px-6 py-3 text-left text-sm font-semibold text-title">Type</th>
@@ -87,7 +87,7 @@
                 class="fixed top-0 right-0 h-screen w-full sm:w-4/5 md:w-3/5 lg:w-2/5 bg-fondTransparent shadow-2xl z-50 transform transition-transform duration-300">
                 <div class="flex flex-col h-full">
                     <div class="flex justify-between items-center px-6 py-4 border-b">
-                        <h2 class="text-xl font-semibold">@(editingId.HasValue ? "Modifier la ressource" : "Nouvelle ressource")
+                        <h2 class="text-xl text-title font-semibold">@(editingId.HasValue ? "Modifier la ressource" : "Nouvelle ressource")
                         </h2>
                         <button @onclick="CloseDrawer" class="text-body hover:text-black text-2xl">&times;</button>
                     </div>
@@ -102,14 +102,14 @@
                             <div>
                                 <label class="block text-sm font-medium mb-1 text-title">Titre *</label>
                                 <InputText @bind-Value="resourceRequest.Title"
-                                           class="w-full rounded-lg text-body bg-surface px-4 py-2 focus:outline-none"
+                                           class="w-full rounded-lg text-body bg-surface shadow-md px-4 py-2 focus:outline-none"
                                            placeholder="Titre de la ressource" />
                                 <ValidationMessage For="@(() => resourceRequest.Title)" class="text-xs text-red-500 mt-1" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-1 text-title">Description *</label>
                                 <InputTextArea @bind-Value="resourceRequest.Description" rows="3"
-                                               class="w-full text-body bg-surface rounded-lg px-4 py-2 focus:outline-none"
+                                               class="w-full text-body bg-surface shadow-md rounded-lg px-4 py-2 focus:outline-none"
                                                placeholder="Description de la ressource" />
                                 <ValidationMessage For="@(() => resourceRequest.Description)"
                                                    class="text-xs text-red-500 mt-1" />
@@ -117,14 +117,14 @@
                             <div>
                                 <label class="block text-sm font-medium mb-1 text-title">URL *</label>
                                 <InputText @bind-Value="resourceRequest.Url"
-                                           class="w-full text-body bg-surface rounded-lg px-4 py-2 focus:outline-none"
+                                           class="w-full text-body bg-surface shadow-md rounded-lg px-4 py-2 focus:outline-none"
                                            placeholder="https://..." />
                                 <ValidationMessage For="@(() => resourceRequest.Url)" class="text-xs text-red-500 mt-1" />
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-1 text-title">Type *</label>
                                 <InputSelect @bind-Value="resourceRequest.ResourceType"
-                                             class="w-full text-body rounded-lg px-4 py-2 bg-surface focus:outline-none">
+                                             class="w-full text-body rounded-lg shadow-md px-4 py-2 bg-surface focus:outline-none">
                                     <option value="">Selectionner un type</option>
                                     <option value="Documentation">Documentation</option>
                                     <option value="Tutoriel">Tutoriel</option>
@@ -140,7 +140,7 @@
                             <div>
                                 <label class="block text-sm font-medium mb-1 text-title">Niveau *</label>
                                 <InputSelect @bind-Value="resourceRequest.Level"
-                                             class="w-full text-body  rounded-lg px-4 py-2 bg-surface focus:outline-none">
+                                             class="w-full text-body shadow-md rounded-lg px-4 py-2 bg-surface focus:outline-none">
                                     <option value="">Selectionner un niveau</option>
                                     <option value="Débutant">Débutant</option>
                                     <option value="Intermediaire">Intermediaire</option>
@@ -170,9 +170,9 @@
             <div class="flex-1 relative">
                 <i class="fas fa-search absolute left-4 top-4 text-gray-400"></i>
                 <input type="text" placeholder="Rechercher une ressource..." @bind="searchQuery" @bind:event="oninput"
-                       class="w-full bg-surface pl-10 text-body pr-4 py-3 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+                       class="w-full bg-surface pl-10 text-body shadow-md pr-4 py-3 rounded-lg focus:outline-none" />
             </div>
-            <select @bind="selectedType" class="bg-surface px-4 py-3 text-body border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+            <select @bind="selectedType" class="bg-surface px-4 py-3 text-body shadow-md rounded-lg focus:outline-none">
                 <option value="">Type</option>
                 <option value="Documentation">Documentation</option>
                 <option value="Tutoriel">Tutoriel</option>
@@ -182,7 +182,7 @@
                 <option value="Livre">Livre</option>
                 <option value="Outil">Outil</option>
             </select>
-            <select @bind="selectedLevel" class="bg-surface px-4 py-3 text-body border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+            <select @bind="selectedLevel" class="bg-surface px-4 py-3 text-body shadow-md rounded-lg focus:outline-none">
                 <option value="">Niveau</option>
                 <option value="Débutant">Débutant</option>
                 <option value="Intermediaire">Intermediaire</option>

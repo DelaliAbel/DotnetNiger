@@ -18,7 +18,7 @@
                 </div>
                 <Skeleton Type="SkeletonType.Button" Width="160px" />
             </div>
-            <div class="overflow-hidden rounded-lg bg-surface shadow-md">
+            <div class="overflow-hidden rounded-lg bg-fondTransparent shadow-md">
                 <div class="overflow-x-auto">
                     <table class="w-full">
                         <thead class="border-b border-gray-100">
@@ -84,12 +84,12 @@ else
                             <i class="fas fa-search absolute left-0 top-1/2 -translate-y-1/2 text-gray-400"></i>
                             <input type="text" placeholder="Rechercher un partenaire..." @bind="searchQuery"
                                    @bind:event="oninput"
-                                   class="w-full border-0 bg-transparent pl-7 text-sm text-body outline-none placeholder:text-gray-400" />
+                                   class="w-full bg-surface shadow-md pl-7 text-sm text-body outline-none placeholder:text-gray-400" />
                         </div>
                     </div>
 
                     <select @bind="selectedStatus"
-                            class="cursor-pointer rounded-lg bg-surface px-4 py-3 text-sm text-body shadow-sm outline-none transition hover:border-gray-300">
+                            class="cursor-pointer rounded-lg bg-surface px-4 py-3 text-sm text-body shadow-md outline-none transition hover:border-gray-300">
                         <option value="">Tous les statuts</option>
                         <option value="true">Actif</option>
                         <option value="false">Inactif</option>

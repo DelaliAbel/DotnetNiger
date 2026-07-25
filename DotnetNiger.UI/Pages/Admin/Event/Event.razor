@@ -93,30 +93,30 @@ else
                 </div>
 
                 <section class="mb-6 flex flex-col gap-4 md:flex-row md:items-center">
-                    <div class="flex-1 rounded-lg bg-surface px-4 py-3 shadow-sm">
+                    <div class="flex-1 rounded-lg bg-surface px-4 py-3 shadow-md">
                         <div class="relative">
-                            <i class="fas fa-search absolute left-0 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <i class="fas fa-search absolute left-0 top-1/2 -translate-y-1/2 text-body"></i>
                             <input type="text" placeholder="Rechercher un évènement..." @bind="searchQuery"
                                    @bind:event="oninput"
-                                   class="w-full border-0 bg-surface pl-7 text-sm text-body outline-none placeholder:text-gray-400" />
+                                   class="w-full shadow-md bg-surface pl-7 text-sm text-body outline-none placeholder:text-gray-400" />
                         </div>
                     </div>
 
                     <select @bind="selectedStatus"
-                            class="cursor-pointer rounded-lg bg-surface px-4 py-3 text-sm text-body shadow-sm outline-none transition hover:border-gray-300">
+                            class="cursor-pointer rounded-lg bg-surface px-4 py-3 text-sm text-body shadow-md outline-none transition hover:border-gray-300">
                         <option value="">Tous</option>
                         <option value="Published">Publié</option>
                         <option value="PendingReview">En cours de validation</option>
                     </select>
                     <select @bind="selectedType"
-                            class="cursor-pointer rounded-lg bg-surface px-4 py-3 text-sm text-body shadow-sm outline-none transition hover:border-gray-300">
+                            class="cursor-pointer rounded-lg bg-surface px-4 py-3 text-sm text-body shadow-md outline-none transition hover:border-gray-300">
                         <option value="">Type</option>
                         <option value="Online">En ligne</option>
                         <option value="Physical">Présentiel</option>
                         <option value="Hybrid">Hybride</option>
                     </select>
                     <select @bind="selectedPeriod"
-                            class="cursor-pointer rounded-lg bg-surface px-4 py-3 text-sm text-body shadow-sm outline-none transition hover:border-gray-300">
+                            class="cursor-pointer rounded-lg bg-surface px-4 py-3 text-sm text-body shadow-md outline-none transition hover:border-gray-300">
                         <option value="">Période</option>
                         <option value="today">Aujourd'hui</option>
                         <option value="week">Cette semaine</option>

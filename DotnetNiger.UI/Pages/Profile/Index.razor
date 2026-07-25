@@ -55,28 +55,28 @@
                     <div class="space-y-2 text-center">
                         <h2 class="text-xl font-semibold tracking-tight text-title sm:text-4xl">
                             @DisplayOrFallback(CurrentUser?.FullName, CurrentUser?.Username ?? "Utilisateur")</h2>
-                            <p class="text-lg text-slate-500">@DisplayPrimaryRole(CurrentUser?.Roles)</p>
+                            <p class="text-lg text-subtitle">@DisplayPrimaryRole(CurrentUser?.Roles)</p>
                         </div>
 
                         <div class="mt-7 space-y-3 text-sm text-title">
                             <div
                                 class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 px-4 py-2">
-                                <i class="fas fa-map-marker-alt text-slate-500"></i>
+                                <i class="fas fa-map-marker-alt text-subtitle"></i>
                                 <span>@BuildLocation(CurrentUser?.City, CurrentUser?.Country)</span>
                             </div>
                             <div
                                 class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 px-4 py-2">
-                                <i class="fas fa-envelope text-slate-500"></i>
+                                <i class="fas fa-envelope text-subtitle"></i>
                                 <span>@DisplayOrFallback(CurrentUser?.Email, "Email non renseigne")</span>
                             </div>
                             <div
                                 class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 px-4 py-2">
-                                <i class="fas fa-phone text-slate-500"></i>
+                                <i class="fas fa-phone text-subtitle"></i>
                                 <span>@DisplayOrFallback(CurrentUser?.PhoneNumber, "Telephone non renseigne")</span>
                             </div>
                             <div
                                 class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-slate-100 px-4 py-2">
-                                <i class="fas fa-calendar-alt text-slate-500"></i>
+                                <i class="fas fa-calendar-alt text-subtitle"></i>
                                 <span>Membre depuis @FormatMemberSince(CurrentUser?.CreatedAt)</span>
                             </div>
                             <div
@@ -100,7 +100,7 @@
 
                         @if (SocialLinks.Count == 0)
                         {
-                            <p class="text-sm text-slate-500">Aucun lien social enregistre.</p>
+                            <p class="text-sm text-subtitle">Aucun lien social enregistre.</p>
                         }
                         else
                         {
@@ -127,9 +127,9 @@
 
                         @if (CurrentUser?.Certificate is null)
                         {
-                            <p class="text-sm text-slate-500 mb-4">Vous n'avez pas encore soumis votre certificat.</p>
+                            <p class="text-sm text-subtitle mb-4">Vous n'avez pas encore soumis votre certificat.</p>
                             <button @onclick='() => showCertifForm = true'
-                                    class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-purple-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-purple-800">
+                                    class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800">
                                 <i class="fas fa-certificate"></i>
                                 Soumettre mon certificat
                             </button>
@@ -190,7 +190,7 @@
                                                 <label class="block text-xs font-medium text-body mb-1">URL de la certification</label>
                                                 <InputText @bind-Value="certifModel.CertificateUrl"
                                                            placeholder="https://www.freecodecamp.org/certification/..."
-                                                           class="w-full rounded-lg     px-4 py-2.5 text-sm" />
+                                                           class="w-full rounded-lg  bg-surface text-body shadow-md px-4 py-2.5 text-sm" />
                                                 <ValidationMessage For="@(() => certifModel.CertificateUrl)"
                                                                    class="text-xs text-red-500 mt-1" />
                                             </div>
@@ -198,7 +198,7 @@
                                             <div class="mb-3">
                                                 <label class="block text-xs font-medium text-body mb-1">Type de certificat</label>
                                                 <InputSelect @bind-Value="certifModel.CertificateType"
-                                                             class="w-full rounded-lg text-body px-4 py-2.5 text-sm bg-surface">
+                                                             class="w-full rounded-lg shadow-md text-body px-4 py-2.5 text-sm bg-surface">
                                                     <option value="">Sélectionnez un type</option>
                                                     <option value="Foundational C# with Microsoft">Foundational C# with Microsoft</option>
                                                     <option value="C# Data and Web">C# Data and Web</option>
@@ -255,12 +255,12 @@
                             </div>
 
                             <div class="space-y-6">
-                                <section class="rounded-lg   border-slate-200 bg-surface p-8 shadow-sm">
+                                <section class="rounded-lg border-slate-200 bg-surface p-8 shadow-sm">
                                     <div class="mb-4 flex items-center justify-between gap-4">
                                         <h2 class="text-lg font-semibold tracking-tight text-title">A propos</h2>
                                         <button @onclick='() => Navigation.NavigateTo("/profile/informations")'
                                                 title="Modifier la biographie"
-                                                class="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-title">
+                                                class="inline-flex h-10 w-10 items-center justify-center rounded-full text-subtitle transition hover:bg-slate-100 hover:text-title">
                                             <i class="fas fa-pen"></i>
                                         </button>
                                     </div>
@@ -279,7 +279,7 @@
                                             <h2 class="text-lg font-semibold tracking-tight text-title">Competences et technologies</h2>
                                             <button @onclick='() => Navigation.NavigateTo("/profile/informations")'
                                                     title="Modifier les competences"
-                                                    class="inline-flex h-10 w-10 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-title">
+                                                    class="inline-flex h-10 w-10 items-center justify-center rounded-full text-subtitle transition hover:bg-slate-100 hover:text-title">
                                                 <i class="fas fa-pen"></i>
                                             </button>
                                         </div>

@@ -84,9 +84,9 @@
             <div class="flex-1 relative">
                 <i class="fas fa-search absolute left-4 top-4 text-gray-400"></i>
                 <input type="text" placeholder="Rechercher une ressource..." @bind="searchQuery" @bind:event="oninput"
-                       class="w-full bg-surface pl-10 pr-4 py-3 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary" />
+                       class="w-full bg-surface pl-10 pr-4 py-3 shadow-md rounded-lg focus:outline-none" />
             </div>
-            <select @bind="selectedType" class="bg-surface px-4 py-3 text-body border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+            <select @bind="selectedType" class="bg-surface px-4 py-3 text-body shadow-md rounded-lg focus:outline-none">
                 <option value="">Type</option>
                 <option value="Documentation">Documentation</option>
                 <option value="Tutoriel">Tutoriel</option>
@@ -96,7 +96,7 @@
                 <option value="Livre">Livre</option>
                 <option value="Outil">Outil</option>
             </select>
-            <select @bind="selectedLevel" class="bg-surface text-body px-4 py-3 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
+            <select @bind="selectedLevel" class="bg-surface text-body px-4 py-3 shadow-md rounded-lg focus:outline-none">
                 <option value="">Niveau</option>
                 <option value="Débutant">Débutant</option>
                 <option value="Intermediaire">Intermediaire</option>

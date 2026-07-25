@@ -22,19 +22,19 @@
         </button>
     </div>
 
-    <div class="rounded-lg bg-surface p-6 shadow">
+    <div class="rounded-lg bg-fondTransparent p-6 shadow-md">
         <div class="grid grid-cols-1 gap-8 lg:grid-cols-3">
             <div class="lg:col-span-2 order-2 lg:order-1 space-y-6">
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-title">Titre</label>
                     <input @bind="postRequest.Title" type="text"
-                           class="w-full rounded-lg   bg-surface border-input px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary" />
+                           class="w-full rounded-lg   bg-surface  px-4 py-3 focus:outline-none shadow-md" />
                 </div>
 
                 <div>
                     <label class="mb-2 block text-sm font-semibold text-title">Type d'article</label>
                     <select @bind="postRequest.PostType"
-                            class="w-full rounded-lg   border-input bg-surface px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary">
+                            class="w-full rounded-lg bg-surface px-4 py-3 focus:outline-none shadow-md">
                         <option value="">Sélectionner</option>
                         <option value="Tutorial">Tutorial</option>
                         <option value="Article">Article</option>
@@ -56,7 +56,7 @@
                     <label class="mb-2 block text-sm font-semibold text-title">Tags</label>
                     <div class="flex gap-2">
                         <input @bind="tagInput" @onkeydown="HandleTagKeyDown" type="text"
-                               class="flex-1 rounded-lg   bg-surface border-input px-4 py-3 focus:outline-none focus:ring-2 focus:ring-primary"
+                               class="flex-1 rounded-lg bg-surface  px-4 py-3 focus:outline-none shadow-md"
                                placeholder="Saisir un tag puis Entrée" />
                         <button type="button" @onclick="AddTag"
                                 class="rounded-lg bg-primary px-4 text-sm font-semibold text-white transition hover:brightness-110">

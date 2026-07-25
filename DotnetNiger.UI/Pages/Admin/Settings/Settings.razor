@@ -36,7 +36,7 @@ else
                     site.</p>
                 </div>
 
-                <div class="mb-8 border-b  ">
+                <div class="mb-8 border-b">
                     <nav class="flex flex-wrap gap-1" role="tablist">
                         @foreach (var tab in tabs)
                         {
@@ -52,26 +52,26 @@ else
                 <div class="space-y-6">
                     @if (activeTab == "general")
                     {
-                        <section class="rounded-lg bg-surface p-6 shadow-sm md:p-8">
+                        <section class="rounded-lg bg-fondTransparent p-6 shadow-sm md:p-8">
                             <h2 class="text-xl font-semibold text-title mb-6">Général</h2>
                             <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                                 <div>
-                                    <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Nom du
+                                    <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title">Nom du
                                         site</label>
                                         <InputText @bind-Value="site_name"
-                                                   class="h-12 w-full rounded-lg border-input bg-surface px-4 text-base text-body focus:outline-none" />
+                                                   class="h-12 w-full rounded-lg bg-surface shadow-md px-4 text-base text-body focus:outline-none" />
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">URL du
+                                        <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title">URL du
                                             logo</label>
                                             <InputText @bind-Value="logo_url"
-                                                       class="h-12 w-full rounded-lg   border-input bg-surface px-4 text-base text-body focus:outline-none" />
+                                                       class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
                                         </div>
                                         <div class="md:col-span-2">
-                                            <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Email de
+                                            <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title">Email de
                                                 contact</label>
                                                 <InputText @bind-Value="contact_email"
-                                                           class="h-12 w-full rounded-lg   border-input bg-surface px-4 text-base text-body focus:outline-none" />
+                                                           class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
                                             </div>
                                         </div>
                                     </section>
@@ -82,34 +82,34 @@ else
                                         <h2 class="text-xl font-semibold text-title mb-6">Réseaux sociaux</h2>
                                         <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                                             <div>
-                                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500"><i
+                                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title"><i
                                                     class="fab fa-facebook mr-2 text-blue-600"></i>Facebook</label>
                                                     <InputText @bind-Value="facebook_url"
-                                                               class="h-12 w-full rounded-lg   border-input bg-surface px-4 text-base text-body focus:outline-none" />
+                                                               class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
                                                 </div>
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500"><i
+                                                    <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title"><i
                                                         class="fab fa-twitter mr-2 text-sky-500"></i>Twitter</label>
                                                         <InputText @bind-Value="twitter_url"
-                                                                   class="h-12 w-full rounded-lg   border-input bg-surface px-4 text-base text-body focus:outline-none" />
+                                                                   class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none"/>
                                                     </div>
                                                     <div>
-                                                        <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500"><i
+                                                        <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title"><i
                                                             class="fab fa-linkedin mr-2 text-blue-700"></i>LinkedIn</label>
                                                             <InputText @bind-Value="linkedin_url"
-                                                                       class="h-12 w-full rounded-lg   border-input bg-surface px-4 text-base text-body focus:outline-none" />
+                                                                       class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
                                                         </div>
                                                         <div>
-                                                            <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500"><i
+                                                            <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title"><i
                                                                 class="fab fa-github mr-2 text-gray-800"></i>GitHub</label>
                                                                 <InputText @bind-Value="github_url"
-                                                                           class="h-12 w-full rounded-lg   border-input bg-surface px-4 text-base text-body focus:outline-none" />
+                                                                           class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
                                                             </div>
                                                             <div>
-                                                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500"><i
+                                                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title"><i
                                                                     class="fab fa-youtube mr-2 text-red-600"></i>YouTube</label>
                                                                     <InputText @bind-Value="youtube_url"
-                                                                               class="h-12 w-full rounded-lg   border-input bg-surface px-4 text-base text-body focus:outline-none" />
+                                                                               class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
                                                                 </div>
                                                             </div>
                                                         </section>
@@ -129,7 +129,7 @@ else
                                 <label class="relative inline-flex cursor-pointer items-center">
                                     <input type="checkbox" class="peer sr-only" @bind="event_approval_required" />
                                     <div class="h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5
-            after:w-5 after:rounded-full after: after:border-input after:bg-surface after:transition-all
+            after:w-5 after:rounded-full after: after after:bg-surface after:transition-all
             peer-checked:bg-black peer-checked:after:translate-x-full peer-checked:after: "></div>
                                 </label>
                             </div>
@@ -141,7 +141,7 @@ else
                                 <label class="relative inline-flex cursor-pointer items-center">
                                     <input type="checkbox" class="peer sr-only" @bind="post_approval_required" />
                                     <div class="h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5
-            after:w-5 after:rounded-full after: after:border-input after:bg-surface after:transition-all
+            after:w-5 after:rounded-full after: after after:bg-surface after:transition-all
             peer-checked:bg-black peer-checked:after:translate-x-full peer-checked:after: "></div>
                                 </label>
                             </div>
@@ -153,7 +153,7 @@ else
                                 <label class="relative inline-flex cursor-pointer items-center">
                                     <input type="checkbox" class="peer sr-only" @bind="newsletter_active" />
                                     <div class="h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5
-            after:w-5 after:rounded-full after: after:border-input after:bg-surface after:transition-all
+            after:w-5 after:rounded-full after: after after:bg-surface after:transition-all
             peer-checked:bg-black peer-checked:after:translate-x-full peer-checked:after: "></div>
                                 </label>
                             </div>
@@ -165,7 +165,7 @@ else
                                 <label class="relative inline-flex cursor-pointer items-center">
                                     <input type="checkbox" class="peer sr-only" @bind="public_upload" />
                                     <div class="h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5
-            after:w-5 after:rounded-full after: after:border-input after:bg-surface after:transition-all
+            after:w-5 after:rounded-full after: after after:bg-surface after:transition-all
             peer-checked:bg-black peer-checked:after:translate-x-full peer-checked:after: "></div>
                                 </label>
                             </div>
@@ -178,15 +178,15 @@ else
                         <h2 class="text-xl font-semibold text-title mb-6">Notifications</h2>
                         <div class="grid grid-cols-1 gap-5">
                             <div>
-                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Email admin pour
+                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title">Email admin pour
             notifications</label>
-                                <InputText @bind-Value="admin_notification_email" class="h-12 w-full rounded-lg border-input
+                                <InputText @bind-Value="admin_notification_email" class="h-12 w-full rounded-lg
             bg-surface px-4 text-base text-body focus:outline-none" />
                             </div>
                             <div>
-                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Slack webhook URL
+                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title">Slack webhook URL
             (optionnel)</label>
-                                <InputText @bind-Value="slack_webhook_url" class="h-12 w-full rounded-lg border-input bg-surface
+                                <InputText @bind-Value="slack_webhook_url" class="h-12 w-full rounded-lg bg-surface
             px-4 text-base text-body focus:outline-none" />
                             </div>
                         </div>
@@ -198,22 +198,22 @@ else
                         <h2 class="text-xl font-semibold text-title mb-6">Inscription</h2>
                         <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                             <div>
-                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Mode
+                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title">Mode
             d'inscription</label>
                                 <select @bind="registration_mode"
                                         class="h-12 w-full cursor-pointer rounded-lg bg-surface px-4 text-sm text-title
-            shadow-sm outline-none transition hover:border-input focus:outline-none focus:ring-2 focus:ring-primary">
+            shadow-sm outline-none transition hover focus:outline-none focus:ring-2 focus:ring-primary">
                                     <option value="open">Ouverte</option>
                                     <option value="invitation">Invitation</option>
                                     <option value="closed">Fermée</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Rôle par défaut des
+                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title">Rôle par défaut des
             nouveaux</label>
                                 <select @bind="default_role"
                                         class="h-12 w-full cursor-pointer rounded-lg bg-surface px-4 text-sm text-title
-            shadow-sm outline-none transition hover:border-input focus:outline-none focus:ring-2 focus:ring-primary">
+            shadow-sm outline-none transition hover focus:outline-none focus:ring-2 focus:ring-primary">
                                     <option value="member">Collaborateur</option>
                                     <option value="none">Aucun</option>
                                 </select>
@@ -227,12 +227,12 @@ else
 
                                                 <div class="mt-8 flex items-center gap-3">
                                                     <button @onclick="SaveSettings"
-                                                            class="inline-flex h-12 items-center rounded-lg bg-black px-8 font-semibold text-white transition hover:bg-gray-800">
+                                                            class="inline-flex h-12 items-center rounded-lg bg-primary px-8 font-semibold text-white transition hover:bg-blue-800">
                                                         <i class="fas fa-floppy-disk mr-2"></i>
                                                         Enregistrer les modifications
                                                     </button>
                                                     <button @onclick="ResetSettings"
-                                                            class="inline-flex h-12 items-center rounded-lg   border-input bg-surface px-8 font-semibold text-title transition hover:bg-gray-100">
+                                                            class="inline-flex h-12 items-center rounded-lg bg-surface px-8 font-semibold text-title transition hover:bg-gray-100">
                                                         Annuler
                                                     </button>
                                                 </div>

@@ -23,7 +23,7 @@
                 </div>
 
                 <section class="mb-6 flex flex-col gap-4 md:flex-row md:items-center">
-                    <div class="flex-1 rounded-lg bg-surface px-4 py-3 shadow-sm ring-1 ring-black/5">
+                    <div class="flex-1 rounded-lg bg-surface px-4 py-3 shadow-md">
                         <div class="relative">
                             <i class="fas fa-search absolute left-0 top-1/2 -translate-y-1/2 text-gray-400"></i>
                             <input type="text" placeholder="Rechercher un article..." @bind="searchQuery" @bind:event="oninput"
@@ -32,7 +32,7 @@
                     </div>
 
                     <select @bind="selectedType"
-                            class="cursor-pointer rounded-lg bg-surface px-4 py-3 text-sm text-body shadow-sm outline-none transition hover:border-gray-300">
+                            class="cursor-pointer rounded-lg bg-surface px-4 py-3 text-sm text-body shadow-md outline-none transition hover:border-gray-300">
                         <option value="">Type d'article</option>
                         <option value="Tutorial">Tutorial</option>
                         <option value="Article">Article</option>
@@ -40,7 +40,7 @@
                     </select>
 
                     <select @bind="selectedStatus"
-                            class="cursor-pointer rounded-lg bg-surface px-4 py-3 text-sm text-body shadow-sm outline-none transition hover:border-gray-300">
+                            class="cursor-pointer rounded-lg bg-surface px-4 py-3 text-sm text-body shadow-md outline-none transition hover:border-gray-300">
                         <option value="">Statut</option>
                         <option value="published">Publié</option>
                         <option value="draft">Brouillon</option>

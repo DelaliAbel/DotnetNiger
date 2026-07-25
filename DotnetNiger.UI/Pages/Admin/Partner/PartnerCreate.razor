@@ -27,7 +27,7 @@
                     <div>
                         <label class="block text-sm font-semibold text-title">Nom *</label>
                         <InputText @bind-Value="partnerRequest.Name"
-                                   class="mt-1 w-full rounded-lg text-body px-4 py-3 text-sm transition focus:outline-none"
+                                   class="mt-1 w-full rounded-lg text-body bg-surface shadow-md px-4 py-3 text-sm transition focus:outline-none"
                                    placeholder="Nom du partenaire" />
                         <ValidationMessage For="@(() => partnerRequest.Name)" class="mt-1 text-xs text-red-500" />
                     </div>
@@ -35,7 +35,7 @@
                     <div>
                         <label class="block text-sm font-semibold text-title">Type</label>
                         <InputSelect @bind-Value="partnerRequest.PartnerType"
-                                     class="mt-1 w-full rounded-lg text-body bg-surface px-4 py-3 text-sm transition focus:outline-none">
+                                     class="mt-1 w-full rounded-lg text-body shadow-md bg-surface px-4 py-3 text-sm transition focus:outline-none">
                             <option value="sponsor">Sponsor</option>
                             <option value="education">Éducation</option>
                         </InputSelect>
@@ -45,7 +45,7 @@
                 <div>
                     <label class="block text-sm font-semibold text-title">Description</label>
                     <InputTextArea @bind-Value="partnerRequest.Description" rows="4"
-                                   class="mt-1 w-full rounded-lg text-body px-4 py-3 text-sm transition focus:outline-none"
+                                   class="mt-1 w-full rounded-lg text-body bg-surface shadow-md px-4 py-3 text-sm transition focus:outline-none"
                                    placeholder="Décrivez le partenaire..." />
                 </div>
 
@@ -53,14 +53,14 @@
                     <div>
                         <label class="block text-sm font-semibold text-title">URL du logo</label>
                         <InputText @bind-Value="partnerRequest.LogoUrl"
-                                   class="mt-1 w-full rounded-lg text-body px-4 py-3 text-sm transition focus:outline-none"
+                                   class="mt-1 w-full rounded-lg bg-surface shadow-md text-body px-4 py-3 text-sm transition focus:outline-none"
                                    placeholder="https://..." />
                     </div>
 
                     <div>
                         <label class="block text-sm font-semibold text-title">Site web</label>
                         <InputText @bind-Value="partnerRequest.WebsiteUrl"
-                                   class="mt-1 w-full rounded-lg text-body px-4 py-3 text-sm transition focus:outline-none"
+                                   class="mt-1 w-full rounded-lg bg-surface shadow-md text-body px-4 py-3 text-sm transition focus:outline-none"
                                    placeholder="https://..." />
                     </div>
                 </div>
@@ -69,7 +69,7 @@
                     <div>
                         <label class="block text-sm font-semibold text-title">Ordre d'affichage</label>
                         <InputNumber @bind-Value="partnerRequest.SortOrder"
-                                     class="mt-1 w-full rounded-lg px-4 py-3 text-sm transition focus:outline-none" />
+                                     class="mt-1 w-full rounded-lg bg-surface text-body shadow-md px-4 py-3 text-sm transition focus:outline-none" />
                     </div>
 
                     <div class="flex items-end pb-3">
