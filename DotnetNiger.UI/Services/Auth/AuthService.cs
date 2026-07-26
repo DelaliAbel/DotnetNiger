@@ -166,7 +166,7 @@ public class AuthService : IAuthService
                 email = request.Email,
                 password = request.Password,
                 firstName = names.Length > 0 ? names[0] : "",
-                lastName = names.Length > 1 ? names[1] : "",
+                lastName = names.Length >= 2 ? string.Join(" ", names.Skip(1)) : "",
                 phoneNumber = request.PhoneNumber
             };
 
@@ -243,6 +243,7 @@ public class AuthService : IAuthService
 
         await _authProvider.ClearTokensAsync();
         await _userStateService.ClearUserAsync();
+        _permissionService.Clear();
     }
 
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
@@ -388,10 +389,21 @@ public class AuthService : IAuthService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<bool> VerifyEmailAsync(VerifyEmailRequest request)
+    public async Task<(bool Success, string? Error)> VerifyEmailAsync(VerifyEmailRequest request)
     {
         var response = await _http.PostAsJsonAsync(ApiEndpoints.Auth.VerifyEmail, request);
-        return response.IsSuccessStatusCode;
+        if (response.IsSuccessStatusCode)
+            return (true, null);
+
+        var body = await response.Content.ReadAsStringAsync();
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.TryGetProperty("error", out var err))
+                return (false, err.GetString());
+        }
+        catch { }
+        return (false, "Code invalide ou expiré.");
     }
 
     private static async Task<(AuthDto?, string?)> ParseTokenResponseAsync(HttpResponseMessage response)

@@ -150,15 +150,23 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         return new AuthenticationState(new ClaimsPrincipal(identity));
     }
 
-    public async Task ClearTokensAsync()
+    public async Task ClearTokensAsync(bool clearAllStorage = true)
     {
         _accessToken = null;
 
         try
         {
+            // Clear auth tokens
             await _js.InvokeVoidAsync("localStorage.removeItem", AccessTokenKey);
             await _js.InvokeVoidAsync("localStorage.removeItem", RefreshTokenKey);
             await _js.InvokeVoidAsync("localStorage.removeItem", "dn_wasm_runtime_registry_member");
+            
+            // Optional: Clear all storage for maximum security
+            if (clearAllStorage)
+            {
+                await _js.InvokeVoidAsync("localStorage.clear");
+                await _js.InvokeVoidAsync("sessionStorage.clear");
+            }
         }
         catch
         {

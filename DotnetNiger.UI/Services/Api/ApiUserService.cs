@@ -3,31 +3,52 @@ using DotnetNiger.UI.Helpers;
 using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
+using Microsoft.Extensions.Logging;
 
 namespace DotnetNiger.UI.Services.Api;
 
 public class ApiUserService : ApiServiceBase, IUserService
 {
-    public ApiUserService(HttpClient http) : base(http)
-    {
-    }
+    public ApiUserService(HttpClient http, ILogger<ApiUserService> logger) : base(http, logger) { }
 
     public async Task<List<UserDto>> GetUsersAsync()
     {
-        var response = await Http.GetAsync(ApiEndpoints.CommunityAdminUsers);
-        if (!response.IsSuccessStatusCode)
+        var url = ApiEndpoints.AdminUsers;
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return [];
+            }
+            return await ApiResponseReader.ReadCollectionAsync<UserDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
             return [];
-
-        return await ApiResponseReader.ReadCollectionAsync<UserDto>(response);
+        }
     }
 
     public async Task<UserDto?> GetUserByIdAsync(Guid userId)
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.CommunityAdminUsers}/{userId}");
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.AdminUsers}/{userId}";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<UserDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
             return null;
-
-        return await ApiResponseReader.ReadAsync<UserDto>(response);
+        }
     }
 
     public async Task<List<UserDto>> GetPendingUsersAsync()
@@ -85,89 +106,161 @@ public class ApiUserService : ApiServiceBase, IUserService
 
     public async Task<UserDto?> CreateUserAsync(CreateUserRequest user)
     {
-        var content = JsonContent.Create(user);
-        var response = await Http.PostAsync(ApiEndpoints.CommunityAdminUsers, content);
-        if (!response.IsSuccessStatusCode)
+        var url = ApiEndpoints.AdminUsers;
+        try
+        {
+            var content = JsonContent.Create(user);
+            var response = await Http.PostAsync(url, content);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on POST {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<UserDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on POST {Url}", url);
             return null;
-
-        return await ApiResponseReader.ReadAsync<UserDto>(response);
+        }
     }
 
     public async Task<UserDto?> UpdateUserAsync(UserDto user)
     {
-        var existing = await GetUserByIdAsync(user.Id);
-        if (existing is null) return null;
-
-        var statusChanged = existing.IsActive != user.IsActive;
-        if (statusChanged)
+        try
         {
-            var statusContent = JsonContent.Create(new UpdateUserStatusRequest { IsActive = user.IsActive });
-            var statusResponse = await Http.PatchAsync($"{ApiEndpoints.AdminUsers}/{user.Id}/status", statusContent);
-            if (!statusResponse.IsSuccessStatusCode)
-                return null;
-        }
+            var existing = await GetUserByIdAsync(user.Id);
+            if (existing is null) return null;
 
-        var teamChanged = existing.IsTeamMember != user.IsTeamMember || existing.Position != user.Position;
-        if (teamChanged)
-        {
-            var teamContent = JsonContent.Create(new UpdateTeamRequest { IsTeamMember = user.IsTeamMember, Position = user.Position });
-            var teamResponse = await Http.PatchAsync(
-                string.Format(ApiEndpoints.AdminUserTeam, user.Id), teamContent);
-            if (!teamResponse.IsSuccessStatusCode)
-                return null;
-        }
-
-        var rolesChanged = existing.Roles.Count != user.Roles.Count ||
-            !existing.Roles.OrderBy(r => r).SequenceEqual(user.Roles.OrderBy(r => r));
-        if (rolesChanged)
-        {
-            var rolesToRemove = existing.Roles.Except(user.Roles).ToList();
-            var rolesToAdd = user.Roles.Except(existing.Roles).ToList();
-
-            foreach (var role in rolesToRemove)
+            var statusChanged = existing.IsActive != user.IsActive;
+            if (statusChanged)
             {
-                var response = await Http.DeleteAsync(
-                    string.Format(ApiEndpoints.AdminUserRole, user.Id, role));
-                if (!response.IsSuccessStatusCode)
+                var statusContent = JsonContent.Create(new UpdateUserStatusRequest { IsActive = user.IsActive });
+                var statusResponse = await Http.PatchAsync($"{ApiEndpoints.AdminUsers}/{user.Id}/status", statusContent);
+                if (!statusResponse.IsSuccessStatusCode)
+                {
+                    Logger.LogWarning("Failed {StatusCode} on PATCH {Url}", (int)statusResponse.StatusCode, $"{ApiEndpoints.AdminUsers}/{user.Id}/status");
                     return null;
+                }
             }
-            foreach (var role in rolesToAdd)
-            {
-                var content = JsonContent.Create(new UpdateUserRolesRequest { RoleName = role });
-                var response = await Http.PostAsync(
-                    string.Format(ApiEndpoints.AdminUserRoles, user.Id), content);
-                if (!response.IsSuccessStatusCode)
-                    return null;
-            }
-        }
 
-        return await GetUserByIdAsync(user.Id);
+            var teamChanged = existing.IsTeamMember != user.IsTeamMember || existing.Position != user.Position;
+            if (teamChanged)
+            {
+                var teamContent = JsonContent.Create(new UpdateTeamRequest { IsTeamMember = user.IsTeamMember, Position = user.Position });
+                var teamUrl = string.Format(ApiEndpoints.AdminUserTeam, user.Id);
+                var teamResponse = await Http.PatchAsync(teamUrl, teamContent);
+                if (!teamResponse.IsSuccessStatusCode)
+                {
+                    Logger.LogWarning("Failed {StatusCode} on PATCH {Url}", (int)teamResponse.StatusCode, teamUrl);
+                    return null;
+                }
+            }
+
+            var rolesChanged = existing.Roles.Count != user.Roles.Count ||
+                !existing.Roles.OrderBy(r => r).SequenceEqual(user.Roles.OrderBy(r => r));
+            if (rolesChanged)
+            {
+                var rolesToRemove = existing.Roles.Except(user.Roles).ToList();
+                var rolesToAdd = user.Roles.Except(existing.Roles).ToList();
+
+                foreach (var role in rolesToRemove)
+                {
+                    var roleUrl = string.Format(ApiEndpoints.AdminUserRole, user.Id, role);
+                    var response = await Http.DeleteAsync(roleUrl);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        Logger.LogWarning("Failed {StatusCode} on DELETE {Url}", (int)response.StatusCode, roleUrl);
+                        return null;
+                    }
+                }
+                foreach (var role in rolesToAdd)
+                {
+                    var roleUrl = string.Format(ApiEndpoints.AdminUserRoles, user.Id);
+                    var roleContent = JsonContent.Create(new UpdateUserRolesRequest { RoleName = role });
+                    var response = await Http.PostAsync(roleUrl, roleContent);
+                    if (!response.IsSuccessStatusCode)
+                    {
+                        Logger.LogWarning("Failed {StatusCode} on POST {Url}", (int)response.StatusCode, roleUrl);
+                        return null;
+                    }
+                }
+            }
+
+            return await GetUserByIdAsync(user.Id);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error updating user {UserId}", user.Id);
+            return null;
+        }
     }
 
     public async Task<bool> DeleteUserAsync(Guid userId)
     {
-        var response = await Http.DeleteAsync($"{ApiEndpoints.CommunityAdminUsers}/{userId}");
-        return response.IsSuccessStatusCode;
+        var url = $"{ApiEndpoints.AdminUsers}/{userId}";
+        try
+        {
+            var response = await Http.DeleteAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on DELETE {Url}", (int)response.StatusCode, url);
+                return false;
+            }
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on DELETE {Url}", url);
+            return false;
+        }
     }
 
     public async Task<bool> ApproveUserAsync(Guid userId)
     {
-        var statusContent = JsonContent.Create(new UpdateUserStatusRequest { IsActive = true });
-        var response = await Http.PatchAsync($"{ApiEndpoints.AdminUsers}/{userId}/status", statusContent);
-        if (!response.IsSuccessStatusCode)
+        var statusUrl = $"{ApiEndpoints.AdminUsers}/{userId}/status";
+        var roleUrl = string.Format(ApiEndpoints.AdminUserRoles, userId);
+        try
+        {
+            var statusContent = JsonContent.Create(new UpdateUserStatusRequest { IsActive = true });
+            var response = await Http.PatchAsync(statusUrl, statusContent);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on PATCH {Url}", (int)response.StatusCode, statusUrl);
+                return false;
+            }
+
+            var roleContent = JsonContent.Create(new UpdateUserRolesRequest { RoleName = "Collaborator" });
+            await Http.PostAsync(roleUrl, roleContent);
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error approving user {UserId}", userId);
             return false;
-
-        var roleContent = JsonContent.Create(new UpdateUserRolesRequest { RoleName = "Collaborator" });
-        await Http.PostAsync(string.Format(ApiEndpoints.AdminUserRoles, userId), roleContent);
-
-        return true;
+        }
     }
 
     public async Task<bool> RejectUserAsync(Guid userId)
     {
-        var content = JsonContent.Create(new UpdateUserStatusRequest { IsActive = false });
-        var response = await Http.PatchAsync($"{ApiEndpoints.AdminUsers}/{userId}/status", content);
-        return response.IsSuccessStatusCode;
+        var url = $"{ApiEndpoints.AdminUsers}/{userId}/status";
+        try
+        {
+            var content = JsonContent.Create(new UpdateUserStatusRequest { IsActive = false });
+            var response = await Http.PatchAsync(url, content);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on PATCH {Url}", (int)response.StatusCode, url);
+                return false;
+            }
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error rejecting user {UserId}", userId);
+            return false;
+        }
     }
 
     public async Task<List<UserDto>> GetTeamMembersAsync()
@@ -182,33 +275,72 @@ public class ApiUserService : ApiServiceBase, IUserService
 
     public async Task<bool> AssignRoleAsync(Guid userId, string roleName)
     {
-        var content = JsonContent.Create(new UpdateUserRolesRequest { RoleName = roleName });
-        var response = await Http.PostAsync(
-            string.Format(ApiEndpoints.AdminUserRoles, userId), content);
-        return response.IsSuccessStatusCode;
+        var url = string.Format(ApiEndpoints.AdminUserRoles, userId);
+        try
+        {
+            var content = JsonContent.Create(new UpdateUserRolesRequest { RoleName = roleName });
+            var response = await Http.PostAsync(url, content);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on POST {Url}", (int)response.StatusCode, url);
+                return false;
+            }
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on POST {Url}", url);
+            return false;
+        }
     }
 
     public async Task<bool> AddToTeamAsync(Guid userId, string position)
     {
-        var content = JsonContent.Create(new UpdateTeamRequest
+        var url = string.Format(ApiEndpoints.AdminUserTeam, userId);
+        try
         {
-            IsTeamMember = true,
-            Position = position
-        });
-        var response = await Http.PatchAsync(
-            string.Format(ApiEndpoints.AdminUserTeam, userId), content);
-        return response.IsSuccessStatusCode;
+            var content = JsonContent.Create(new UpdateTeamRequest
+            {
+                IsTeamMember = true,
+                Position = position
+            });
+            var response = await Http.PatchAsync(url, content);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on PATCH {Url}", (int)response.StatusCode, url);
+                return false;
+            }
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on PATCH {Url}", url);
+            return false;
+        }
     }
 
     public async Task<bool> RemoveFromTeamAsync(Guid userId)
     {
-        var content = JsonContent.Create(new UpdateTeamRequest
+        var url = string.Format(ApiEndpoints.AdminUserTeam, userId);
+        try
         {
-            IsTeamMember = false,
-            Position = string.Empty
-        });
-        var response = await Http.PatchAsync(
-            string.Format(ApiEndpoints.AdminUserTeam, userId), content);
-        return response.IsSuccessStatusCode;
+            var content = JsonContent.Create(new UpdateTeamRequest
+            {
+                IsTeamMember = false,
+                Position = string.Empty
+            });
+            var response = await Http.PatchAsync(url, content);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on PATCH {Url}", (int)response.StatusCode, url);
+                return false;
+            }
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on PATCH {Url}", url);
+            return false;
+        }
     }
 }

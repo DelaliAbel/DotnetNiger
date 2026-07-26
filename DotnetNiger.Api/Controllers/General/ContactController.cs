@@ -2,6 +2,7 @@ using DotnetNiger.Api.Constants;
 using DotnetNiger.Api.DTOs.Requests;
 using DotnetNiger.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using System.ComponentModel.DataAnnotations;
 
 namespace DotnetNiger.Api.Controllers.General;
@@ -9,6 +10,7 @@ namespace DotnetNiger.Api.Controllers.General;
 /// <summary>Contrôleur de formulaire de contact.</summary>
 [ApiController]
 [Route("api/contact")]
+[EnableRateLimiting("default")]
 public class ContactController(IContactService contactService) : ControllerBase
 {
     /// <summary>Envoie un message de contact.</summary>

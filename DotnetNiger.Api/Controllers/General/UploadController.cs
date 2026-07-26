@@ -1,13 +1,17 @@
 using DotnetNiger.Api.Constants;
 using DotnetNiger.Api.DTOs.Requests;
 using DotnetNiger.Api.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace DotnetNiger.Api.Controllers.General;
 
 /// <summary>Contrôleur d'upload et de gestion des images.</summary>
 [ApiController]
 [Route("api/upload")]
+[Authorize]
+[EnableRateLimiting("default")]
 public class UploadController(IImageProcessingService imageService) : ControllerBase
 {
     private const long MaxFileSize = 4 * 1024 * 1024;

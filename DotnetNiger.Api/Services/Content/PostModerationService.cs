@@ -36,5 +36,6 @@ public class PostModerationService : IPostModerationService
 
     private static PostResponse MapToResponse(Post p) =>
         new(p.Id, p.Title, p.Slug, p.Content, p.Excerpt, p.CoverImageUrl,
-            p.AuthorId, p.Status.ToString(), p.PublishedAt, p.CreatedAt, p.UpdatedAt);
+            p.AuthorId, p.Status.ToString(), p.PublishedAt, p.CreatedAt, p.UpdatedAt,
+            p.AuthorName, p.AuthorAvatar, p.PostType, p.ViewCount, [], []);
 }

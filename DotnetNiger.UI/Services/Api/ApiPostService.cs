@@ -2,14 +2,13 @@ using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using System.Net.Http.Json;
+using Microsoft.Extensions.Logging;
 
 namespace DotnetNiger.UI.Services.Api;
 
 public class ApiPostService : ApiServiceBase, IPostService
 {
-    public ApiPostService(HttpClient http) : base(http)
-    {
-    }
+    public ApiPostService(HttpClient http, ILogger<ApiPostService> logger) : base(http, logger) { }
 
     public async Task<List<PostDto>> GetAllPostsAsync()
     {
@@ -18,12 +17,10 @@ public class ApiPostService : ApiServiceBase, IPostService
 
     public async Task<List<PostDto>> GetPublishedPostsAsync()
     {
-        var posts = await GetCollectionAsync<PostDto>(ApiEndpoints.Posts, new Dictionary<string, string?>
+        return await GetCollectionAsync<PostDto>(ApiEndpoints.Posts, new Dictionary<string, string?>
         {
             ["published"] = "true"
         });
-
-        return posts.Where(p => p.PublishedAt != DateTime.MinValue).ToList();
     }
 
     public async Task<List<PostDto>> GetPostsByCategoryAsync(string categorySlug)
@@ -52,44 +49,102 @@ public class ApiPostService : ApiServiceBase, IPostService
 
     public async Task<PostDto?> GetPostByIdAsync(Guid id)
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Posts}/{id}");
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Posts}/{id}";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<PostDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
             return null;
-
-        return await ApiResponseReader.ReadAsync<PostDto>(response);
+        }
     }
 
     public async Task<PostDto?> GetPostBySlugAsync(string slug)
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Posts}/{slug}");
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Posts}/{slug}";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<PostDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
             return null;
-
-        return await ApiResponseReader.ReadAsync<PostDto>(response);
+        }
     }
 
     public async Task<PostDto?> CreatePostAsync(CreatePostRequest request , Guid currentId)
     {
-        var response = await Http.PostAsJsonAsync(ApiEndpoints.Posts, request);
-        if (!response.IsSuccessStatusCode)
+        var url = ApiEndpoints.Posts;
+        try
+        {
+            var response = await Http.PostAsJsonAsync(url, request);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on POST {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<PostDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on POST {Url}", url);
             return null;
-
-        return await ApiResponseReader.ReadAsync<PostDto>(response);
+        }
     }
 
     public async Task<PostDto?> UpdatePostAsync(Guid id, UpdatePostRequest request)
     {
-        var response = await Http.PutAsJsonAsync($"{ApiEndpoints.Posts}/{id}", request);
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Posts}/{id}";
+        try
+        {
+            var response = await Http.PutAsJsonAsync(url, request);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on PUT {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<PostDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on PUT {Url}", url);
             return null;
-
-        return await ApiResponseReader.ReadAsync<PostDto>(response);
+        }
     }
 
     public async Task<bool> DeletePostAsync(Guid id)
     {
-        var response = await Http.DeleteAsync($"{ApiEndpoints.Posts}/{id}");
-        return response.IsSuccessStatusCode;
+        var url = $"{ApiEndpoints.Posts}/{id}";
+        try
+        {
+            var response = await Http.DeleteAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on DELETE {Url}", (int)response.StatusCode, url);
+                return false;
+            }
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on DELETE {Url}", url);
+            return false;
+        }
     }
 
     public async Task<List<PostDto>> SearchPostsAsync(string query)
@@ -102,19 +157,55 @@ public class ApiPostService : ApiServiceBase, IPostService
 
     public async Task<bool> PublishPostAsync(Guid postId)
     {
-        var response = await Http.PatchAsync($"{ApiEndpoints.Posts}/{postId}/publish", null);
-        return response.IsSuccessStatusCode;
+        var url = $"{ApiEndpoints.Posts}/{postId}/publish";
+        try
+        {
+            var response = await Http.PatchAsync(url, null);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on PATCH {Url}", (int)response.StatusCode, url);
+                return false;
+            }
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on PATCH {Url}", url);
+            return false;
+        }
     }
 
     public async Task<bool> UnPublishPostAsync(Guid postId)
     {
-        var response = await Http.PatchAsync($"{ApiEndpoints.Posts}/{postId}/unpublish", null);
-        return response.IsSuccessStatusCode;
+        var url = $"{ApiEndpoints.Posts}/{postId}/unpublish";
+        try
+        {
+            var response = await Http.PatchAsync(url, null);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on PATCH {Url}", (int)response.StatusCode, url);
+                return false;
+            }
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on PATCH {Url}", url);
+            return false;
+        }
     }
 
     public async Task IncrementViewCountAsync(Guid id)
     {
-        await Http.PostAsync($"{ApiEndpoints.Posts}/{id}/views", null);
+        var url = $"{ApiEndpoints.Posts}/{id}/views";
+        try
+        {
+            await Http.PostAsync(url, null);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on POST {Url}", url);
+        }
     }
 
     public async Task<List<PostDto>> GetAdminPostsAsync(string? status = null)
@@ -123,15 +214,26 @@ public class ApiPostService : ApiServiceBase, IPostService
         if (!string.IsNullOrWhiteSpace(status))
             query["status"] = status;
 
-        return await GetCollectionAsync<PostDto>(ApiEndpoints.AdminPosts, query);
+        return await GetCollectionAsync<PostDto>(ApiEndpoints.Posts, query);
     }
 
     public async Task<List<PostDto>> GetMyPostsAsync()
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Posts}/mine");
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Posts}/mine";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return new List<PostDto>();
+            }
+            return await ApiResponseReader.ReadCollectionAsync<PostDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
             return new List<PostDto>();
-
-        return await ApiResponseReader.ReadCollectionAsync<PostDto>(response);
+        }
     }
 }

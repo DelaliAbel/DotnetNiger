@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text;
+using System.Threading.RateLimiting;
 using DotnetNiger.Api.Constants;
 using DotnetNiger.Api.Data.Email;
 using DotnetNiger.Api.Entities;
@@ -9,7 +10,9 @@ using DotnetNiger.Api.Seed;
 using DotnetNiger.Api.Services.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -204,6 +207,61 @@ builder.Services.AddCors(options =>
     });
 });
 
+// --- Rate Limiting ---
+builder.Services.Configure<RateLimitingOptions>(builder.Configuration.GetSection(RateLimitingOptions.SectionName));
+var rateLimitOptions = builder.Configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>()!;
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.OnRejected = (context, cancellationToken) =>
+    {
+        context.HttpContext.Response.ContentType = "application/json";
+        var retryAfter = context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfterValue)
+            ? (int)retryAfterValue.TotalSeconds
+            : rateLimitOptions.WindowSeconds;
+        context.HttpContext.Response.Headers.RetryAfter = retryAfter.ToString();
+        return new ValueTask(context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            error = "Trop de requêtes. Veuillez réessayer plus tard.",
+            retryAfterSeconds = retryAfter
+        }, cancellationToken));
+    };
+
+    options.AddPolicy("default", httpContext =>
+    {
+        var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetTokenBucketLimiter(
+            $"default:{ip}",
+            _ => new TokenBucketRateLimiterOptions
+            {
+                TokenLimit = rateLimitOptions.PermitLimit,
+                ReplenishmentPeriod = TimeSpan.FromSeconds(rateLimitOptions.WindowSeconds),
+                TokensPerPeriod = rateLimitOptions.PermitLimit,
+                AutoReplenishment = true,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+    });
+
+    options.AddPolicy("Auth", httpContext =>
+    {
+        var clientId = httpContext.Request.Headers["ClientId"].FirstOrDefault() ?? "unknown";
+        return RateLimitPartition.GetTokenBucketLimiter(
+            $"auth:{clientId}",
+            _ => new TokenBucketRateLimiterOptions
+            {
+                TokenLimit = rateLimitOptions.AuthPermitLimit,
+                ReplenishmentPeriod = TimeSpan.FromSeconds(rateLimitOptions.AuthWindowSeconds),
+                TokensPerPeriod = rateLimitOptions.AuthPermitLimit,
+                AutoReplenishment = true,
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+    });
+});
+
 // --- Services métier ---
 builder.Services.AddIdentityServices();
 
@@ -225,7 +283,7 @@ if (app.Environment.IsDevelopment())
 app.Use(async (context, next) =>
 {
     await next();
-    if (!context.Response.HasStarted && context.Response.StatusCode is 404 or 401 or 403 or 500
+    if (!context.Response.HasStarted && context.Response.StatusCode is 404 or 401 or 403 or 429 or 500
         && context.Response.ContentType == null)
     {
         context.Response.ContentType = "application/json";
@@ -234,6 +292,7 @@ app.Use(async (context, next) =>
             401 => "Non authentifié",
             403 => "Accès refusé",
             404 => "Ressource introuvable",
+            429 => "Trop de requêtes. Veuillez réessayer plus tard.",
             500 => "Erreur interne du serveur",
             _ => "Erreur"
         };
@@ -244,6 +303,7 @@ app.Use(async (context, next) =>
 app.UseStaticFiles();
 app.UseHttpsRedirection();
 app.UseCors();
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

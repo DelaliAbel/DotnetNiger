@@ -52,16 +52,26 @@ public class AccountController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<object>> Register([FromBody] RegisterRequest request)
     {
-        var user = await _accountService.RegisterAsync(
-            request.Email, request.Password,
-            request.FirstName, request.LastName, request.PhoneNumber);
+        if (!ModelState.IsValid)
+            return BadRequest(new { error = "Données invalides", errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage) });
 
-        return Ok(new
+        try
         {
-            message = "Compte créé. Un code de confirmation vous a été envoyé par email.",
-            userId = user.Id,
-            email = user.Email
-        });
+            var user = await _accountService.RegisterAsync(
+                request.Email, request.Password,
+                request.FirstName, request.LastName, request.PhoneNumber);
+
+            return Ok(new
+            {
+                message = "Compte créé. Un code de confirmation vous a été envoyé par email.",
+                userId = user.Id,
+                email = user.Email
+            });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
     // ============================================================
@@ -203,6 +213,7 @@ public class AccountController : ControllerBase
         var (accessToken, refreshToken, expiresIn) =
             await _tokenService.GenerateTokenPairAsync(user);
 
+        var frontendOrigin = _smtp.FrontendBaseUrl.TrimEnd('/');
         var html = "<!DOCTYPE html><html><head><title>Connexion en cours...</title></head><body>"
             + "<script>"
             + "window.opener.postMessage({"
@@ -210,7 +221,7 @@ public class AccountController : ControllerBase
             + $"  accessToken: '{accessToken}',"
             + $"  refreshToken: '{refreshToken}',"
             + $"  expiresIn: {expiresIn}"
-            + "}, '*');"
+            + $"}}, '{frontendOrigin}');"
             + "window.close();"
             + "</script>"
             + "<p>Connexion réussie. Cette fenêtre se ferme automatiquement...</p>"
@@ -220,12 +231,13 @@ public class AccountController : ControllerBase
     }
 
     /// <summary>Sert une page HTML d'erreur et ferme la popup.</summary>
-    private static async Task WriteErrorAndClose(HttpResponse response, string message)
+    private async Task WriteErrorAndClose(HttpResponse response, string message)
     {
         response.ContentType = "text/html";
+        var frontendOrigin = _smtp.FrontendBaseUrl.TrimEnd('/');
         var html = "<!DOCTYPE html><html><head><title>Erreur</title></head><body>"
             + "<script>"
-            + "window.opener.postMessage({ type: 'external-login-error', error: '" + message + "' }, '*');"
+            + "window.opener.postMessage({ type: 'external-login-error', error: '" + message + "' }, '" + frontendOrigin + "');"
             + "window.close();"
             + "</script>"
             + "<p>Erreur : " + message + "</p>"
@@ -275,8 +287,15 @@ public class AccountController : ControllerBase
     [HttpPost("verify-email")]
     public async Task<ActionResult<object>> VerifyEmail([FromBody] ConfirmEmailRequest request)
     {
-        await _accountService.ConfirmEmailAsync(request.Email, request.Code);
-        return Ok(new { message = "Email confirmé avec succès." });
+        try
+        {
+            await _accountService.ConfirmEmailAsync(request.Email, request.Code);
+            return Ok(new { message = "Email confirmé avec succès." });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { error = ex.Message });
+        }
     }
 
     /// <summary>Demande un nouveau code de vérification email (alias de resend-code).</summary>

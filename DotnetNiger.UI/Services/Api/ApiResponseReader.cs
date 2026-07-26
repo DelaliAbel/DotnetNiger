@@ -22,11 +22,11 @@ internal static class ApiResponseReader
             if (wrapped is not null && wrapped.Success)
                 return wrapped.Data;
 
-            // Tentative de lecture directe si l'API ne renvoie pas le wrapper
             return await response.Content.ReadFromJsonAsync<T>(Options);
         }
-        catch
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"[ApiResponseReader] ReadAsync<{typeof(T).Name}> failed: {ex.Message}");
             return default;
         }
     }
@@ -48,7 +48,6 @@ internal static class ApiResponseReader
             if (doc.ValueKind != JsonValueKind.Object)
                 return new List<T>();
 
-            // On cherche la propriété "data" (insensible à la casse)
             JsonElement data = default;
             bool hasData = false;
 
@@ -64,23 +63,23 @@ internal static class ApiResponseReader
 
             if (hasData)
             {
-                // Cas paginé : data { items: [] }
                 if (data.ValueKind == JsonValueKind.Object && data.TryGetProperty("items", out var items) && items.ValueKind == JsonValueKind.Array)
                 {
                     return items.Deserialize<List<T>>(Options) ?? new List<T>();
                 }
                 
-                // Cas liste simple dans data : data []
                 if (data.ValueKind == JsonValueKind.Array)
                 {
                     return data.Deserialize<List<T>>(Options) ?? new List<T>();
                 }
             }
 
+            Console.Error.WriteLine($"[ApiResponseReader] ReadCollectionAsync<{typeof(T).Name}>: no 'data' property found in response");
             return new List<T>();
         }
-        catch
+        catch (Exception ex)
         {
+            Console.Error.WriteLine($"[ApiResponseReader] ReadCollectionAsync<{typeof(T).Name}> failed: {ex.Message}");
             return new List<T>();
         }
     }

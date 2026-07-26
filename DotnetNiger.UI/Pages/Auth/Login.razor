@@ -382,21 +382,21 @@
     {
         _isLoading = true;
         _errorMessage = null;
-        var verified = await Auth.VerifyEmailAsync(new VerifyEmailRequest
+        var (success, error) = await Auth.VerifyEmailAsync(new VerifyEmailRequest
         {
             Email = _verifyEmail,
             Code = _verifyCode
         });
         _isLoading = false;
 
-        if (verified)
+        if (success)
         {
             _verifySuccess = true;
             _isVerifyStep = false;
         }
         else
         {
-            _errorMessage = "Code invalide ou expiré. Réessayez.";
+            _errorMessage = error ?? "Code invalide ou expiré. Réessayez.";
         }
     }
 }

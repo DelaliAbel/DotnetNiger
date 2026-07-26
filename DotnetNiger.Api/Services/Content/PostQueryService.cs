@@ -17,7 +17,10 @@ public class PostQueryService : IPostQueryService
         string? published, string? category, string? tag,
         string? query, int page, int pageSize, Guid? after = null, Guid? authorId = null)
     {
-        var q = _db.Posts.AsNoTracking();
+        var q = _db.Posts
+            .Include(p => p.PostCategories).ThenInclude(pc => pc.Category)
+            .Include(p => p.PostTags).ThenInclude(pt => pt.Tag)
+            .AsNoTracking();
 
         if (published == "true") q = q.Where(p => p.Status == PostStatus.Published);
         else if (published == "false") q = q.Where(p => p.Status == PostStatus.Draft || p.Status == PostStatus.PendingReview);
@@ -40,18 +43,38 @@ public class PostQueryService : IPostQueryService
     /// <summary>Récupère un article par son identifiant.</summary>
     public async Task<PostResponse?> GetByIdAsync(Guid id)
     {
-        var post = await _db.Posts.FindAsync(id);
+        var post = await _db.Posts.AsNoTracking()
+            .Include(p => p.PostCategories).ThenInclude(pc => pc.Category)
+            .Include(p => p.PostTags).ThenInclude(pt => pt.Tag)
+            .FirstOrDefaultAsync(p => p.Id == id);
         return post == null ? null : MapToResponse(post);
     }
 
     /// <summary>Récupère un article par son slug.</summary>
     public async Task<PostResponse?> GetBySlugAsync(string slug)
     {
-        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Slug == slug);
+        var post = await _db.Posts.AsNoTracking()
+            .Include(p => p.PostCategories).ThenInclude(pc => pc.Category)
+            .Include(p => p.PostTags).ThenInclude(pt => pt.Tag)
+            .FirstOrDefaultAsync(p => p.Slug == slug);
         return post == null ? null : MapToResponse(post);
     }
 
-    private static PostResponse MapToResponse(Post p) =>
-        new(p.Id, p.Title, p.Slug, p.Content, p.Excerpt, p.CoverImageUrl,
-            p.AuthorId, p.Status.ToString(), p.PublishedAt, p.CreatedAt, p.UpdatedAt);
+    private static PostResponse MapToResponse(Post p)
+    {
+        var categories = p.PostCategories?.Select(pc => new CategoryResponse(
+            pc.Category.Id, pc.Category.Name, pc.Category.Slug,
+            pc.Category.Description, pc.Category.IconUrl, pc.Category.PostCount)).ToList() ?? [];
+
+        var tags = p.PostTags?.Select(pt => new TagResponse
+        {
+            Id = pt.Tag.Id, Name = pt.Tag.Name, Slug = pt.Tag.Slug, UsageCount = pt.Tag.UsageCount
+        }).ToList() ?? [];
+
+        return new PostResponse(
+            p.Id, p.Title, p.Slug, p.Content, p.Excerpt, p.CoverImageUrl,
+            p.AuthorId, p.Status.ToString(), p.PublishedAt, p.CreatedAt, p.UpdatedAt,
+            p.AuthorName, p.AuthorAvatar, p.PostType, p.ViewCount,
+            categories, tags);
+    }
 }

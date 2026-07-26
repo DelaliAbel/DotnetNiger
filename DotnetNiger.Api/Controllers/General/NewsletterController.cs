@@ -3,12 +3,14 @@ using DotnetNiger.Api.DTOs.Requests;
 using DotnetNiger.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace DotnetNiger.Api.Controllers.General;
 
 /// <summary>Contrôleur de gestion de la newsletter.</summary>
 [ApiController]
 [Route("api/newsletter")]
+[EnableRateLimiting("default")]
 public class NewsletterController(INewsletterService newsletterService) : ControllerBase
 {
     /// <summary>Inscrit un abonné à la newsletter.</summary>

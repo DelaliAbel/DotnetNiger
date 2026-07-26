@@ -18,7 +18,11 @@ public class EventQueryService : IEventQueryService
         string? category, string? tag, DateTime? from, DateTime? to,
         Guid? organizerId, int page, int pageSize, Guid? createdBy = null)
     {
-        var q = _db.Events.AsNoTracking();
+        var q = _db.Events
+            .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .Include(e => e.Speakers)
+            .Include(e => e.Medias)
+            .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(status))
         {
@@ -48,7 +52,11 @@ public class EventQueryService : IEventQueryService
     /// <summary>Récupère un événement par identifiant.</summary>
     public async Task<EventResponse?> GetByIdAsync(Guid id)
     {
-        var ev = await _db.Events.FindAsync(id);
+        var ev = await _db.Events.AsNoTracking()
+            .Include(e => e.EventTags).ThenInclude(et => et.Tag)
+            .Include(e => e.Speakers)
+            .Include(e => e.Medias)
+            .FirstOrDefaultAsync(e => e.Id == id);
         return ev == null ? null : MapToResponse(ev);
     }
 
@@ -78,9 +86,33 @@ public class EventQueryService : IEventQueryService
             .ToListAsync();
     }
 
-    private static EventResponse MapToResponse(Event e) =>
-        new(e.Id, e.Title, e.Slug, e.Description, e.StartDate, e.EndDate,
-            e.Location, e.CoverImageUrl, e.CreatedBy, e.Status.ToString(),
-            e.Status == EventStatus.Published,
-            e.CreatedAt, e.UpdatedAt);
+    private static EventResponse MapToResponse(Event e)
+    {
+        var tags = e.EventTags?.Select(et => new TagResponse
+        {
+            Id = et.Tag.Id, Name = et.Tag.Name, Slug = et.Tag.Slug, UsageCount = et.Tag.UsageCount
+        }).ToList() ?? [];
+
+        var speakers = e.Speakers?.Select(s => new SpeakerResponse(
+            s.UserId, s.Name, s.Role, s.AvatarUrl)).ToList() ?? [];
+
+        var medias = e.Medias?.Select(m => new EventMediaResponse(
+            m.Id, m.Type, m.FileUrl, m.Url, m.Title)).ToList() ?? [];
+
+        var galleryUrls = e.Medias?
+            .Where(m => m.Type == "image" && !string.IsNullOrEmpty(m.Url))
+            .Select(m => m.Url)
+            .ToList() ?? [];
+
+        return new EventResponse(
+            e.Id, e.Title, e.Slug, e.Description,
+            e.StartDate, e.EndDate, e.Location,
+            e.CoverImageUrl, e.CreatedBy,
+            e.Status.ToString(), e.Status == EventStatus.Published,
+            e.CreatedAt, e.UpdatedAt,
+            e.EventType, e.Category, e.OrganizerName,
+            e.Capacity, e.RegisteredCount, e.MeetupLink,
+            e.RejectionReason, e.SubmittedAt, e.PublishedAt,
+            medias, galleryUrls, tags, speakers);
+    }
 }

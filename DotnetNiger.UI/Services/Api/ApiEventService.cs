@@ -3,14 +3,13 @@ using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using System.Net.Http.Json;
+using Microsoft.Extensions.Logging;
 
 namespace DotnetNiger.UI.Services.Api;
 
 public class ApiEventService : ApiServiceBase, IEventService
 {
-    public ApiEventService(HttpClient http) : base(http)
-    {
-    }
+    public ApiEventService(HttpClient http, ILogger<ApiEventService> logger) : base(http, logger) { }
 
     public async Task<List<EventDto>> GetAllEventsAsync()
     {
@@ -19,8 +18,7 @@ public class ApiEventService : ApiServiceBase, IEventService
 
     public async Task<List<EventDto>> GetPublishedEventsAsync()
     {
-        var events = await GetCollectionAsync<EventDto>(ApiEndpoints.Events);
-        return events.Where(e => e.IsPublished).ToList();
+        return await GetCollectionAsync<EventDto>(ApiEndpoints.Events);
     }
 
     public async Task<List<EventDto>> GetUpcomingEventsAsync()
@@ -39,20 +37,42 @@ public class ApiEventService : ApiServiceBase, IEventService
 
     public async Task<EventDto?> GetEventByIdAsync(Guid id)
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Events}/{id}");
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Events}/{id}";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<EventDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
             return null;
-
-        return await ApiResponseReader.ReadAsync<EventDto>(response);
+        }
     }
 
     public async Task<EventDto?> GetEventBySlugAsync(string slug)
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Events}/{slug}");
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Events}/{slug}";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<EventDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
             return null;
-
-        return await ApiResponseReader.ReadAsync<EventDto>(response);
+        }
     }
 
     public async Task<List<EventDto>> SearchEventsAsync(string query)
@@ -75,26 +95,62 @@ public class ApiEventService : ApiServiceBase, IEventService
 
     public async Task<EventDto?> CreateEventAsync(CreateEventRequest request, Guid currentUserId, bool isAdmin)
     {
-        var response = await Http.PostAsJsonAsync(ApiEndpoints.Events, request);
-        if (!response.IsSuccessStatusCode)
+        var url = ApiEndpoints.Events;
+        try
+        {
+            var response = await Http.PostAsJsonAsync(url, request);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on POST {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<EventDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on POST {Url}", url);
             return null;
-
-        return await ApiResponseReader.ReadAsync<EventDto>(response);
+        }
     }
 
     public async Task<EventDto?> UpdateEventAsync(Guid id, CreateEventRequest request)
     {
-        var response = await Http.PutAsJsonAsync($"{ApiEndpoints.Events}/{id}", request);
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Events}/{id}";
+        try
+        {
+            var response = await Http.PutAsJsonAsync(url, request);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on PUT {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<EventDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on PUT {Url}", url);
             return null;
-
-        return await ApiResponseReader.ReadAsync<EventDto>(response);
+        }
     }
 
     public async Task<bool> DeleteEventAsync(Guid id)
     {
-        var response = await Http.DeleteAsync($"{ApiEndpoints.Events}/{id}");
-        return response.IsSuccessStatusCode;
+        var url = $"{ApiEndpoints.Events}/{id}";
+        try
+        {
+            var response = await Http.DeleteAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on DELETE {Url}", (int)response.StatusCode, url);
+                return false;
+            }
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on DELETE {Url}", url);
+            return false;
+        }
     }
 
     public async Task<bool> TogglePublishAsync(Guid id)
@@ -103,80 +159,188 @@ public class ApiEventService : ApiServiceBase, IEventService
         if (current is null)
             return false;
 
-        var endpoint = current.IsPublished
-            ? $"{ApiEndpoints.AdminEvents}/{id}/unpublish"
-            : $"{ApiEndpoints.AdminEvents}/{id}/publish";
+        var url = current.IsPublished
+            ? $"{ApiEndpoints.Events}/{id}/unpublish"
+            : $"{ApiEndpoints.Events}/{id}/publish";
 
-        var response = await Http.PatchAsync(endpoint, null);
-        return response.IsSuccessStatusCode;
+        try
+        {
+            var response = await Http.PatchAsync(url, null);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on PATCH {Url}", (int)response.StatusCode, url);
+                return false;
+            }
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on PATCH {Url}", url);
+            return false;
+        }
     }
 
     public async Task<EventRegistrationDto?> RegisterToEventAsync(RegisterEventRequest request, Guid userId, string userName)
     {
-        var response = await Http.PostAsJsonAsync($"{ApiEndpoints.Events}/registrations", request);
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Events}/registrations";
+        try
+        {
+            var response = await Http.PostAsJsonAsync(url, request);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on POST {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<EventRegistrationDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on POST {Url}", url);
             return null;
-
-        return await ApiResponseReader.ReadAsync<EventRegistrationDto>(response);
+        }
     }
 
     public async Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId)
     {
-        var response = await Http.DeleteAsync($"{ApiEndpoints.Events}/{eventId}/registrations");
-        return response.IsSuccessStatusCode;
+        var url = $"{ApiEndpoints.Events}/{eventId}/registrations";
+        try
+        {
+            var response = await Http.DeleteAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on DELETE {Url}", (int)response.StatusCode, url);
+                return false;
+            }
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on DELETE {Url}", url);
+            return false;
+        }
     }
 
     public async Task<List<EventRegistrationDto>> GetRegistrationsByEventAsync(Guid eventId)
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Events}/{eventId}/registrations");
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Events}/{eventId}/registrations";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return new List<EventRegistrationDto>();
+            }
+            return await ApiResponseReader.ReadCollectionAsync<EventRegistrationDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
             return new List<EventRegistrationDto>();
-
-        return await ApiResponseReader.ReadCollectionAsync<EventRegistrationDto>(response);
+        }
     }
 
     public async Task<List<EventDto>> GetPendingEventsAsync()
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Events}/pending");
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Events}/pending";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return new List<EventDto>();
+            }
+            return await ApiResponseReader.ReadCollectionAsync<EventDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
             return new List<EventDto>();
-
-        return await ApiResponseReader.ReadCollectionAsync<EventDto>(response);
+        }
     }
 
     public async Task<bool> ApproveEventAsync(Guid eventId, string? adminComment = null)
     {
-        var endpoint = string.IsNullOrWhiteSpace(adminComment)
-            ? $"{ApiEndpoints.AdminEvents}/{eventId}/approve"
-            : $"{ApiEndpoints.AdminEvents}/{eventId}/approve?comment={Uri.EscapeDataString(adminComment)}";
+        var url = string.IsNullOrWhiteSpace(adminComment)
+            ? $"{ApiEndpoints.Events}/{eventId}/approve"
+            : $"{ApiEndpoints.Events}/{eventId}/approve?comment={Uri.EscapeDataString(adminComment)}";
 
-        var response = await Http.PatchAsync(endpoint, null);
-        return response.IsSuccessStatusCode;
+        try
+        {
+            var response = await Http.PatchAsync(url, null);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on PATCH {Url}", (int)response.StatusCode, url);
+                return false;
+            }
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on PATCH {Url}", url);
+            return false;
+        }
     }
 
     public async Task<bool> RejectEventAsync(Guid eventId, string reason)
     {
-        var endpoint = $"{ApiEndpoints.AdminEvents}/{eventId}/reject?reason={Uri.EscapeDataString(reason)}";
-        var response = await Http.PatchAsync(endpoint, null);
-        return response.IsSuccessStatusCode;
+        var url = $"{ApiEndpoints.Events}/{eventId}/reject?reason={Uri.EscapeDataString(reason)}";
+        try
+        {
+            var response = await Http.PatchAsync(url, null);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on PATCH {Url}", (int)response.StatusCode, url);
+                return false;
+            }
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on PATCH {Url}", url);
+            return false;
+        }
     }
 
     public async Task<List<EventDto>> GetEventsBySubmitterAsync(Guid userId)
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Events}?submitterId={userId}");
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Events}?submitterId={userId}";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return new List<EventDto>();
+            }
+            return await ApiResponseReader.ReadCollectionAsync<EventDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
             return new List<EventDto>();
-
-        return await ApiResponseReader.ReadCollectionAsync<EventDto>(response);
+        }
     }
 
     public async Task<List<EventDto>> GetMyEventsAsync()
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Events}/mine");
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Events}/mine";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return new List<EventDto>();
+            }
+            return await ApiResponseReader.ReadCollectionAsync<EventDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
             return new List<EventDto>();
-
-        return await ApiResponseReader.ReadCollectionAsync<EventDto>(response);
+        }
     }
 
 }

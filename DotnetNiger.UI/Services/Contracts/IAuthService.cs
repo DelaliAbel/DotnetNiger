@@ -17,7 +17,7 @@ public interface IAuthService
     Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request);
     Task<ApiSuccessResponse<object>> ResetPasswordAsync(ResetPasswordRequest request);
     Task<bool> RequestEmailVerificationAsync(RequestEmailVerificationRequest request);
-    Task<bool> VerifyEmailAsync(VerifyEmailRequest request);
+    Task<(bool Success, string? Error)> VerifyEmailAsync(VerifyEmailRequest request);
     
     // Login externe (Google/GitHub)
     Task<ApiSuccessResponse<AuthDto>> CompleteExternalLoginAsync(string ticket);

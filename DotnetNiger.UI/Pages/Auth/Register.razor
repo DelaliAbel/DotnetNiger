@@ -408,7 +408,8 @@
         {
             Email = _step1.Email,
             Password = _step1.Password,
-            FullName = fullName
+            FullName = fullName,
+            PhoneNumber = _step1.PhoneNumber
         });
 
         _isLoading = false;
@@ -429,7 +430,7 @@
         _isLoading = true;
         _errorMessage = null;
 
-        var verified = await Auth.VerifyEmailAsync(new VerifyEmailRequest
+        var (success, error) = await Auth.VerifyEmailAsync(new VerifyEmailRequest
         {
             Email = _step1.Email,
             Code = _step2.Code
@@ -437,14 +438,14 @@
 
         _isLoading = false;
 
-        if (verified)
+        if (success)
         {
             _currentStep = 3;
             await SaveSessionAsync();
         }
         else
         {
-            _errorMessage = "Code invalide ou expiré. Vérifiez votre email et réessayez.";
+            _errorMessage = error ?? "Code invalide ou expiré. Vérifiez votre email et réessayez.";
         }
     }
 

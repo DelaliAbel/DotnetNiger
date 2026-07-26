@@ -10,4 +10,10 @@ public interface IProfileService
       Task<List<SocialLinkDto>> GetSocialLinksAsync();
       Task<SocialLinkDto?> AddSocialLinkAsync(AddSocialLinkRequest request);
       Task<bool> DeleteSocialLinkAsync(Guid id);
+      Task<bool> ChangePasswordAsync(ChangePasswordRequest request);
+      Task<bool> ChangeEmailAsync(ChangeEmailRequest request);
+      Task<bool> ConfirmChangeEmailAsync(ConfirmChangeEmailRequest request);
+      Task<bool> DeleteProfileAsync();
+      Task<bool> RequestDeletionAsync();
+      Task<bool> CancelDeletionAsync();
 }

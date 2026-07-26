@@ -159,5 +159,7 @@ public class EventCommandService : IEventCommandService
         new(e.Id, e.Title, e.Slug, e.Description, e.StartDate, e.EndDate,
             e.Location, e.CoverImageUrl, e.CreatedBy, e.Status.ToString(),
             e.Status == EventStatus.Published,
-            e.CreatedAt, e.UpdatedAt);
+            e.CreatedAt, e.UpdatedAt,
+            e.EventType, e.Category, e.OrganizerName, e.Capacity, e.RegisteredCount,
+            e.MeetupLink, e.RejectionReason, e.SubmittedAt, e.PublishedAt, [], [], [], []);
 }

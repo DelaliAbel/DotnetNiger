@@ -22,6 +22,7 @@ public class EventsController(
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
+        status ??= "Published";
         var result = await eventQuery.GetAllAsync(status, query, null, null, null, null, null, null, page, pageSize);
         return Ok(new { Success = true, Data = result });
     }

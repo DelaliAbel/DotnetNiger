@@ -17,7 +17,7 @@ public class ApiUploadService : ApiServiceBase, IUploadService
     private readonly ILogger<ApiUploadService> _logger;
     private readonly ApiBaseUrlProvider _baseUrlProvider;
 
-    public ApiUploadService(HttpClient http, ILogger<ApiUploadService> logger, ApiBaseUrlProvider baseUrlProvider) : base(http)
+    public ApiUploadService(HttpClient http, ILogger<ApiUploadService> logger, ApiBaseUrlProvider baseUrlProvider) : base(http, logger)
     {
         _logger = logger;
         _baseUrlProvider = baseUrlProvider;

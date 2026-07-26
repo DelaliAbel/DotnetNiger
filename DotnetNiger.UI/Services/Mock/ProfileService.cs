@@ -72,4 +72,22 @@ public class ProfileService : IProfileService
 
         return await Task.FromResult(removed);
     }
+
+    public async Task<bool> ChangePasswordAsync(ChangePasswordRequest request)
+        => await Task.FromResult(true);
+
+    public async Task<bool> ChangeEmailAsync(ChangeEmailRequest request)
+        => await Task.FromResult(true);
+
+    public async Task<bool> ConfirmChangeEmailAsync(ConfirmChangeEmailRequest request)
+        => await Task.FromResult(true);
+
+    public async Task<bool> DeleteProfileAsync()
+        => await Task.FromResult(true);
+
+    public async Task<bool> RequestDeletionAsync()
+        => await Task.FromResult(true);
+
+    public async Task<bool> CancelDeletionAsync()
+        => await Task.FromResult(true);
 }

@@ -66,14 +66,15 @@
 
         try
         {
-            isVerified = await Auth.VerifyEmailAsync(new VerifyEmailRequest
+            var (success, error) = await Auth.VerifyEmailAsync(new VerifyEmailRequest
             {
                 Email = Email,
                 Code = Token
             });
 
+            isVerified = success;
             if (!isVerified)
-                errorMessage = "La vérification a échoué. Vous pouvez demander un nouveau lien.";
+                errorMessage = error ?? "La vérification a échoué. Vous pouvez demander un nouveau lien.";
         }
         finally
         {

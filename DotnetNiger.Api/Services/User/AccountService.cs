@@ -329,7 +329,6 @@ public class AccountService
 
         if (_emailSender is EmailSender typed)
         {
-            await typed.SendConfirmationLinkAsync(user, user.Email!, confirmUrl);
             await typed.SendConfirmationCodeAsync(user, user.Email!, code, confirmUrl);
         }
         else

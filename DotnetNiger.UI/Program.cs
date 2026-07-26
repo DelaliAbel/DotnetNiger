@@ -88,27 +88,27 @@ else
 {
     builder.Services.AddScoped<IToastService, ToastService>();
     builder.Services.AddScoped<IAuthService>(sp => sp.GetRequiredService<AuthService>());
-    builder.Services.AddScoped<IUserService>(sp => new ApiUserService(sp.GetRequiredService<HttpClient>()));
-    builder.Services.AddScoped<IPostService>(sp => new ApiPostService(sp.GetRequiredService<HttpClient>()));
-    builder.Services.AddScoped<IEventService>(sp => new ApiEventService(sp.GetRequiredService<HttpClient>()));
-    builder.Services.AddScoped<IResourceService>(sp => new ApiResourceService(sp.GetRequiredService<HttpClient>()));
-    builder.Services.AddScoped<IProfileService>(sp => new ApiProfileService(sp.GetRequiredService<HttpClient>()));
-    builder.Services.AddScoped<ICommentService>(sp => new ApiCommentService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<CustomAuthStateProvider>()));
-    builder.Services.AddScoped<IRegistrationService>(sp => new ApiRegistrationService(sp.GetRequiredService<HttpClient>()));
-    builder.Services.AddScoped<INotificationService>(sp => new ApiNotificationService(sp.GetRequiredService<HttpClient>()));
-    builder.Services.AddScoped<IContactService>(sp => new ApiContactService(sp.GetRequiredService<HttpClient>()));
-    builder.Services.AddScoped<IProjectService>(sp => new ApiProjectService(sp.GetRequiredService<HttpClient>()));
-    builder.Services.AddScoped<IPartnerService>(sp => new ApiPartnerService(sp.GetRequiredService<HttpClient>()));
-    builder.Services.AddScoped<INewsletterService>(sp => new ApiNewsletterService(sp.GetRequiredService<HttpClient>()));
-    builder.Services.AddScoped<IMemberDirectoryService>(sp => new ApiMemberDirectoryService(sp.GetRequiredService<HttpClient>()));
-    builder.Services.AddScoped<ISearchService>(sp => new ApiSearchService(sp.GetRequiredService<HttpClient>()));
+    builder.Services.AddScoped<IUserService>(sp => new ApiUserService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiUserService>>()));
+    builder.Services.AddScoped<IPostService>(sp => new ApiPostService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiPostService>>()));
+    builder.Services.AddScoped<IEventService>(sp => new ApiEventService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiEventService>>()));
+    builder.Services.AddScoped<IResourceService>(sp => new ApiResourceService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiResourceService>>()));
+    builder.Services.AddScoped<IProfileService>(sp => new ApiProfileService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiProfileService>>()));
+    builder.Services.AddScoped<ICommentService>(sp => new ApiCommentService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiCommentService>>(), sp.GetRequiredService<CustomAuthStateProvider>()));
+    builder.Services.AddScoped<IRegistrationService>(sp => new ApiRegistrationService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiRegistrationService>>()));
+    builder.Services.AddScoped<INotificationService>(sp => new ApiNotificationService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiNotificationService>>()));
+    builder.Services.AddScoped<IContactService>(sp => new ApiContactService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiContactService>>()));
+    builder.Services.AddScoped<IProjectService>(sp => new ApiProjectService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiProjectService>>()));
+    builder.Services.AddScoped<IPartnerService>(sp => new ApiPartnerService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiPartnerService>>()));
+    builder.Services.AddScoped<INewsletterService>(sp => new ApiNewsletterService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiNewsletterService>>()));
+    builder.Services.AddScoped<IMemberDirectoryService>(sp => new ApiMemberDirectoryService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiMemberDirectoryService>>()));
+    builder.Services.AddScoped<ISearchService>(sp => new ApiSearchService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiSearchService>>()));
     builder.Services.AddScoped<IUserStateService, UserStateService>();
     builder.Services.AddScoped<IUploadService>(sp => new ApiUploadService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiUploadService>>(), sp.GetRequiredService<ApiBaseUrlProvider>()));
-    builder.Services.AddScoped<ICategoryService>(sp => new ApiCategoryService(sp.GetRequiredService<HttpClient>()));
-    builder.Services.AddScoped<ITagService>(sp => new ApiTagService(sp.GetRequiredService<HttpClient>()));
-    builder.Services.AddScoped<IStatsService>(sp => new ApiStatsService(sp.GetRequiredService<HttpClient>()));
-    builder.Services.AddScoped<ISettingsService>(sp => new ApiSettingsService(sp.GetRequiredService<HttpClient>()));
-    builder.Services.AddScoped<ICertificateAdminService>(sp => new ApiCertificateAdminService(sp.GetRequiredService<HttpClient>()));
+    builder.Services.AddScoped<ICategoryService>(sp => new ApiCategoryService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiCategoryService>>()));
+    builder.Services.AddScoped<ITagService>(sp => new ApiTagService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiTagService>>()));
+    builder.Services.AddScoped<IStatsService>(sp => new ApiStatsService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiStatsService>>()));
+    builder.Services.AddScoped<ISettingsService>(sp => new ApiSettingsService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiSettingsService>>()));
+    builder.Services.AddScoped<ICertificateAdminService>(sp => new ApiCertificateAdminService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiCertificateAdminService>>()));
     builder.Services.AddScoped<IPermissionService>(sp => new PermissionService(sp.GetRequiredService<CustomAuthStateProvider>()));
 }
 
