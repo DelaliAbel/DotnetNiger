@@ -1,6 +1,7 @@
 using DotnetNiger.Api.Data.Email;
 using DotnetNiger.Api.Entities;
 using DotnetNiger.Api.Services.General;
+using DotnetNiger.Api.Services.Admin;
 using DotnetNiger.Api.Data;
 using DotnetNiger.Api.Services.User;
 using Microsoft.AspNetCore.Identity;
@@ -24,6 +25,7 @@ public static class DependencyInjection
         services.AddScoped<AccountService>();
         services.AddScoped<IPermissionService, PermissionService>();
         services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<IRoleService, RoleService>();
         services.AddScoped<DashboardService>();
 
         // --- Email ---

@@ -20,6 +20,7 @@ public class PostQueryService : IPostQueryService
         var q = _db.Posts
             .Include(p => p.PostCategories).ThenInclude(pc => pc.Category)
             .Include(p => p.PostTags).ThenInclude(pt => pt.Tag)
+            .Where(p => !p.IsDeleted)
             .AsNoTracking();
 
         if (published == "true") q = q.Where(p => p.Status == PostStatus.Published);
@@ -28,6 +29,10 @@ public class PostQueryService : IPostQueryService
         if (authorId.HasValue) q = q.Where(p => p.AuthorId == authorId.Value);
         if (!string.IsNullOrWhiteSpace(query))
             q = q.Where(p => p.Title.Contains(query) || (p.Content != null && p.Content.Contains(query)));
+        if (!string.IsNullOrWhiteSpace(category))
+            q = q.Where(p => p.PostCategories.Any(pc => pc.Category.Slug == category || pc.Category.Name == category));
+        if (!string.IsNullOrWhiteSpace(tag))
+            q = q.Where(p => p.PostTags.Any(pt => pt.Tag.Slug == tag || pt.Tag.Name == tag));
 
         var total = await q.CountAsync();
         var items = await q
@@ -46,7 +51,7 @@ public class PostQueryService : IPostQueryService
         var post = await _db.Posts.AsNoTracking()
             .Include(p => p.PostCategories).ThenInclude(pc => pc.Category)
             .Include(p => p.PostTags).ThenInclude(pt => pt.Tag)
-            .FirstOrDefaultAsync(p => p.Id == id);
+            .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
         return post == null ? null : MapToResponse(post);
     }
 
@@ -56,7 +61,7 @@ public class PostQueryService : IPostQueryService
         var post = await _db.Posts.AsNoTracking()
             .Include(p => p.PostCategories).ThenInclude(pc => pc.Category)
             .Include(p => p.PostTags).ThenInclude(pt => pt.Tag)
-            .FirstOrDefaultAsync(p => p.Slug == slug);
+            .FirstOrDefaultAsync(p => p.Slug == slug && !p.IsDeleted);
         return post == null ? null : MapToResponse(post);
     }
 

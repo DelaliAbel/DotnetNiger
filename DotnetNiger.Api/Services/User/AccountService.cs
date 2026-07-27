@@ -132,7 +132,7 @@ public class AccountService
 
         if (!string.IsNullOrEmpty(_smtp.Host))
         {
-            var confirmUrl = $"{_smtp.AppBaseUrl}/api/v1/profile/confirm-change-email?email={Uri.EscapeDataString(newEmail)}&code={Uri.EscapeDataString(code)}";
+            var confirmUrl = $"{_smtp.FrontendBaseUrl.TrimEnd('/')}/verify-email?email={Uri.EscapeDataString(newEmail)}&token={Uri.EscapeDataString(code)}";
             if (_emailSender is EmailSender typed)
                 await typed.SendConfirmationCodeAsync(user, user.Email!, code, confirmUrl);
         }
@@ -176,7 +176,7 @@ public class AccountService
         if (user == null) return;
 
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-        var resetLink = $"{_smtp.AppBaseUrl.TrimEnd('/')}/Account/ResetPassword?email={Uri.EscapeDataString(email)}&code={Uri.EscapeDataString(token)}";
+        var resetLink = $"{_smtp.FrontendBaseUrl.TrimEnd('/')}/reset-password?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(token)}";
         await _emailSender.SendPasswordResetLinkAsync(user, email, resetLink);
     }
 
@@ -325,7 +325,7 @@ public class AccountService
         _logger.LogWarning("[DEV] CODE DE CONFIRMATION EMAIL | Email: {Email} | Code: {Code}", user.Email, code);
         Console.WriteLine($"[DEV] CODE DE CONFIRMATION EMAIL | Email: {user.Email} | Code: {code}");
 
-        var confirmUrl = $"{_smtp.AppBaseUrl}/api/auth/confirm-email?email={Uri.EscapeDataString(user.Email!)}&code={Uri.EscapeDataString(code)}";
+        var confirmUrl = $"{_smtp.FrontendBaseUrl.TrimEnd('/')}/verify-email?email={Uri.EscapeDataString(user.Email!)}&token={Uri.EscapeDataString(code)}";
 
         if (_emailSender is EmailSender typed)
         {

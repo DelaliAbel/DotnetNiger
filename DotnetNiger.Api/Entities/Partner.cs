@@ -23,6 +23,8 @@ public class Partner
     public int SortOrder { get; set; }
     /// <summary>Indique si le partenaire est actif.</summary>
     public bool IsActive { get; set; } = true;
+    /// <summary>Indique si le partenaire est supprimé logiquement.</summary>
+    public bool IsDeleted { get; set; } = false;
     /// <summary>Date de création.</summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     /// <summary>Date de dernière mise à jour.</summary>

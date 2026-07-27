@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using DotnetNiger.Api.DTOs.Responses;
-using DotnetNiger.Api.Entities;
 using DotnetNiger.Api.Data;
 
 namespace DotnetNiger.Api.Services.General;
@@ -20,7 +19,7 @@ public class DashboardService
     }
 
     /// <summary>Récupère les statistiques globales du système (mis en cache 5 min).</summary>
-    public async Task<object> GetSystemStatsAsync()
+    public async Task<SystemStatsResponse> GetSystemStatsAsync()
     {
         var stats = await _cache.GetOrCreateAsync("SystemStats", async entry =>
         {
@@ -32,20 +31,13 @@ public class DashboardService
             var totalRefreshTokens = await _db.RefreshTokens.IgnoreQueryFilters().CountAsync();
             var totalServices = await _db.ExternalServices.IgnoreQueryFilters().CountAsync();
 
-            return new
-            {
-                totalUsers,
-                totalRoles,
-                totalPermissions,
-                totalRefreshTokens,
-                totalServices
-            };
+            return new SystemStatsResponse(totalUsers, totalRoles, totalPermissions, totalRefreshTokens, totalServices);
         });
         return stats!;
     }
 
     /// <summary>Récupère l'historique des connexions avec pagination.</summary>
-    public async Task<PaginatedResponse<LoginHistory>> GetLoginHistoryAsync(
+    public async Task<PaginatedResponse<LoginHistoryResponse>> GetLoginHistoryAsync(
         int page, int pageSize)
     {
         var query = _db.LoginHistories.AsNoTracking().OrderByDescending(l => l.CreatedAt);
@@ -54,13 +46,16 @@ public class DashboardService
         var items = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .Select(l => new LoginHistoryResponse(
+                l.Id, l.UserId, l.IpAddress, l.UserAgent,
+                l.Provider, l.Success, l.FailureReason, l.CreatedAt))
             .ToListAsync();
 
-        return new PaginatedResponse<LoginHistory>(items, total, page, pageSize);
+        return new PaginatedResponse<LoginHistoryResponse>(items, total, page, pageSize);
     }
 
     /// <summary>Récupère les logs d'audit avec filtres et pagination.</summary>
-    public async Task<PaginatedResponse<AuditLog>> GetAuditLogsAsync(
+    public async Task<PaginatedResponse<AuditLogResponse>> GetAuditLogsAsync(
         int page, int pageSize,
         string? entityType = null, string? action = null,
         DateTime? from = null, DateTime? to = null)
@@ -81,25 +76,22 @@ public class DashboardService
             .OrderByDescending(l => l.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .Select(l => new AuditLogResponse(
+                l.Id, l.UserId, l.EntityType, l.EntityId,
+                l.Action, l.Description, l.IpAddress, l.CreatedAt))
             .ToListAsync();
 
-        return new PaginatedResponse<AuditLog>(items, total, page, pageSize);
+        return new PaginatedResponse<AuditLogResponse>(items, total, page, pageSize);
     }
 
     /// <summary>Récupère les statistiques personnelles d'un utilisateur.</summary>
-    public async Task<object> GetMyStatsAsync(Guid userId)
+    public async Task<MyStatsResponse> GetMyStatsAsync(Guid userId)
     {
         var myEvents = await _db.Events.CountAsync(e => e.OrganizerId == userId);
-        var myPosts = await _db.Posts.CountAsync(p => p.AuthorId == userId);
+        var myPosts = await _db.Posts.CountAsync(p => p.AuthorId == userId && !p.IsDeleted);
         var myResources = await _db.Resources.CountAsync(r => r.AuthorId == userId);
         var myProjects = await _db.Projects.CountAsync(p => p.CreatedBy == userId);
 
-        return new
-        {
-            eventsCount = myEvents,
-            blogsCount = myPosts,
-            resourcesCount = myResources,
-            projectsCount = myProjects
-        };
+        return new MyStatsResponse(myEvents, myPosts, myResources, myProjects);
     }
 }

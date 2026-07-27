@@ -41,7 +41,7 @@
                                     else
                                     {
                                         <div class="flex h-full w-full items-center justify-center text-xs font-semibold text-body">
-                                            @comment.AuthorName[..1].ToUpperInvariant()
+                                            @((comment.AuthorName ?? "?")[..1].ToUpperInvariant())
                                         </div>
                                     }
                                 </div>
@@ -100,7 +100,7 @@
         var confirmed = await JS.InvokeAsync<bool>("confirm", "Approuver ce commentaire ?");
         if (!confirmed) return;
 
-        var updated = await CommentService.UpdateCommentAsync(new UpdateCommentRequest { Id = id });
+        var updated = await CommentService.ApproveCommentAsync(id);
         if (updated is not null)
         {
             var comment = Comments.FirstOrDefault(c => c.Id == id);
@@ -119,10 +119,18 @@
         var confirmed = await JS.InvokeAsync<bool>("confirm", "Rejeter ce commentaire ?");
         if (!confirmed) return;
 
-        var comment = Comments.FirstOrDefault(c => c.Id == id);
-        if (comment is not null) comment.Status = "rejected";
-        ToastService.ShowToast("Commentaire rejeté.", ToastLevel.Success);
-        await OnChanged.InvokeAsync();
+        var updated = await CommentService.RejectCommentAsync(id);
+        if (updated is not null)
+        {
+            var comment = Comments.FirstOrDefault(c => c.Id == id);
+            if (comment is not null) comment.Status = "rejected";
+            ToastService.ShowToast("Commentaire rejeté.", ToastLevel.Success);
+            await OnChanged.InvokeAsync();
+        }
+        else
+        {
+            ToastService.ShowToast("Erreur lors du rejet.", ToastLevel.Error);
+        }
     }
 
     private async Task DeleteComment(Guid id)

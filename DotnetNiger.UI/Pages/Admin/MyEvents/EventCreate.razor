@@ -121,7 +121,7 @@
                         <!-- Auteur / Organisateur -->
                         <div>
                             <label class="block text-sm font-semibold mb-2 text-title">Auteur</label>
-                            <InputText @bind-Value="organizerName"
+                            <InputText @bind-Value="eventRequest.OrganizerName"
                                        class="w-full px-4 py-2 text-body bg-surface rounded-lg focus:outline-none shadow-md"
                                        placeholder="Nom de l'organisateur" />
                         </div>
@@ -435,7 +435,7 @@
     };
 
     private Guid currentUserId;
-    private string organizerName = string.Empty;
+    // OrganizerName is bound directly to eventRequest.OrganizerName
     private bool IsCurrentUserAdmin;
 
     private string errorMessage = string.Empty;
@@ -456,7 +456,8 @@
 
     private void RemoveSpeaker(int index)
     {
-        speakers.RemoveAt(index);
+        if (index >= 0 && index < speakers.Count)
+            speakers.RemoveAt(index);
     }
 
     private void ToggleMemberSearch()
@@ -522,7 +523,8 @@
 
     private void RemoveGalleryImage(int index)
     {
-        galleryImageUrls.RemoveAt(index);
+        if (index >= 0 && index < galleryImageUrls.Count)
+            galleryImageUrls.RemoveAt(index);
     }
 
     private void SetEventMode(string mode)
@@ -566,7 +568,7 @@
             }
 
             currentUserId = UserStateService.UserId;
-            organizerName = UserStateService.UserName;
+            eventRequest.OrganizerName = UserStateService.UserName;
             IsCurrentUserAdmin = UserStateService.IsAdmin;
 
             allMembers = await UserService.GetUsersAsync();
@@ -686,7 +688,7 @@
             RegisteredCount = 0,
             GalleryImageUrls = eventRequest.GalleryImageUrls ?? new(),
             Speakers = eventRequest.Speakers ?? new(),
-            OrganizerName = organizerName,
+            OrganizerName = eventRequest.OrganizerName,
             IsPublished = false
         };
 

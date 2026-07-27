@@ -16,15 +16,21 @@ public class PostCommandService : IPostCommandService
     /// <summary>Crée un nouvel article avec ses tags et catégories.</summary>
     public async Task<PostResponse> CreateAsync(CreatePostRequest request, Guid authorId, string authorName, bool isAdmin, bool isCollaborator)
     {
+        var slug = await GenerateUniqueSlug(request.Slug, request.Title);
+
         var post = new Post
         {
             Id = Guid.NewGuid(),
             Title = request.Title,
-            Slug = request.Slug ?? string.Empty,
+            Slug = slug,
             Content = request.Content,
             Excerpt = request.Excerpt,
             CoverImageUrl = request.CoverImageUrl,
             AuthorId = authorId,
+            AuthorName = authorName,
+            AuthorAvatar = "",
+            PostType = request.PostType,
+            IsPublished = request.IsPublished,
             Status = isAdmin || isCollaborator ? PostStatus.Published : PostStatus.Draft
         };
 
@@ -42,14 +48,14 @@ public class PostCommandService : IPostCommandService
         var post = await _db.Posts
             .Include(p => p.PostTags)
             .Include(p => p.PostCategories)
-            .FirstOrDefaultAsync(p => p.Id == id);
+            .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
         if (post == null) return null;
 
         if (!isAdmin && post.AuthorId != userId)
             throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à modifier cet article.");
 
         if (request.Title != null) post.Title = request.Title;
-        if (request.Slug != null) post.Slug = request.Slug;
+        if (request.Slug != null) post.Slug = await EnsureUniqueSlug(request.Slug, post.Id);
         if (request.Content != null) post.Content = request.Content;
         if (request.Excerpt != null) post.Excerpt = request.Excerpt;
         if (request.CoverImageUrl != null) post.CoverImageUrl = request.CoverImageUrl;
@@ -66,14 +72,15 @@ public class PostCommandService : IPostCommandService
         return MapToResponse(post);
     }
 
-    /// <summary>Supprime un article (auteur ou admin uniquement).</summary>
+    /// <summary>Supprime un article (suppression logique).</summary>
     public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin)
     {
-        var post = await _db.Posts.FindAsync(id);
+        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
         if (post == null) return false;
         if (!isAdmin && post.AuthorId != userId)
             throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à supprimer cet article.");
-        _db.Posts.Remove(post);
+        post.IsDeleted = true;
+        post.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         return true;
     }
@@ -81,18 +88,22 @@ public class PostCommandService : IPostCommandService
     /// <summary>Incrémente le compteur de vues d'un article.</summary>
     public async Task<PostResponse?> IncrementViewCountAsync(Guid id)
     {
+        var affected = await _db.Posts
+            .Where(p => p.Id == id && !p.IsDeleted)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(p => p.ViewCount, p => p.ViewCount + 1)
+                .SetProperty(p => p.UpdatedAt, DateTime.UtcNow));
+
+        if (affected == 0) return null;
+
         var post = await _db.Posts.FindAsync(id);
-        if (post == null) return null;
-        post.ViewCount++;
-        post.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
-        return MapToResponse(post);
+        return post == null ? null : MapToResponse(post);
     }
 
     /// <summary>Soumet un article pour modération.</summary>
     public async Task SubmitForReviewAsync(Guid id)
     {
-        var post = await _db.Posts.FindAsync(id)
+        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted)
             ?? throw new KeyNotFoundException("Article non trouvé");
         post.Status = PostStatus.PendingReview;
         post.UpdatedAt = DateTime.UtcNow;
@@ -102,7 +113,7 @@ public class PostCommandService : IPostCommandService
     /// <summary>Publie un article.</summary>
     public async Task PublishAsync(Guid id)
     {
-        var post = await _db.Posts.FindAsync(id)
+        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted)
             ?? throw new KeyNotFoundException("Article non trouvé");
         post.Status = PostStatus.Published;
         post.PublishedAt = DateTime.UtcNow;
@@ -113,7 +124,7 @@ public class PostCommandService : IPostCommandService
     /// <summary>Archive un article.</summary>
     public async Task ArchiveAsync(Guid id)
     {
-        var post = await _db.Posts.FindAsync(id)
+        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted)
             ?? throw new KeyNotFoundException("Article non trouvé");
         post.Status = PostStatus.Archived;
         post.UpdatedAt = DateTime.UtcNow;
@@ -132,13 +143,13 @@ public class PostCommandService : IPostCommandService
 
         if (tagIds?.Count > 0)
         {
-            var existing = await _db.Tags.Where(t => tagIds.Contains(t.Id)).ToListAsync();
+            var existing = await _db.Tags.Where(t => !t.IsDeleted && tagIds.Contains(t.Id)).ToListAsync();
             tagsToLink.AddRange(existing);
         }
 
         if (tagNames?.Count > 0)
         {
-            var existingNames = await _db.Tags.Where(t => tagNames.Contains(t.Name)).ToListAsync();
+            var existingNames = await _db.Tags.Where(t => !t.IsDeleted && tagNames.Contains(t.Name)).ToListAsync();
             var missingNames = tagNames.Except(existingNames.Select(t => t.Name)).ToList();
 
             foreach (var name in missingNames)
@@ -173,11 +184,46 @@ public class PostCommandService : IPostCommandService
 
         if (categoryIds.Count == 0) return;
 
-        var categories = await _db.Categories.Where(c => categoryIds.Contains(c.Id)).ToListAsync();
+        var categories = await _db.Categories.Where(c => !c.IsDeleted && categoryIds.Contains(c.Id)).ToListAsync();
         foreach (var category in categories)
         {
             post.PostCategories.Add(new PostCategory { PostId = post.Id, CategoryId = category.Id });
         }
+    }
+
+    private async Task<string> GenerateUniqueSlug(string? providedSlug, string title)
+    {
+        var baseSlug = !string.IsNullOrWhiteSpace(providedSlug)
+            ? providedSlug
+            : title.ToLowerInvariant()
+                .Replace(" ", "-")
+                .Replace("é", "e").Replace("è", "e").Replace("ê", "e").Replace("ë", "e")
+                .Replace("à", "a").Replace("â", "a").Replace("î", "i").Replace("ï", "i")
+                .Replace("ô", "o").Replace("ù", "u").Replace("û", "u").Replace("ü", "u")
+                .Replace("ç", "c").Replace("œ", "oe").Replace("æ", "ae");
+
+        baseSlug = new string(baseSlug.Where(c => char.IsLetterOrDigit(c) || c == '-').ToArray());
+        baseSlug = baseSlug.Trim('-');
+        if (string.IsNullOrWhiteSpace(baseSlug)) baseSlug = "article";
+
+        var candidate = baseSlug;
+        var suffix = 1;
+        while (await _db.Posts.AnyAsync(p => p.Slug == candidate && !p.IsDeleted))
+        {
+            candidate = $"{baseSlug}-{suffix++}";
+        }
+        return candidate;
+    }
+
+    private async Task<string> EnsureUniqueSlug(string slug, Guid entityId)
+    {
+        var candidate = slug;
+        var suffix = 1;
+        while (await _db.Posts.AnyAsync(p => p.Slug == candidate && p.Id != entityId && !p.IsDeleted))
+        {
+            candidate = $"{slug}-{suffix++}";
+        }
+        return candidate;
     }
 
     private static PostResponse MapToResponse(Post p) =>

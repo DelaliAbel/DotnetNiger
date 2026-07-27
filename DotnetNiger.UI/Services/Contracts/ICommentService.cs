@@ -13,4 +13,6 @@ public interface ICommentService
     Task<CommentResponse?> UpdateCommentAsync(UpdateCommentRequest request);
     Task<bool> DeleteCommentAsync(DeleteCommentRequest request);
     Task<List<CommentResponse>> GetAllCommentsAsync();
+    Task<CommentResponse?> ApproveCommentAsync(Guid id);
+    Task<CommentResponse?> RejectCommentAsync(Guid id);
 }

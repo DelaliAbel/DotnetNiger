@@ -14,19 +14,19 @@ public class SearchService : ISearchService
     public SearchService(DotnetNigerDbContext db) => _db = db;
 
     /// <summary>Recherche parmi les contenus publiés selon la requête et le type.</summary>
-    public async Task<SearchResultResponse> SearchAsync(SearchQueryRequest request)
+    public async Task<PaginatedResponse<SearchResultResponse>> SearchAsync(SearchQueryRequest request)
     {
         var query = (request.Query ?? "").ToLower().Trim();
         if (string.IsNullOrWhiteSpace(query))
-            return new SearchResultResponse { Type = "empty" };
+            return new PaginatedResponse<SearchResultResponse>([], 0, 1, 15);
 
         var results = new List<SearchResultResponse>();
 
         if (request.Type == null || request.Type == "posts")
         {
             var posts = await _db.Posts.AsNoTracking()
-                .Where(p => p.Status == PostStatus.Published
-                    && (p.Title.ToLower().Contains(query) || p.Content.ToLower().Contains(query)))
+                .Where(p => !p.IsDeleted && p.Status == PostStatus.Published
+                    && (p.Title.ToLower().Contains(query) || (p.Content != null && p.Content.ToLower().Contains(query))))
                 .Take(5)
                 .ToListAsync();
             foreach (var p in posts)
@@ -42,7 +42,7 @@ public class SearchService : ISearchService
         {
             var events = await _db.Events.AsNoTracking()
                 .Where(e => e.Status == EventStatus.Published
-                    && (e.Title.ToLower().Contains(query) || e.Description.ToLower().Contains(query)))
+                    && (e.Title.ToLower().Contains(query) || (e.Description != null && e.Description.ToLower().Contains(query))))
                 .Take(5)
                 .ToListAsync();
             foreach (var e in events)
@@ -58,7 +58,7 @@ public class SearchService : ISearchService
         {
             var resources = await _db.Resources.AsNoTracking()
                 .Where(r => r.Status == ResourceStatus.Published
-                    && (r.Title.ToLower().Contains(query) || r.Description.ToLower().Contains(query)))
+                    && (r.Title.ToLower().Contains(query) || (r.Description != null && r.Description.ToLower().Contains(query))))
                 .Take(5)
                 .ToListAsync();
             foreach (var r in resources)
@@ -70,9 +70,11 @@ public class SearchService : ISearchService
                 });
         }
 
-        if (results.Count == 0)
-            return new SearchResultResponse { Type = "no_results", Title = "Aucun résultat trouvé" };
+        var total = results.Count;
+        var page = request.Page > 0 ? request.Page : 1;
+        var pageSize = request.PageSize > 0 ? request.PageSize : 15;
+        var paged = results.Skip((page - 1) * pageSize).Take(pageSize).ToList();
 
-        return results[0];
+        return new PaginatedResponse<SearchResultResponse>(paged, total, page, pageSize);
     }
 }

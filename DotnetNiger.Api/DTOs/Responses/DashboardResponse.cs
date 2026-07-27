@@ -32,3 +32,40 @@ public record DashboardStats(
     int PartnersCount,
     // <summary>Nombre de certificats en attente.</summary>
     int PendingCertificatesCount);
+
+/// <summary>Statistiques système.</summary>
+public record SystemStatsResponse(
+    int TotalUsers,
+    int TotalRoles,
+    int TotalPermissions,
+    int TotalRefreshTokens,
+    int TotalServices);
+
+/// <summary>Statistiques personnelles d'un utilisateur.</summary>
+public record MyStatsResponse(
+    int EventsCount,
+    int BlogsCount,
+    int ResourcesCount,
+    int ProjectsCount);
+
+/// <summary>Réponse d'historique de connexion.</summary>
+public record LoginHistoryResponse(
+    Guid Id,
+    Guid UserId,
+    string IpAddress,
+    string UserAgent,
+    string? Provider,
+    bool Success,
+    string? FailureReason,
+    DateTime CreatedAt);
+
+/// <summary>Réponse de log d'audit.</summary>
+public record AuditLogResponse(
+    Guid Id,
+    Guid UserId,
+    string EntityType,
+    Guid EntityId,
+    string Action,
+    string? Description,
+    string? IpAddress,
+    DateTime CreatedAt);

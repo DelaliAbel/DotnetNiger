@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DotnetNiger.Api.Controllers.Content;
 
 /// <summary>Contrôleur de gestion des ressources éducatives.</summary>
+[ApiController]
 [Route("api/resources")]
 public class ResourcesController(IResourceQueryService resourceQuery, IResourceCommandService resourceCommand) : BaseController
 {
@@ -38,7 +39,7 @@ public class ResourcesController(IResourceQueryService resourceQuery, IResourceC
     }
 
     /// <summary>Récupère une ressource par son identifiant.</summary>
-    [HttpGet("{id:guid}")]
+    [HttpGet("{id:guid}", Order = 1)]
     public async Task<IActionResult> GetById(Guid id)
     {
         var resource = await resourceQuery.GetByIdAsync(id);
@@ -47,7 +48,7 @@ public class ResourcesController(IResourceQueryService resourceQuery, IResourceC
     }
 
     /// <summary>Récupère une ressource par son slug.</summary>
-    [HttpGet("{slug}")]
+    [HttpGet("{slug}", Order = 2)]
     public async Task<IActionResult> GetBySlug(string slug)
     {
         var resource = await resourceQuery.GetBySlugAsync(slug);
@@ -134,10 +135,17 @@ public class ResourcesController(IResourceQueryService resourceQuery, IResourceC
     [Authorize]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var userId = GetUserId();
-        var deleted = await resourceCommand.DeleteAsync(id, userId, IsAdmin());
-        if (!deleted) return NotFound(new { Success = false, Message = Messages.Resource.NotFound });
-        return Ok(new { Success = true, Message = Messages.Resource.Deleted });
+        try
+        {
+            var userId = GetUserId();
+            var deleted = await resourceCommand.DeleteAsync(id, userId, IsAdmin());
+            if (!deleted) return NotFound(new { Success = false, Message = Messages.Resource.NotFound });
+            return Ok(new { Success = true, Message = Messages.Resource.Deleted });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { Success = false, Message = ex.Message });
+        }
     }
 
     /// <summary>Incrémente le compteur de vues d'une ressource.</summary>

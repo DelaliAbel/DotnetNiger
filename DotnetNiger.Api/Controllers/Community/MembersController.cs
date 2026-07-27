@@ -62,7 +62,21 @@ public class MembersController(IMemberDirectoryService memberService) : BaseCont
     {
         try
         {
-            var member = await memberService.UpdateProfileAsync(GetUserId(), request);
+            var userId = GetUserId();
+            Guid targetUserId;
+            if (IsAdmin())
+            {
+                var targetMember = await memberService.GetByIdAsync(id);
+                if (targetMember == null) return NotFound(new { Success = false, Message = "Membre non trouvé" });
+                targetUserId = targetMember.UserId;
+            }
+            else
+            {
+                if (userId != id)
+                    return StatusCode(403, new { Success = false, Message = "Vous ne pouvez modifier que votre propre profil." });
+                targetUserId = userId;
+            }
+            var member = await memberService.UpdateProfileAsync(targetUserId, request);
             return Ok(new { Success = true, Data = member });
         }
         catch (KeyNotFoundException)
@@ -71,12 +85,26 @@ public class MembersController(IMemberDirectoryService memberService) : BaseCont
         }
     }
 
-    /// <summary>Supprime le profil de membre de l'utilisateur connecté.</summary>
+    /// <summary>Supprime le profil de membre.</summary>
     [HttpDelete("{id:guid}")]
     [Authorize]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var deleted = await memberService.DeleteProfileAsync(GetUserId());
+        var userId = GetUserId();
+        Guid targetUserId;
+        if (IsAdmin())
+        {
+            var targetMember = await memberService.GetByIdAsync(id);
+            if (targetMember == null) return NotFound(new { Success = false, Message = "Membre non trouvé" });
+            targetUserId = targetMember.UserId;
+        }
+        else
+        {
+            if (userId != id)
+                return StatusCode(403, new { Success = false, Message = "Vous ne pouvez supprimer que votre propre profil." });
+            targetUserId = userId;
+        }
+        var deleted = await memberService.DeleteProfileAsync(targetUserId);
         if (!deleted) return NotFound(new { Success = false, Message = "Membre non trouvé" });
         return Ok(new { Success = true, Message = "Profil supprimé" });
     }

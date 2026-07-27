@@ -82,6 +82,11 @@ if (useMock)
     builder.Services.AddScoped<IMemberDirectoryService, MockMemberDirectoryService>();
     builder.Services.AddScoped<ISearchService, MockSearchService>();
     builder.Services.AddScoped<IContactService, MockContactService>();
+    builder.Services.AddScoped<ICategoryService, MockCategoryService>();
+    builder.Services.AddScoped<ITagService, MockTagService>();
+    builder.Services.AddScoped<IStatsService, MockStatsService>();
+    builder.Services.AddScoped<ISettingsService, MockSettingsService>();
+    builder.Services.AddScoped<ICertificateAdminService, MockCertificateAdminService>();
 }
 else
 #endif

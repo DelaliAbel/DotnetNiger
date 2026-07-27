@@ -23,24 +23,43 @@ public static class AdminUser
     /// </summary>
     public static async Task SeedAsync(UserManager<ApplicationUser> userManager)
     {
-        if (await userManager.FindByEmailAsync(Email) != null)
-            return;
-
-        var admin = new ApplicationUser
+        var admin = await userManager.FindByEmailAsync(Email);
+        if (admin == null)
         {
-            UserName = Email,
-            Email = Email,
-            FirstName = "Admin",
-            LastName = "DotnetNiger",
-            EmailConfirmed = true,
-            IsActive = true
-        };
+            admin = new ApplicationUser
+            {
+                UserName = "DotnetNiger SAdmin",
+                Email = Email,
+                FirstName = "Admin",
+                LastName = "DotnetNiger",
+                EmailConfirmed = true,
+                IsActive = true
+            };
 
-        var result = await userManager.CreateAsync(admin, Password);
-        if (result.Succeeded)
-        {
-            await userManager.AddToRoleAsync(admin, Role);
-            AdminId = admin.Id;
+
+            var result = await userManager.CreateAsync(admin, Password);
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                    Console.WriteLine(error.Description);
+
+                return;
+            }
         }
+
+        //Ajouter le role meme si l'admin existe deja
+        if (!await userManager.IsInRoleAsync(admin, Role))
+        {
+            var roleResult = await userManager.AddToRoleAsync(admin, Role);
+            if (!roleResult.Succeeded)
+            {
+                foreach (var error in roleResult.Errors)
+                {
+                    Console.WriteLine(error.Description);
+                }
+            }
+        }
+
+        AdminId = admin.Id;
     }
 }

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DotnetNiger.Api.Controllers.Community;
 
 /// <summary>Contrôleur de gestion des certificats des membres.</summary>
+[ApiController]
 [Route("api/certificates")]
 public class CertificatesController : BaseController
 {

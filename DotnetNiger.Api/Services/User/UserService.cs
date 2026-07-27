@@ -131,11 +131,10 @@ public class UserService : IUserService
     public async Task ForgotPasswordAsync(string email)
     {
         var user = await _userManager.FindByEmailAsync(email);
-        if (user == null)
-            throw new KeyNotFoundException("Utilisateur non trouvé");
+        if (user == null) return;
 
         var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-        var resetLink = $"{_smtp.AppBaseUrl.TrimEnd('/')}/Account/ResetPassword?email={Uri.EscapeDataString(email)}&code={Uri.EscapeDataString(token)}";
+        var resetLink = $"{_smtp.FrontendBaseUrl.TrimEnd('/')}/reset-password?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(token)}";
 
         await _emailSender.SendPasswordResetLinkAsync(user, email, resetLink);
     }

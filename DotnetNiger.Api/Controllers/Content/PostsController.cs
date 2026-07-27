@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DotnetNiger.Api.Controllers.Content;
 
 /// <summary>Contrôleur de gestion des articles (posts).</summary>
+[ApiController]
 [Route("api/posts")]
 public class PostsController(
     IPostQueryService postQuery,
@@ -33,6 +34,16 @@ public class PostsController(
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
         var userId = GetUserId();
         return Ok(new { Success = true, Data = await postQuery.GetAllAsync(null, null, null, null, page, pageSize, null, userId) });
+    }
+
+    /// <summary>Récupère tous les articles (admin - tous statuts).</summary>
+    [HttpGet("admin")]
+    [Authorize(Policy = "admin.dashboard.view")]
+    public async Task<IActionResult> GetAdminAll([FromQuery] string? published, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
+        return Ok(new { Success = true, Data = await postQuery.GetAllAsync(published, null, null, query, page, pageSize, null) });
     }
 
     /// <summary>Récupère un article par son identifiant.</summary>
@@ -108,9 +119,16 @@ public class PostsController(
     [Authorize]
     public async Task<IActionResult> Publish(Guid id)
     {
-        var post = await postModeration.PublishAsync(id, GetUserId(), IsAdmin());
-        if (post is null) return NotFound(new { Success = false, Message = Messages.Post.NotFound });
-        return Ok(new { Success = true, Data = post });
+        try
+        {
+            var post = await postModeration.PublishAsync(id, GetUserId(), IsAdmin());
+            if (post is null) return NotFound(new { Success = false, Message = Messages.Post.NotFound });
+            return Ok(new { Success = true, Data = post });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { Success = false, Message = ex.Message });
+        }
     }
 
     /// <summary>Dépublie un article (le rend invisible).</summary>
@@ -118,9 +136,16 @@ public class PostsController(
     [Authorize]
     public async Task<IActionResult> Unpublish(Guid id)
     {
-        var post = await postModeration.UnpublishAsync(id, GetUserId(), IsAdmin());
-        if (post is null) return NotFound(new { Success = false, Message = Messages.Post.NotFound });
-        return Ok(new { Success = true, Data = post });
+        try
+        {
+            var post = await postModeration.UnpublishAsync(id, GetUserId(), IsAdmin());
+            if (post is null) return NotFound(new { Success = false, Message = Messages.Post.NotFound });
+            return Ok(new { Success = true, Data = post });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { Success = false, Message = ex.Message });
+        }
     }
 
     /// <summary>Incrémente le compteur de vues d'un article.</summary>
@@ -137,8 +162,15 @@ public class PostsController(
     [Authorize]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var deleted = await postCommand.DeleteAsync(id, GetUserId(), IsAdmin());
-        if (!deleted) return NotFound(new { Success = false, Message = Messages.Post.NotFound });
-        return Ok(new { Success = true, Message = Messages.Post.Deleted });
+        try
+        {
+            var deleted = await postCommand.DeleteAsync(id, GetUserId(), IsAdmin());
+            if (!deleted) return NotFound(new { Success = false, Message = Messages.Post.NotFound });
+            return Ok(new { Success = true, Message = Messages.Post.Deleted });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { Success = false, Message = ex.Message });
+        }
     }
 }

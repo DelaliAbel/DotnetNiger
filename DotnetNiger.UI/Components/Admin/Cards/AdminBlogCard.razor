@@ -117,20 +117,7 @@
             }
             else
             {
-                var request = new UpdatePostRequest
-                {
-                    Title = post.Title,
-                    Content = post.Content,
-                    Excerpt = post.Excerpt,
-                    CoverImageUrl = post.CoverImageUrl,
-                    PostType = post.PostType,
-                    SeoDescription = string.IsNullOrWhiteSpace(post.Excerpt) ? post.Title : post.Excerpt,
-                    CategoryIds = post.Categories.Select(category => category.Id).ToList(),
-                    TagNames = post.Tags.Select(tag => tag.Name).ToList(),
-                    IsPublished = true
-                };
-
-                await PostService.UpdatePostAsync(post.Id, request);
+                await PostService.PublishPostAsync(post.Id);
                 ToastService.ShowToast("Article publié.", ToastLevel.Success);
             }
 

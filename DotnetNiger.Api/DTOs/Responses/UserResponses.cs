@@ -19,7 +19,9 @@ public record UserResponse(
     // <summary>Date de création du compte.</summary>
     DateTime CreatedAt,
     // <summary>Rôles attribués à l'utilisateur.</summary>
-    IList<string> Roles);
+    IList<string> Roles,
+    // <summary>Indique si l'utilisateur est membre de l'équipe.</summary>
+    bool IsTeamMember = false);
 
 /// <summary>Réponse simplifiée du profil utilisateur.</summary>
 public record UserProfileResponse(

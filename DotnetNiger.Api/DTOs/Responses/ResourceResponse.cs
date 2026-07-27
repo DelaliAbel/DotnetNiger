@@ -20,6 +20,14 @@ public record ResourceResponse(
     Guid CreatedBy,
     // <summary>Statut de la ressource.</summary>
     string Status,
+    // <summary>Type de la ressource.</summary>
+    string ResourceType,
+    // <summary>Niveau de difficulté.</summary>
+    string Level,
+    // <summary>Nombre de vues.</summary>
+    int ViewCount,
+    // <summary>Tags associés.</summary>
+    List<TagResponse> Tags,
     // <summary>Date de création.</summary>
     DateTime CreatedAt,
     // <summary>Date de dernière mise à jour.</summary>

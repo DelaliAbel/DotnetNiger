@@ -17,6 +17,8 @@ public class Category
     public string? IconUrl { get; set; }
     /// <summary>Nombre de publications dans cette catégorie.</summary>
     public int PostCount { get; set; }
+    /// <summary>Indique si la catégorie est supprimée logiquement.</summary>
+    public bool IsDeleted { get; set; }
     /// <summary>Date de création.</summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     /// <summary>Date de dernière mise à jour.</summary>

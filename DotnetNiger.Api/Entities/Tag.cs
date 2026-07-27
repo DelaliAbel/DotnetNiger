@@ -13,6 +13,8 @@ public class Tag
     public string Slug { get; set; } = string.Empty;
     /// <summary>Nombre d'utilisations du tag.</summary>
     public int UsageCount { get; set; }
+    /// <summary>Indique si le tag est supprimé logiquement.</summary>
+    public bool IsDeleted { get; set; }
 
     /// <summary>Publications associées au tag.</summary>
     public ICollection<PostTag> PostTags { get; set; } = [];

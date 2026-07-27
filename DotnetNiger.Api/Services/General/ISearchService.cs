@@ -7,5 +7,5 @@ namespace DotnetNiger.Api.Services.General;
 public interface ISearchService
 {
     /// <summary>Effectue une recherche parmi les contenus.</summary>
-    Task<SearchResultResponse> SearchAsync(SearchQueryRequest request);
+    Task<PaginatedResponse<SearchResultResponse>> SearchAsync(SearchQueryRequest request);
 }

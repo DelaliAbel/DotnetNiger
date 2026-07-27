@@ -234,6 +234,14 @@ public class EventService : IEventService
         return _events.Where(e => !e.IsPublished).ToList();
     }
 
+    public async Task<List<EventDto>> GetAdminEventsAsync(string? status = null)
+    {
+        await Task.Delay(800);
+        if (string.IsNullOrWhiteSpace(status))
+            return _events.ToList();
+        return _events.Where(e => e.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
     public async Task<bool> ApproveEventAsync(Guid eventId, string? adminComment = null)
     {
         await Task.Delay(500);

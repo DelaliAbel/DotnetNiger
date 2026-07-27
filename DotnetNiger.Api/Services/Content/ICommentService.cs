@@ -17,7 +17,7 @@ public interface ICommentService
     /// <summary>Met à jour un commentaire.</summary>
     Task<CommentResponse?> UpdateAsync(Guid id, UpdateCommentRequest request, Guid userId);
     /// <summary>Supprime un commentaire.</summary>
-    Task<bool> DeleteAsync(Guid id, Guid userId, bool deleteAllReplies);
+    Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin, bool deleteAllReplies);
     /// <summary>Récupère tous les commentaires.</summary>
     Task<List<CommentResponse>> GetAllAsync();
 }

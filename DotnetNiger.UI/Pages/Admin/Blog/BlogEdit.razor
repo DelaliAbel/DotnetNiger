@@ -152,8 +152,22 @@
     private Editor EditorRef = default!;
     private string tagInput = string.Empty;
 
+    private Guid _loadedId;
 
     protected override async Task OnInitializedAsync()
+    {
+        await LoadPostAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != Guid.Empty && _loadedId != Id)
+        {
+            await LoadPostAsync();
+        }
+    }
+
+    private async Task LoadPostAsync()
     {
         var post = await PostService.GetPostByIdAsync(Id);
         if (post is null)
@@ -162,7 +176,6 @@
             return;
         }
 
-        // Restaurer le formulaire si on revient d'un aperçu
         var expectedReturn = $"/admin/blog/edit/{Id}";
         if (PreviewState.PendingPostRequest is not null && PreviewState.ReturnUrl == expectedReturn)
         {
@@ -186,6 +199,7 @@
             postRequest = MapToUpdateRequest(post);
         }
 
+        _loadedId = Id;
         isLoading = false;
     }
     private void HandleImageUploaded(string imageUrl)
@@ -235,7 +249,7 @@
             PostType = postRequest.PostType ?? string.Empty,
             CategoryIds = postRequest.CategoryIds ?? new(),
             TagNames = postRequest.TagNames ?? new(),
-            IsPublished = postRequest.IsPublished
+            IsPublished = postRequest.IsPublished ?? false
         };
 
         var previewDto = new PostDto

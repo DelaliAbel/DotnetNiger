@@ -16,18 +16,27 @@ public class EventCommandService : IEventCommandService
     /// <summary>Crée un nouvel événement avec ses tags.</summary>
     public async Task<EventResponse> CreateAsync(CreateEventRequest request, Guid organizerId, bool isAdmin, bool isCollaborator)
     {
+        var slug = await GenerateUniqueSlug(request.Slug, request.Title);
+
         var eventEntity = new Event
         {
             Id = Guid.NewGuid(),
             Title = request.Title,
-            Slug = request.Slug ?? string.Empty,
+            Slug = slug,
             Description = request.Description,
             StartDate = request.StartDate,
             EndDate = request.EndDate,
             Location = request.Location,
             CoverImageUrl = request.CoverImageUrl,
+            EventType = request.EventType,
+            Category = request.Category,
             OrganizerId = organizerId,
+            OrganizerName = request.OrganizerName,
+            Capacity = request.Capacity,
+            MeetupLink = request.MeetupLink,
             CreatedBy = organizerId,
+            IsPublished = request.IsPublished,
+            IsArchived = request.IsArchived,
             Status = isAdmin ? EventStatus.Published : EventStatus.PendingReview
         };
 
@@ -50,7 +59,7 @@ public class EventCommandService : IEventCommandService
             throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à modifier cet événement.");
 
         if (request.Title != null) eventEntity.Title = request.Title;
-        if (request.Slug != null) eventEntity.Slug = request.Slug;
+        if (request.Slug != null) eventEntity.Slug = await EnsureUniqueSlug(request.Slug, eventEntity.Id);
         if (request.Description != null) eventEntity.Description = request.Description;
         if (request.Location != null) eventEntity.Location = request.Location;
         if (request.CoverImageUrl != null) eventEntity.CoverImageUrl = request.CoverImageUrl;
@@ -72,14 +81,15 @@ public class EventCommandService : IEventCommandService
         return MapToResponse(eventEntity);
     }
 
-    /// <summary>Supprime un événement (organisateur ou admin uniquement).</summary>
+    /// <summary>Supprime un événement (suppression logique).</summary>
     public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin)
     {
         var eventEntity = await _db.Events.FindAsync(id);
         if (eventEntity == null) return false;
         if (!isAdmin && eventEntity.OrganizerId != userId)
             throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à supprimer cet événement.");
-        _db.Events.Remove(eventEntity);
+        eventEntity.IsDeleted = true;
+        eventEntity.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         return true;
     }
@@ -126,13 +136,13 @@ public class EventCommandService : IEventCommandService
 
         if (tagIds?.Count > 0)
         {
-            var existing = await _db.Tags.Where(t => tagIds.Contains(t.Id)).ToListAsync();
+            var existing = await _db.Tags.Where(t => !t.IsDeleted && tagIds.Contains(t.Id)).ToListAsync();
             tagsToLink.AddRange(existing);
         }
 
         if (tagNames?.Count > 0)
         {
-            var existingNames = await _db.Tags.Where(t => tagNames.Contains(t.Name)).ToListAsync();
+            var existingNames = await _db.Tags.Where(t => !t.IsDeleted && tagNames.Contains(t.Name)).ToListAsync();
             var missingNames = tagNames.Except(existingNames.Select(t => t.Name)).ToList();
 
             foreach (var name in missingNames)
@@ -153,6 +163,41 @@ public class EventCommandService : IEventCommandService
         {
             eventEntity.EventTags.Add(new EventTag { EventId = eventEntity.Id, TagId = tag.Id });
         }
+    }
+
+    private async Task<string> GenerateUniqueSlug(string? providedSlug, string title)
+    {
+        var baseSlug = !string.IsNullOrWhiteSpace(providedSlug)
+            ? providedSlug
+            : title.ToLowerInvariant()
+                .Replace(" ", "-")
+                .Replace("é", "e").Replace("è", "e").Replace("ê", "e").Replace("ë", "e")
+                .Replace("à", "a").Replace("â", "a").Replace("î", "i").Replace("ï", "i")
+                .Replace("ô", "o").Replace("ù", "u").Replace("û", "u").Replace("ü", "u")
+                .Replace("ç", "c").Replace("œ", "oe").Replace("æ", "ae");
+
+        baseSlug = new string(baseSlug.Where(c => char.IsLetterOrDigit(c) || c == '-').ToArray());
+        baseSlug = baseSlug.Trim('-');
+        if (string.IsNullOrWhiteSpace(baseSlug)) baseSlug = "evenement";
+
+        var candidate = baseSlug;
+        var suffix = 1;
+        while (await _db.Events.AnyAsync(e => e.Slug == candidate))
+        {
+            candidate = $"{baseSlug}-{suffix++}";
+        }
+        return candidate;
+    }
+
+    private async Task<string> EnsureUniqueSlug(string slug, Guid entityId)
+    {
+        var candidate = slug;
+        var suffix = 1;
+        while (await _db.Events.AnyAsync(e => e.Slug == candidate && e.Id != entityId))
+        {
+            candidate = $"{slug}-{suffix++}";
+        }
+        return candidate;
     }
 
     private static EventResponse MapToResponse(Event e) =>

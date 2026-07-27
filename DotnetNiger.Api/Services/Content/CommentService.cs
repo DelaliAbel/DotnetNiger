@@ -17,7 +17,8 @@ public class CommentService : ICommentService
     public async Task<List<CommentResponse>> GetByPostIdAsync(Guid postId)
     {
         var comments = await _db.Comments.AsNoTracking()
-            .Where(c => c.PostId == postId && c.ParentCommentId == null)
+            .Include(c => c.Replies.Where(r => !r.IsDeleted))
+            .Where(c => c.PostId == postId && c.ParentCommentId == null && !c.IsDeleted)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
         return comments.Select(MapToResponse).ToList();
@@ -27,7 +28,8 @@ public class CommentService : ICommentService
     public async Task<List<CommentResponse>> GetByEventIdAsync(Guid eventId)
     {
         var comments = await _db.Comments.AsNoTracking()
-            .Where(c => c.EventId == eventId && c.ParentCommentId == null)
+            .Include(c => c.Replies.Where(r => !r.IsDeleted))
+            .Where(c => c.EventId == eventId && c.ParentCommentId == null && !c.IsDeleted)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
         return comments.Select(MapToResponse).ToList();
@@ -36,7 +38,9 @@ public class CommentService : ICommentService
     /// <summary>Récupère un commentaire par identifiant.</summary>
     public async Task<CommentResponse?> GetByIdAsync(Guid id)
     {
-        var comment = await _db.Comments.FindAsync(id);
+        var comment = await _db.Comments
+            .Include(c => c.Replies.Where(r => !r.IsDeleted))
+            .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
         return comment == null ? null : MapToResponse(comment);
     }
 
@@ -64,7 +68,7 @@ public class CommentService : ICommentService
     /// <summary>Met à jour le contenu d'un commentaire (auteur uniquement).</summary>
     public async Task<CommentResponse?> UpdateAsync(Guid id, UpdateCommentRequest request, Guid userId)
     {
-        var comment = await _db.Comments.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
+        var comment = await _db.Comments.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId && !c.IsDeleted);
         if (comment == null) return null;
         comment.Content = request.Content;
         comment.UpdatedAt = DateTime.UtcNow;
@@ -72,12 +76,28 @@ public class CommentService : ICommentService
         return MapToResponse(comment);
     }
 
-    /// <summary>Supprime un commentaire (auteur ou admin).</summary>
-    public async Task<bool> DeleteAsync(Guid id, Guid userId, bool deleteAllReplies)
+    /// <summary>Supprime un commentaire (suppression logique).</summary>
+    public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin, bool deleteAllReplies)
     {
-        var comment = await _db.Comments.FirstOrDefaultAsync(c => c.Id == id && (c.UserId == userId || deleteAllReplies));
+        var comment = await _db.Comments
+            .Include(c => c.Replies)
+            .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
         if (comment == null) return false;
-        _db.Comments.Remove(comment);
+        if (!isAdmin && comment.UserId != userId)
+            throw new UnauthorizedAccessException("Vous ne pouvez supprimer que vos propres commentaires.");
+
+        comment.IsDeleted = true;
+        comment.UpdatedAt = DateTime.UtcNow;
+
+        if (deleteAllReplies && comment.Replies != null && comment.Replies.Count != 0)
+        {
+            foreach (var reply in comment.Replies.Where(r => !r.IsDeleted))
+            {
+                reply.IsDeleted = true;
+                reply.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
         await _db.SaveChangesAsync();
         return true;
     }
@@ -86,6 +106,8 @@ public class CommentService : ICommentService
     public async Task<List<CommentResponse>> GetAllAsync()
     {
         var comments = await _db.Comments.AsNoTracking()
+            .Include(c => c.Replies.Where(r => !r.IsDeleted))
+            .Where(c => !c.IsDeleted)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
         return comments.Select(MapToResponse).ToList();
@@ -109,7 +131,7 @@ public class CommentService : ICommentService
         };
 
         if (c.Replies != null && c.Replies.Count != 0)
-            response.Replies = c.Replies.Select(MapToResponse).ToList();
+            response.Replies = c.Replies.Where(r => !r.IsDeleted).Select(MapToResponse).ToList();
 
         return response;
     }

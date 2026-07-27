@@ -11,6 +11,14 @@ namespace DotnetNiger.Api.Controllers.Content;
 [Route("api/comments")]
 public class CommentsController(ICommentService commentService) : BaseController
 {
+    /// <summary>Récupère tous les commentaires.</summary>
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var comments = await commentService.GetAllAsync();
+        return Ok(new { Success = true, Data = comments });
+    }
+
     /// <summary>Récupère les commentaires d'un article par son identifiant.</summary>
     [HttpGet("post/{postId:guid}")]
     public async Task<IActionResult> GetByPostId(Guid postId)
@@ -44,8 +52,15 @@ public class CommentsController(ICommentService commentService) : BaseController
         var userId = GetUserId();
         var userName = GetUserName();
         var avatar = GetUserAvatar();
-        var comment = await commentService.CreateAsync(request, userId, userName, avatar);
-        return Ok(new { Success = true, Data = comment });
+        try
+        {
+            var comment = await commentService.CreateAsync(request, userId, userName, avatar);
+            return Ok(new { Success = true, Data = comment });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { Success = false, Message = ex.Message });
+        }
     }
 
     /// <summary>Met à jour un commentaire existant.</summary>
@@ -54,9 +69,16 @@ public class CommentsController(ICommentService commentService) : BaseController
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCommentRequest request)
     {
         var userId = GetUserId();
-        var comment = await commentService.UpdateAsync(id, request, userId);
-        if (comment is null) return NotFound(new { Success = false, Message = Messages.Comment.NotFound });
-        return Ok(new { Success = true, Data = comment });
+        try
+        {
+            var comment = await commentService.UpdateAsync(id, request, userId);
+            if (comment is null) return NotFound(new { Success = false, Message = Messages.Comment.NotFound });
+            return Ok(new { Success = true, Data = comment });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { Success = false, Message = ex.Message });
+        }
     }
 
     /// <summary>Supprime un commentaire, optionnellement avec toutes ses réponses.</summary>
@@ -65,8 +87,15 @@ public class CommentsController(ICommentService commentService) : BaseController
     public async Task<IActionResult> Delete(Guid id, [FromQuery] bool deleteAllReplies = false)
     {
         var userId = GetUserId();
-        var deleted = await commentService.DeleteAsync(id, userId, deleteAllReplies);
-        if (!deleted) return NotFound(new { Success = false, Message = Messages.Comment.NotFound });
-        return Ok(new { Success = true, Message = Messages.Comment.Deleted });
+        try
+        {
+            var deleted = await commentService.DeleteAsync(id, userId, IsAdmin(), deleteAllReplies);
+            if (!deleted) return NotFound(new { Success = false, Message = Messages.Comment.NotFound });
+            return Ok(new { Success = true, Message = Messages.Comment.Deleted });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { Success = false, Message = ex.Message });
+        }
     }
 }

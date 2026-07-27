@@ -154,6 +154,47 @@ public class ApiCommentService : ApiServiceBase, ICommentService
         }
     }
 
+    public async Task<CommentResponse?> ApproveCommentAsync(Guid id)
+    {
+        var url = $"{ApiEndpoints.Comments}/{id}/approve";
+        try
+        {
+            var response = await Http.PatchAsync(url, null);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on PATCH {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<CommentResponse>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on PATCH {Url}", url);
+            return null;
+        }
+    }
+
+    public async Task<CommentResponse?> RejectCommentAsync(Guid id)
+    {
+        var url = $"{ApiEndpoints.Comments}/{id}/reject";
+        try
+        {
+            var response = await Http.PatchAsync(url, null);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on PATCH {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<CommentResponse>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on PATCH {Url}", url);
+            return null;
+        }
+    }
+
+
     public async Task<bool> DeleteCommentAsync(DeleteCommentRequest request)
     {
         var url = request.DeleteAllReplies

@@ -1,11 +1,11 @@
 using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
+using DotnetNiger.Api;
 using DotnetNiger.Api.Constants;
+using DotnetNiger.Api.Data;
 using DotnetNiger.Api.Data.Email;
 using DotnetNiger.Api.Entities;
-using DotnetNiger.Api;
-using DotnetNiger.Api.Data;
 using DotnetNiger.Api.Seed;
 using DotnetNiger.Api.Services.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -26,6 +26,9 @@ var builder = WebApplication.CreateBuilder(args);
 // --- Configuration JWT ---
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
 var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()!;
+
+if (string.IsNullOrWhiteSpace(jwtSettings.SecretKey) || jwtSettings.SecretKey.Length < 32)
+    throw new InvalidOperationException("JWT SecretKey must be configured and at least 32 characters long. Use user-secrets or environment variables.");
 
 // --- Controllers + Swagger ---
 builder.Services.AddControllers()
@@ -202,8 +205,10 @@ builder.Services.AddCors(options =>
     {
         if (origins.Length != 0)
             policy.WithOrigins(origins).AllowAnyMethod().AllowAnyHeader().AllowCredentials();
+        else if (builder.Environment.IsDevelopment())
+            policy.SetIsOriginAllowed(_ => true).AllowAnyMethod().AllowAnyHeader();
         else
-            policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+            policy.SetIsOriginAllowed(_ => false);
     });
 });
 

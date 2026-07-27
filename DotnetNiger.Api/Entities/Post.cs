@@ -29,6 +29,8 @@ public class Post
     public PostStatus Status { get; set; } = PostStatus.Draft;
     /// <summary>Indique si la publication est publiée.</summary>
     public bool IsPublished { get; set; }
+    /// <summary>Indique si la publication est supprimée logiquement.</summary>
+    public bool IsDeleted { get; set; }
     /// <summary>Nombre de vues.</summary>
     public int ViewCount { get; set; }
     /// <summary>Date de publication.</summary>

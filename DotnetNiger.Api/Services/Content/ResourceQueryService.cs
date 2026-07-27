@@ -17,11 +17,22 @@ public class ResourceQueryService : IResourceQueryService
         string? resourceType, string? level, string? query,
         string? tag, Guid? categoryId, int page, int pageSize, Guid? after = null, Guid? authorId = null)
     {
-        var q = _db.Resources.AsNoTracking();
+        var q = _db.Resources
+            .Include(r => r.ResourceTags).ThenInclude(rt => rt.Tag)
+            .Include(r => r.ResourceCategories).ThenInclude(rc => rc.Category)
+            .AsNoTracking();
 
         if (authorId.HasValue) q = q.Where(r => r.AuthorId == authorId.Value);
         if (!string.IsNullOrWhiteSpace(query))
             q = q.Where(r => r.Title.Contains(query) || (r.Description != null && r.Description.Contains(query)));
+        if (!string.IsNullOrWhiteSpace(resourceType))
+            q = q.Where(r => r.ResourceType == resourceType);
+        if (!string.IsNullOrWhiteSpace(level))
+            q = q.Where(r => r.Level == level);
+        if (!string.IsNullOrWhiteSpace(tag))
+            q = q.Where(r => r.ResourceTags.Any(rt => rt.Tag.Slug == tag || rt.Tag.Name == tag));
+        if (categoryId.HasValue)
+            q = q.Where(r => r.ResourceCategories.Any(rc => rc.CategoryId == categoryId.Value));
 
         var total = await q.CountAsync();
         var items = await q
@@ -37,14 +48,18 @@ public class ResourceQueryService : IResourceQueryService
     /// <summary>Récupère une ressource par identifiant.</summary>
     public async Task<ResourceResponse?> GetByIdAsync(Guid id)
     {
-        var r = await _db.Resources.FindAsync(id);
+        var r = await _db.Resources
+            .Include(x => x.ResourceTags).ThenInclude(rt => rt.Tag)
+            .FirstOrDefaultAsync(x => x.Id == id);
         return r == null ? null : MapToResponse(r);
     }
 
     /// <summary>Récupère une ressource par slug.</summary>
     public async Task<ResourceResponse?> GetBySlugAsync(string slug)
     {
-        var r = await _db.Resources.FirstOrDefaultAsync(res => res.Slug == slug);
+        var r = await _db.Resources
+            .Include(x => x.ResourceTags).ThenInclude(rt => rt.Tag)
+            .FirstOrDefaultAsync(res => res.Slug == slug);
         return r == null ? null : MapToResponse(r);
     }
 
@@ -72,5 +87,7 @@ public class ResourceQueryService : IResourceQueryService
 
     private static ResourceResponse MapToResponse(Resource r) =>
         new(r.Id, r.Title, r.Slug, r.Description, r.Url, r.DownloadUrl, r.ThumbnailUrl,
-            r.CreatedBy, r.Status.ToString(), r.CreatedAt, r.UpdatedAt);
+            r.CreatedBy, r.Status.ToString(), r.ResourceType, r.Level, r.ViewCount,
+            r.ResourceTags?.Select(rt => new TagResponse { Id = rt.Tag.Id, Name = rt.Tag.Name, Slug = rt.Tag.Slug }).ToList() ?? [],
+            r.CreatedAt, r.UpdatedAt);
 }

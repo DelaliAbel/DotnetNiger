@@ -26,6 +26,9 @@ public interface IEventService
     // Admin : récupérer les événements en attente
     Task<List<EventDto>> GetPendingEventsAsync();
 
+    // Admin : récupérer tous les événements (tous statuts)
+    Task<List<EventDto>> GetAdminEventsAsync(string? status = null);
+
     // Admin : approuver un événement
     Task<bool> ApproveEventAsync(Guid eventId, string? adminComment = null);
 

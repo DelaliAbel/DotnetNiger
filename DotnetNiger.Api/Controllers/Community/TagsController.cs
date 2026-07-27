@@ -20,7 +20,7 @@ public class TagsController(ITagService tagService) : ControllerBase
     }
 
     /// <summary>Récupère un tag par son identifiant.</summary>
-    [HttpGet("{id:guid}")]
+    [HttpGet("{id:guid}", Order = 1)]
     public async Task<IActionResult> GetById(Guid id)
     {
         var t = await tagService.GetByIdAsync(id);
@@ -29,7 +29,7 @@ public class TagsController(ITagService tagService) : ControllerBase
     }
 
     /// <summary>Récupère un tag par son slug.</summary>
-    [HttpGet("{slug}")]
+    [HttpGet("{slug}", Order = 2)]
     public async Task<IActionResult> GetBySlug(string slug)
     {
         var t = await tagService.GetBySlugAsync(slug);

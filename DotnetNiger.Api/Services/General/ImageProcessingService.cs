@@ -42,7 +42,9 @@ public class ImageProcessingService : IImageProcessingService
     public bool Delete(string path)
     {
         if (string.IsNullOrWhiteSpace(path)) return false;
-        var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", path.TrimStart('/'));
+        var uploadsRoot = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads"));
+        var filePath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", path.TrimStart('/')));
+        if (!filePath.StartsWith(uploadsRoot, StringComparison.OrdinalIgnoreCase)) return false;
         if (!File.Exists(filePath)) return false;
         File.Delete(filePath);
         return true;

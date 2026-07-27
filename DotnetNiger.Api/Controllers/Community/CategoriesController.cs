@@ -20,7 +20,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
     }
 
     /// <summary>Récupère une catégorie par son identifiant.</summary>
-    [HttpGet("{id:guid}")]
+    [HttpGet("{id:guid}", Order = 1)]
     public async Task<IActionResult> GetById(Guid id)
     {
         var c = await categoryService.GetByIdAsync(id);
@@ -29,7 +29,7 @@ public class CategoriesController(ICategoryService categoryService) : Controller
     }
 
     /// <summary>Récupère une catégorie par son slug.</summary>
-    [HttpGet("{slug}")]
+    [HttpGet("{slug}", Order = 2)]
     public async Task<IActionResult> GetBySlug(string slug)
     {
         var c = await categoryService.GetBySlugAsync(slug);

@@ -23,24 +23,38 @@ public class CertificateService : ICertificateService
     /// <summary>Approuve un certificat et upgrade le rôle de l'utilisateur.</summary>
     public async Task<CertificateResponse?> ApproveCertificateAsync(Guid id)
     {
-        var cert = await _db.Set<Certificate>().FindAsync(id);
-        if (cert == null) return null;
-
-        cert.Status = "Approved";
-        cert.ReviewedAt = DateTime.UtcNow;
-
-        var user = await _userManager.FindByIdAsync(cert.UserId.ToString());
-        if (user != null)
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+        try
         {
-            if (await _userManager.IsInRoleAsync(user, RoleConstants.User))
-                await _userManager.RemoveFromRoleAsync(user, RoleConstants.User);
+            var cert = await _db.Set<Certificate>().FindAsync(id);
+            if (cert == null)
+            {
+                await transaction.RollbackAsync();
+                return null;
+            }
 
-            if (!await _userManager.IsInRoleAsync(user, RoleConstants.Collaborator))
-                await _userManager.AddToRoleAsync(user, RoleConstants.Collaborator);
+            cert.Status = "Approved";
+            cert.ReviewedAt = DateTime.UtcNow;
+
+            var user = await _userManager.FindByIdAsync(cert.UserId.ToString());
+            if (user != null)
+            {
+                if (await _userManager.IsInRoleAsync(user, RoleConstants.User))
+                    await _userManager.RemoveFromRoleAsync(user, RoleConstants.User);
+
+                if (!await _userManager.IsInRoleAsync(user, RoleConstants.Collaborator))
+                    await _userManager.AddToRoleAsync(user, RoleConstants.Collaborator);
+            }
+
+            await _db.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return MapToResponse(cert);
         }
-
-        await _db.SaveChangesAsync();
-        return MapToResponse(cert);
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 
     /// <summary>Rejette un certificat avec une raison.</summary>

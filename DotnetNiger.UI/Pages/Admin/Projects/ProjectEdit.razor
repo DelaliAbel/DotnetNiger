@@ -124,11 +124,11 @@
 
                     <div class="flex items-center gap-6">
                         <label class="flex items-center gap-2 text-sm text-title">
-                            <InputCheckbox @bind-Value="updateRequest.IsFeatured" />
+                            <InputCheckbox @bind-Value="isFeatured" />
                             Projet à la une
                         </label>
                         <label class="flex items-center gap-2 text-sm text-title">
-                            <InputCheckbox @bind-Value="updateRequest.IsPublished" />
+                            <InputCheckbox @bind-Value="isPublished" />
                             Publié
                         </label>
                     </div>
@@ -162,10 +162,21 @@
     private string errorMessage = string.Empty;
     private bool isLoading = true;
     private bool notFound;
+    private bool isFeatured;
+    private bool isPublished;
+    private Guid _loadedId;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadProjectAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != Guid.Empty && _loadedId != Id)
+        {
+            await LoadProjectAsync();
+        }
     }
 
     private async Task LoadProjectAsync()
@@ -193,6 +204,8 @@
                 IsFeatured = project.IsFeatured,
                 IsPublished = project.IsPublished
             };
+            isFeatured = project.IsFeatured;
+            isPublished = project.IsPublished;
         }
         catch
         {
@@ -200,6 +213,7 @@
         }
         finally
         {
+            _loadedId = Id;
             isLoading = false;
         }
     }
@@ -215,6 +229,8 @@
 
         try
         {
+            updateRequest.IsFeatured = isFeatured;
+            updateRequest.IsPublished = isPublished;
             var updated = await ProjectService.UpdateAsync(Id, updateRequest);
             if (updated is null)
             {

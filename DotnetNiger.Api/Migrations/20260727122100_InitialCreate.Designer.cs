@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DotnetNiger.Api.Migrations
 {
     [DbContext(typeof(DotnetNigerDbContext))]
-    [Migration("20260723112412_RemoveOpenIddict_AddRefreshTokens")]
-    partial class RemoveOpenIddict_AddRefreshTokens
+    [Migration("20260727122100_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -239,6 +239,9 @@ namespace DotnetNiger.Api.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -343,6 +346,9 @@ namespace DotnetNiger.Api.Migrations
 
                     b.Property<Guid?>("EventId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<Guid?>("ParentCommentId")
                         .HasColumnType("uniqueidentifier");
@@ -902,6 +908,9 @@ namespace DotnetNiger.Api.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("LogoUrl")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -988,6 +997,9 @@ namespace DotnetNiger.Api.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("IsPublished")
                         .HasColumnType("bit");
@@ -1431,6 +1443,9 @@ namespace DotnetNiger.Api.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()

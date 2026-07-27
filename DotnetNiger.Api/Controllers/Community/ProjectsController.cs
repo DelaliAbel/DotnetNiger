@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace DotnetNiger.Api.Controllers.Community;
 
 /// <summary>Contrôleur de gestion des projets communautaires.</summary>
+[ApiController]
 [Route("api/projects")]
 public class ProjectsController(IProjectService projectService) : BaseController
 {

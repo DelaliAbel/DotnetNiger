@@ -58,11 +58,29 @@ public class SettingsService : ISettingsService
         return MapToResponse(setting);
     }
 
-    /// <summary>Définit plusieurs paramètres en une seule opération.</summary>
+    /// <summary>Définit plusieurs paramètres en une seule opération atomique.</summary>
     public async Task SetBatchAsync(Dictionary<string, string> settings)
     {
         foreach (var (key, value) in settings)
-            await SetAsync(key, value);
+        {
+            var setting = await _db.SiteSettings.FindAsync(key);
+            if (setting == null)
+            {
+                _db.SiteSettings.Add(new SiteSetting
+                {
+                    Id = key,
+                    Key = key,
+                    Value = value,
+                    UpdatedAt = DateTime.UtcNow
+                });
+            }
+            else
+            {
+                setting.Value = value;
+                setting.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+        await _db.SaveChangesAsync();
     }
 
     /// <summary>Supprime un paramètre par sa clé.</summary>

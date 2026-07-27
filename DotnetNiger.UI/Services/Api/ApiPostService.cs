@@ -87,24 +87,16 @@ public class ApiPostService : ApiServiceBase, IPostService
         }
     }
 
-    public async Task<PostDto?> CreatePostAsync(CreatePostRequest request , Guid currentId)
+    public async Task<PostDto?> CreatePostAsync(CreatePostRequest request, Guid currentId)
     {
         var url = ApiEndpoints.Posts;
-        try
+        var response = await Http.PostAsJsonAsync(url, request);
+        if (!response.IsSuccessStatusCode)
         {
-            var response = await Http.PostAsJsonAsync(url, request);
-            if (!response.IsSuccessStatusCode)
-            {
-                Logger.LogWarning("Failed {StatusCode} on POST {Url}", (int)response.StatusCode, url);
-                return null;
-            }
-            return await ApiResponseReader.ReadAsync<PostDto>(response);
+            var error = await ApiResponseReader.ReadErrorAsync(response);
+            throw new InvalidOperationException(error ?? $"Erreur {(int)response.StatusCode} lors de la création de l'article.");
         }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error on POST {Url}", url);
-            return null;
-        }
+        return await ApiResponseReader.ReadAsync<PostDto>(response);
     }
 
     public async Task<PostDto?> UpdatePostAsync(Guid id, UpdatePostRequest request)
@@ -212,9 +204,9 @@ public class ApiPostService : ApiServiceBase, IPostService
     {
         var query = new Dictionary<string, string?>();
         if (!string.IsNullOrWhiteSpace(status))
-            query["status"] = status;
+            query["published"] = status == "Published" ? "true" : status == "Draft" ? "false" : null;
 
-        return await GetCollectionAsync<PostDto>(ApiEndpoints.Posts, query);
+        return await GetCollectionAsync<PostDto>($"{ApiEndpoints.Posts}/admin", query);
     }
 
     public async Task<List<PostDto>> GetMyPostsAsync()

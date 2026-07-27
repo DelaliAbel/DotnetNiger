@@ -18,6 +18,7 @@ public class MemberDirectoryService : IMemberDirectoryService
     {
         var member = await _db.Members
             .AsNoTracking()
+            .Include(m => m.SocialLinks)
             .FirstOrDefaultAsync(m => m.UserId == userId)
             ?? throw new KeyNotFoundException("Profil membre non trouvé");
 
@@ -97,7 +98,7 @@ public class MemberDirectoryService : IMemberDirectoryService
         if (!string.IsNullOrWhiteSpace(query))
             queryable = queryable.Where(m => m.DisplayName.Contains(query) || (m.Bio != null && m.Bio.Contains(query)));
         if (!string.IsNullOrWhiteSpace(country))
-            queryable = queryable.Where(m => m.Location == country);
+            queryable = queryable.Where(m => m.Country == country);
 
         var totalCount = await queryable.CountAsync();
         var items = await queryable
@@ -129,6 +130,7 @@ public class MemberDirectoryService : IMemberDirectoryService
     {
         var member = await _db.Members
             .AsNoTracking()
+            .Include(m => m.SocialLinks)
             .FirstOrDefaultAsync(m => m.Id == id);
         return member == null ? null : MapToResponse(member);
     }

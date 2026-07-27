@@ -58,7 +58,7 @@ public class AdminService : IAdminService
         await _auditLog.LogAsync("User", user.Id, "Invite", $"Invitation envoyée à {email} avec le rôle {role}");
 
         var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
-        var inviteUrl = $"{_smtp.AppBaseUrl.TrimEnd('/')}/Account/Register?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(token)}";
+        var inviteUrl = $"{_smtp.FrontendBaseUrl.TrimEnd('/')}/verify-email?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(token)}";
         if (_emailSender is EmailSender typed)
             await typed.SendInviteEmailAsync(email, inviteUrl, role);
     }
@@ -106,10 +106,17 @@ public class AdminService : IAdminService
             .GroupBy(x => x.UserId)
             .ToDictionary(g => g.Key, g => g.Select(x => x.RoleName).ToList());
 
+        var teamMemberUserIds = await _db.Members
+            .Where(m => m.IsTeamMember)
+            .Select(m => m.UserId)
+            .ToListAsync();
+        var teamMemberSet = new HashSet<Guid>(teamMemberUserIds);
+
         return users.Select(u => new UserResponse(
             u.Id, u.Email!, u.FirstName, u.LastName,
             u.AvatarUrl, u.IsActive, u.EmailConfirmed,
-            u.CreatedAt, rolesByUser.GetValueOrDefault(u.Id, []))).ToList();
+            u.CreatedAt, rolesByUser.GetValueOrDefault(u.Id, []),
+            teamMemberSet.Contains(u.Id))).ToList();
     }
 
     /// <summary>Récupère la liste des utilisateurs (alias de GetAllUsers).</summary>
@@ -286,7 +293,7 @@ public class AdminService : IAdminService
         return result.Succeeded;
     }
 
-    /// <summary>Assigne un rôle à un utilisateur en remplaçant les rôles existants.</summary>
+    /// <summary>Assigne un rôle à un utilisateur (ajoute sans remplacer les rôles existants).</summary>
     public async Task<bool> AssignRoleToUserAsync(Guid userId, string roleName)
     {
         var user = await _userManager.FindByIdAsync(userId.ToString());
@@ -298,11 +305,9 @@ public class AdminService : IAdminService
         var currentRoles = await _userManager.GetRolesAsync(user);
         if (currentRoles.Contains(roleName)) return true;
 
-        if (currentRoles.Count != 0)
-            await _userManager.RemoveFromRolesAsync(user, currentRoles);
         var result = await _userManager.AddToRoleAsync(user, roleName);
         if (result.Succeeded)
-            await _auditLog.LogAsync("User", userId, "AssignRole", $"Rôle {roleName} assigné (remplace {string.Join(", ", currentRoles)})");
+            await _auditLog.LogAsync("User", userId, "AssignRole", $"Rôle {roleName} ajouté (rôles existants : {string.Join(", ", currentRoles)})");
         return result.Succeeded;
     }
 
@@ -359,9 +364,9 @@ public class AdminService : IAdminService
     {
         var now = DateTime.UtcNow;
 
-        var myPosts = await _db.Posts.CountAsync(p => p.AuthorId == userId);
-        var myPublishedPosts = await _db.Posts.CountAsync(p => p.AuthorId == userId && p.Status == PostStatus.Published);
-        var myDraftPosts = await _db.Posts.CountAsync(p => p.AuthorId == userId && p.Status == PostStatus.Draft);
+        var myPosts = await _db.Posts.CountAsync(p => p.AuthorId == userId && !p.IsDeleted);
+        var myPublishedPosts = await _db.Posts.CountAsync(p => p.AuthorId == userId && !p.IsDeleted && p.Status == PostStatus.Published);
+        var myDraftPosts = await _db.Posts.CountAsync(p => p.AuthorId == userId && !p.IsDeleted && p.Status == PostStatus.Draft);
         var myEvents = await _db.Events.CountAsync(e => e.OrganizerId == userId);
         var myUpcomingEvents = await _db.Events.CountAsync(e => e.OrganizerId == userId && e.StartDate > now);
         var myPastEvents = await _db.Events.CountAsync(e => e.OrganizerId == userId && e.EndDate < now);

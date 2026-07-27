@@ -160,10 +160,19 @@
     private string errorMessage = string.Empty;
     private bool isLoading = true;
     private bool notFound;
+    private Guid _loadedId;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadPartnerAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != Guid.Empty && _loadedId != Id)
+        {
+            await LoadPartnerAsync();
+        }
     }
 
     private async Task LoadPartnerAsync()
@@ -197,6 +206,7 @@
         }
         finally
         {
+            _loadedId = Id;
             isLoading = false;
         }
     }

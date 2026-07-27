@@ -16,6 +16,7 @@ public class TagService : ITagService
     public async Task<List<TagResponse>> GetAllAsync()
     {
         return await _db.Tags.AsNoTracking()
+            .Where(t => !t.IsDeleted)
             .OrderBy(t => t.Name)
             .Select(t => new TagResponse
             {
@@ -31,13 +32,13 @@ public class TagService : ITagService
     public async Task<TagResponse?> GetByIdAsync(Guid id)
     {
         var tag = await _db.Tags.FindAsync(id);
-        return tag == null ? null : MapToResponse(tag);
+        return tag == null || tag.IsDeleted ? null : MapToResponse(tag);
     }
 
     /// <summary>Récupère un tag par slug.</summary>
     public async Task<TagResponse?> GetBySlugAsync(string slug)
     {
-        var tag = await _db.Tags.FirstOrDefaultAsync(t => t.Slug == slug);
+        var tag = await _db.Tags.FirstOrDefaultAsync(t => t.Slug == slug && !t.IsDeleted);
         return tag == null ? null : MapToResponse(tag);
     }
 
@@ -48,7 +49,7 @@ public class TagService : ITagService
         {
             Id = Guid.NewGuid(),
             Name = name,
-            Slug = name.ToLower().Replace(" ", "-")
+            Slug = await GenerateUniqueSlug(name)
         };
         _db.Tags.Add(tag);
         await _db.SaveChangesAsync();
@@ -58,20 +59,20 @@ public class TagService : ITagService
     /// <summary>Met à jour le nom d'un tag.</summary>
     public async Task<TagResponse?> UpdateAsync(Guid id, string name)
     {
-        var tag = await _db.Tags.FindAsync(id);
+        var tag = await _db.Tags.FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted);
         if (tag == null) return null;
         tag.Name = name;
-        tag.Slug = name.ToLower().Replace(" ", "-");
+        tag.Slug = await EnsureUniqueSlug(name, id);
         await _db.SaveChangesAsync();
         return MapToResponse(tag);
     }
 
-    /// <summary>Supprime un tag.</summary>
+    /// <summary>Supprime un tag (suppression logique).</summary>
     public async Task<bool> DeleteAsync(Guid id)
     {
-        var tag = await _db.Tags.FindAsync(id);
-        if (tag == null) return false;
-        _db.Tags.Remove(tag);
+        var tag = await _db.Tags.FirstOrDefaultAsync(t => t.Id == id && !t.IsDeleted);
+        if (tag == null || tag.IsDeleted) return false;
+        tag.IsDeleted = true;
         await _db.SaveChangesAsync();
         return true;
     }
@@ -80,4 +81,48 @@ public class TagService : ITagService
     {
         Id = t.Id, Name = t.Name, Slug = t.Slug, UsageCount = t.UsageCount
     };
+
+    private async Task<string> GenerateUniqueSlug(string name)
+    {
+        var baseSlug = name.ToLowerInvariant()
+            .Replace(" ", "-")
+            .Replace("é", "e").Replace("è", "e").Replace("ê", "e").Replace("ë", "e")
+            .Replace("à", "a").Replace("â", "a").Replace("î", "i").Replace("ï", "i")
+            .Replace("ô", "o").Replace("ù", "u").Replace("û", "u").Replace("ü", "u")
+            .Replace("ç", "c");
+
+        baseSlug = new string(baseSlug.Where(c => char.IsLetterOrDigit(c) || c == '-').ToArray());
+        baseSlug = baseSlug.Trim('-');
+        if (string.IsNullOrWhiteSpace(baseSlug)) baseSlug = "tag";
+
+        var candidate = baseSlug;
+        var suffix = 1;
+        while (await _db.Tags.AnyAsync(t => t.Slug == candidate && !t.IsDeleted))
+        {
+            candidate = $"{baseSlug}-{suffix++}";
+        }
+        return candidate;
+    }
+
+    private async Task<string> EnsureUniqueSlug(string name, Guid entityId)
+    {
+        var baseSlug = name.ToLowerInvariant()
+            .Replace(" ", "-")
+            .Replace("é", "e").Replace("è", "e").Replace("ê", "e").Replace("ë", "e")
+            .Replace("à", "a").Replace("â", "a").Replace("î", "i").Replace("ï", "i")
+            .Replace("ô", "o").Replace("ù", "u").Replace("û", "u").Replace("ü", "u")
+            .Replace("ç", "c");
+
+        baseSlug = new string(baseSlug.Where(c => char.IsLetterOrDigit(c) || c == '-').ToArray());
+        baseSlug = baseSlug.Trim('-');
+        if (string.IsNullOrWhiteSpace(baseSlug)) baseSlug = "tag";
+
+        var candidate = baseSlug;
+        var suffix = 1;
+        while (await _db.Tags.AnyAsync(t => t.Slug == candidate && t.Id != entityId && !t.IsDeleted))
+        {
+            candidate = $"{baseSlug}-{suffix++}";
+        }
+        return candidate;
+    }
 }

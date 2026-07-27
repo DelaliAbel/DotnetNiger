@@ -160,6 +160,19 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadPostAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != Guid.Empty && originalPost?.Id != Id)
+        {
+            await LoadPostAsync();
+        }
+    }
+
+    private async Task LoadPostAsync()
+    {
         var post = await PostService.GetPostByIdAsync(Id);
         if (post is null)
         {
@@ -241,7 +254,7 @@
             PostType = postRequest.PostType ?? string.Empty,
             CategoryIds = postRequest.CategoryIds ?? new(),
             TagNames = tagNames,
-            IsPublished = postRequest.IsPublished
+            IsPublished = postRequest.IsPublished ?? false
         };
 
         var previewDto = new PostDto

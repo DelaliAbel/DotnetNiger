@@ -27,6 +27,17 @@ public class EventsController(
         return Ok(new { Success = true, Data = result });
     }
 
+    /// <summary>Récupère tous les événements (admin - tous statuts).</summary>
+    [HttpGet("admin")]
+    [Authorize(Policy = "admin.dashboard.view")]
+    public async Task<IActionResult> GetAdminAll([FromQuery] string? status, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    {
+        page = Math.Max(1, page);
+        pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
+        var result = await eventQuery.GetAllAsync(status, query, null, null, null, null, null, null, page, pageSize);
+        return Ok(new { Success = true, Data = result });
+    }
+
     /// <summary>Récupère les événements de l'utilisateur connecté.</summary>
     [HttpGet("mine")]
     [Authorize]
@@ -92,9 +103,16 @@ public class EventsController(
     [Authorize]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var deleted = await eventCommand.DeleteAsync(id, GetUserId(), IsAdmin());
-        if (!deleted) return NotFound(new { Success = false, Message = Messages.Event.NotFound });
-        return Ok(new { Success = true, Message = Messages.Event.Deleted });
+        try
+        {
+            var deleted = await eventCommand.DeleteAsync(id, GetUserId(), IsAdmin());
+            if (!deleted) return NotFound(new { Success = false, Message = Messages.Event.NotFound });
+            return Ok(new { Success = true, Message = Messages.Event.Deleted });
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return StatusCode(403, new { Success = false, Message = ex.Message });
+        }
     }
 
     /// <summary>Inscrit un utilisateur à un événement.</summary>

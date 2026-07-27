@@ -27,6 +27,8 @@ public class Comment
     public DateTime CreatedAt { get; set; }
     /// <summary>Date de dernière mise à jour.</summary>
     public DateTime? UpdatedAt { get; set; }
+    /// <summary>Indique si le commentaire est supprimé logiquement.</summary>
+    public bool IsDeleted { get; set; }
 
     /// <summary>Navigation vers l'auteur.</summary>
     public ApplicationUser? Author { get; set; }

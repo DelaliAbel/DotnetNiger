@@ -281,8 +281,22 @@ else
     private bool isUploadingAvatar;
     private string? avatarUploadError;
     private bool IsViewingOwnProfile => UserId is null || UserId == UserStateService.CurrentUser?.Id;
+    private Guid? _loadedUserId;
 
     protected override async Task OnInitializedAsync()
+    {
+        await LoadProfileAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_loadedUserId != UserId)
+        {
+            await LoadProfileAsync();
+        }
+    }
+
+    private async Task LoadProfileAsync()
     {
         UserStateService.OnChange += HandleStateChanged;
 
@@ -308,6 +322,7 @@ else
         }
         finally
         {
+            _loadedUserId = UserId;
             isLoading = false;
         }
     }

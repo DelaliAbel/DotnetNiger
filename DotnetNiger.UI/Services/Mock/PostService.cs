@@ -181,12 +181,12 @@ namespace DotnetNiger.UI.Services.Mock
             if (post == null)
                 return await Task.FromResult<PostDto?>(null);
 
-            post.Title = request.Title;
-            post.Slug = GenerateSlug(request.Title);
-            post.Content = request.Content;
-            post.Excerpt = request.Excerpt;
-            post.CoverImageUrl = request.CoverImageUrl;
-            post.PostType = request.PostType;
+            post.Title = request.Title ?? post.Title;
+            post.Slug = GenerateSlug(request.Title ?? post.Title);
+            post.Content = request.Content ?? post.Content;
+            post.Excerpt = request.Excerpt ?? post.Excerpt;
+            post.CoverImageUrl = request.CoverImageUrl ?? post.CoverImageUrl;
+            post.PostType = request.PostType ?? post.PostType;
 
             return await Task.FromResult<PostDto?>(post);
         }

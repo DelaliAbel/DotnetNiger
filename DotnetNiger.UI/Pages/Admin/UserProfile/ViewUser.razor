@@ -254,6 +254,7 @@ else
     private bool showRoleMenu;
     private bool showConfirmRoleModal;
     private string pendingRoleName = string.Empty;
+    private Guid _loadedUserId;
 
     private readonly List<string> AvailableRoles = new()
     {
@@ -268,12 +269,26 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadUserAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (UserId != Guid.Empty && _loadedUserId != UserId)
+        {
+            await LoadUserAsync();
+        }
+    }
+
+    private async Task LoadUserAsync()
+    {
         try
         {
             user = await UserService.GetUserByIdAsync(UserId);
         }
         finally
         {
+            _loadedUserId = UserId;
             isLoading = false;
         }
     }

@@ -320,8 +320,22 @@
     private string? LoadError { get; set; }
     private bool _showLightbox;
     private int _lightboxIndex;
+    private string? _loadedSlug;
 
     protected override async Task OnInitializedAsync()
+    {
+        await LoadEventAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(Slug) && _loadedSlug != Slug)
+        {
+            await LoadEventAsync();
+        }
+    }
+
+    private async Task LoadEventAsync()
     {
         if (Slug is null)
         {
@@ -344,6 +358,7 @@
         }
         finally
         {
+            _loadedSlug = Slug;
             IsLoading = false;
         }
     }

@@ -67,7 +67,7 @@ public class ProjectService : IProjectService
         {
             Id = Guid.NewGuid(),
             Title = request.Title,
-            Slug = request.Title.ToLower().Replace(" ", "-"),
+            Slug = await GenerateUniqueSlug(null, request.Title),
             Description = request.Description,
             Url = request.Url,
             GithubUrl = request.GithubUrl,
@@ -97,7 +97,7 @@ public class ProjectService : IProjectService
         if (request.Title != null)
         {
             project.Title = request.Title;
-            project.Slug = GenerateSlug(request.Title);
+            project.Slug = await GenerateUniqueSlug(null, request.Title);
         }
         if (request.Description != null) project.Description = request.Description;
         if (request.Url != null) project.Url = request.Url;
@@ -125,14 +125,40 @@ public class ProjectService : IProjectService
         return true;
     }
 
-    private static string GenerateSlug(string title) =>
-        System.Text.RegularExpressions.Regex.Replace(
-            title.ToLower().Trim(),
-            @"[^a-z0-9\s-]",
-            ""
-        ).Replace(" ", "-")
-         .Replace("--", "-")
-         .Trim('-');
+    private async Task<string> GenerateUniqueSlug(string? providedSlug, string title)
+    {
+        var baseSlug = !string.IsNullOrWhiteSpace(providedSlug)
+            ? providedSlug
+            : title.ToLowerInvariant()
+                .Replace(" ", "-")
+                .Replace("é", "e").Replace("è", "e").Replace("ê", "e").Replace("ë", "e")
+                .Replace("à", "a").Replace("â", "a").Replace("î", "i").Replace("ï", "i")
+                .Replace("ô", "o").Replace("ù", "u").Replace("û", "u").Replace("ü", "u")
+                .Replace("ç", "c");
+
+        baseSlug = new string(baseSlug.Where(c => char.IsLetterOrDigit(c) || c == '-').ToArray());
+        baseSlug = baseSlug.Trim('-');
+        if (string.IsNullOrWhiteSpace(baseSlug)) baseSlug = "projet";
+
+        var candidate = baseSlug;
+        var suffix = 1;
+        while (await _db.Set<Project>().AnyAsync(p => p.Slug == candidate))
+        {
+            candidate = $"{baseSlug}-{suffix++}";
+        }
+        return candidate;
+    }
+
+    private async Task<string> EnsureUniqueSlug(string slug, Guid entityId)
+    {
+        var candidate = slug;
+        var suffix = 1;
+        while (await _db.Set<Project>().AnyAsync(p => p.Slug == candidate && p.Id != entityId))
+        {
+            candidate = $"{slug}-{suffix++}";
+        }
+        return candidate;
+    }
 
     private static ProjectResponse MapToResponse(Project p) => new()
     {

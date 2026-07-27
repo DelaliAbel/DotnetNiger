@@ -31,6 +31,32 @@ internal static class ApiResponseReader
         }
     }
 
+    public static async Task<string?> ReadErrorAsync(HttpResponseMessage response)
+    {
+        try
+        {
+            if (response.Content.Headers.ContentLength == 0)
+                return null;
+
+            var doc = await response.Content.ReadFromJsonAsync<JsonElement>(Options);
+
+            if (doc.TryGetProperty("error", out var err) && err.ValueKind == JsonValueKind.String)
+                return err.GetString();
+
+            if (doc.TryGetProperty("message", out var msg) && msg.ValueKind == JsonValueKind.String)
+                return msg.GetString();
+
+            if (doc.TryGetProperty("errors", out var errors) && errors.ValueKind == JsonValueKind.Array)
+                return string.Join(", ", errors.EnumerateArray().Select(e => e.GetString()));
+
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public static async Task<List<T>> ReadCollectionAsync<T>(HttpResponseMessage response)
     {
         try

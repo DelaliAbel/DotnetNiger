@@ -491,7 +491,22 @@
         memberSearchQuery = string.Empty;
     }
 
+    private Guid _loadedId;
+
     protected override async Task OnInitializedAsync()
+    {
+        await LoadEventAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != Guid.Empty && _loadedId != Id)
+        {
+            await LoadEventAsync();
+        }
+    }
+
+    private async Task LoadEventAsync()
     {
         isLoading = true;
         try
@@ -543,6 +558,7 @@
         }
         finally
         {
+            _loadedId = Id;
             isLoading = false;
         }
     }

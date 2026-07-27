@@ -308,6 +308,40 @@ public class CommentService : ICommentService
         };
     }
 
+    public Task<CommentResponse?> ApproveCommentAsync(Guid id)
+    {
+        var comment = FindComment(_comments, id);
+        if (comment == null)
+            return Task.FromResult<CommentResponse?>(null);
+
+        comment.Status = "approved";
+        comment.UpdatedAt = DateTime.Now;
+        return Task.FromResult<CommentResponse?>(comment);
+    }
+
+    public Task<CommentResponse?> RejectCommentAsync(Guid id)
+    {
+        var comment = FindComment(_comments, id);
+        if (comment == null)
+            return Task.FromResult<CommentResponse?>(null);
+
+        comment.Status = "rejected";
+        comment.UpdatedAt = DateTime.Now;
+        return Task.FromResult<CommentResponse?>(comment);
+    }
+
+    private static CommentResponse? FindComment(List<CommentResponse> comments, Guid id)
+    {
+        foreach (var c in comments)
+        {
+            if (c.Id == id) return c;
+            var found = FindComment(c.Replies, id);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+
     public Task<List<CommentResponse>> GetAllCommentsAsync()
     {
         var flat = new List<CommentResponse>();

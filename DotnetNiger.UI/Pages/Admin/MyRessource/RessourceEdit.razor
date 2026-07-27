@@ -107,8 +107,22 @@
     private bool isLoading = true;
     private CreateResourceRequest resourceRequest = new();
     private string errorMessage = string.Empty;
+    private Guid _loadedId;
 
     protected override async Task OnInitializedAsync()
+    {
+        await LoadResourceAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != Guid.Empty && _loadedId != Id)
+        {
+            await LoadResourceAsync();
+        }
+    }
+
+    private async Task LoadResourceAsync()
     {
         isLoading = true;
         try
@@ -136,6 +150,7 @@
         }
         finally
         {
+            _loadedId = Id;
             isLoading = false;
         }
     }

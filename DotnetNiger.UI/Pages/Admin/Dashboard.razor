@@ -576,6 +576,35 @@ CurrentUserDisplayName[..1].ToUpperInvariant();
 						ManageRoute = "/admin/events",
 						IsPublished = e.IsPublished,
 					}).ToList();
+
+				var resources = await ResourceService.GetAllResourcesAsync();
+				RecentResources = resources
+					.Take(4)
+					.Select(r => new DashboardItem
+					{
+						Kind = DashboardItemKind.Resource,
+						Id = r.Id,
+						Title = r.Title,
+						Subtitle = r.Description ?? "",
+						ViewRoute = $"/admin/ressources/edit/{r.Id}",
+						EditRoute = $"/admin/ressources/edit/{r.Id}",
+						ManageRoute = "/admin/ressources",
+						IsPublished = true,
+					}).ToList();
+
+				var projectsResult = await ProjectService.GetAllAsync(null, null, 1, 4);
+				RecentProjects = projectsResult.Items
+					.Select(p => new DashboardItem
+					{
+						Kind = DashboardItemKind.Project,
+						Id = p.Id,
+						Title = p.Title,
+						Subtitle = p.Description ?? "",
+						ViewRoute = $"/admin/projects/edit/{p.Id}",
+						EditRoute = $"/admin/projects/edit/{p.Id}",
+						ManageRoute = "/admin/projects",
+						IsPublished = p.IsPublished,
+					}).ToList();
 			}
 			else
 			{
@@ -589,6 +618,7 @@ CurrentUserDisplayName[..1].ToUpperInvariant();
 			PendingPosts = [];
 			PendingEvents = [];
 			RecentResources = [];
+			RecentProjects = [];
 			RecentEvents = [];
 		}
 		isLoading = false;

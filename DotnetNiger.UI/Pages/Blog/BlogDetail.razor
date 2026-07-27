@@ -377,8 +377,22 @@
 	private bool IsShared;
 	private string? _coverImageUrl;
 	private List<PostDto> RelatedPosts { get; set; } = new();
+	private string? _loadedId;
 
 	protected override async Task OnInitializedAsync()
+	{
+		await LoadPostAsync();
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		if (!string.IsNullOrWhiteSpace(Id) && _loadedId != Id)
+		{
+			await LoadPostAsync();
+		}
+	}
+
+	private async Task LoadPostAsync()
 	{
 		if (string.IsNullOrWhiteSpace(Id))
 		{
@@ -408,6 +422,7 @@
 			_coverImageUrl = await UploadService.ResolveImageUrlAsync(post.CoverImageUrl);
 		}
 
+		_loadedId = Id;
 		isLoading = false;
 
 		// Load comments for this post
@@ -419,14 +434,14 @@
 		// Load related posts (same tags)
 		if (post is not null)
 		{
-			var tagNames = post.Tags.Select(t => t.Name).ToHashSet();
+			var tagNames = post.Tags?.Select(t => t.Name).ToHashSet() ?? new HashSet<string>();
 			var allPosts = await PostService.GetAllPostsAsync();
 			RelatedPosts = allPosts
 				.Where(p => p.Id != post.Id && p.PublishedAt.HasValue)
 				.Select(p => new
 				{
 					Post = p,
-					MatchCount = p.Tags.Count(t => tagNames.Contains(t.Name))
+					MatchCount = p.Tags?.Count(t => tagNames.Contains(t.Name)) ?? 0
 				})
 				.Where(x => x.MatchCount > 0)
 				.OrderByDescending(x => x.MatchCount)
@@ -444,7 +459,7 @@
 
 	private async Task RefreshComments()
 	{
-		if (post?.Id == Guid.Empty)
+		if (post is null || post.Id == Guid.Empty)
 			return;
 
 		isLoadingComments = true;

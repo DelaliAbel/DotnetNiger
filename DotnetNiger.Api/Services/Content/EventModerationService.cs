@@ -53,7 +53,8 @@ public class EventModerationService : IEventModerationService
 
         var ev = await _db.Events.FindAsync(id);
         if (ev == null) return null;
-        ev.Status = EventStatus.Cancelled;
+        ev.Status = EventStatus.Rejected;
+        ev.RejectionReason = reason;
         ev.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
         return MapToResponse(ev);

@@ -136,8 +136,22 @@
 
     private ProjectResponse? Project;
     private bool isLoading = true;
+    private string _loadedSlug = string.Empty;
 
     protected override async Task OnInitializedAsync()
+    {
+        await LoadProjectAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(Slug) && _loadedSlug != Slug)
+        {
+            await LoadProjectAsync();
+        }
+    }
+
+    private async Task LoadProjectAsync()
     {
         try
         {
@@ -149,6 +163,7 @@
         }
         finally
         {
+            _loadedSlug = Slug;
             isLoading = false;
         }
     }

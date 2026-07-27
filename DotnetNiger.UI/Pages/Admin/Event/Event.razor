@@ -242,7 +242,7 @@ else
         isLoading = true;
         try
         {
-            allEvents = await EventService.GetAllEventsAsync();
+            allEvents = await EventService.GetAdminEventsAsync();
         }
         finally
         {
@@ -270,7 +270,7 @@ else
         {
             await EventService.ApproveEventAsync(id);
             ToastService.ShowToast("Événement publié.", ToastLevel.Success);
-            allEvents = await EventService.GetAllEventsAsync();
+            allEvents = await EventService.GetAdminEventsAsync();
         }
         catch
         {

@@ -15,12 +15,23 @@ public class EventRegistrationService : IEventRegistrationService
     /// <summary>Inscrit un utilisateur à un événement publié.</summary>
     public async Task<EventRegistrationResponse?> RegisterAsync(Guid eventId, Guid userId, string userName, string? avatarUrl)
     {
-        var ev = await _db.Events.FindAsync(eventId);
-        if (ev == null || ev.Status != EventStatus.Published) return null;
+        var ev = await _db.Events
+            .FirstOrDefaultAsync(e => e.Id == eventId && e.Status == EventStatus.Published);
+        if (ev == null) return null;
 
         var existing = await _db.EventRegistrations
             .AnyAsync(r => r.EventId == eventId && r.UserId == userId);
         if (existing) return null;
+
+        var affected = await _db.Events
+            .Where(e => e.Id == eventId
+                && e.Status == EventStatus.Published
+                && (e.Capacity == 0 || e.RegisteredCount < e.Capacity))
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(e => e.RegisteredCount, e => e.RegisteredCount + 1)
+                .SetProperty(e => e.UpdatedAt, DateTime.UtcNow));
+
+        if (affected == 0) return null;
 
         var registration = new EventRegistration
         {
@@ -52,8 +63,16 @@ public class EventRegistrationService : IEventRegistrationService
         var registration = await _db.EventRegistrations
             .FirstOrDefaultAsync(r => r.EventId == eventId && r.UserId == userId);
         if (registration == null) return false;
+
         _db.EventRegistrations.Remove(registration);
         await _db.SaveChangesAsync();
+
+        await _db.Events
+            .Where(e => e.Id == eventId && e.RegisteredCount > 0)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(e => e.RegisteredCount, e => e.RegisteredCount - 1)
+                .SetProperty(e => e.UpdatedAt, DateTime.UtcNow));
+
         return true;
     }
 }

@@ -22,6 +22,7 @@ public class EventQueryService : IEventQueryService
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
             .Include(e => e.Speakers)
             .Include(e => e.Medias)
+            .Where(e => !e.IsDeleted)
             .AsNoTracking();
 
         if (!string.IsNullOrWhiteSpace(status))
@@ -56,7 +57,7 @@ public class EventQueryService : IEventQueryService
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
             .Include(e => e.Speakers)
             .Include(e => e.Medias)
-            .FirstOrDefaultAsync(e => e.Id == id);
+            .FirstOrDefaultAsync(e => e.Id == id && !e.IsDeleted);
         return ev == null ? null : MapToResponse(ev);
     }
 
@@ -70,6 +71,7 @@ public class EventQueryService : IEventQueryService
     public async Task<List<EventRegistrationResponse>> GetRegistrationsAsync(Guid eventId)
     {
         return await _db.EventRegistrations.AsNoTracking()
+            .Include(r => r.Event)
             .Where(r => r.EventId == eventId)
             .Select(r => new EventRegistrationResponse
             {
@@ -77,8 +79,8 @@ public class EventQueryService : IEventQueryService
                 EventId = r.EventId,
                 EventTitle = r.Event!.Title,
                 UserId = r.UserId,
-                UserName = "",
-                AvatarUrl = "",
+                UserName = r.UserName,
+                AvatarUrl = r.AvatarUrl,
                 RegisteredAt = r.RegisteredAt,
                 IsAttended = r.IsAttended,
                 RegistrationStatus = r.RegistrationStatus
