@@ -21,8 +21,6 @@ public class SmtpOptions
     public string AppName { get; set; } = "DotnetNiger Community";
     /// <summary>Sous-titre de l'application dans les emails.</summary>
     public string AppSubtitle { get; set; } = "";
-    /// <summary>URL de base de l'API.</summary>
-    public string AppBaseUrl { get; set; } = "";
     /// <summary>URL de base du frontend.</summary>
     public string FrontendBaseUrl { get; set; } = "";
     /// <summary>Email du support.</summary>
