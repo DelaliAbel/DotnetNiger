@@ -4,7 +4,7 @@ Signaler une vulnerabilite par email aux maintainers. Ne pas ouvrir d'issue publ
 
 ## Pratiques
 
-- Authentification par JWT (OpenIddict)
+- Authentification par JWT
 - CORS restreint en production
 - Rate limiting sur les endpoints sensibles
 - Fichiers uploades valides (type, taille)

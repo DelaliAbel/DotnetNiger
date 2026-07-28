@@ -8,23 +8,32 @@ Le format est base sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) 
 - Tag/Category sync dans EventCommandService, PostCommandService, ResourceCommandService
 - Endpoint `GET /api/admin/stats/mine` pour le dashboard Collaborateur
 - CRUD Membres (POST/PUT/DELETE `/api/members`), endpoint `GET /api/members/mine`
+- Email notification admin pour les messages de contact
+- `ContactMessagesController` (GET list, PATCH mark as read)
+- `PublicSettingsController` à `GET /api/settings/public`
 
 ### Changed
-- Program.cs : CORS depuis `appsettings.json`, suppression middleware debug
-- ResourceResponse : ajout du champ `Url`
+- Program.cs : CORS depuis `appsettings.json`, suppression middleware debug, refactoring 319→45 lignes
+- Architecture Onion : API restructurée en Domain/Application/Infrastructure/Api
+- UI restructurée : Services découpés en Api/Mock/App/Auth/Contracts/Browser
+- Format réponse unifié `{ success, data, message }` sur les 22 controllers
+- `BaseController` : helpers `Success<T>()`, `Failure()`, `NotFound()` etc.
+- `ContactMessage.Name` remplacé par `FullName`
 
 ### Fixed
 - Tags/Categories effaces a l'update : backend ne remplace plus si `null`
 - CORS : plus de `AllowAnyOrigin()` en dur
 - Tous les Update DTOs frontend (Event, Resource, Post, Project) rendus nullable pour corriger les PUT 400
-- Routes API frontend synchronisées avec le backend (auth, admin, profile)
-- `Sidebar.razor` : NewsLetter et Commentaires cachés pour les Collaborateurs
-- `RedirectToLogin.razor` : utilisateur connecté sans rôle redirigé vers `/admin` au lieu de `/`
+- Routes API frontend synchronisees avec le backend (auth, admin, profile)
+- `Sidebar.razor` : NewsLetter et Commentaires caches pour les Collaborateurs
+- `RedirectToLogin.razor` : utilisateur connecte sans role redirige vers `/admin` au lieu de `/`
+- `SocialLinkConfiguration.WithMany(m => m.SocialLinks)` corrigé
+- Settings.razor : tabs inutilisés et variables supprimés
 
-### Added
-- `BootstrapOpenIddictAsync` dans SeedData — enregistre le client OpenIddict "web-ui" au démarrage
-- Redirect URI `/auth/callback-popup.html` ajouté au client web-ui (nécessaire pour le popup OAuth)
-- `RoleConstants.IsSuperAdminRole()`
+### Removed
+- `SocialLinkRequest.cs` (inutilisé)
+- Méthodes `AddSocialLinkAsync`/`RemoveSocialLinkAsync` de `IMemberDirectoryService`
+- Clés config inutilisées : `Admin:DefaultPassword`, `Serilog`, `DatabaseProvider`, `Smtp:AppBaseUrl`
 
 ## [2026-07-19] — Consolidation monolithique
 
