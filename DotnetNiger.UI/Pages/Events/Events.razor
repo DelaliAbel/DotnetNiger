@@ -37,13 +37,14 @@
 						<option value="Niamey">Niamey</option>
 						<option value="other">Autres villes</option>
 					</select>
-					<select @bind="selectedDateFilter" @bind:after="() => currentPage = 1"
-							class="bg-surface text-body px-4 py-3 rounded-lg focus:outline-none text-sm min-w-[150px]">
-						<option value="">Date d'événement</option>
-						<option value="week">Cette semaine</option>
-						<option value="month">Ce mois</option>
-						<option value="quarter">Ce trimestre</option>
-					</select>
+				<select @bind="selectedDateFilter" @bind:after="() => currentPage = 1"
+						class="bg-surface text-body px-4 py-3 rounded-lg focus:outline-none text-sm min-w-[150px]">
+					<option value="">À venir</option>
+					<option value="all">Tous</option>
+					<option value="week">Cette semaine</option>
+					<option value="month">Ce mois</option>
+					<option value="quarter">Ce trimestre</option>
+				</select>
 				</div>
 
 				@if (IsLoading)
@@ -134,18 +135,24 @@
 					return e.Location?.Equals(selectedLocation, StringComparison.OrdinalIgnoreCase) == true;
 				}).ToList();
 			}
-			if (!string.IsNullOrWhiteSpace(selectedDateFilter))
+			var now = DateTime.Now;
+			if (string.IsNullOrWhiteSpace(selectedDateFilter) || selectedDateFilter == "upcoming")
 			{
-				var now = DateTime.Now;
-				events = events.Where(e => selectedDateFilter switch
-				{
-					"week" => e.StartDate >= now && e.StartDate <= now.AddDays(7),
-					"month" => e.StartDate >= now && e.StartDate <= now.AddMonths(1),
-					"quarter" => e.StartDate >= now && e.StartDate <= now.AddMonths(3),
-					_ => true
-				}).ToList();
+				events = events.Where(e => e.StartDate >= now).ToList();
 			}
-			return events;
+			else if (selectedDateFilter == "week")
+			{
+				events = events.Where(e => e.StartDate >= now && e.StartDate <= now.AddDays(7)).ToList();
+			}
+			else if (selectedDateFilter == "month")
+			{
+				events = events.Where(e => e.StartDate >= now && e.StartDate <= now.AddMonths(1)).ToList();
+			}
+			else if (selectedDateFilter == "quarter")
+			{
+				events = events.Where(e => e.StartDate >= now && e.StartDate <= now.AddMonths(3)).ToList();
+			}
+			return events.OrderBy(e => e.StartDate).ToList();
 		}
 	}
 

@@ -10,6 +10,7 @@
 @inject IUserStateService UserStateService
 @inject NavigationManager Navigation
 @inject IToastService ToastService
+@inject IConfirmService ConfirmService
 @inject IUploadService UploadService
 @inject IJSRuntime JS
 
@@ -468,11 +469,21 @@ StringComparison.OrdinalIgnoreCase))).ToList();
 
     private async Task DeleteAsync(Guid userId)
     {
+        var confirmed = await ConfirmService.ShowAsync("Supprimer définitivement cet utilisateur ?");
+        if (!confirmed) return;
+
         try
         {
-            await UserService.DeleteUserAsync(userId);
-            ToastService.ShowToast("Utilisateur supprimé.", ToastLevel.Success);
-            await ReloadAsync();
+            var success = await UserService.DeleteUserAsync(userId);
+            if (success)
+            {
+                ToastService.ShowToast("Utilisateur supprimé.", ToastLevel.Success);
+                await ReloadAsync();
+            }
+            else
+            {
+                ToastService.ShowToast("Erreur lors de la suppression.", ToastLevel.Error);
+            }
         }
         catch
         {

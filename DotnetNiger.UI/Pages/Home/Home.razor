@@ -286,7 +286,7 @@
         IsLoadingResources = true;
         try
         {
-            var events = (await EventService.GetPublishedEventsAsync()).Take(3).ToList();
+            var events = (await EventService.GetUpcomingEventsAsync()).Take(3).ToList();
             AllEvents = events;
             foreach (var evt in events)
             {

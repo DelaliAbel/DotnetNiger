@@ -170,6 +170,27 @@ public class AdminService : IAdminService
             throw new InvalidOperationException(
                 "Un administrateur ne peut pas supprimer un autre administrateur. Seul le SuperAdmin peut effectuer cette action.");
 
+        // Supprimer les enregistrements liés pour éviter les violations FK
+        var registrations = await _db.EventRegistrations.Where(r => r.UserId == id).ToListAsync();
+        _db.EventRegistrations.RemoveRange(registrations);
+
+        var comments = await _db.Comments.Where(c => c.AuthorId == id).ToListAsync();
+        _db.Comments.RemoveRange(comments);
+
+        var certificates = await _db.Certificates.Where(c => c.UserId == id).ToListAsync();
+        _db.Certificates.RemoveRange(certificates);
+
+        var notifications = await _db.Notifications.Where(n => n.UserId == id).ToListAsync();
+        _db.Notifications.RemoveRange(notifications);
+
+        var deletionRequests = await _db.AccountDeletionRequests.Where(d => d.UserId == id).ToListAsync();
+        _db.AccountDeletionRequests.RemoveRange(deletionRequests);
+
+        var members = await _db.Members.Where(m => m.UserId == id).ToListAsync();
+        _db.Members.RemoveRange(members);
+
+        await _db.SaveChangesAsync();
+
         var email = user.Email;
         var result = await _userManager.DeleteAsync(user);
         if (result.Succeeded)

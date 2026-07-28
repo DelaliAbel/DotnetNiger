@@ -26,7 +26,8 @@
             <AdminActionDropdown ItemId="@(Event?.Id ?? Guid.Empty)" Status="@(Event?.Status ?? "Draft")" ReviewStatusValue="PendingReview"
                                  ViewLabel="Voir l'événement" EditLabel="Modifier" DeleteLabel="Supprimer" ApproveLabel="Publier"
                                  RejectLabel="Rejeter" OnView="OpenEvent" OnEdit="EditEvent" OnDelete="DeleteEvent"
-                                 OnApprove="SetPublished" OnReject="DeleteEvent" />
+                                 OnApprove="SetPublished" OnReject="DeleteEvent"
+                                 ToggleStatusLabel="@(IsPublished ? "Dépublier" : "Publier")" OnToggleStatus="@ToggleEventStatus" />
         </div>
 
         <p class="mb-4 line-clamp-3 text-sm leading-6 text-body break-words">
@@ -127,5 +128,12 @@
     {
         if (Event is null) return;
         await OnSetArchived.InvokeAsync(Event.Id);
+    }
+
+    private async Task ToggleEventStatus(Guid id)
+    {
+        if (Event is null) return;
+        await EventService.TogglePublishAsync(Event.Id);
+        await OnEventDeleted.InvokeAsync();
     }
 }
