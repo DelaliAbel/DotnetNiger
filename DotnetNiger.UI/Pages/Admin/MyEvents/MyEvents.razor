@@ -5,6 +5,7 @@
 @inject IEventService EventService
 @inject IToastService ToastService
 @inject IJSRuntime JS
+@inject IConfirmService ConfirmService
 
 @if (isLoading)
 {
@@ -251,10 +252,15 @@ else
 
     private async Task DeleteEvent(Guid id)
     {
+        var ev = allEvents.FirstOrDefault(e => e.Id == id);
+        var title = ev?.Title ?? "cet événement";
+        var confirmed = await ConfirmService.ShowAsync($"Supprimer définitivement « {title} » ?");
+        if (!confirmed) return;
+
         try
         {
             await EventService.DeleteEventAsync(id);
-            ToastService.ShowToast("Événement supprimé.", ToastLevel.Success);
+            ToastService.ShowToast("Événement supprimé définitivement.", ToastLevel.Success);
             await LoadEventsAsync();
         }
         catch

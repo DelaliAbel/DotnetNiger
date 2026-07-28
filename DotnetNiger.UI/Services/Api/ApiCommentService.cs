@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using DotnetNiger.UI.Configuration;
 using System.Security.Claims;
 using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;

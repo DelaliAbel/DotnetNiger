@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.Extensions.Logging;

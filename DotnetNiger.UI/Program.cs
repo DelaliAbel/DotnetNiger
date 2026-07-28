@@ -2,7 +2,8 @@ using DotnetNiger.UI;
 using DotnetNiger.UI.Services.Browser;
 using DotnetNiger.UI.Services.Auth;
 using DotnetNiger.UI.Services.Api;
-using DotnetNiger.UI.Services;
+using DotnetNiger.UI.Services.App;
+using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Services.Mock;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.AspNetCore.Components;
@@ -65,15 +66,16 @@ if (useMock)
 {
     builder.Services.AddScoped<IPermissionService, MockPermissionService>();
     builder.Services.AddScoped<IToastService, ToastService>();
+    builder.Services.AddScoped<IConfirmService, ConfirmService>();
     builder.Services.AddScoped<IUploadService, MockUploadService>();
     builder.Services.AddScoped<IAuthService, MockAuthService>();
     builder.Services.AddScoped<IUserService, MockUserService>();
-    builder.Services.AddScoped<IPostService, PostService>();
-    builder.Services.AddScoped<IEventService, EventService>();
-    builder.Services.AddScoped<INotificationService, NotificationService>();
-    builder.Services.AddScoped<IResourceService, ResourceService>();
-    builder.Services.AddScoped<IProfileService, ProfileService>();
-    builder.Services.AddScoped<ICommentService, CommentService>();
+    builder.Services.AddScoped<IPostService, MockPostService>();
+    builder.Services.AddScoped<IEventService, MockEventService>();
+    builder.Services.AddScoped<INotificationService, MockNotificationService>();
+    builder.Services.AddScoped<IResourceService, MockResourceService>();
+    builder.Services.AddScoped<IProfileService, MockProfileService>();
+    builder.Services.AddScoped<ICommentService, MockCommentService>();
     builder.Services.AddScoped<IRegistrationService, MockRegistrationService>();
     builder.Services.AddScoped<IUserStateService, UserStateService>();
     builder.Services.AddScoped<IProjectService, MockProjectService>();
@@ -91,6 +93,7 @@ if (useMock)
 else
 #endif
 {
+    builder.Services.AddScoped<IConfirmService, ConfirmService>();
     builder.Services.AddScoped<IToastService, ToastService>();
     builder.Services.AddScoped<IAuthService>(sp => sp.GetRequiredService<AuthService>());
     builder.Services.AddScoped<IUserService>(sp => new ApiUserService(sp.GetRequiredService<HttpClient>(), sp.GetRequiredService<ILogger<ApiUserService>>()));

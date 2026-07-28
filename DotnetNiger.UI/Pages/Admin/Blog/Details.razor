@@ -11,7 +11,7 @@
 @using System.Text.RegularExpressions
 @inject IPostService PostService
 @inject NavigationManager NavigationManager
-@inject IJSRuntime JS
+@inject IConfirmService ConfirmService
 @inject IToastService ToastService
 @inject IUploadService UploadService
 
@@ -315,13 +315,13 @@
 
 	private async Task DeletePost(Guid postId)
 	{
-		var confirmed = await JS.InvokeAsync<bool>("confirm", "Êtes-vous sûr de vouloir supprimer cet article ?");
+		var confirmed = await ConfirmService.ShowAsync("Supprimer définitivement cet article ?");
 		if (confirmed)
 		{
 			try
 			{
 				await PostService.DeletePostAsync(postId);
-				ToastService.ShowToast("Article supprimé.", ToastLevel.Success);
+				ToastService.ShowToast("Article supprimé définitivement.", ToastLevel.Success);
 				NavigationManager.NavigateTo("/admin/blog");
 			}
 			catch

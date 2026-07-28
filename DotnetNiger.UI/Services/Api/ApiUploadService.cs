@@ -2,6 +2,7 @@
 using System.Text.Json;
 using DotnetNiger.UI.Models;
 using DotnetNiger.UI.Models.Responses;
+using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.AspNetCore.Components.Forms;
 
@@ -84,16 +85,28 @@ public class ApiUploadService : ApiServiceBase, IUploadService
             };
         }
 
-        var result = await response.Content.ReadFromJsonAsync<UploadResponse>(new JsonSerializerOptions
+        var result = await response.Content.ReadFromJsonAsync<JsonElement>(new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
         });
 
-        return result ?? new UploadResponse
+        if (result.ValueKind == JsonValueKind.Object &&
+            result.TryGetProperty("success", out var success) &&
+            success.ValueKind == JsonValueKind.True &&
+            result.TryGetProperty("data", out var data) &&
+            data.ValueKind == JsonValueKind.Object)
         {
-            Success = false,
-            Message = "Réponse inattendue du serveur."
-        };
+            var imageUrl = data.TryGetProperty("imageUrl", out var urlProp) && urlProp.ValueKind == JsonValueKind.String
+                ? urlProp.GetString() ?? ""
+                : "";
+            var message = result.TryGetProperty("message", out var msg) && msg.ValueKind == JsonValueKind.String
+                ? msg.GetString()
+                : "Upload réussi";
+
+            return new UploadResponse { Success = true, ImageUrl = imageUrl, Message = message ?? "Upload réussi", FileName = fileName };
+        }
+
+        return new UploadResponse { Success = false, Message = "Réponse inattendue du serveur." };
     }
 
     public async Task<bool> DeleteImageAsync(string imageUrl)

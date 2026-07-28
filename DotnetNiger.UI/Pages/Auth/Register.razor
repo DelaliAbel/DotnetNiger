@@ -6,6 +6,7 @@
 @inject IJSRuntime JS
 @inject CustomAuthStateProvider AuthProvider
 @inject IRegistrationService RegistrationService
+@inject IToastService ToastService
 
 <PageTitle>Inscription - .NET Niger</PageTitle>
 
@@ -359,7 +360,10 @@
                 }
             }
         }
-        catch { }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors de la restauration de la session.", ToastLevel.Warning);
+        }
     }
 
     private async Task SaveSessionAsync()
@@ -377,13 +381,22 @@
             var json = System.Text.Json.JsonSerializer.Serialize(data);
             await JS.InvokeVoidAsync("sessionStorage.setItem", SessionKey, json);
         }
-        catch { }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors de la sauvegarde de la session.", ToastLevel.Warning);
+        }
     }
 
     private async Task ClearSessionAsync()
     {
-        try { await JS.InvokeVoidAsync("sessionStorage.removeItem", SessionKey); }
-        catch { }
+        try
+        {
+            await JS.InvokeVoidAsync("sessionStorage.removeItem", SessionKey);
+        }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors de la suppression de la session.", ToastLevel.Warning);
+        }
     }
 
     private async Task GoBackToStep1()
@@ -440,8 +453,23 @@
 
         if (success)
         {
-            _currentStep = 3;
-            await SaveSessionAsync();
+            var loginResult = await Auth.LoginAsync(new LoginRequest
+            {
+                Email = _step1.Email,
+                Password = _step1.Password
+            });
+
+            if (loginResult.Success)
+            {
+                _currentStep = 3;
+                await SaveSessionAsync();
+            }
+            else
+            {
+                _errorMessage = loginResult.Message ?? "Email vérifié mais connexion automatique échouée. Connectez-vous pour soumettre votre certificat.";
+                _currentStep = 3;
+                await SaveSessionAsync();
+            }
         }
         else
         {

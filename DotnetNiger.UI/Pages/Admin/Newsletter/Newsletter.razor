@@ -4,6 +4,7 @@
 @inject INewsletterService NewsletterService
 @inject IToastService ToastService
 @inject IJSRuntime JS
+@inject IConfirmService ConfirmService
 
 @if (isLoading)
 {
@@ -140,7 +141,7 @@ else
 
     private async Task DeleteSubscriber(string email)
     {
-        var confirmed = await JS.InvokeAsync<bool>("confirm", $"Supprimer l'abonné {email} ?");
+        var confirmed = await ConfirmService.ShowAsync($"Supprimer l'abonné {email} ?");
         if (!confirmed) return;
 
         var deleted = await NewsletterService.DeleteSubscriberAsync(email);

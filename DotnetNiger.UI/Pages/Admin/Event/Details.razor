@@ -3,6 +3,7 @@
 @using Microsoft.AspNetCore.Components.Web
 @using DotnetNiger.UI.Models.Responses
 @using DotnetNiger.UI.Services.Contracts
+@inject IConfirmService ConfirmService
 @using System.Globalization
 @inject IEventService EventService
 @inject NavigationManager NavigationManager
@@ -421,6 +422,8 @@
     private async Task DeleteEvent()
     {
         if (CurrentEvent is null) return;
+        var confirmed = await ConfirmService.ShowAsync("Êtes-vous sûr de vouloir supprimer cet événement ?");
+        if (!confirmed) return;
         await EventService.DeleteEventAsync(CurrentEvent.Id);
         NavigationManager.NavigateTo("/admin/events");
     }

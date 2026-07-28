@@ -6,6 +6,7 @@
 @inject IPostService PostService
 @inject IToastService ToastService
 @inject NavigationManager NavigationManager
+@inject IConfirmService ConfirmService
 
 <div class="bg-surface shadow-md">
     <table class="w-full">
@@ -97,6 +98,11 @@
 
     private async Task DeletePost(Guid id)
     {
+        var post = Posts.FirstOrDefault(p => p.Id == id);
+        var title = post?.Title ?? "cet article";
+        var confirmed = await ConfirmService.ShowAsync($"Supprimer définitivement « {title} » ?");
+        if (!confirmed) return;
+
         await PostService.DeletePostAsync(id);
         await OnChanged.InvokeAsync();
     }

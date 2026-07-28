@@ -1,6 +1,8 @@
 ﻿@* Carte admin des événements avec menu d'actions harmonisé. *@
 @using DotnetNiger.UI.Models.Responses
 @inject NavigationManager NavigationManager
+@inject IEventService EventService
+@inject IConfirmService ConfirmService
 
 <div class="group rounded-lg bg-surface shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
     <div class="relative w-full overflow-hidden aspect-video">
@@ -103,6 +105,9 @@
     private async Task DeleteEvent(Guid id)
     {
         if (Event is null) return;
+        var confirmed = await ConfirmService.ShowAsync("Êtes-vous sûr de vouloir supprimer cet événement ?");
+        if (!confirmed) return;
+        await EventService.DeleteEventAsync(Event.Id);
         await OnEventDeleted.InvokeAsync();
     }
 

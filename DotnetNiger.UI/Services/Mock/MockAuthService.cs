@@ -3,7 +3,6 @@ using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Auth;
 using DotnetNiger.UI.Services.Contracts;
-using DotnetNiger.UI.Services.Helpers;
 
 namespace DotnetNiger.UI.Services.Mock;
 

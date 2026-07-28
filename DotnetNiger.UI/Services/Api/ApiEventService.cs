@@ -1,4 +1,5 @@
 using DotnetNiger.UI.Helpers;
+using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
@@ -65,7 +66,7 @@ public class ApiEventService : ApiServiceBase, IEventService
 
     public async Task<EventDto?> GetEventBySlugAsync(string slug)
     {
-        var url = $"{ApiEndpoints.Events}/{slug}";
+        var url = $"{ApiEndpoints.Events}/by-slug/{slug}";
         try
         {
             var response = await Http.GetAsync(url);

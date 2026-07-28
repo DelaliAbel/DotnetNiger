@@ -1,4 +1,5 @@
 using DotnetNiger.UI.Models.Responses;
+using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.Extensions.Logging;
 

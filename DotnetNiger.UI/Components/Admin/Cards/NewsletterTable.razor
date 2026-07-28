@@ -1,6 +1,6 @@
 @* Tableau admin des abonnés newsletter avec suppression inline. *@
 @using DotnetNiger.UI.Models.Responses
-@inject IJSRuntime JS
+@inject IConfirmService ConfirmService
 
 <div class="rounded-lg bg-surface shadow-md">
     <table class="w-full">
@@ -52,7 +52,7 @@
 
     private async Task ConfirmDelete(string email)
     {
-        var confirmed = await JS.InvokeAsync<bool>("confirm", $"Supprimer l'abonné {email} ?");
+        var confirmed = await ConfirmService.ShowAsync($"Supprimer l'abonné {email} ?");
         if (!confirmed) return;
 
         if (OnDelete.HasDelegate)

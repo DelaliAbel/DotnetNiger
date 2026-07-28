@@ -14,6 +14,8 @@
 @inject NavigationManager Navigation
 @inject IUploadService UploadService
 @inject ICertificateAdminService CertificateAdminService
+@inject IConfirmService ConfirmService
+@inject IToastService ToastService
 
 <div
 	class="min-h-screen px-3 sm:px-4 py-4 sm:py-6 md:px-8 md:py-8">
@@ -146,6 +148,13 @@
 															<p class="truncate text-xs sm:text-sm font-semibold text-title">@cert.UserName</p>
 															<p class="truncate text-[10px] sm:text-xs text-muted">@cert.UserEmail</p>
 															<p class="truncate text-[10px] sm:text-xs text-placeholder hidden sm:block">@cert.CertificateType</p>
+														@if (!string.IsNullOrWhiteSpace(cert.CertificateUrl))
+														{
+															<a href="@cert.CertificateUrl" target="_blank" rel="noopener noreferrer"
+															   class="mt-1 inline-flex items-center gap-1 text-[10px] sm:text-xs text-accent hover:underline">
+																<i class="fas fa-external-link-alt"></i> Vérifier le certificat
+															</a>
+														}
 														</div>
 													</div>
 													<AdminActionDropdown ItemId="cert.Id" Status="Pending" ViewLabel="Voir" EditLabel="Modifier"
@@ -520,10 +529,10 @@ CurrentUserDisplayName[..1].ToUpperInvariant();
 			{
 				Metrics =
 				[
-					new() { IconClass = "fas fa-calendar-alt", Value = stats?.EventsCount ?? 0, Label = "Mes événements", Url = "/admin/events" },
-					new() { IconClass = "fas fa-newspaper", Value = stats?.PublishedPostsCount ?? 0, Label = "Mes articles", Url = "/admin/blog" },
-					new() { IconClass = "fas fa-folder-open", Value = stats?.ResourcesCount ?? 0, Label = "Mes ressources", Url = "/admin/ressources" },
-					new() { IconClass = "fas fa-certificate", Value = stats?.PendingCertificatesCount ?? 0, Label = "Mes certificats", Url = "/admin/certificates" }
+					new() { IconClass = "fas fa-calendar-alt", Value = stats?.EventsCount ?? 0, Label = "Mes événements", Url = "/admin/mes-evenements" },
+					new() { IconClass = "fas fa-newspaper", Value = stats?.PublishedPostsCount ?? 0, Label = "Mes articles", Url = "/admin/mes-articles" },
+					new() { IconClass = "fas fa-folder-open", Value = stats?.ResourcesCount ?? 0, Label = "Mes ressources", Url = "/admin/mes-ressources" },
+					new() { IconClass = "fas fa-code-branch", Value = stats?.ProjectsCount ?? 0, Label = "Mes projets", Url = "/admin/mes-projets" }
 				];
 			}
 			else
@@ -672,9 +681,9 @@ CurrentUserDisplayName[..1].ToUpperInvariant();
 			await CertificateAdminService.ApproveAsync(id);
 			PendingCertificates.RemoveAll(c => c.Id == id);
 		}
-		catch
+		catch (Exception ex)
 		{
-			// ignore
+			ToastService.ShowToast($"Erreur lors de l'approbation du certificat : {ex.Message}", ToastLevel.Error);
 		}
 		await LoadDashboardAsync();
 	}
@@ -686,9 +695,9 @@ CurrentUserDisplayName[..1].ToUpperInvariant();
 			await CertificateAdminService.RejectAsync(id);
 			PendingCertificates.RemoveAll(c => c.Id == id);
 		}
-		catch
+		catch (Exception ex)
 		{
-			// ignore
+			ToastService.ShowToast($"Erreur lors du rejet du certificat : {ex.Message}", ToastLevel.Error);
 		}
 		await LoadDashboardAsync();
 	}
@@ -744,6 +753,9 @@ CurrentUserDisplayName[..1].ToUpperInvariant();
 		{
 			return;
 		}
+
+		var confirmed = await ConfirmService.ShowAsync($"Supprimer définitivement « {item.Title} » ?");
+		if (!confirmed) return;
 
 		switch (item.Kind)
 		{

@@ -231,11 +231,19 @@
                     <div class="flex-1 overflow-y-auto px-6 py-6 space-y-5">
                         <EditForm Model="CreateUser" OnValidSubmit="SaveAsync">
                             <DataAnnotationsValidator />
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Nom Complet</label>
-                                <InputText @bind-Value="CreateUser.FullName"
-                                           class="w-full   rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                           placeholder="Nom Complet" />
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Prénom</label>
+                                    <InputText @bind-Value="CreateUser.FirstName"
+                                               class="w-full   rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                               placeholder="Prénom" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Nom</label>
+                                    <InputText @bind-Value="CreateUser.LastName"
+                                               class="w-full   rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                               placeholder="Nom" />
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-1">Email</label>
@@ -545,7 +553,9 @@ StringComparison.OrdinalIgnoreCase))).ToList();
 
         editingUserId = userId;
         editModel = CloneUser(user);
-        CreateUser.FullName = user.FullName;
+        var nameParts = (user.FullName ?? "").Split(' ', 2);
+        CreateUser.FirstName = nameParts.Length > 0 ? nameParts[0] : "";
+        CreateUser.LastName = nameParts.Length > 1 ? nameParts[1] : "";
         CreateUser.Email = user.Email;
         CreateUser.Password = string.Empty;
         CreateUser.IsTeamMember = user.IsTeamMember;
@@ -586,11 +596,18 @@ StringComparison.OrdinalIgnoreCase))).ToList();
 
             if (editingUserId is null)
             {
-                await UserService.CreateUserAsync(CreateUser);
+                var result = await UserService.CreateUserAsync(CreateUser);
+                if (result is null)
+                {
+                    ToastService.ShowToast("Erreur lors de la création de l'utilisateur.", ToastLevel.Error);
+                    return;
+                }
                 ToastService.ShowToast("Utilisateur créé.", ToastLevel.Success);
             }
             else
             {
+                editModel.FirstName = CreateUser.FirstName;
+                editModel.LastName = CreateUser.LastName;
                 editModel.FullName = CreateUser.FullName;
                 editModel.Email = CreateUser.Email;
                 editModel.Id = editingUserId.Value;

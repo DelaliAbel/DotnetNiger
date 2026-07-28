@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;

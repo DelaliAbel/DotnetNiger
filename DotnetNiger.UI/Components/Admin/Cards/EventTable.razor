@@ -2,6 +2,7 @@
 @using DotnetNiger.UI.Models.Responses
 @inject IEventService EventService
 @inject NavigationManager Navigation
+@inject IConfirmService ConfirmService
 
 <div class="rounded-lg bg-surface shadow-md">
     <table class="w-full">
@@ -110,6 +111,8 @@
 
     private async Task DeleteEvent(Guid id)
     {
+        var confirmed = await ConfirmService.ShowAsync("Êtes-vous sûr de vouloir supprimer cet événement ?");
+        if (!confirmed) return;
         await EventService.DeleteEventAsync(id);
         await OnChanged.InvokeAsync();
     }

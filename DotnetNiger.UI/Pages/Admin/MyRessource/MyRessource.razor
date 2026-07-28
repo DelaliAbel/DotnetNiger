@@ -5,6 +5,7 @@
 @inject IResourceService ResourceService
 @inject IToastService ToastService
 @inject IJSRuntime JS
+@inject IConfirmService ConfirmService
 @using DotnetNiger.UI.Components.Admin.Cards
 @using DotnetNiger.UI.Components.Admin.Shared
 @using DotnetNiger.UI.Components.Cards
@@ -210,10 +211,15 @@
 
     private async Task DeleteResource(Guid id)
     {
+        var resource = allResources.FirstOrDefault(r => r.Id == id);
+        var title = resource?.Title ?? "cette ressource";
+        var confirmed = await ConfirmService.ShowAsync($"Supprimer définitivement « {title} » ?");
+        if (!confirmed) return;
+
         try
         {
             await ResourceService.DeleteResourceAsync(id);
-            ToastService.ShowToast("Ressource supprimée.", ToastLevel.Success);
+            ToastService.ShowToast("Ressource supprimée définitivement.", ToastLevel.Success);
             allResources = await ResourceService.GetMyResourcesAsync();
         }
         catch

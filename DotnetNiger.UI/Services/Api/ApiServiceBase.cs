@@ -1,4 +1,5 @@
 using System.Net.Http.Json;
+using DotnetNiger.UI.Configuration;
 
 namespace DotnetNiger.UI.Services.Api;
 

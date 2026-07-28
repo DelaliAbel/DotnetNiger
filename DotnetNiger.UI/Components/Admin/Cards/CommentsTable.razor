@@ -1,9 +1,9 @@
-@* Tableau admin des commentaires avec modération inline. *@
+@* Tableau admin des commentaires — suppression uniquement. *@
 @using DotnetNiger.UI.Models.Responses
 @using DotnetNiger.UI.Models.Requests
 @inject ICommentService CommentService
 @inject IToastService ToastService
-@inject IJSRuntime JS
+@inject IConfirmService ConfirmService
 
 <div class="overflow-hidden rounded-lg bg-surface shadow-md">
     <table class="w-full">
@@ -14,7 +14,6 @@
                 <th class="px-6 py-4 text-left text-sm font-semibold text-title">Type</th>
                 <th class="px-6 py-4 text-left text-sm font-semibold text-title">Cible</th>
                 <th class="px-6 py-4 text-left text-sm font-semibold text-title">Date</th>
-                <th class="px-6 py-4 text-left text-sm font-semibold text-title">Statut</th>
                 <th class="px-6 py-4 text-left text-sm font-semibold text-title">Actions</th>
             </tr>
         </thead>
@@ -22,7 +21,7 @@
             @if (Comments is null || Comments.Count == 0)
             {
                 <tr>
-                    <td colspan="7" class="px-6 py-10 text-center text-sm text-body">Aucun commentaire trouvé.</td>
+                    <td colspan="6" class="px-6 py-10 text-center text-sm text-body">Aucun commentaire trouvé.</td>
                 </tr>
             }
             else
@@ -60,29 +59,10 @@
                         </td>
                         <td class="px-6 py-4 text-sm text-body">@comment.CreatedAt.ToString("dd/MM/yyyy")</td>
                         <td class="px-6 py-4 text-sm">
-                            <span
-                                class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold @GetStatusClass(comment.Status)">
-                                @GetStatusLabel(comment.Status)
-                            </span>
-                        </td>
-                        <td class="px-6 py-4 text-sm">
-                            <div class="flex items-center gap-2">
-                                @if (comment.Status == "pending")
-                                {
-                                    <button @onclick="() => ApproveComment(comment.Id)"
-                                            class="rounded-lg p-2 text-green-600 transition hover:bg-green-50" title="Approuver">
-                                        <i class="fas fa-check"></i>
-                                    </button>
-                                    <button @onclick="() => RejectComment(comment.Id)"
-                                            class="rounded-lg p-2 text-red-600 transition hover:bg-red-50" title="Rejeter">
-                                        <i class="fas fa-xmark"></i>
-                                    </button>
-                                }
-                                <button @onclick="() => DeleteComment(comment.Id)"
-                                        class="rounded-lg p-2 text-body transition hover:bg-gray-100" title="Supprimer">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
+                            <button @onclick="() => DeleteComment(comment.Id)"
+                                    class="rounded-lg p-2 text-body transition hover:bg-gray-100" title="Supprimer">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </td>
                     </tr>
                 }
@@ -95,47 +75,9 @@
     [Parameter] public List<CommentResponse> Comments { get; set; } = new();
     [Parameter] public EventCallback OnChanged { get; set; }
 
-    private async Task ApproveComment(Guid id)
-    {
-        var confirmed = await JS.InvokeAsync<bool>("confirm", "Approuver ce commentaire ?");
-        if (!confirmed) return;
-
-        var updated = await CommentService.ApproveCommentAsync(id);
-        if (updated is not null)
-        {
-            var comment = Comments.FirstOrDefault(c => c.Id == id);
-            if (comment is not null) comment.Status = "approved";
-            ToastService.ShowToast("Commentaire approuvé.", ToastLevel.Success);
-            await OnChanged.InvokeAsync();
-        }
-        else
-        {
-            ToastService.ShowToast("Erreur lors de l'approbation.", ToastLevel.Error);
-        }
-    }
-
-    private async Task RejectComment(Guid id)
-    {
-        var confirmed = await JS.InvokeAsync<bool>("confirm", "Rejeter ce commentaire ?");
-        if (!confirmed) return;
-
-        var updated = await CommentService.RejectCommentAsync(id);
-        if (updated is not null)
-        {
-            var comment = Comments.FirstOrDefault(c => c.Id == id);
-            if (comment is not null) comment.Status = "rejected";
-            ToastService.ShowToast("Commentaire rejeté.", ToastLevel.Success);
-            await OnChanged.InvokeAsync();
-        }
-        else
-        {
-            ToastService.ShowToast("Erreur lors du rejet.", ToastLevel.Error);
-        }
-    }
-
     private async Task DeleteComment(Guid id)
     {
-        var confirmed = await JS.InvokeAsync<bool>("confirm", "Supprimer ce commentaire ?");
+        var confirmed = await ConfirmService.ShowAsync("Supprimer ce commentaire ?");
         if (!confirmed) return;
 
         var deleted = await CommentService.DeleteCommentAsync(new DeleteCommentRequest { Id = id, DeleteAllReplies = true });
@@ -152,22 +94,6 @@
 
     private static string Truncate(string value, int maxLength)
         => value?.Length > maxLength ? value[..maxLength] + "..." : value ?? "";
-
-    private static string GetStatusClass(string status) => status switch
-    {
-        "pending" => "bg-amber-100 text-amber-700",
-        "approved" => "bg-success-bg text-success",
-        "rejected" => "bg-red-100 text-red-700",
-        _ => "bg-gray-100 text-title"
-    };
-
-    private static string GetStatusLabel(string status) => status switch
-    {
-        "pending" => "En attente",
-        "approved" => "Approuvé",
-        "rejected" => "Rejeté",
-        _ => status
-    };
 
     private static string GetTargetTitle(CommentResponse comment)
     {

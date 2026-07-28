@@ -6,6 +6,7 @@
 @inject IPostService PostService
 @inject NavigationManager NavigationManager
 @inject IToastService ToastService
+@inject IConfirmService ConfirmService
 
 <div class="group rounded-lg bg-surface shadow-md">
     <div class="relative w-full overflow-hidden aspect-video">
@@ -87,12 +88,15 @@
     {
         if (post?.Id != null)
         {
+            var confirmed = await ConfirmService.ShowAsync($"Supprimer l'article « {post.Title} » ?");
+            if (!confirmed) return;
+
             try
             {
                 bool success = await PostService.DeletePostAsync(post.Id);
                 if (success)
                 {
-                    ToastService.ShowToast("Article supprimé.", ToastLevel.Success);
+                    ToastService.ShowToast("Article supprimé définitivement.", ToastLevel.Success);
                     await OnPostDeleted.InvokeAsync();
                     StateHasChanged();
                 }
