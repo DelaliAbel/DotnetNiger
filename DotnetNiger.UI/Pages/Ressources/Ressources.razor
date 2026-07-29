@@ -106,14 +106,16 @@ else
                     }
                 </div>
             }
-
-            <div class="flex items-center justify-between mt-6">
-                <p class="text-sm text-body">
-                    @((currentPage - 1) * pageSize + 1)–@Math.Min(currentPage * pageSize, filteredResources.Count) sur
-                    @filteredResources.Count ressource@(filteredResources.Count > 1 ? "s" : "")
-                </p>
-                <Paginated @bind-CurrentPage="currentPage" TotalPages="@totalPages" MaxVisiblePages="5" />
-            </div>
+            @if (filteredResources is not null && filteredResources.Count > 0)
+            {
+                <div class="flex items-center justify-between mt-6">
+                    <p class="text-sm text-body">
+                        @((currentPage - 1) * pageSize + 1)–@Math.Min(currentPage * pageSize, filteredResources.Count) sur
+                        @filteredResources.Count ressource@(filteredResources.Count > 1 ? "s" : "")
+                    </p>
+                    <Paginated @bind-CurrentPage="currentPage" TotalPages="@totalPages" MaxVisiblePages="5" />
+                </div>
+            }
         </div>
     </section>
 }

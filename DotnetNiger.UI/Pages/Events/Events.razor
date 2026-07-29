@@ -75,11 +75,15 @@
 								<EventCard Event="@evt" />
 							}
 						</div>
-
-						@if (TotalPages > 1)
-						{
+					}
+					@if (FilteredEvents is not null && FilteredEvents.Count > 0){
+						<div class="flex items-center justify-between mt-6">
+							<p class="text-sm text-body">
+                        @((currentPage - 1) * ItemsPerPage + 1)–@Math.Min(currentPage * ItemsPerPage, FilteredEvents.Count) sur
+                        @FilteredEvents.Count event@(FilteredEvents.Count > 1 ? "s" : "")
+                    </p>
 							<Paginated CurrentPage="@currentPage" CurrentPageChanged="@OnPageChanged" TotalPages="@TotalPages" />
-						}
+						</div>
 					}
 				}
 			</div>
