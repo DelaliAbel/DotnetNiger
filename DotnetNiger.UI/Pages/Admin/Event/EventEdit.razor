@@ -669,7 +669,26 @@
 
         try
         {
-            var updated = await EventService.UpdateEventAsync(Id, eventRequest);
+            var updateRequest = new UpdateEventRequest
+            {
+                Title = eventRequest.Title,
+                Description = eventRequest.Description,
+                Location = eventRequest.Location,
+                EventType = eventRequest.EventType,
+                Category = eventRequest.Category,
+                StartDate = eventRequest.StartDate,
+                EndDate = eventRequest.EndDate,
+                CoverImageUrl = eventRequest.CoverImageUrl,
+                Capacity = eventRequest.Capacity,
+                MeetupLink = eventRequest.MeetupLink,
+                IsPublished = eventRequest.IsPublished,
+                IsArchived = eventRequest.IsArchived,
+                GalleryImageUrls = eventRequest.GalleryImageUrls,
+                Speakers = eventRequest.Speakers,
+                TagNames = eventRequest.TagNames,
+            };
+
+            var updated = await EventService.UpdateEventAsync(Id, updateRequest);
             if (updated is null)
             {
                 errorMessage = "Impossible de mettre à jour l'événement.";

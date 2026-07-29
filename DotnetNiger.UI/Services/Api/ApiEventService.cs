@@ -114,7 +114,7 @@ public class ApiEventService : ApiServiceBase, IEventService
         return await ApiResponseReader.ReadAsync<EventDto>(response);
     }
 
-    public async Task<EventDto?> UpdateEventAsync(Guid id, CreateEventRequest request)
+    public async Task<EventDto?> UpdateEventAsync(Guid id, UpdateEventRequest request)
     {
         var url = $"{ApiEndpoints.Events}/{id}";
         try

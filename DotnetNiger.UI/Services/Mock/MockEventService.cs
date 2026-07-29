@@ -290,38 +290,59 @@ public class MockEventService : IEventService
         return _events.Where(e => e.SubmittedBy == user.Id).OrderByDescending(e => e.SubmittedAt).ToList();
     }
 
-    public async Task<EventDto?> UpdateEventAsync(Guid id, CreateEventRequest request)
+    public async Task<EventDto?> UpdateEventAsync(Guid id, UpdateEventRequest request)
     {
         var ev = _events.FirstOrDefault(e => e.Id == id);
         if (ev is null) return await Task.FromResult<EventDto?>(null);
 
-        ev.Title = request.Title;
-        ev.Slug = GenerateSlug(request.Title);
-        ev.Description = request.Description;
-        ev.Location = request.Location;
-        ev.EventType = request.EventType;
-        ev.Category = request.Category;
-        ev.StartDate = request.StartDate;
-        ev.EndDate = request.EndDate;
-        ev.CoverImageUrl = request.CoverImageUrl;
-        ev.Capacity = request.Capacity;
-        ev.MeetupLink = request.MeetupLink;
-        ev.GalleryImageUrls = request.GalleryImageUrls;
-        ev.Medias = request.GalleryImageUrls.Select(url => new EventMediaDto
+        if (request.Title != null)
         {
-            Id = Guid.NewGuid(),
-            Type = "Image",
-            Url = url,
-            Title = "Galerie"
-        }).ToList();
-
-        ev.Speakers = request.Speakers?.Select(s => new SpeakerDto
+            ev.Title = request.Title;
+            ev.Slug = GenerateSlug(request.Title);
+        }
+        if (request.Description != null)
+            ev.Description = request.Description;
+        if (request.Location != null)
+            ev.Location = request.Location;
+        if (request.EventType != null)
+            ev.EventType = request.EventType;
+        if (request.Category != null)
+            ev.Category = request.Category;
+        if (request.StartDate.HasValue)
+            ev.StartDate = request.StartDate.Value;
+        if (request.EndDate.HasValue)
+            ev.EndDate = request.EndDate.Value;
+        if (request.CoverImageUrl != null)
+            ev.CoverImageUrl = request.CoverImageUrl;
+        if (request.Capacity.HasValue)
+            ev.Capacity = request.Capacity.Value;
+        if (request.MeetupLink != null)
+            ev.MeetupLink = request.MeetupLink;
+        if (request.GalleryImageUrls != null)
         {
-            UserId = s.UserId,
-            Name = s.Name,
-            Role = s.Role,
-            AvatarUrl = s.AvatarUrl
-        }).ToList() ?? new();
+            ev.GalleryImageUrls = request.GalleryImageUrls;
+            ev.Medias = request.GalleryImageUrls.Select(url => new EventMediaDto
+            {
+                Id = Guid.NewGuid(),
+                Type = "Image",
+                Url = url,
+                Title = "Galerie"
+            }).ToList();
+        }
+        if (request.Speakers != null)
+        {
+            ev.Speakers = request.Speakers.Select(s => new SpeakerDto
+            {
+                UserId = s.UserId,
+                Name = s.Name,
+                Role = s.Role,
+                AvatarUrl = s.AvatarUrl
+            }).ToList();
+        }
+        if (request.IsPublished.HasValue)
+            ev.IsPublished = request.IsPublished.Value;
+        if (request.IsArchived.HasValue)
+            ev.IsArchived = request.IsArchived.Value;
 
         return await Task.FromResult<EventDto?>(ev);
     }
