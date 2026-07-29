@@ -41,7 +41,7 @@ public class EventCommandService : IEventCommandService
         };
 
         await SyncEventTagsAsync(eventEntity, request.TagNames, request.TagIds);
-        SyncEventSpeakers(eventEntity, request.Speakers);
+        SyncEventSpeakers(eventEntity.Id, request.Speakers);
 
         _db.Events.Add(eventEntity);
         await _db.SaveChangesAsync();
@@ -53,7 +53,6 @@ public class EventCommandService : IEventCommandService
     {
         var eventEntity = await _db.Events
             .Include(e => e.EventTags)
-            .Include(e => e.Speakers)
             .FirstOrDefaultAsync(e => e.Id == id);
         if (eventEntity == null) return null;
 
@@ -78,7 +77,7 @@ public class EventCommandService : IEventCommandService
         if (request.TagNames != null)
             await SyncEventTagsAsync(eventEntity, request.TagNames, null);
 
-        SyncEventSpeakers(eventEntity, request.Speakers);
+        SyncEventSpeakers(eventEntity.Id, request.Speakers);
 
         eventEntity.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync();
@@ -168,21 +167,20 @@ public class EventCommandService : IEventCommandService
         }
     }
 
-    private void SyncEventSpeakers(Event eventEntity, List<SpeakerRequest>? speakers)
+    private void SyncEventSpeakers(Guid eventId, List<SpeakerRequest>? speakers)
     {
-        if (eventEntity.Speakers.Count != 0)
-        {
-            _db.Speakers.RemoveRange(eventEntity.Speakers);
-            eventEntity.Speakers.Clear();
-        }
+        var existing = _db.Speakers.Where(s => s.EventId == eventId).ToList();
+        if (existing.Count != 0)
+            _db.Speakers.RemoveRange(existing);
+
         if (speakers is null) return;
 
         foreach (var s in speakers)
         {
-            eventEntity.Speakers.Add(new Speaker
+            _db.Speakers.Add(new Speaker
             {
                 Id = Guid.NewGuid(),
-                EventId = eventEntity.Id,
+                EventId = eventId,
                 UserId = s.UserId,
                 Name = s.Name,
                 Role = s.Role,
