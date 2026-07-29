@@ -168,9 +168,13 @@ public class EventCommandService : IEventCommandService
         }
     }
 
-    private static void SyncEventSpeakers(Event eventEntity, List<SpeakerRequest>? speakers)
+    private void SyncEventSpeakers(Event eventEntity, List<SpeakerRequest>? speakers)
     {
-        eventEntity.Speakers.Clear();
+        if (eventEntity.Speakers.Count != 0)
+        {
+            _db.Speakers.RemoveRange(eventEntity.Speakers);
+            eventEntity.Speakers.Clear();
+        }
         if (speakers is null) return;
 
         foreach (var s in speakers)
