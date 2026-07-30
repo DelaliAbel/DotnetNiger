@@ -60,7 +60,7 @@
 						</header>
 
 						<div class="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 lg:grid-cols-3">
-							@if (projects.Count == 0)
+							@if (projects?.Count == 0)
 							{
 								<div class="col-span-full text-center py-8 sm:py-10">
 									<p class="text-xs sm:text-sm md:text-base text-body">Aucun projet pour le moment.</p>
