@@ -87,10 +87,19 @@ public class EventCommandService : IEventCommandService
     /// <summary>Supprime un événement (suppression définitive).</summary>
     public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin)
     {
-        var eventEntity = await _db.Events.FirstOrDefaultAsync(e => e.Id == id);
+        var eventEntity = await _db.Events
+            .Include(e => e.Registrations)
+            .Include(e => e.Comments)
+            .FirstOrDefaultAsync(e => e.Id == id);
         if (eventEntity == null) return false;
         if (!isAdmin && eventEntity.OrganizerId != userId)
-            throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à supprimer cet événement.");
+            throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à modifier cet événement.");
+
+        if (eventEntity.Registrations.Count != 0)
+            _db.Set<EventRegistration>().RemoveRange(eventEntity.Registrations);
+        if (eventEntity.Comments.Count != 0)
+            _db.Set<Comment>().RemoveRange(eventEntity.Comments);
+
         _db.Events.Remove(eventEntity);
         await _db.SaveChangesAsync();
         return true;
