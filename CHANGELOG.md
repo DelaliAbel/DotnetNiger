@@ -2,6 +2,8 @@
 
 ## 2026-07-30
 - **fix** : suppression des inscriptions et commentaires avant de supprimer un événement (FK restrict)
+- **mise à jour** : thème (pages auth, community)
+- **clean** : suppression `.dockerignore`, mise à jour `.md` (README, CHANGELOG, CONTRIBUTING, SECURITY)
 
 ## 2026-07-29
 - **fix** : envoie `UpdateEventRequest` au PUT API pour corriger la mise à jour des événements
