@@ -78,7 +78,7 @@
                         <div>
                             <label class="block text-sm font-semibold text-title">Nom *</label>
                             <InputText @bind-Value="updateRequest.Name"
-                                       class="mt-1 w-full rounded-lg px-4 py-3 text-sm transition focus:outline-none text-body"
+                                       class="mt-1 w-full rounded-lg bg-surface shadow-md px-4 py-3 text-sm transition focus:outline-none text-body"
                                        placeholder="Nom du partenaire" />
                             <ValidationMessage For="@(() => updateRequest.Name)" class="mt-1 text-xs text-red-500" />
                         </div>
@@ -86,7 +86,7 @@
                         <div>
                             <label class="block text-sm font-semibold text-title">Type</label>
                             <InputSelect @bind-Value="updateRequest.PartnerType"
-                                         class="mt-1 w-full rounded-lg bg-surface px-4 py-3 text-sm transition focus:outline-none text-body">
+                                         class="mt-1 w-full rounded-lg shadow-md bg-surface px-4 py-3 text-sm transition focus:outline-none text-body">
                                 <option value="sponsor">Sponsor</option>
                                 <option value="education">Éducation</option>
                             </InputSelect>
@@ -96,7 +96,7 @@
                     <div>
                         <label class="block text-sm font-semibold text-title">Description</label>
                         <InputTextArea @bind-Value="updateRequest.Description" rows="4"
-                                       class="mt-1 w-full rounded-lg px-4 py-3 text-sm transition focus:outline-none text-body"
+                                       class="mt-1 w-full rounded-lg px-4 py-3 text-sm bg-surface shadow-md transition focus:outline-none text-body"
                                        placeholder="Décrivez le partenaire..." />
                     </div>
 
@@ -104,14 +104,14 @@
                         <div>
                             <label class="block text-sm font-semibold text-title">URL du logo</label>
                             <InputText @bind-Value="updateRequest.LogoUrl"
-                                       class="mt-1 w-full rounded-lg px-4 py-3 text-sm transition focus:outline-none text-body"
+                                       class="mt-1 w-full rounded-lg bg-surface shadow-md px-4 py-3 text-sm transition focus:outline-none text-body"
                                        placeholder="https://..." />
                         </div>
 
                         <div>
                             <label class="block text-sm font-semibold text-title">Site web</label>
                             <InputText @bind-Value="updateRequest.WebsiteUrl"
-                                       class="mt-1 w-full rounded-lg px-4 py-3 text-sm transition focus:outline-none text-body"
+                                       class="mt-1 w-full rounded-lg bg-surface shadow-md px-4 py-3 text-sm transition focus:outline-none text-body"
                                        placeholder="https://..." />
                         </div>
                     </div>
@@ -120,7 +120,7 @@
                         <div>
                             <label class="block text-sm font-semibold text-title">Ordre d'affichage</label>
                             <InputNumber @bind-Value="updateRequest.SortOrder"
-                                         class="mt-1 w-full rounded-lg px-4 py-3 text-sm transition focus:outline-none text-body" />
+                                         class="mt-1 w-full rounded-lg px-4 py-3 text-sm bg-surface shadow-md transition focus:outline-none text-body" />
                         </div>
 
                         <div class="flex items-end pb-3">
@@ -160,10 +160,19 @@
     private string errorMessage = string.Empty;
     private bool isLoading = true;
     private bool notFound;
+    private Guid _loadedId;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadPartnerAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != Guid.Empty && _loadedId != Id)
+        {
+            await LoadPartnerAsync();
+        }
     }
 
     private async Task LoadPartnerAsync()
@@ -197,6 +206,7 @@
         }
         finally
         {
+            _loadedId = Id;
             isLoading = false;
         }
     }

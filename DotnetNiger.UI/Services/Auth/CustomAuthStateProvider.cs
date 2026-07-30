@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
@@ -137,8 +138,9 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
             await _js.InvokeVoidAsync("localStorage.setItem", AccessTokenKey, accessToken);
             await _js.InvokeVoidAsync("localStorage.setItem", RefreshTokenKey, refreshToken);
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"[AuthState] SaveTokens: échec écriture localStorage — {ex.Message}");
         }
         NotifyAuthenticationStateChanged(Task.FromResult(CreateAuthenticatedState(accessToken)));
     }
@@ -150,18 +152,27 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         return new AuthenticationState(new ClaimsPrincipal(identity));
     }
 
-    public async Task ClearTokensAsync()
+    public async Task ClearTokensAsync(bool clearAllStorage = true)
     {
         _accessToken = null;
 
         try
         {
+            // Clear auth tokens
             await _js.InvokeVoidAsync("localStorage.removeItem", AccessTokenKey);
             await _js.InvokeVoidAsync("localStorage.removeItem", RefreshTokenKey);
             await _js.InvokeVoidAsync("localStorage.removeItem", "dn_wasm_runtime_registry_member");
+            
+            // Optional: Clear all storage for maximum security
+            if (clearAllStorage)
+            {
+                await _js.InvokeVoidAsync("localStorage.clear");
+                await _js.InvokeVoidAsync("sessionStorage.clear");
+            }
         }
-        catch
+        catch (Exception ex)
         {
+            Debug.WriteLine($"[AuthState] ClearTokens: échec suppression localStorage — {ex.Message}");
         }
         NotifyAuthenticationStateChanged(Task.FromResult(Anonymous));
     }

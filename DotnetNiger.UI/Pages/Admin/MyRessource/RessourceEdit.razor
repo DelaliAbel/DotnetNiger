@@ -18,7 +18,7 @@
 
     @if (!isLoading)
     {
-        <div class="bg-surface rounded-lg shadow p-6">
+        <div class="bg-fondTransparent rounded-lg shadow-md p-6">
             <h2 class="text-xl font-semibold mb-6 text-title">Modifier la ressource</h2>
 
             @if (!string.IsNullOrEmpty(errorMessage))
@@ -31,28 +31,28 @@
                 <div>
                     <label class="block text-sm font-medium mb-1 text-title">Titre *</label>
                     <InputText @bind-Value="resourceRequest.Title"
-                               class="w-full text-body rounded-lg px-4 py-2 focus:outline-none"
+                               class="w-full text-body bg-surface shadow-md rounded-lg px-4 py-2 focus:outline-none"
                                placeholder="Titre de la ressource" />
                     <ValidationMessage For="@(() => resourceRequest.Title)" class="text-xs text-red-500 mt-1" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1 text-title">Description *</label>
                     <InputTextArea @bind-Value="resourceRequest.Description" rows="3"
-                                   class="w-full text-body rounded-lg px-4 py-2 focus:outline-none"
+                                   class="w-full text-body bg-surface shadow-md rounded-lg px-4 py-2 focus:outline-none"
                                    placeholder="Description de la ressource" />
                     <ValidationMessage For="@(() => resourceRequest.Description)" class="text-xs text-red-500 mt-1" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1 text-title">URL *</label>
                     <InputText @bind-Value="resourceRequest.Url"
-                               class="w-full text-body rounded-lg px-4 py-2 focus:outline-none"
+                               class="w-full text-body bg-surface shadow-md rounded-lg px-4 py-2 focus:outline-none"
                                placeholder="https://..." />
                     <ValidationMessage For="@(() => resourceRequest.Url)" class="text-xs text-red-500 mt-1" />
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1">Type *</label>
                     <InputSelect @bind-Value="resourceRequest.ResourceType"
-                                 class="w-full text-body rounded-lg px-4 py-2 bg-surface focus:outline-none">
+                                 class="w-full text-body shadow-md rounded-lg px-4 py-2 bg-surface focus:outline-none">
                         <option value="">Selectionner un type</option>
                         <option value="Documentation">Documentation</option>
                         <option value="Tutoriel">Tutoriel</option>
@@ -67,7 +67,7 @@
                 <div>
                     <label class="block text-sm font-medium mb-1 text-title">Niveau *</label>
                     <InputSelect @bind-Value="resourceRequest.Level"
-                                 class="w-full text-body rounded-lg px-4 py-2 bg-surface focus:outline-none">
+                                 class="w-full text-body shadow-md rounded-lg px-4 py-2 bg-surface focus:outline-none">
                         <option value="">Selectionner un niveau</option>
                         <option value="Débutant">Débutant</option>
                         <option value="Intermediaire">Intermediaire</option>
@@ -88,7 +88,7 @@
     }
     else
     {
-        <div class="bg-surface rounded-lg shadow p-6 space-y-5">
+        <div class="bg-fondTransparent rounded-lg shadow p-6 space-y-5">
             <Skeleton Type="SkeletonType.Title" Class="w-48" />
             <Skeleton Type="SkeletonType.Text" Lines="1" Class="w-16" />
             <Skeleton Type="SkeletonType.Custom" Class="h-10 w-full rounded-lg" />
@@ -107,8 +107,22 @@
     private bool isLoading = true;
     private CreateResourceRequest resourceRequest = new();
     private string errorMessage = string.Empty;
+    private Guid _loadedId;
 
     protected override async Task OnInitializedAsync()
+    {
+        await LoadResourceAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != Guid.Empty && _loadedId != Id)
+        {
+            await LoadResourceAsync();
+        }
+    }
+
+    private async Task LoadResourceAsync()
     {
         isLoading = true;
         try
@@ -136,6 +150,7 @@
         }
         finally
         {
+            _loadedId = Id;
             isLoading = false;
         }
     }

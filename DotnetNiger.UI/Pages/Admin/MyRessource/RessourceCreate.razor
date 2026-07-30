@@ -16,7 +16,7 @@
         </button>
     </div>
 
-    <div class="bg-surface rounded-lg shadow p-6">
+    <div class="bg-fondTransparent rounded-lg shadow-md p-6">
         <h2 class="text-xl font-semibold mb-6 text-title">Nouvelle ressource</h2>
 
         @if (!string.IsNullOrEmpty(errorMessage))
@@ -29,28 +29,28 @@
             <div>
                 <label class="block text-sm font-medium mb-1 text-title">Titre *</label>
                 <InputText @bind-Value="resourceRequest.Title"
-                           class="w-full text-body rounded-lg px-4 py-2 focus:outline-non"
+                           class="w-full text-body bg-surface shadow-md rounded-lg px-4 py-2 focus:outline-non"
                            placeholder="Titre de la ressource" />
                 <ValidationMessage For="@(() => resourceRequest.Title)" class="text-xs text-red-500 mt-1" />
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1 text-title">Description *</label>
                 <InputTextArea @bind-Value="resourceRequest.Description" rows="3"
-                               class="w-full text-body rounded-lg px-4 py-2 focus:outline-non"
+                               class="w-full text-body bg-surface shadow-md rounded-lg px-4 py-2 focus:outline-non"
                                placeholder="Description de la ressource" />
                 <ValidationMessage For="@(() => resourceRequest.Description)" class="text-xs text-red-500 mt-1" />
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1 text-title">URL *</label>
                 <InputText @bind-Value="resourceRequest.Url"
-                           class="w-full text-body rounded-lg px-4 py-2 focus:outline-non"
+                           class="w-full text-body bg-surface shadow-md rounded-lg px-4 py-2 focus:outline-non"
                            placeholder="https://..." />
                 <ValidationMessage For="@(() => resourceRequest.Url)" class="text-xs text-red-500 mt-1" />
             </div>
             <div>
                 <label class="block text-sm font-medium mb-1 text-title">Type *</label>
                 <InputSelect @bind-Value="resourceRequest.ResourceType"
-                             class="w-full text-body rounded-lg px-4 py-2 bg-surface focus:outline-non">
+                             class="w-full text-body shadow-md rounded-lg px-4 py-2 bg-surface focus:outline-non">
                     <option value="">Selectionner un type</option>
                     <option value="Documentation">Documentation</option>
                     <option value="Tutoriel">Tutoriel</option>
@@ -65,7 +65,7 @@
             <div>
                 <label class="block text-sm font-medium mb-1 text-title">Niveau *</label>
                 <InputSelect @bind-Value="resourceRequest.Level"
-                             class="w-full text-body rounded-lg px-4 py-2 bg-surface focus:outline-non">
+                             class="w-full text-body shadow-md rounded-lg px-4 py-2 bg-surface focus:outline-non">
                     <option value="">Selectionner un niveau</option>
                     <option value="Débutant">Débutant</option>
                     <option value="Intermediaire">Intermediaire</option>

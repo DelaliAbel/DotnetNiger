@@ -1,0 +1,115 @@
+using Microsoft.EntityFrameworkCore;
+using DotnetNiger.Api.Application.DTOs.Responses;
+using DotnetNiger.Api.Domain.Entities;
+using DotnetNiger.Api.Infrastructure.Data;
+
+namespace DotnetNiger.Api.Application.Services.Settings;
+
+/// <summary>Service de gestion des paramètres du site (CRUD clé/valeur).</summary>
+public class SettingsService : ISettingsService
+{
+    private readonly DotnetNigerDbContext _db;
+
+    public SettingsService(DotnetNigerDbContext db) => _db = db;
+
+    /// <summary>Récupère tous les paramètres du site.</summary>
+    public async Task<List<SiteSettingResponse>> GetAllAsync()
+    {
+        return await _db.SiteSettings.AsNoTracking()
+            .OrderBy(s => s.Key)
+            .Select(s => new SiteSettingResponse
+            {
+                Key = s.Key,
+                Value = s.Value,
+                Type = s.Type,
+                Description = s.Description
+            })
+            .ToListAsync();
+    }
+
+    /// <summary>Récupère un paramètre par sa clé.</summary>
+    public async Task<SiteSettingResponse?> GetByKeyAsync(string key)
+    {
+        var setting = await _db.SiteSettings.FindAsync(key);
+        return setting == null ? null : MapToResponse(setting);
+    }
+
+    /// <summary>Définit ou met à jour un paramètre par clé/valeur.</summary>
+    public async Task<SiteSettingResponse> SetAsync(string key, string value)
+    {
+        var setting = await _db.SiteSettings.FindAsync(key);
+        if (setting == null)
+        {
+            setting = new SiteSetting
+            {
+                Id = key,
+                Key = key,
+                Value = value,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _db.SiteSettings.Add(setting);
+        }
+        else
+        {
+            setting.Value = value;
+            setting.UpdatedAt = DateTime.UtcNow;
+        }
+        await _db.SaveChangesAsync();
+        return MapToResponse(setting);
+    }
+
+    /// <summary>Définit plusieurs paramètres en une seule opération atomique.</summary>
+    public async Task SetBatchAsync(Dictionary<string, string> settings)
+    {
+        foreach (var (key, value) in settings)
+        {
+            var setting = await _db.SiteSettings.FindAsync(key);
+            if (setting == null)
+            {
+                _db.SiteSettings.Add(new SiteSetting
+                {
+                    Id = key,
+                    Key = key,
+                    Value = value,
+                    UpdatedAt = DateTime.UtcNow
+                });
+            }
+            else
+            {
+                setting.Value = value;
+                setting.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+        await _db.SaveChangesAsync();
+    }
+
+    /// <summary>Récupère les paramètres publics du site.</summary>
+    public async Task<PublicSettingsResponse> GetPublicSettingsAsync()
+    {
+        var dict = await _db.SiteSettings.AsNoTracking()
+            .ToDictionaryAsync(s => s.Key, s => s.Value, StringComparer.OrdinalIgnoreCase);
+
+        return new PublicSettingsResponse
+        {
+            SiteName = dict.GetValueOrDefault("site_name", ".NET Niger"),
+            DefaultOgImage = dict.GetValueOrDefault("default_og_image", "/images/og-default.jpg"),
+            LogoUrl = dict.GetValueOrDefault("logo_url", ""),
+            ContactEmail = dict.GetValueOrDefault("contact_email", "")
+        };
+    }
+
+    /// <summary>Supprime un paramètre par sa clé.</summary>
+    public async Task<bool> DeleteAsync(string key)
+    {
+        var setting = await _db.SiteSettings.FindAsync(key);
+        if (setting == null) return false;
+        _db.SiteSettings.Remove(setting);
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
+    private static SiteSettingResponse MapToResponse(SiteSetting s) => new()
+    {
+        Key = s.Key, Value = s.Value, Type = s.Type, Description = s.Description
+    };
+}

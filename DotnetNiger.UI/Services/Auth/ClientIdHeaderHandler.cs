@@ -46,6 +46,18 @@ public class ClientIdHeaderHandler : DelegatingHandler
 
         var response = await base.SendAsync(request, cancellationToken);
 
+        if (response.StatusCode == HttpStatusCode.TooManyRequests)
+        {
+            _logger.LogWarning("Requête rate-limited (429) sur {Method} {Uri}", request.Method, request.RequestUri);
+
+            var retryAfter = response.Headers.RetryAfter;
+            var retryAfterSeconds = retryAfter?.Delta?.TotalSeconds ?? 60;
+
+            _logger.LogInformation("Retry-After: {Seconds}s", retryAfterSeconds);
+
+            return response;
+        }
+
         if (response.StatusCode == HttpStatusCode.Unauthorized
             && request.Headers.Authorization != null
             && request.RequestUri != null

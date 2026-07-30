@@ -10,6 +10,7 @@
 @inject IUserStateService UserStateService
 @inject NavigationManager Navigation
 @inject IToastService ToastService
+@inject IConfirmService ConfirmService
 @inject IUploadService UploadService
 @inject IJSRuntime JS
 
@@ -225,17 +226,25 @@
                 class="fixed top-0 right-0 h-screen w-full sm:w-4/5 md:w-3/5 lg:w-2/5 bg-surface shadow-lg z-50 transform transition-transform duration-300">
                 <div class="flex flex-col h-full">
                     <div class="flex justify-between items-center px-6 py-4 border-b">
-                        <h2 class="text-xl font-semibold"> "Nouveau utilisateur"</h2>
+                        <h2 class="text-xl font-semibold">Nouveau Membre</h2>
                         <button @onclick="CloseForm" class="text-body hover:text-black text-lg">&times;</button>
                     </div>
                     <div class="flex-1 overflow-y-auto px-6 py-6 space-y-5">
                         <EditForm Model="CreateUser" OnValidSubmit="SaveAsync">
                             <DataAnnotationsValidator />
-                            <div>
-                                <label class="block text-sm font-medium mb-1">Nom Complet</label>
-                                <InputText @bind-Value="CreateUser.FullName"
-                                           class="w-full   rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                           placeholder="Titre de la ressource" />
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Prénom</label>
+                                    <InputText @bind-Value="CreateUser.FirstName"
+                                               class="w-full   rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                               placeholder="Prénom" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium mb-1">Nom</label>
+                                    <InputText @bind-Value="CreateUser.LastName"
+                                               class="w-full   rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                               placeholder="Nom" />
+                                </div>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium mb-1">Email</label>
@@ -257,7 +266,7 @@
                             </div>
 
                             <label class="flex items-center gap-3 cursor-pointer">
-                                <InputCheckbox @bind-Value="CreateUser.IsTeamMember"
+                                <InputCheckbox  @bind-Value="CreateUser.IsTeamMember"
                                                class="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary" />
                                 <span class="text-sm font-medium">Intégrer à l'équipe</span>
                             </label>
@@ -460,11 +469,21 @@ StringComparison.OrdinalIgnoreCase))).ToList();
 
     private async Task DeleteAsync(Guid userId)
     {
+        var confirmed = await ConfirmService.ShowAsync("Supprimer définitivement cet utilisateur ?");
+        if (!confirmed) return;
+
         try
         {
-            await UserService.DeleteUserAsync(userId);
-            ToastService.ShowToast("Utilisateur supprimé.", ToastLevel.Success);
-            await ReloadAsync();
+            var success = await UserService.DeleteUserAsync(userId);
+            if (success)
+            {
+                ToastService.ShowToast("Utilisateur supprimé.", ToastLevel.Success);
+                await ReloadAsync();
+            }
+            else
+            {
+                ToastService.ShowToast("Erreur lors de la suppression.", ToastLevel.Error);
+            }
         }
         catch
         {
@@ -545,7 +564,9 @@ StringComparison.OrdinalIgnoreCase))).ToList();
 
         editingUserId = userId;
         editModel = CloneUser(user);
-        CreateUser.FullName = user.FullName;
+        var nameParts = (user.FullName ?? "").Split(' ', 2);
+        CreateUser.FirstName = nameParts.Length > 0 ? nameParts[0] : "";
+        CreateUser.LastName = nameParts.Length > 1 ? nameParts[1] : "";
         CreateUser.Email = user.Email;
         CreateUser.Password = string.Empty;
         CreateUser.IsTeamMember = user.IsTeamMember;
@@ -586,11 +607,18 @@ StringComparison.OrdinalIgnoreCase))).ToList();
 
             if (editingUserId is null)
             {
-                await UserService.CreateUserAsync(CreateUser);
+                var result = await UserService.CreateUserAsync(CreateUser);
+                if (result is null)
+                {
+                    ToastService.ShowToast("Erreur lors de la création de l'utilisateur.", ToastLevel.Error);
+                    return;
+                }
                 ToastService.ShowToast("Utilisateur créé.", ToastLevel.Success);
             }
             else
             {
+                editModel.FirstName = CreateUser.FirstName;
+                editModel.LastName = CreateUser.LastName;
                 editModel.FullName = CreateUser.FullName;
                 editModel.Email = CreateUser.Email;
                 editModel.Id = editingUserId.Value;

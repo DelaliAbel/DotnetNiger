@@ -33,9 +33,9 @@
 				<select @bind="selectedCategory"
 						class="bg-surface text-body px-4 py-3 rounded-lg focus:outline-none text-sm min-w-[150px]">
 					<option value="">Catégorie</option>
-					<option value="Auteur">Auteur</option>
-					<option value="Lecteur">Lecteur</option>
-					<option value="Mentor">Mentor</option>
+					<option value="Tutorial">Tutorial</option>
+					<option value="Article">Article</option>
+					<option value="Interview">Interview</option>
 				</select>
 			</div>
 
@@ -62,7 +62,7 @@
 				}
 				else if (pagedPosts.Count == 0)
 				{
-					<p class="col-span-full text-center text-xs sm:text-sm md:text-base text-primary/70">
+					<p class="col-span-full text-center text-xs sm:text-sm md:text-base text-body">
 						@if (!string.IsNullOrWhiteSpace(tag))
 						{
 							<span>Aucun article trouvé pour le tag <strong>#@tag</strong>.</span>
@@ -84,7 +84,11 @@
 			</div>
 			@if (allPosts is not null && allPosts.Count > 0)
 			{
-				<div>
+				<div class="flex items-center justify-between mt-6">
+					<p class="text-sm text-body">
+                        @((currentPage - 1) * pageSize + 1)–@Math.Min(currentPage * pageSize, filteredPosts.Count) sur
+                        @filteredPosts.Count post@(filteredPosts.Count > 1 ? "s" : "")
+                    </p>
 					<Paginated @bind-CurrentPage="currentPage" TotalPages="@totalPages" />
 				</div>
 			}

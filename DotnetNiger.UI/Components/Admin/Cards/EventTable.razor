@@ -2,6 +2,7 @@
 @using DotnetNiger.UI.Models.Responses
 @inject IEventService EventService
 @inject NavigationManager Navigation
+@inject IConfirmService ConfirmService
 
 <div class="rounded-lg bg-surface shadow-md">
     <table class="w-full">
@@ -53,9 +54,10 @@
                         <td class="px-6 py-4 text-sm text-body">@ev.RegisteredCount / @ev.Capacity</td>
                         <td class="px-6 py-4 text-sm">
                             <AdminActionDropdown ItemId="ev.Id" Status="@(ev.Status)" ReviewStatusValue="PendingReview"
-                                                 ViewLabel="Voir l'événement" EditLabel="Modifier" DeleteLabel="Supprimer" ApproveLabel="Publier"
-                                                 RejectLabel="Rejeter" OnView="OpenEvent" OnEdit="EditEvent" OnDelete="DeleteEvent"
-                                                 OnApprove="PublishEvent" OnReject="DeleteEvent" />
+                                                  ViewLabel="Voir l'événement" EditLabel="Modifier" DeleteLabel="Supprimer" ApproveLabel="Publier"
+                                                  RejectLabel="Rejeter" OnView="OpenEvent" OnEdit="EditEvent" OnDelete="DeleteEvent"
+                                                  OnApprove="PublishEvent" OnReject="DeleteEvent"
+                                                  ToggleStatusLabel="@(ev.Status == "Published" ? "Dépublier" : "Publier")" OnToggleStatus="@ToggleEventStatus" />
                         </td>
                     </tr>
                 }
@@ -110,6 +112,8 @@
 
     private async Task DeleteEvent(Guid id)
     {
+        var confirmed = await ConfirmService.ShowAsync("Êtes-vous sûr de vouloir supprimer cet événement ?");
+        if (!confirmed) return;
         await EventService.DeleteEventAsync(id);
         await OnChanged.InvokeAsync();
     }
@@ -117,6 +121,12 @@
     private async Task PublishEvent(Guid id)
     {
         await EventService.ApproveEventAsync(id);
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task ToggleEventStatus(Guid id)
+    {
+        await EventService.TogglePublishAsync(id);
         await OnChanged.InvokeAsync();
     }
 }

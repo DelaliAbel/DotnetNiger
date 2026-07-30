@@ -1,8 +1,10 @@
 ﻿@page "/admin/events/{Slug}"
+@page "/admin/events/{Id:guid}"
 @* @attribute [Authorize(Roles = "Admin,SuperAdmin,Collaborator")] *@
 @using Microsoft.AspNetCore.Components.Web
 @using DotnetNiger.UI.Models.Responses
 @using DotnetNiger.UI.Services.Contracts
+@inject IConfirmService ConfirmService
 @using System.Globalization
 @inject IEventService EventService
 @inject NavigationManager NavigationManager
@@ -314,37 +316,73 @@
     [Parameter]
     public string? Slug { get; set; }
 
+    [Parameter]
+    public Guid? Id { get; set; }
+
     private static readonly CultureInfo FrCulture = CultureInfo.GetCultureInfo("fr-FR");
     private EventDto? CurrentEvent { get; set; }
     private bool IsLoading { get; set; } = true;
     private string? LoadError { get; set; }
     private bool _showLightbox;
     private int _lightboxIndex;
+    private string? _loadedIdentifier;
 
     protected override async Task OnInitializedAsync()
     {
-        if (Slug is null)
+        await LoadEventAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var key = Id.HasValue ? Id.Value.ToString() : Slug ?? "";
+        if (!string.IsNullOrWhiteSpace(key) && _loadedIdentifier != key)
+        {
+            await LoadEventAsync();
+        }
+    }
+
+    private async Task LoadEventAsync()
+    {
+        if (Id.HasValue)
+        {
+            try
+            {
+                CurrentEvent = await EventService.GetEventByIdAsync(Id.Value);
+                if (CurrentEvent is null)
+                    LoadError = "L'événement demandé n'existe pas.";
+            }
+            catch (Exception ex)
+            {
+                LoadError = ex.Message;
+            }
+            finally
+            {
+                _loadedIdentifier = Id.Value.ToString();
+                IsLoading = false;
+            }
+        }
+        else if (!string.IsNullOrWhiteSpace(Slug))
+        {
+            try
+            {
+                CurrentEvent = await EventService.GetEventBySlugAsync(Slug);
+                if (CurrentEvent is null)
+                    LoadError = "L'événement demandé n'existe pas.";
+            }
+            catch (Exception ex)
+            {
+                LoadError = ex.Message;
+            }
+            finally
+            {
+                _loadedIdentifier = Slug;
+                IsLoading = false;
+            }
+        }
+        else
         {
             IsLoading = false;
             LoadError = "Identifiant d'événement invalide.";
-            return;
-        }
-
-        try
-        {
-            CurrentEvent = await EventService.GetEventBySlugAsync(Slug);
-            if (CurrentEvent is null)
-            {
-                LoadError = "L'événement demandé n'existe pas.";
-            }
-        }
-        catch (Exception ex)
-        {
-            LoadError = ex.Message;
-        }
-        finally
-        {
-            IsLoading = false;
         }
     }
 
@@ -406,6 +444,8 @@
     private async Task DeleteEvent()
     {
         if (CurrentEvent is null) return;
+        var confirmed = await ConfirmService.ShowAsync("Êtes-vous sûr de vouloir supprimer cet événement ?");
+        if (!confirmed) return;
         await EventService.DeleteEventAsync(CurrentEvent.Id);
         NavigationManager.NavigateTo("/admin/events");
     }

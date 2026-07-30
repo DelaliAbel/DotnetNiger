@@ -1,15 +1,15 @@
 using System.Net.Http.Json;
+using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
+using Microsoft.Extensions.Logging;
 
 namespace DotnetNiger.UI.Services.Api;
 
 public class ApiProjectService : ApiServiceBase, IProjectService
 {
-    public ApiProjectService(HttpClient http) : base(http)
-    {
-    }
+    public ApiProjectService(HttpClient http, ILogger<ApiProjectService> logger) : base(http, logger) { }
 
     public async Task<PaginatedDto<ProjectResponse>> GetAllAsync(string? status, string? query, int page = 1, int pageSize = 10)
     {
@@ -18,60 +18,162 @@ public class ApiProjectService : ApiServiceBase, IProjectService
             ["page"] = page.ToString(), ["pageSize"] = pageSize.ToString(),
             ["status"] = status, ["query"] = query
         };
-        var response = await Http.GetAsync(BuildUrl(ApiEndpoints.Projects, q));
-        if (!response.IsSuccessStatusCode)
+        var url = BuildUrl(ApiEndpoints.Projects, q);
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return new PaginatedDto<ProjectResponse>();
+            }
+            return await ApiResponseReader.ReadAsync<PaginatedDto<ProjectResponse>>(response)
+                   ?? new PaginatedDto<ProjectResponse>();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
             return new PaginatedDto<ProjectResponse>();
-        return await ApiResponseReader.ReadAsync<PaginatedDto<ProjectResponse>>(response)
-               ?? new PaginatedDto<ProjectResponse>();
+        }
     }
 
     public async Task<List<ProjectResponse>> GetFeaturedAsync()
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Projects}/featured");
-        if (!response.IsSuccessStatusCode) return [];
-        return await ApiResponseReader.ReadCollectionAsync<ProjectResponse>(response);
+        var url = $"{ApiEndpoints.Projects}/featured";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return [];
+            }
+            return await ApiResponseReader.ReadCollectionAsync<ProjectResponse>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
+            return [];
+        }
     }
 
     public async Task<ProjectResponse?> GetByIdAsync(Guid id)
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Projects}/{id}");
-        if (!response.IsSuccessStatusCode) return null;
-        return await ApiResponseReader.ReadAsync<ProjectResponse>(response);
+        var url = $"{ApiEndpoints.Projects}/{id}";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<ProjectResponse>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
+            return null;
+        }
     }
 
     public async Task<ProjectResponse?> GetBySlugAsync(string slug)
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Projects}/slug/{slug}");
-        if (!response.IsSuccessStatusCode) return null;
-        return await ApiResponseReader.ReadAsync<ProjectResponse>(response);
+        var url = $"{ApiEndpoints.Projects}/slug/{slug}";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<ProjectResponse>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
+            return null;
+        }
     }
 
     public async Task<ProjectResponse?> CreateAsync(CreateProjectRequest request)
     {
-        var response = await Http.PostAsJsonAsync(ApiEndpoints.Projects, request);
-        if (!response.IsSuccessStatusCode)
+        var url = ApiEndpoints.Projects;
+        try
+        {
+            var response = await Http.PostAsJsonAsync(url, request);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on POST {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<ProjectResponse>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on POST {Url}", url);
             return null;
-        return await ApiResponseReader.ReadAsync<ProjectResponse>(response);
+        }
     }
 
     public async Task<ProjectResponse?> UpdateAsync(Guid id, UpdateProjectRequest request)
     {
-        var response = await Http.PutAsJsonAsync($"{ApiEndpoints.Projects}/{id}", request);
-        if (!response.IsSuccessStatusCode) return null;
-        return await ApiResponseReader.ReadAsync<ProjectResponse>(response);
+        var url = $"{ApiEndpoints.Projects}/{id}";
+        try
+        {
+            var response = await Http.PutAsJsonAsync(url, request);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on PUT {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<ProjectResponse>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on PUT {Url}", url);
+            return null;
+        }
     }
 
     public async Task<bool> DeleteAsync(Guid id)
     {
-        var response = await Http.DeleteAsync($"{ApiEndpoints.Projects}/{id}");
-        return response.IsSuccessStatusCode;
+        var url = $"{ApiEndpoints.Projects}/{id}";
+        try
+        {
+            var response = await Http.DeleteAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on DELETE {Url}", (int)response.StatusCode, url);
+                return false;
+            }
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on DELETE {Url}", url);
+            return false;
+        }
     }
 
     public async Task<List<ProjectResponse>> GetMyProjectsAsync()
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Projects}/mine");
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Projects}/mine";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return new List<ProjectResponse>();
+            }
+            return await ApiResponseReader.ReadCollectionAsync<ProjectResponse>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
             return new List<ProjectResponse>();
-        return await ApiResponseReader.ReadCollectionAsync<ProjectResponse>(response);
+        }
     }
 }

@@ -1,6 +1,8 @@
 ﻿@* Carte admin des événements avec menu d'actions harmonisé. *@
 @using DotnetNiger.UI.Models.Responses
 @inject NavigationManager NavigationManager
+@inject IEventService EventService
+@inject IConfirmService ConfirmService
 
 <div class="group rounded-lg bg-surface shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5">
     <div class="relative w-full overflow-hidden aspect-video">
@@ -24,7 +26,8 @@
             <AdminActionDropdown ItemId="@(Event?.Id ?? Guid.Empty)" Status="@(Event?.Status ?? "Draft")" ReviewStatusValue="PendingReview"
                                  ViewLabel="Voir l'événement" EditLabel="Modifier" DeleteLabel="Supprimer" ApproveLabel="Publier"
                                  RejectLabel="Rejeter" OnView="OpenEvent" OnEdit="EditEvent" OnDelete="DeleteEvent"
-                                 OnApprove="SetPublished" OnReject="DeleteEvent" />
+                                 OnApprove="SetPublished" OnReject="DeleteEvent"
+                                 ToggleStatusLabel="@(IsPublished ? "Dépublier" : "Publier")" OnToggleStatus="@ToggleEventStatus" />
         </div>
 
         <p class="mb-4 line-clamp-3 text-sm leading-6 text-body break-words">
@@ -103,6 +106,9 @@
     private async Task DeleteEvent(Guid id)
     {
         if (Event is null) return;
+        var confirmed = await ConfirmService.ShowAsync("Êtes-vous sûr de vouloir supprimer cet événement ?");
+        if (!confirmed) return;
+        await EventService.DeleteEventAsync(Event.Id);
         await OnEventDeleted.InvokeAsync();
     }
 
@@ -122,5 +128,12 @@
     {
         if (Event is null) return;
         await OnSetArchived.InvokeAsync(Event.Id);
+    }
+
+    private async Task ToggleEventStatus(Guid id)
+    {
+        if (Event is null) return;
+        await EventService.TogglePublishAsync(Event.Id);
+        await OnEventDeleted.InvokeAsync();
     }
 }

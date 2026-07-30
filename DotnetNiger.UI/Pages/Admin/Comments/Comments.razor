@@ -98,15 +98,15 @@ else
 
                     <div class="flex-1 min-w-0">
                         <div class="relative">
-                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                            <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-body"></i>
                             <input type="text" placeholder="Rechercher un commentaire..." @bind="searchQuery"
                                    @bind:event="oninput"
-                                   class="w-full rounded-lg     bg-surface py-2.5 pl-9 pr-4 text-sm text-title outline-none placeholder:text-gray-400" />
+                                   class="w-full rounded-lg bg-surface py-2.5 pl-9 pr-4 text-sm shadow-md text-body outline-none placeholder:text-body" />
                         </div>
                     </div>
 
                     <select @bind="typeFilter"
-                            class="cursor-pointer rounded-lg     bg-surface px-4 py-2.5 text-sm text-title shadow-sm outline-none transition hover:border-gray-300">
+                            class="cursor-pointer rounded-lg bg-surface px-4 py-2.5 text-sm text-body shadow-md outline-none transition hover:border-gray-300">
                         <option value="">Type</option>
                         <option value="post">Articles</option>
                         <option value="event">Événements</option>

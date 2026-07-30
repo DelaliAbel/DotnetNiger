@@ -6,11 +6,11 @@
 
 <PageTitle>Vérification e-mail - .NET Niger</PageTitle>
 
-<div class="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
-    <div class="w-full max-w-md bg-surface rounded-lg shadow-lg p-8">
+<div class="min-h-screen flex items-center justify-center px-4 py-12">
+    <div class="w-full max-w-md bg-fondTransparent rounded-lg shadow-sm p-8">
         <div class="text-center mb-6">
-            <h1 class="text-2xl font-bold text-gray-800">Vérification de votre email</h1>
-            <p class="text-body mt-2">Validation de votre compte en cours...</p>
+            <h1 class="text-2xl font-bold text-title">Vérification de votre email</h1>
+            <p class="text-subtitle mt-2">Validation de votre compte en cours...</p>
         </div>
 
         @if (isLoading)
@@ -24,11 +24,11 @@
         }
         else if (isVerified)
         {
-            <div class="mb-4 rounded-lg bg-green-50   border-green-200 px-4 py-3 text-green-700 text-sm">
+            <div class="mb-4 rounded-lg bg-green-50 border-green-200 px-4 py-3 text-green-700 text-sm">
                 Votre email a été vérifié avec succès. Vous pouvez maintenant vous connecter.
             </div>
             <button @onclick='NavigateToLogin'
-                    class="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition">
+                    class="w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-white hover:bg-blue-800 transition">
                 Aller à la connexion
             </button>
         }
@@ -66,14 +66,15 @@
 
         try
         {
-            isVerified = await Auth.VerifyEmailAsync(new VerifyEmailRequest
+            var (success, error) = await Auth.VerifyEmailAsync(new VerifyEmailRequest
             {
                 Email = Email,
                 Code = Token
             });
 
+            isVerified = success;
             if (!isVerified)
-                errorMessage = "La vérification a échoué. Vous pouvez demander un nouveau lien.";
+                errorMessage = error ?? "La vérification a échoué. Vous pouvez demander un nouveau lien.";
         }
         finally
         {

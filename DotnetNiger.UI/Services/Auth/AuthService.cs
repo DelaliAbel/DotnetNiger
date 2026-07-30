@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
@@ -6,6 +7,7 @@ using DotnetNiger.UI.Helpers;
 using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Api;
+using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Services.Contracts;
 
 namespace DotnetNiger.UI.Services.Auth;
@@ -166,7 +168,7 @@ public class AuthService : IAuthService
                 email = request.Email,
                 password = request.Password,
                 firstName = names.Length > 0 ? names[0] : "",
-                lastName = names.Length > 1 ? names[1] : "",
+                lastName = names.Length >= 2 ? string.Join(" ", names.Skip(1)) : "",
                 phoneNumber = request.PhoneNumber
             };
 
@@ -185,6 +187,15 @@ public class AuthService : IAuthService
             }
 
             var root = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+            // Standardized wrapper: { success: true, data: { userId, email, message } }
+            if (root.TryGetProperty("success", out var successProp) &&
+                successProp.ValueKind == JsonValueKind.True &&
+                root.TryGetProperty("data", out var dataProp) &&
+                dataProp.ValueKind == JsonValueKind.Object)
+            {
+                root = dataProp;
+            }
 
             var userId = root.TryGetProperty("userId", out var uidProp)
                 && uidProp.ValueKind == JsonValueKind.String
@@ -243,6 +254,7 @@ public class AuthService : IAuthService
 
         await _authProvider.ClearTokensAsync();
         await _userStateService.ClearUserAsync();
+        _permissionService.Clear();
     }
 
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
@@ -388,10 +400,24 @@ public class AuthService : IAuthService
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<bool> VerifyEmailAsync(VerifyEmailRequest request)
+    public async Task<(bool Success, string? Error)> VerifyEmailAsync(VerifyEmailRequest request)
     {
         var response = await _http.PostAsJsonAsync(ApiEndpoints.Auth.VerifyEmail, request);
-        return response.IsSuccessStatusCode;
+        if (response.IsSuccessStatusCode)
+            return (true, null);
+
+        var body = await response.Content.ReadAsStringAsync();
+        try
+        {
+            using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.TryGetProperty("error", out var err))
+                return (false, err.GetString());
+        }
+        catch (JsonException ex)
+        {
+            Debug.WriteLine($"[AuthService] VerifyEmail: échec parsing JSON — {ex.Message}");
+        }
+        return (false, "Code invalide ou expiré.");
     }
 
     private static async Task<(AuthDto?, string?)> ParseTokenResponseAsync(HttpResponseMessage response)
@@ -416,6 +442,15 @@ public class AuthService : IAuthService
             {
                 using var doc = JsonDocument.Parse(raw);
                 var result = doc.RootElement;
+
+                // Standardized wrapper: { success: true, data: { accessToken: ..., ... } }
+                if (result.TryGetProperty("success", out var successProp) &&
+                    successProp.ValueKind == JsonValueKind.True &&
+                    result.TryGetProperty("data", out var dataProp) &&
+                    dataProp.ValueKind == JsonValueKind.Object)
+                {
+                    result = dataProp;
+                }
 
                 // Nouveau format JSON natif (camelCase)
                 if (result.TryGetProperty("accessToken", out var at) && at.ValueKind == JsonValueKind.String)
@@ -468,9 +503,9 @@ public class AuthService : IAuthService
                 {
                     claims = ParseClaimsFromJwt(accessToken).ToList();
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Certains serveurs renvoient des tokens opaques/chiffrés: on hydrate l'utilisateur via /api/auth/userinfo.
+                    Debug.WriteLine($"[AuthService] JWT claims parsing failed (token opaque/chiffré?) — {ex.Message}");
                 }
             }
 
@@ -518,6 +553,15 @@ public class AuthService : IAuthService
 
             using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             var root = doc.RootElement;
+
+            // Standardized wrapper: { success: true, data: { id, email, ... } }
+            if (root.TryGetProperty("success", out var successProp) &&
+                successProp.ValueKind == JsonValueKind.True &&
+                root.TryGetProperty("data", out var dataProp) &&
+                dataProp.ValueKind == JsonValueKind.Object)
+            {
+                root = dataProp;
+            }
 
             var id = root.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.String
                 && Guid.TryParse(idProp.GetString(), out var parsedId)
@@ -586,7 +630,10 @@ public class AuthService : IAuthService
             if (root.TryGetProperty("error", out var err) && err.ValueKind == JsonValueKind.String)
                 return err.GetString();
         }
-        catch { }
+        catch (JsonException ex)
+        {
+            Debug.WriteLine($"[AuthService] TryReadOidcError: échec parsing JSON — {ex.Message}");
+        }
 
         var text = (json ?? string.Empty).Trim();
         return string.IsNullOrWhiteSpace(text) ? null : text;

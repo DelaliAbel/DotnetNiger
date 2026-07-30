@@ -1,0 +1,101 @@
+using DotnetNiger.Api.Constants;
+using DotnetNiger.Api.Application.DTOs.Requests;
+using DotnetNiger.Api.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace DotnetNiger.Api.Controllers.Content;
+
+/// <summary>Contrôleur de gestion des commentaires sur les publications.</summary>
+[ApiController]
+[Route("api/comments")]
+public class CommentsController(ICommentService commentService) : BaseController
+{
+    /// <summary>Récupère tous les commentaires.</summary>
+    [HttpGet]
+    public async Task<IActionResult> GetAll()
+    {
+        var comments = await commentService.GetAllAsync();
+        return Success(comments);
+    }
+
+    /// <summary>Récupère les commentaires d'un article par son identifiant.</summary>
+    [HttpGet("post/{postId:guid}")]
+    public async Task<IActionResult> GetByPostId(Guid postId)
+    {
+        var comments = await commentService.GetByPostIdAsync(postId);
+        return Success(comments);
+    }
+
+    /// <summary>Récupère les commentaires d'un événement par son identifiant.</summary>
+    [HttpGet("event/{eventId:guid}")]
+    public async Task<IActionResult> GetByEventId(Guid eventId)
+    {
+        var comments = await commentService.GetByEventIdAsync(eventId);
+        return Success(comments);
+    }
+
+    /// <summary>Récupère un commentaire par son identifiant.</summary>
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        var comment = await commentService.GetByIdAsync(id);
+        if (comment is null) return NotFound(Messages.Comment.NotFound);
+        return Success(comment);
+    }
+
+    /// <summary>Crée un nouveau commentaire.</summary>
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> Create([FromBody] CreateCommentRequest request)
+    {
+        var userId = GetUserId();
+        var userName = GetUserName();
+        var avatar = GetUserAvatar();
+        try
+        {
+            var comment = await commentService.CreateAsync(request, userId, userName, avatar);
+            return Success(comment);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
+    /// <summary>Met à jour un commentaire existant.</summary>
+    [HttpPut("{id:guid}")]
+    [Authorize]
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCommentRequest request)
+    {
+        var userId = GetUserId();
+        try
+        {
+            var comment = await commentService.UpdateAsync(id, request, userId);
+            if (comment is null) return NotFound(Messages.Comment.NotFound);
+            return Success(comment);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Failure(ex.Message, 403);
+        }
+    }
+
+    /// <summary>Supprime un commentaire, optionnellement avec toutes ses réponses.</summary>
+    [HttpDelete("{id:guid}")]
+    [Authorize]
+    public async Task<IActionResult> Delete(Guid id, [FromQuery] bool deleteAllReplies = false)
+    {
+        var userId = GetUserId();
+        try
+        {
+            var deleted = await commentService.DeleteAsync(id, userId, IsAdmin(), deleteAllReplies);
+            if (!deleted) return NotFound(Messages.Comment.NotFound);
+            return Success<object?>(null, Messages.Comment.Deleted);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Failure(ex.Message, 403);
+        }
+    }
+}

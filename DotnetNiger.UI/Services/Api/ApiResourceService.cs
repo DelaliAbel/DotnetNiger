@@ -1,15 +1,15 @@
 using DotnetNiger.UI.Models.Requests;
+using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using System.Net.Http.Json;
+using Microsoft.Extensions.Logging;
 
 namespace DotnetNiger.UI.Services.Api;
 
 public class ApiResourceService : ApiServiceBase, IResourceService
 {
-    public ApiResourceService(HttpClient http) : base(http)
-    {
-    }
+    public ApiResourceService(HttpClient http, ILogger<ApiResourceService> logger) : base(http, logger) { }
 
     public async Task<List<ResourceDto>> GetAllResourcesAsync()
     {
@@ -18,20 +18,42 @@ public class ApiResourceService : ApiServiceBase, IResourceService
 
     public async Task<ResourceDto?> GetResourceByIdAsync(Guid id)
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Resources}/{id}");
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Resources}/{id}";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<ResourceDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
             return null;
-
-        return await ApiResponseReader.ReadAsync<ResourceDto>(response);
+        }
     }
 
     public async Task<ResourceDto?> GetResourceBySlugAsync(string slug)
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Resources}/{slug}");
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Resources}/{slug}";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<ResourceDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
             return null;
-
-        return await ApiResponseReader.ReadAsync<ResourceDto>(response);
+        }
     }
 
     public async Task<List<ResourceDto>> GetResourcesByTypeAsync(string resourceType)
@@ -64,67 +86,155 @@ public class ApiResourceService : ApiServiceBase, IResourceService
 
     public async Task<List<string>> GetResourceTypesAsync()
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Resources}/types");
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Resources}/types";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return [];
+            }
+            return await ApiResponseReader.ReadCollectionAsync<string>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
             return [];
-
-        return await ApiResponseReader.ReadCollectionAsync<string>(response);
+        }
     }
 
     public async Task<List<string>> GetLevelsAsync()
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Resources}/levels");
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Resources}/levels";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return [];
+            }
+            return await ApiResponseReader.ReadCollectionAsync<string>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
             return [];
-
-        return await ApiResponseReader.ReadCollectionAsync<string>(response);
+        }
     }
 
     public async Task<ResourceDto?> CreateResourceAsync(CreateResourceRequest request)
     {
-        var response = await Http.PostAsJsonAsync(ApiEndpoints.Resources, request);
-        if (!response.IsSuccessStatusCode)
+        var url = ApiEndpoints.Resources;
+        try
+        {
+            var response = await Http.PostAsJsonAsync(url, request);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on POST {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<ResourceDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on POST {Url}", url);
             return null;
-
-        return await ApiResponseReader.ReadAsync<ResourceDto>(response);
+        }
     }
 
     public async Task<ResourceDto?> AddResourceAsync(CreateResourceRequest request)
     {
-        var response = await Http.PostAsJsonAsync(ApiEndpoints.Resources, request);
-        if (!response.IsSuccessStatusCode)
+        var url = ApiEndpoints.Resources;
+        try
+        {
+            var response = await Http.PostAsJsonAsync(url, request);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on POST {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<ResourceDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on POST {Url}", url);
             return null;
-
-        return await ApiResponseReader.ReadAsync<ResourceDto>(response);
+        }
     }
 
     public async Task<ResourceDto?> UpdateResourceAsync(Guid id, CreateResourceRequest request)
     {
-        var response = await Http.PutAsJsonAsync($"{ApiEndpoints.Resources}/{id}", request);
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Resources}/{id}";
+        try
+        {
+            var response = await Http.PutAsJsonAsync(url, request);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on PUT {Url}", (int)response.StatusCode, url);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<ResourceDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on PUT {Url}", url);
             return null;
-
-        return await ApiResponseReader.ReadAsync<ResourceDto>(response);
+        }
     }
 
     public async Task<bool> DeleteResourceAsync(Guid id)
     {
-        var response = await Http.DeleteAsync($"{ApiEndpoints.Resources}/{id}");
-        return response.IsSuccessStatusCode;
+        var url = $"{ApiEndpoints.Resources}/{id}";
+        try
+        {
+            var response = await Http.DeleteAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on DELETE {Url}", (int)response.StatusCode, url);
+                return false;
+            }
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on DELETE {Url}", url);
+            return false;
+        }
     }
 
     public async Task IncrementViewCountAsync(Guid id)
     {
-        await Http.PostAsync($"{ApiEndpoints.Resources}/{id}/views", null);
+        var url = $"{ApiEndpoints.Resources}/{id}/views";
+        try
+        {
+            await Http.PostAsync(url, null);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on POST {Url}", url);
+        }
     }
 
     public async Task<List<ResourceDto>> GetMyResourcesAsync()
     {
-        var response = await Http.GetAsync($"{ApiEndpoints.Resources}/mine");
-        if (!response.IsSuccessStatusCode)
+        var url = $"{ApiEndpoints.Resources}/mine";
+        try
+        {
+            var response = await Http.GetAsync(url);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, url);
+                return new List<ResourceDto>();
+            }
+            return await ApiResponseReader.ReadCollectionAsync<ResourceDto>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", url);
             return new List<ResourceDto>();
-
-        return await ApiResponseReader.ReadCollectionAsync<ResourceDto>(response);
+        }
     }
 
 }

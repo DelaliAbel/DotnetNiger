@@ -133,8 +133,22 @@ else
 
     private ResourceDto? resource;
     private bool isLoading = true;
+    private string? _loadedSlug;
 
     protected override async Task OnInitializedAsync()
+    {
+        await LoadResourceAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(Slug) && _loadedSlug != Slug)
+        {
+            await LoadResourceAsync();
+        }
+    }
+
+    private async Task LoadResourceAsync()
     {
         if (string.IsNullOrWhiteSpace(Slug))
         {
@@ -162,6 +176,7 @@ else
         }
         finally
         {
+            _loadedSlug = Slug;
             isLoading = false;
         }
     }

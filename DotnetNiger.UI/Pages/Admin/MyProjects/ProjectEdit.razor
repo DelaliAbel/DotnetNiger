@@ -18,7 +18,7 @@
             </button>
         </div>
 
-        <div class="rounded-lg bg-surface p-6 shadow-[0_10px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5 md:p-8">
+        <div class="rounded-lg bg-fondTransparent p-6 md:p-8">
             <h1 class="text-2xl font-bold text-title">Modifier le projet</h1>
             <p class="mt-1 text-sm text-subtitle">Modifiez les informations du projet.</p>
 
@@ -78,7 +78,7 @@
                         <div>
                             <label class="block text-sm font-semibold text-title">Titre *</label>
                             <InputText @bind-Value="updateRequest.Title"
-                                       class="mt-1 w-full rounded-lg text-body px-4 py-3 text-sm transition focus:outline-none"
+                                       class="mt-1 w-full rounded-lg text-body bg-surface shadow-md px-4 py-3 text-sm transition focus:outline-none"
                                        placeholder="Nom du projet" />
                             <ValidationMessage For="@(() => updateRequest.Title)" class="mt-1 text-xs text-red-500" />
                         </div>
@@ -86,7 +86,7 @@
                         <div>
                             <label class="block text-sm font-semibold text-title">Statut</label>
                             <InputSelect @bind-Value="updateRequest.Status"
-                                         class="mt-1 w-full rounded-lg text-body bg-surface px-4 py-3 text-sm transition focus:outline-none">
+                                         class="mt-1 w-full rounded-lg text-body bg-surface shadow-md px-4 py-3 text-sm transition focus:outline-none">
                                 <option value="active">Actif</option>
                                 <option value="archived">Archivé</option>
                             </InputSelect>
@@ -96,7 +96,7 @@
                     <div>
                         <label class="block text-sm font-semibold text-title">Description *</label>
                         <InputTextArea @bind-Value="updateRequest.Description" rows="5"
-                                       class="mt-1 w-full rounded-lg text-body px-4 py-3 text-sm transition focus:outline-none"
+                                       class="mt-1 w-full rounded-lg text-body bg-surface shadow-md px-4 py-3 text-sm transition focus:outline-none"
                                        placeholder="Décrivez le projet..." />
                         <ValidationMessage For="@(() => updateRequest.Description)" class="mt-1 text-xs text-red-500" />
                     </div>
@@ -104,31 +104,31 @@
                     <div>
                         <label class="block text-sm font-semibold text-title">URL GitHub</label>
                         <InputText @bind-Value="updateRequest.GithubUrl"
-                                   class="mt-1 w-full rounded-lg text-body px-4 py-3 text-sm transition focus:outline-none"
+                                   class="mt-1 w-full rounded-lg text-body bg-surface shadow-md px-4 py-3 text-sm transition focus:outline-none"
                                    placeholder="https://github.com/..." />
                     </div>
 
                     <div>
                         <label class="block text-sm font-semibold text-title">Technologies</label>
                         <InputText @bind-Value="updateRequest.Technologies"
-                                   class="mt-1 w-full rounded-lg text-body px-4 py-3 text-sm transition focus:outline-none"
+                                   class="mt-1 w-full rounded-lg text-body bg-surface shadow-md px-4 py-3 text-sm transition focus:outline-none"
                                    placeholder="ASP.NET Core, Blazor, PostgreSQL..." />
                     </div>
 
                     <div>
                         <label class="block text-sm font-semibold text-title">Image URL</label>
                         <InputText @bind-Value="updateRequest.ImageUrl"
-                                   class="mt-1 w-full rounded-lg text-body px-4 py-3 text-sm transition focus:outline-none"
+                                   class="mt-1 w-full rounded-lg text-body bg-surface shadow-md px-4 py-3 text-sm transition focus:outline-none"
                                    placeholder="https://..." />
                     </div>
 
                     <div class="flex items-center gap-6">
                         <label class="flex items-center gap-2 text-sm text-title">
-                            <InputCheckbox @bind-Value="updateRequest.IsFeatured" />
+                            <InputCheckbox @bind-Value="isFeatured" />
                             Projet à la une
                         </label>
                         <label class="flex items-center gap-2 text-sm text-title">
-                            <InputCheckbox @bind-Value="updateRequest.IsPublished" />
+                            <InputCheckbox @bind-Value="isPublished" />
                             Publié
                         </label>
                     </div>
@@ -162,10 +162,21 @@
     private string errorMessage = string.Empty;
     private bool isLoading = true;
     private bool notFound;
+    private bool isFeatured;
+    private bool isPublished;
+    private Guid _loadedId;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadProjectAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != Guid.Empty && _loadedId != Id)
+        {
+            await LoadProjectAsync();
+        }
     }
 
     private async Task LoadProjectAsync()
@@ -193,6 +204,8 @@
                 IsFeatured = project.IsFeatured,
                 IsPublished = project.IsPublished
             };
+            isFeatured = project.IsFeatured;
+            isPublished = project.IsPublished;
         }
         catch
         {
@@ -200,6 +213,7 @@
         }
         finally
         {
+            _loadedId = Id;
             isLoading = false;
         }
     }
@@ -215,6 +229,8 @@
 
         try
         {
+            updateRequest.IsFeatured = isFeatured;
+            updateRequest.IsPublished = isPublished;
             var updated = await ProjectService.UpdateAsync(Id, updateRequest);
             if (updated is null)
             {

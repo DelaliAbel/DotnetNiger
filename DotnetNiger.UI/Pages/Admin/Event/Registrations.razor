@@ -180,8 +180,22 @@
     private string EventTitle { get; set; } = string.Empty;
     private bool IsLoading { get; set; } = true;
     private string? LoadError { get; set; }
+    private Guid _loadedEventId;
 
     protected override async Task OnInitializedAsync()
+    {
+        await LoadRegistrationsAsync();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (EventId != Guid.Empty && _loadedEventId != EventId)
+        {
+            await LoadRegistrationsAsync();
+        }
+    }
+
+    private async Task LoadRegistrationsAsync()
     {
         if (EventId == Guid.Empty)
         {
@@ -203,6 +217,7 @@
         }
         finally
         {
+            _loadedEventId = EventId;
             IsLoading = false;
         }
     }

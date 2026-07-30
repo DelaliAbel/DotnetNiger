@@ -4,7 +4,9 @@
 @using System.Net
 @using System.Text.RegularExpressions
 @inject IPostService PostService
+@inject IToastService ToastService
 @inject NavigationManager NavigationManager
+@inject IConfirmService ConfirmService
 
 <div class="bg-surface shadow-md">
     <table class="w-full">
@@ -96,6 +98,11 @@
 
     private async Task DeletePost(Guid id)
     {
+        var post = Posts.FirstOrDefault(p => p.Id == id);
+        var title = post?.Title ?? "cet article";
+        var confirmed = await ConfirmService.ShowAsync($"Supprimer définitivement « {title} » ?");
+        if (!confirmed) return;
+
         await PostService.DeletePostAsync(id);
         await OnChanged.InvokeAsync();
     }
@@ -105,28 +112,24 @@
         var post = Posts.FirstOrDefault(item => item.Id == id);
         if (post is null) return;
 
-        if (IsPublished(post))
+        try
         {
-            await PostService.UnPublishPostAsync(id);
-        }
-        else
-        {
-            var request = new UpdatePostRequest
+            if (IsPublished(post))
             {
-                Title = post.Title,
-                Content = post.Content,
-                Excerpt = post.Excerpt,
-                CoverImageUrl = post.CoverImageUrl,
-                PostType = post.PostType,
-                SeoDescription = string.IsNullOrWhiteSpace(post.Excerpt) ? post.Title : post.Excerpt,
-                CategoryIds = post.Categories.Select(category => category.Id).ToList(),
-                TagNames = post.Tags.Select(tag => tag.Name).ToList(),
-                IsPublished = true
-            };
+                await PostService.UnPublishPostAsync(id);
+                ToastService.ShowToast("Article dépublié.", ToastLevel.Success);
+            }
+            else
+            {
+                await PostService.PublishPostAsync(id);
+                ToastService.ShowToast("Article publié.", ToastLevel.Success);
+            }
 
-            await PostService.UpdatePostAsync(id, request);
+            await OnChanged.InvokeAsync();
         }
-
-        await OnChanged.InvokeAsync();
+        catch
+        {
+            ToastService.ShowToast("Erreur lors du changement de statut.", ToastLevel.Error);
+        }
     }
 }

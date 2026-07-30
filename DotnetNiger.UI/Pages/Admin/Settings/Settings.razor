@@ -36,7 +36,7 @@ else
                     site.</p>
                 </div>
 
-                <div class="mb-8 border-b  ">
+                <div class="mb-8 border-b">
                     <nav class="flex flex-wrap gap-1" role="tablist">
                         @foreach (var tab in tabs)
                         {
@@ -52,26 +52,26 @@ else
                 <div class="space-y-6">
                     @if (activeTab == "general")
                     {
-                        <section class="rounded-lg bg-surface p-6 shadow-sm md:p-8">
+                        <section class="rounded-lg bg-fondTransparent p-6 shadow-sm md:p-8">
                             <h2 class="text-xl font-semibold text-title mb-6">Général</h2>
                             <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                                 <div>
-                                    <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Nom du
+                                    <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title">Nom du
                                         site</label>
                                         <InputText @bind-Value="site_name"
-                                                   class="h-12 w-full rounded-lg border-input bg-surface px-4 text-base text-body focus:outline-none" />
+                                                   class="h-12 w-full rounded-lg bg-surface shadow-md px-4 text-base text-body focus:outline-none" />
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">URL du
+                                        <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title">URL du
                                             logo</label>
                                             <InputText @bind-Value="logo_url"
-                                                       class="h-12 w-full rounded-lg   border-input bg-surface px-4 text-base text-body focus:outline-none" />
+                                                       class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
                                         </div>
                                         <div class="md:col-span-2">
-                                            <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Email de
+                                            <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title">Email de
                                                 contact</label>
                                                 <InputText @bind-Value="contact_email"
-                                                           class="h-12 w-full rounded-lg   border-input bg-surface px-4 text-base text-body focus:outline-none" />
+                                                           class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
                                             </div>
                                         </div>
                                     </section>
@@ -82,157 +82,50 @@ else
                                         <h2 class="text-xl font-semibold text-title mb-6">Réseaux sociaux</h2>
                                         <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                                             <div>
-                                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500"><i
+                                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title"><i
                                                     class="fab fa-facebook mr-2 text-blue-600"></i>Facebook</label>
                                                     <InputText @bind-Value="facebook_url"
-                                                               class="h-12 w-full rounded-lg   border-input bg-surface px-4 text-base text-body focus:outline-none" />
+                                                               class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
                                                 </div>
                                                 <div>
-                                                    <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500"><i
+                                                    <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title"><i
                                                         class="fab fa-twitter mr-2 text-sky-500"></i>Twitter</label>
                                                         <InputText @bind-Value="twitter_url"
-                                                                   class="h-12 w-full rounded-lg   border-input bg-surface px-4 text-base text-body focus:outline-none" />
+                                                                   class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none"/>
                                                     </div>
                                                     <div>
-                                                        <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500"><i
+                                                        <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title"><i
                                                             class="fab fa-linkedin mr-2 text-blue-700"></i>LinkedIn</label>
                                                             <InputText @bind-Value="linkedin_url"
-                                                                       class="h-12 w-full rounded-lg   border-input bg-surface px-4 text-base text-body focus:outline-none" />
+                                                                       class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
                                                         </div>
                                                         <div>
-                                                            <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500"><i
+                                                            <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title"><i
                                                                 class="fab fa-github mr-2 text-gray-800"></i>GitHub</label>
                                                                 <InputText @bind-Value="github_url"
-                                                                           class="h-12 w-full rounded-lg   border-input bg-surface px-4 text-base text-body focus:outline-none" />
+                                                                           class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
                                                             </div>
                                                             <div>
-                                                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500"><i
+                                                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title"><i
                                                                     class="fab fa-youtube mr-2 text-red-600"></i>YouTube</label>
                                                                     <InputText @bind-Value="youtube_url"
-                                                                               class="h-12 w-full rounded-lg   border-input bg-surface px-4 text-base text-body focus:outline-none" />
+                                                                               class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
                                                                 </div>
                                                             </div>
                                                         </section>
                                                     }
-                                                    @* TODO : Partie a revoir , d'ou la mise en commentaire *@
-                                                    @*
-                else if (activeTab == "features")
-                {
-                    <section class="rounded-lg bg-surface p-6 shadow-sm md:p-8">
-                        <h2 class="text-xl font-semibold text-title mb-6">Fonctionnalités</h2>
-                        <div class="space-y-5">
-                            <div class="flex items-center justify-between rounded-lg border-gray-100 bg-gray-50 px-5 py-4">
-                                <div>
-                                    <p class="text-sm font-semibold text-title">Approbation requise pour les événements</p>
-                                    <p class="text-xs text-body">Les événements doivent être approuvés avant publication</p>
-                                </div>
-                                <label class="relative inline-flex cursor-pointer items-center">
-                                    <input type="checkbox" class="peer sr-only" @bind="event_approval_required" />
-                                    <div class="h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5
-            after:w-5 after:rounded-full after: after:border-input after:bg-surface after:transition-all
-            peer-checked:bg-black peer-checked:after:translate-x-full peer-checked:after: "></div>
-                                </label>
-                            </div>
-                            <div class="flex items-center justify-between rounded-lg border-gray-100 bg-gray-50 px-5 py-4">
-                                <div>
-                                    <p class="text-sm font-semibold text-title">Approbation requise pour les articles</p>
-                                    <p class="text-xs text-body">Les articles doivent être approuvés avant publication</p>
-                                </div>
-                                <label class="relative inline-flex cursor-pointer items-center">
-                                    <input type="checkbox" class="peer sr-only" @bind="post_approval_required" />
-                                    <div class="h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5
-            after:w-5 after:rounded-full after: after:border-input after:bg-surface after:transition-all
-            peer-checked:bg-black peer-checked:after:translate-x-full peer-checked:after: "></div>
-                                </label>
-                            </div>
-                            <div class="flex items-center justify-between rounded-lg border-gray-100 bg-gray-50 px-5 py-4">
-                                <div>
-                                    <p class="text-sm font-semibold text-title">Inscription newsletter active</p>
-                                    <p class="text-xs text-body">Les visiteurs peuvent s'inscrire à la newsletter</p>
-                                </div>
-                                <label class="relative inline-flex cursor-pointer items-center">
-                                    <input type="checkbox" class="peer sr-only" @bind="newsletter_active" />
-                                    <div class="h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5
-            after:w-5 after:rounded-full after: after:border-input after:bg-surface after:transition-all
-            peer-checked:bg-black peer-checked:after:translate-x-full peer-checked:after: "></div>
-                                </label>
-                            </div>
-                            <div class="flex items-center justify-between rounded-lg border-gray-100 bg-gray-50 px-5 py-4">
-                                <div>
-                                    <p class="text-sm font-semibold text-title">Upload public</p>
-                                    <p class="text-xs text-body">Les membres peuvent uploader des fichiers</p>
-                                </div>
-                                <label class="relative inline-flex cursor-pointer items-center">
-                                    <input type="checkbox" class="peer sr-only" @bind="public_upload" />
-                                    <div class="h-6 w-11 rounded-full bg-gray-200 after:absolute after:left-[2px] after:top-[2px] after:h-5
-            after:w-5 after:rounded-full after: after:border-input after:bg-surface after:transition-all
-            peer-checked:bg-black peer-checked:after:translate-x-full peer-checked:after: "></div>
-                                </label>
-                            </div>
-                        </div>
-                    </section>
-                }
-                else if (activeTab == "notifications")
-                {
-                    <section class="rounded-lg bg-surface p-6 shadow-sm md:p-8">
-                        <h2 class="text-xl font-semibold text-title mb-6">Notifications</h2>
-                        <div class="grid grid-cols-1 gap-5">
-                            <div>
-                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Email admin pour
-            notifications</label>
-                                <InputText @bind-Value="admin_notification_email" class="h-12 w-full rounded-lg border-input
-            bg-surface px-4 text-base text-body focus:outline-none" />
-                            </div>
-                            <div>
-                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Slack webhook URL
-            (optionnel)</label>
-                                <InputText @bind-Value="slack_webhook_url" class="h-12 w-full rounded-lg border-input bg-surface
-            px-4 text-base text-body focus:outline-none" />
-                            </div>
-                        </div>
-                    </section>
-                }
-                else if (activeTab == "registration")
-                {
-                    <section class="rounded-lg bg-surface p-6 shadow-sm md:p-8">
-                        <h2 class="text-xl font-semibold text-title mb-6">Inscription</h2>
-                        <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
-                            <div>
-                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Mode
-            d'inscription</label>
-                                <select @bind="registration_mode"
-                                        class="h-12 w-full cursor-pointer rounded-lg bg-surface px-4 text-sm text-title
-            shadow-sm outline-none transition hover:border-input focus:outline-none focus:ring-2 focus:ring-primary">
-                                    <option value="open">Ouverte</option>
-                                    <option value="invitation">Invitation</option>
-                                    <option value="closed">Fermée</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-slate-500">Rôle par défaut des
-            nouveaux</label>
-                                <select @bind="default_role"
-                                        class="h-12 w-full cursor-pointer rounded-lg bg-surface px-4 text-sm text-title
-            shadow-sm outline-none transition hover:border-input focus:outline-none focus:ring-2 focus:ring-primary">
-                                    <option value="member">Collaborateur</option>
-                                    <option value="none">Aucun</option>
-                                </select>
-                            </div>
-                        </div>
-                    </section>
-                }
-             *@
+
 
                                                 </div>
 
                                                 <div class="mt-8 flex items-center gap-3">
                                                     <button @onclick="SaveSettings"
-                                                            class="inline-flex h-12 items-center rounded-lg bg-black px-8 font-semibold text-white transition hover:bg-gray-800">
+                                                            class="inline-flex h-12 items-center rounded-lg bg-primary px-8 font-semibold text-white transition hover:bg-blue-800">
                                                         <i class="fas fa-floppy-disk mr-2"></i>
                                                         Enregistrer les modifications
                                                     </button>
                                                     <button @onclick="ResetSettings"
-                                                            class="inline-flex h-12 items-center rounded-lg   border-input bg-surface px-8 font-semibold text-title transition hover:bg-gray-100">
+                                                            class="inline-flex h-12 items-center rounded-lg bg-surface px-8 font-semibold text-title transition hover:bg-gray-100">
                                                         Annuler
                                                     </button>
                                                 </div>
@@ -252,22 +145,13 @@ else
     private string linkedin_url = "";
     private string github_url = "";
     private string youtube_url = "";
-    private bool event_approval_required = false;
-    private bool post_approval_required = false;
-    private bool newsletter_active = true;
-    private bool public_upload = false;
-    private string admin_notification_email = "";
-    private string slack_webhook_url = "";
-    private string registration_mode = "open";
-    private string default_role = "member";
+
 
     private readonly List<(string id, string label, string icon)> tabs = new()
 {
 ("general", "Général", "fa-globe"),
 ("social", "Réseaux sociaux", "fa-share-nodes"),
-("features", "Fonctionnalités", "fa-toggle-on"),
-("notifications", "Notifications", "fa-bell"),
-("registration", "Inscription", "fa-user-plus"),
+
 };
 
     protected override async Task OnInitializedAsync()
@@ -303,14 +187,7 @@ else
             linkedin_url = dict.GetValueOrDefault("linkedin_url", "");
             github_url = dict.GetValueOrDefault("github_url", "");
             youtube_url = dict.GetValueOrDefault("youtube_url", "");
-            event_approval_required = dict.GetValueOrDefault("event_approval_required", "false") == "true";
-            post_approval_required = dict.GetValueOrDefault("post_approval_required", "false") == "true";
-            newsletter_active = dict.GetValueOrDefault("newsletter_active", "true") == "true";
-            public_upload = dict.GetValueOrDefault("public_upload", "false") == "true";
-            admin_notification_email = dict.GetValueOrDefault("admin_notification_email", "");
-            slack_webhook_url = dict.GetValueOrDefault("slack_webhook_url", "");
-            registration_mode = dict.GetValueOrDefault("registration_mode", "open");
-            default_role = dict.GetValueOrDefault("default_role", "member");
+
         }
         finally
         {
@@ -330,14 +207,7 @@ else
             ["linkedin_url"] = linkedin_url,
             ["github_url"] = github_url,
             ["youtube_url"] = youtube_url,
-            ["event_approval_required"] = event_approval_required ? "true" : "false",
-            ["post_approval_required"] = post_approval_required ? "true" : "false",
-            ["newsletter_active"] = newsletter_active ? "true" : "false",
-            ["public_upload"] = public_upload ? "true" : "false",
-            ["admin_notification_email"] = admin_notification_email,
-            ["slack_webhook_url"] = slack_webhook_url,
-            ["registration_mode"] = registration_mode,
-            ["default_role"] = default_role,
+
         };
 
         var saved = await SettingsService.SetBatchAsync(batch);

@@ -3,7 +3,6 @@ using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Auth;
 using DotnetNiger.UI.Services.Contracts;
-using DotnetNiger.UI.Services.Helpers;
 
 namespace DotnetNiger.UI.Services.Mock;
 
@@ -247,7 +246,7 @@ public class MockAuthService : IAuthService
         return true;
     }
 
-    public async Task<bool> VerifyEmailAsync(VerifyEmailRequest request)
+    public async Task<(bool Success, string? Error)> VerifyEmailAsync(VerifyEmailRequest request)
     {
         await Task.Delay(500);
         
@@ -256,16 +255,16 @@ public class MockAuthService : IAuthService
 
         if (user == null)
         {
-            return false;
+            return (false, "Utilisateur non trouvé.");
         }
 
         // Simuler la vérification du token
         if (request.Code != "valid-verification-code")
         {
-            return false;
+            return (false, "Code invalide ou expiré.");
         }
 
-        return true;
+        return (true, null);
     }
 
     #endregion

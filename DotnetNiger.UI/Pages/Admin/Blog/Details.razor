@@ -11,7 +11,7 @@
 @using System.Text.RegularExpressions
 @inject IPostService PostService
 @inject NavigationManager NavigationManager
-@inject IJSRuntime JS
+@inject IConfirmService ConfirmService
 @inject IToastService ToastService
 @inject IUploadService UploadService
 
@@ -257,10 +257,24 @@
 
 	private PostDto? post;
 	private bool isLoading = true;
+	private Guid _loadedId;
 
 	private bool IsPublished => post?.PublishedAt.HasValue == true;
 
 	protected override async Task OnInitializedAsync()
+	{
+		await LoadPostAsync();
+	}
+
+	protected override async Task OnParametersSetAsync()
+	{
+		if (Id != Guid.Empty && _loadedId != Id)
+		{
+			await LoadPostAsync();
+		}
+	}
+
+	private async Task LoadPostAsync()
 	{
 		if (Id == Guid.Empty)
 		{
@@ -274,6 +288,7 @@
 		}
 		finally
 		{
+			_loadedId = Id;
 			isLoading = false;
 		}
 	}
@@ -300,13 +315,13 @@
 
 	private async Task DeletePost(Guid postId)
 	{
-		var confirmed = await JS.InvokeAsync<bool>("confirm", "Êtes-vous sûr de vouloir supprimer cet article ?");
+		var confirmed = await ConfirmService.ShowAsync("Supprimer définitivement cet article ?");
 		if (confirmed)
 		{
 			try
 			{
 				await PostService.DeletePostAsync(postId);
-				ToastService.ShowToast("Article supprimé.", ToastLevel.Success);
+				ToastService.ShowToast("Article supprimé définitivement.", ToastLevel.Success);
 				NavigationManager.NavigateTo("/admin/blog");
 			}
 			catch
@@ -322,20 +337,7 @@
 
 		try
 		{
-			var request = new UpdatePostRequest
-			{
-				Title = post.Title,
-				Content = post.Content,
-				Excerpt = post.Excerpt,
-				CoverImageUrl = post.CoverImageUrl,
-				PostType = post.PostType,
-				SeoDescription = string.IsNullOrWhiteSpace(post.Excerpt) ? post.Title : post.Excerpt,
-				CategoryIds = post.Categories?.Select(c => c.Id).ToList() ?? new(),
-				TagNames = post.Tags?.Select(t => t.Name).ToList() ?? new(),
-				IsPublished = true
-			};
-
-			await PostService.UpdatePostAsync(postId, request);
+			await PostService.PublishPostAsync(postId);
 			post.PublishedAt = DateTime.UtcNow;
 			ToastService.ShowToast("Article publié.", ToastLevel.Success);
 			await InvokeAsync(StateHasChanged);
@@ -352,21 +354,8 @@
 
 		try
 		{
-			var request = new UpdatePostRequest
-			{
-				Title = post.Title,
-				Content = post.Content,
-				Excerpt = post.Excerpt,
-				CoverImageUrl = post.CoverImageUrl,
-				PostType = post.PostType,
-				SeoDescription = string.IsNullOrWhiteSpace(post.Excerpt) ? post.Title : post.Excerpt,
-				CategoryIds = post.Categories?.Select(c => c.Id).ToList() ?? new(),
-				TagNames = post.Tags?.Select(t => t.Name).ToList() ?? new(),
-				IsPublished = false
-			};
-
-			await PostService.UpdatePostAsync(postId, request);
-			post.PublishedAt = DateTime.MinValue;
+			await PostService.UnPublishPostAsync(postId);
+			post.PublishedAt = null;
 			ToastService.ShowToast("Article dépublié.", ToastLevel.Success);
 			await InvokeAsync(StateHasChanged);
 		}

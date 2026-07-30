@@ -32,6 +32,7 @@ public class CreateEventRequest
     public bool IsPublished { get; set; }
     public bool IsArchived { get; set; }
     public List<string> TagNames { get; set; } = new();
+    public List<Guid> TagIds { get; set; } = new();
     public List<string> GalleryImageUrls { get; set; } = new();
     public List<SpeakerDto> Speakers { get; set; } = new();
 }

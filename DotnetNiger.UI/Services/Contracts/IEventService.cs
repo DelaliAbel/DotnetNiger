@@ -13,18 +13,21 @@ public interface IEventService
     Task<EventDto?> GetEventBySlugAsync(string slug);
     Task<List<EventDto>> SearchEventsAsync(string query);
     Task<List<EventDto>> GetEventsByTypeAsync(string eventType);
-    Task<EventDto?> UpdateEventAsync(Guid id, CreateEventRequest request);
+    Task<EventDto?> UpdateEventAsync(Guid id, UpdateEventRequest request);
     Task<bool> DeleteEventAsync(Guid id);
     Task<bool> TogglePublishAsync(Guid id);
     Task<EventRegistrationDto?> RegisterToEventAsync(RegisterEventRequest request, Guid userId, string userName);
     Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId);
     Task<List<EventRegistrationDto>> GetRegistrationsByEventAsync(Guid eventId);
 
-     // Création d'événement (soumis ou publié selon rôle)
+    // Création d'événement (soumis ou publié selon rôle)
     Task<EventDto?> CreateEventAsync(CreateEventRequest request, Guid currentUserId, bool isAdmin);
 
     // Admin : récupérer les événements en attente
     Task<List<EventDto>> GetPendingEventsAsync();
+
+    // Admin : récupérer tous les événements (tous statuts)
+    Task<List<EventDto>> GetAdminEventsAsync(string? status = null);
 
     // Admin : approuver un événement
     Task<bool> ApproveEventAsync(Guid eventId, string? adminComment = null);
