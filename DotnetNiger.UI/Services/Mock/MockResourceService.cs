@@ -3,6 +3,7 @@ using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Auth;
 using DotnetNiger.UI.Services.Contracts;
 using DotnetNiger.UI.Helpers;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock;
 
@@ -147,13 +148,13 @@ public class MockResourceService : IResourceService
             _resources.OrderByDescending(r => r.CreatedAt).ToList());
     }
 
-    public async Task<ResourceDto?> GetResourceByIdAsync(Guid id)
+    public async Task<ResourceDto?> GetResourceByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await Task.Delay(800);
         return await Task.FromResult(_resources.FirstOrDefault(r => r.Id == id));
     }
 
-    public async Task<ResourceDto?> GetResourceBySlugAsync(string slug)
+    public async Task<ResourceDto?> GetResourceBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
         await Task.Delay(800);
         var resource = _resources.FirstOrDefault(r => r.Slug == slug);
@@ -212,7 +213,7 @@ public class MockResourceService : IResourceService
             }).ToList());
     }
 
-    public async Task<ResourceDto?> CreateResourceAsync(CreateResourceRequest request)
+    public async Task<ResourceDto?> CreateResourceAsync(CreateResourceRequest request, CancellationToken cancellationToken = default)
     {
         var newResource = new ResourceDto
         {
@@ -232,7 +233,7 @@ public class MockResourceService : IResourceService
         return await Task.FromResult(newResource);
     }
 
-    public async Task<ResourceDto?> AddResourceAsync(CreateResourceRequest request)
+    public async Task<ResourceDto?> AddResourceAsync(CreateResourceRequest request, CancellationToken cancellationToken = default)
     {
         var newResource = new ResourceDto
         {
@@ -252,7 +253,7 @@ public class MockResourceService : IResourceService
         return await Task.FromResult(newResource);
     }
 
-    public async Task<ResourceDto?> UpdateResourceAsync(Guid id, CreateResourceRequest request)
+    public async Task<ResourceDto?> UpdateResourceAsync(Guid id, CreateResourceRequest request, CancellationToken cancellationToken = default)
     {
         var resource = _resources.FirstOrDefault(r => r.Id == id);
         if (resource is null) return await Task.FromResult<ResourceDto?>(null);
@@ -267,7 +268,7 @@ public class MockResourceService : IResourceService
         return await Task.FromResult<ResourceDto?>(resource);
     }
 
-    public async Task<bool> DeleteResourceAsync(Guid id)
+    public async Task<bool> DeleteResourceAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var resource = _resources.FirstOrDefault(r => r.Id == id);
         if (resource is null) return await Task.FromResult(false);
@@ -283,7 +284,7 @@ public class MockResourceService : IResourceService
         return _resources.Where(r => r.CreatedBy == user.Id).OrderByDescending(r => r.CreatedAt).ToList();
     }
 
-    public async Task IncrementViewCountAsync(Guid id)
+    public async Task IncrementViewCountAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var resource = _resources.FirstOrDefault(r => r.Id == id);
         if (resource is not null) resource.ViewCount++;

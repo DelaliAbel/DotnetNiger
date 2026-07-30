@@ -9,6 +9,7 @@ using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Api;
 using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Services.Contracts;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Auth;
 
@@ -242,7 +243,7 @@ public class AuthService : IAuthService
         }
     }
 
-    public async Task LogoutAsync()
+    public async Task LogoutAsync(CancellationToken cancellationToken = default)
     {
         var refreshToken = await _authProvider.GetRefreshTokenAsync();
 
@@ -252,7 +253,7 @@ public class AuthService : IAuthService
                 new { refreshToken = refreshToken });
         }
 
-        await _authProvider.ClearTokensAsync();
+        await _authProvider.ClearTokensAsync(clearAllStorage: false);
         await _userStateService.ClearUserAsync();
         _permissionService.Clear();
     }
@@ -263,7 +264,7 @@ public class AuthService : IAuthService
     /// Renouvelle l'access token depuis le refresh token stocké.
     /// Efface la session si le refresh token est invalide ou expiré.
     /// </summary>
-    public async Task<AuthDto?> RefreshTokenAsync()
+    public async Task<AuthDto?> RefreshTokenAsync(CancellationToken cancellationToken = default)
     {
         if (!await _refreshLock.WaitAsync(TimeSpan.FromSeconds(5)))
             return null;
@@ -298,7 +299,7 @@ public class AuthService : IAuthService
         }
     }
 
-	public async Task<UserDto?> GetCurrentUserAsync()
+	public async Task<UserDto?> GetCurrentUserAsync(CancellationToken cancellationToken = default)
 	{
         var apiUser = await TryGetUserInfoAsync();
         if (apiUser is not null)
@@ -335,10 +336,10 @@ public class AuthService : IAuthService
 		};
 	}
 
-    public async Task<bool> IsAuthenticatedAsync()
+    public async Task<bool> IsAuthenticatedAsync(CancellationToken cancellationToken = default)
         => !string.IsNullOrWhiteSpace(await _authProvider.GetAccessTokenAsync());
 
-    public async Task<bool> IsAdminAsync()
+    public async Task<bool> IsAdminAsync(CancellationToken cancellationToken = default)
     {
         var token = await _authProvider.GetAccessTokenAsync();
         if (string.IsNullOrWhiteSpace(token))
@@ -351,10 +352,10 @@ public class AuthService : IAuthService
         return roles.Any(r => RoleConstants.IsAdminRole(r));
     }
 
-    public Task<string?> GetAccessTokenAsync()
+    public Task<string?> GetAccessTokenAsync(CancellationToken cancellationToken = default)
         => _authProvider.GetAccessTokenAsync();
 
-    public async Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request)
+    public async Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default)
     {
         var response = await _http.PostAsJsonAsync(ApiEndpoints.Auth.ForgotPassword, request);
         return response.IsSuccessStatusCode;
@@ -394,13 +395,13 @@ public class AuthService : IAuthService
         };
     }
 
-    public async Task<bool> RequestEmailVerificationAsync(RequestEmailVerificationRequest request)
+    public async Task<bool> RequestEmailVerificationAsync(RequestEmailVerificationRequest request, CancellationToken cancellationToken = default)
     {
         var response = await _http.PostAsJsonAsync(ApiEndpoints.Auth.RequestEmailVerification, request);
         return response.IsSuccessStatusCode;
     }
 
-    public async Task<(bool Success, string? Error)> VerifyEmailAsync(VerifyEmailRequest request)
+    public async Task<(bool Success, string? Error)> VerifyEmailAsync(VerifyEmailRequest request, CancellationToken cancellationToken = default)
     {
         var response = await _http.PostAsJsonAsync(ApiEndpoints.Auth.VerifyEmail, request);
         if (response.IsSuccessStatusCode)

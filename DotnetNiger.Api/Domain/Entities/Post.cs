@@ -27,8 +27,6 @@ public class Post
     public string PostType { get; set; } = string.Empty;
     /// <summary>Statut de publication.</summary>
     public PostStatus Status { get; set; } = PostStatus.Draft;
-    /// <summary>Indique si la publication est publiée.</summary>
-    public bool IsPublished { get; set; }
     /// <summary>Nombre de vues.</summary>
     public int ViewCount { get; set; }
     /// <summary>Date de publication.</summary>

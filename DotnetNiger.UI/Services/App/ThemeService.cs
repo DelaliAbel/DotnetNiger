@@ -1,4 +1,5 @@
 using Microsoft.JSInterop;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.App;
 
@@ -17,7 +18,7 @@ public class ThemeService
         _js = js;
     }
 
-    public async Task InitializeAsync()
+    public async Task InitializeAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -31,14 +32,14 @@ public class ThemeService
         }
     }
 
-    public async Task ToggleThemeAsync()
+    public async Task ToggleThemeAsync(CancellationToken cancellationToken = default)
     {
         _currentTheme = _currentTheme == "light" ? "dark" : "light";
         await ApplyThemeAsync(_currentTheme);
         OnThemeChanged?.Invoke();
     }
 
-    public async Task SetThemeAsync(string theme)
+    public async Task SetThemeAsync(string theme, CancellationToken cancellationToken = default)
     {
         _currentTheme = theme;
         await ApplyThemeAsync(theme);

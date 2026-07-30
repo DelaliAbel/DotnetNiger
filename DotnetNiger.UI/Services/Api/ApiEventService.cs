@@ -5,6 +5,7 @@ using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -44,7 +45,7 @@ public class ApiEventService : ApiServiceBase, IEventService
             .OrderByDescending(e => e.StartDate).ToList();
     }
 
-    public async Task<EventDto?> GetEventByIdAsync(Guid id)
+    public async Task<EventDto?> GetEventByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Events}/{id}";
         try
@@ -64,7 +65,7 @@ public class ApiEventService : ApiServiceBase, IEventService
         }
     }
 
-    public async Task<EventDto?> GetEventBySlugAsync(string slug)
+    public async Task<EventDto?> GetEventBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Events}/by-slug/{slug}";
         try
@@ -102,7 +103,7 @@ public class ApiEventService : ApiServiceBase, IEventService
         return events.Where(e => e.EventType.Equals(eventType, StringComparison.OrdinalIgnoreCase)).ToList();
     }
 
-    public async Task<EventDto?> CreateEventAsync(CreateEventRequest request, Guid currentUserId, bool isAdmin)
+    public async Task<EventDto?> CreateEventAsync(CreateEventRequest request, Guid currentUserId, bool isAdmin, CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.Events;
         var response = await Http.PostAsJsonAsync(url, request);
@@ -114,7 +115,7 @@ public class ApiEventService : ApiServiceBase, IEventService
         return await ApiResponseReader.ReadAsync<EventDto>(response);
     }
 
-    public async Task<EventDto?> UpdateEventAsync(Guid id, UpdateEventRequest request)
+    public async Task<EventDto?> UpdateEventAsync(Guid id, UpdateEventRequest request, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Events}/{id}";
         try
@@ -134,7 +135,7 @@ public class ApiEventService : ApiServiceBase, IEventService
         }
     }
 
-    public async Task<bool> DeleteEventAsync(Guid id)
+    public async Task<bool> DeleteEventAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Events}/{id}";
         try
@@ -154,7 +155,7 @@ public class ApiEventService : ApiServiceBase, IEventService
         }
     }
 
-    public async Task<bool> TogglePublishAsync(Guid id)
+    public async Task<bool> TogglePublishAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var current = await GetEventByIdAsync(id);
         if (current is null)
@@ -181,7 +182,7 @@ public class ApiEventService : ApiServiceBase, IEventService
         }
     }
 
-    public async Task<EventRegistrationDto?> RegisterToEventAsync(RegisterEventRequest request, Guid userId, string userName)
+    public async Task<EventRegistrationDto?> RegisterToEventAsync(RegisterEventRequest request, Guid userId, string userName, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Events}/registrations";
         try
@@ -201,7 +202,7 @@ public class ApiEventService : ApiServiceBase, IEventService
         }
     }
 
-    public async Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId)
+    public async Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Events}/{eventId}/registrations";
         try
@@ -261,7 +262,7 @@ public class ApiEventService : ApiServiceBase, IEventService
         }
     }
 
-    public async Task<bool> ApproveEventAsync(Guid eventId, string? adminComment = null)
+    public async Task<bool> ApproveEventAsync(Guid eventId, string? adminComment = null, CancellationToken cancellationToken = default)
     {
         var url = string.IsNullOrWhiteSpace(adminComment)
             ? $"{ApiEndpoints.Events}/{eventId}/approve"
@@ -284,7 +285,7 @@ public class ApiEventService : ApiServiceBase, IEventService
         }
     }
 
-    public async Task<bool> RejectEventAsync(Guid eventId, string reason)
+    public async Task<bool> RejectEventAsync(Guid eventId, string reason, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Events}/{eventId}/reject?reason={Uri.EscapeDataString(reason)}";
         try

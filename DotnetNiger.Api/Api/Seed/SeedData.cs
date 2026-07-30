@@ -14,7 +14,7 @@ namespace DotnetNiger.Api.Seed;
 /// </summary>
 public static class SeedData
 {
-    public static async Task InitializeAsync(IServiceProvider serviceProvider)
+    public static async Task InitializeAsync(IServiceProvider serviceProvider, string adminPassword)
     {
         using var scope = serviceProvider.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<DotnetNigerDbContext>();
@@ -25,6 +25,6 @@ public static class SeedData
 
         await RolesSeeder.SeedAsync(roleManager);
         await PermissionsSeeder.SeedAsync(db, roleManager);
-        await AdminUser.SeedAsync(userManager);
+        await AdminUser.SeedAsync(userManager, adminPassword);
     }
 }

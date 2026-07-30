@@ -2,6 +2,7 @@ using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -18,7 +19,7 @@ public class ApiCertificateAdminService : ApiServiceBase, ICertificateAdminServi
         return await GetCollectionAsync<CertificateAdminDto>(ApiEndpoints.AdminCertificates, query);
     }
 
-    public async Task<bool> ApproveAsync(Guid id, string? notes = null)
+    public async Task<bool> ApproveAsync(Guid id, string? notes = null, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.AdminCertificates}/{id}/approve";
         try
@@ -38,7 +39,7 @@ public class ApiCertificateAdminService : ApiServiceBase, ICertificateAdminServi
         }
     }
 
-    public async Task<bool> RejectAsync(Guid id, string? notes = null)
+    public async Task<bool> RejectAsync(Guid id, string? notes = null, CancellationToken cancellationToken = default)
     {
         var url = string.IsNullOrWhiteSpace(notes)
             ? $"{ApiEndpoints.AdminCertificates}/{id}/reject"

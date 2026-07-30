@@ -52,7 +52,6 @@ public class CommentService : ICommentService
             Id = Guid.NewGuid(),
             Content = request.Content,
             UserId = userId,
-            AuthorId = userId,
             AuthorName = userName,
             AuthorAvatar = avatar ?? "",
             PostId = request.PostId,

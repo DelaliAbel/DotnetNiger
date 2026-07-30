@@ -3,6 +3,7 @@ using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -15,7 +16,7 @@ public class ApiCategoryService : ApiServiceBase, ICategoryService
         return await GetCollectionAsync<CategoryDto>(ApiEndpoints.Categories);
     }
 
-    public async Task<CategoryDto?> GetByIdAsync(Guid id)
+    public async Task<CategoryDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Categories}/{id}";
         try
@@ -35,7 +36,7 @@ public class ApiCategoryService : ApiServiceBase, ICategoryService
         }
     }
 
-    public async Task<CategoryDto?> GetBySlugAsync(string slug)
+    public async Task<CategoryDto?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Categories}/{slug}";
         try
@@ -55,7 +56,7 @@ public class ApiCategoryService : ApiServiceBase, ICategoryService
         }
     }
 
-    public async Task<CategoryDto?> CreateAsync(string name, string description)
+    public async Task<CategoryDto?> CreateAsync(string name, string description, CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.Categories;
         try
@@ -76,7 +77,7 @@ public class ApiCategoryService : ApiServiceBase, ICategoryService
         }
     }
 
-    public async Task<CategoryDto?> UpdateAsync(Guid id, string name, string description)
+    public async Task<CategoryDto?> UpdateAsync(Guid id, string name, string description, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Categories}/{id}";
         try
@@ -97,7 +98,7 @@ public class ApiCategoryService : ApiServiceBase, ICategoryService
         }
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Categories}/{id}";
         try

@@ -49,7 +49,11 @@ var app = builder.Build();
 app.UsePipeline(builder.Environment.IsDevelopment());
 
 if (app.Environment.IsDevelopment())
-    await SeedData.InitializeAsync(app.Services);
+{
+    var adminPassword = builder.Configuration.GetValue<string>("AdminPassword")
+        ?? throw new InvalidOperationException("AdminPassword must be configured in appsettings.json or environment variables.");
+    await SeedData.InitializeAsync(app.Services, adminPassword);
+}
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 

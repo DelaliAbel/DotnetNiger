@@ -1,5 +1,6 @@
 ﻿using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock;
 
@@ -10,7 +11,7 @@ public class MockNotificationService : INotificationService
 
     public event Action<Guid>? NotificationsChanged;
 
-    public Task SendNotificationAsync(Guid userId, string message)
+    public Task SendNotificationAsync(Guid userId, string message, CancellationToken cancellationToken = default)
     {
         if (!_store.TryGetValue(userId, out var list))
         {
@@ -32,7 +33,7 @@ public class MockNotificationService : INotificationService
         return list.OrderByDescending(n => n.CreatedAt).ToList();
     }
 
-    public async Task<int> GetUnreadCountAsync(Guid userId)
+    public async Task<int> GetUnreadCountAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         await Task.Delay(800);
         if (!_store.TryGetValue(userId, out var list))
@@ -41,7 +42,7 @@ public class MockNotificationService : INotificationService
         return list.Count(n => !n.IsRead);
     }
 
-    public Task MarkAsReadAsync(Guid userId, Guid notificationId)
+    public Task MarkAsReadAsync(Guid userId, Guid notificationId, CancellationToken cancellationToken = default)
     {
         if (!_store.TryGetValue(userId, out var list))
             return Task.CompletedTask;
@@ -55,7 +56,7 @@ public class MockNotificationService : INotificationService
         return Task.CompletedTask;
     }
 
-    public Task MarkAllAsReadAsync(Guid userId)
+    public Task MarkAllAsReadAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         if (!_store.TryGetValue(userId, out var list))
             return Task.CompletedTask;

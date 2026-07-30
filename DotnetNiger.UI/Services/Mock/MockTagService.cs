@@ -1,5 +1,6 @@
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock;
 
@@ -15,13 +16,13 @@ public class MockTagService : ITagService
 
     public Task<List<TagDto>> GetAllAsync() => Task.FromResult(_tags.ToList());
 
-    public Task<TagDto?> GetByIdAsync(Guid id) =>
+    public Task<TagDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         Task.FromResult(_tags.FirstOrDefault(t => t.Id == id));
 
-    public Task<TagDto?> GetBySlugAsync(string slug) =>
+    public Task<TagDto?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default) =>
         Task.FromResult(_tags.FirstOrDefault(t => t.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase)));
 
-    public Task<TagDto?> CreateAsync(string name)
+    public Task<TagDto?> CreateAsync(string name, CancellationToken cancellationToken = default)
     {
         var tag = new TagDto
         {
@@ -33,7 +34,7 @@ public class MockTagService : ITagService
         return Task.FromResult<TagDto?>(tag);
     }
 
-    public Task<TagDto?> UpdateAsync(Guid id, string name)
+    public Task<TagDto?> UpdateAsync(Guid id, string name, CancellationToken cancellationToken = default)
     {
         var tag = _tags.FirstOrDefault(t => t.Id == id);
         if (tag is null) return Task.FromResult<TagDto?>(null);
@@ -41,7 +42,7 @@ public class MockTagService : ITagService
         return Task.FromResult<TagDto?>(tag);
     }
 
-    public Task<bool> DeleteAsync(Guid id)
+    public Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var removed = _tags.RemoveAll(t => t.Id == id);
         return Task.FromResult(removed > 0);

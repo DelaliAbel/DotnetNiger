@@ -3,6 +3,7 @@ using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -15,7 +16,7 @@ public class ApiSettingsService : ApiServiceBase, ISettingsService
         return await GetCollectionAsync<SiteSettingDto>(ApiEndpoints.AdminSettings);
     }
 
-    public async Task<SiteSettingDto?> GetByKeyAsync(string key)
+    public async Task<SiteSettingDto?> GetByKeyAsync(string key, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.AdminSettings}/{key}";
         try
@@ -35,7 +36,7 @@ public class ApiSettingsService : ApiServiceBase, ISettingsService
         }
     }
 
-    public async Task<SiteSettingDto?> SetAsync(string key, string value)
+    public async Task<SiteSettingDto?> SetAsync(string key, string value, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.AdminSettings}/{key}";
         try
@@ -56,7 +57,7 @@ public class ApiSettingsService : ApiServiceBase, ISettingsService
         }
     }
 
-    public async Task<bool> SetBatchAsync(Dictionary<string, string> settings)
+    public async Task<bool> SetBatchAsync(Dictionary<string, string> settings, CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.AdminSettings;
         try
@@ -77,7 +78,7 @@ public class ApiSettingsService : ApiServiceBase, ISettingsService
         }
     }
 
-    public async Task<bool> DeleteAsync(string key)
+    public async Task<bool> DeleteAsync(string key, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.AdminSettings}/{key}";
         try

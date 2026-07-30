@@ -1,6 +1,7 @@
 using System.Text.Json;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.JSInterop;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Browser;
 
@@ -29,6 +30,6 @@ public class JsLocalStorageService : ILocalStorageService
         await _jsRuntime.InvokeVoidAsync("localStorage.setItem", key, json);
     }
 
-    public Task RemoveItemAsync(string key)
+    public Task RemoveItemAsync(string key, CancellationToken cancellationToken = default)
         => _jsRuntime.InvokeVoidAsync("localStorage.removeItem", key).AsTask();
 }

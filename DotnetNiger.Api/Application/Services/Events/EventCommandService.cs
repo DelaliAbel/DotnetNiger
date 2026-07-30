@@ -35,9 +35,8 @@ public class EventCommandService : IEventCommandService
             Capacity = request.Capacity,
             MeetupLink = request.MeetupLink,
             CreatedBy = organizerId,
-            IsPublished = request.IsPublished,
-            IsArchived = request.IsArchived,
-            Status = EventStatus.Draft
+            Status = request.IsArchived ? EventStatus.Archived :
+                     request.IsPublished ? EventStatus.Published : EventStatus.Draft
         };
 
         await SyncEventTagsAsync(eventEntity, request.TagNames, request.TagIds);
@@ -71,8 +70,10 @@ public class EventCommandService : IEventCommandService
         if (request.OrganizerName != null) eventEntity.OrganizerName = request.OrganizerName;
         if (request.Capacity.HasValue) eventEntity.Capacity = request.Capacity.Value;
         if (request.MeetupLink != null) eventEntity.MeetupLink = request.MeetupLink;
-        if (request.IsPublished.HasValue) eventEntity.IsPublished = request.IsPublished.Value;
-        if (request.IsArchived.HasValue) eventEntity.IsArchived = request.IsArchived.Value;
+        if (request.IsArchived.HasValue)
+            eventEntity.Status = request.IsArchived.Value ? EventStatus.Archived : EventStatus.Draft;
+        else if (request.IsPublished.HasValue)
+            eventEntity.Status = request.IsPublished.Value ? EventStatus.Published : EventStatus.Draft;
 
         if (request.TagNames != null)
             await SyncEventTagsAsync(eventEntity, request.TagNames, null);

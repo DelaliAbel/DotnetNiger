@@ -37,10 +37,6 @@ public class Event
     public int Capacity { get; set; }
     /// <summary>Nombre d'inscrits actuel.</summary>
     public int RegisteredCount { get; set; }
-    /// <summary>Indique si l'événement est publié.</summary>
-    public bool IsPublished { get; set; }
-    /// <summary>Indique si l'événement est archivé.</summary>
-    public bool IsArchived { get; set; }
     /// <summary>Lien de réunion en ligne.</summary>
     public string MeetupLink { get; set; } = string.Empty;
     /// <summary>Raison du rejet éventuel.</summary>

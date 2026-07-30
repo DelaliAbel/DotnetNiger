@@ -5,6 +5,7 @@ using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -32,7 +33,7 @@ public class ApiUserService : ApiServiceBase, IUserService
         }
     }
 
-    public async Task<UserDto?> GetUserByIdAsync(Guid userId)
+    public async Task<UserDto?> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.AdminUsers}/{userId}";
         try
@@ -58,7 +59,7 @@ public class ApiUserService : ApiServiceBase, IUserService
         return users.Where(u => !u.IsActive).ToList();
     }
 
-    public async Task<UserDto?> GetUserByEmailAsync(string email)
+    public async Task<UserDto?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         var users = await GetUsersAsync();
         return users.FirstOrDefault(u =>
@@ -93,19 +94,19 @@ public class ApiUserService : ApiServiceBase, IUserService
         ).ToList();
     }
 
-    public async Task<int> GetUsersCountAsync()
+    public async Task<int> GetUsersCountAsync(CancellationToken cancellationToken = default)
     {
         var users = await GetUsersAsync();
         return users.Count;
     }
 
-    public async Task<int> GetActiveUsersCountAsync()
+    public async Task<int> GetActiveUsersCountAsync(CancellationToken cancellationToken = default)
     {
         var users = await GetUsersAsync();
         return users.Count(u => u.IsActive);
     }
 
-    public async Task<UserDto?> CreateUserAsync(CreateUserRequest user)
+    public async Task<UserDto?> CreateUserAsync(CreateUserRequest user, CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.AdminUsers;
         try
@@ -126,7 +127,7 @@ public class ApiUserService : ApiServiceBase, IUserService
         }
     }
 
-    public async Task<UserDto?> UpdateUserAsync(UserDto user)
+    public async Task<UserDto?> UpdateUserAsync(UserDto user, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -197,7 +198,7 @@ public class ApiUserService : ApiServiceBase, IUserService
         }
     }
 
-    public async Task<bool> DeleteUserAsync(Guid userId)
+    public async Task<bool> DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.AdminUsers}/{userId}";
         try
@@ -217,7 +218,7 @@ public class ApiUserService : ApiServiceBase, IUserService
         }
     }
 
-    public async Task<bool> ApproveUserAsync(Guid userId)
+    public async Task<bool> ApproveUserAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var statusUrl = $"{ApiEndpoints.AdminUsers}/{userId}/status";
         var roleUrl = string.Format(ApiEndpoints.AdminUserRoles, userId);
@@ -243,7 +244,7 @@ public class ApiUserService : ApiServiceBase, IUserService
         }
     }
 
-    public async Task<bool> RejectUserAsync(Guid userId)
+    public async Task<bool> RejectUserAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.AdminUsers}/{userId}/status";
         try
@@ -274,7 +275,7 @@ public class ApiUserService : ApiServiceBase, IUserService
         ).ToList();
     }
 
-    public async Task<bool> AssignRoleAsync(Guid userId, string roleName)
+    public async Task<bool> AssignRoleAsync(Guid userId, string roleName, CancellationToken cancellationToken = default)
     {
         var url = string.Format(ApiEndpoints.AdminUserRoles, userId);
         try
@@ -295,7 +296,7 @@ public class ApiUserService : ApiServiceBase, IUserService
         }
     }
 
-    public async Task<bool> AddToTeamAsync(Guid userId, string position)
+    public async Task<bool> AddToTeamAsync(Guid userId, string position, CancellationToken cancellationToken = default)
     {
         var url = string.Format(ApiEndpoints.AdminUserTeam, userId);
         try
@@ -320,7 +321,7 @@ public class ApiUserService : ApiServiceBase, IUserService
         }
     }
 
-    public async Task<bool> RemoveFromTeamAsync(Guid userId)
+    public async Task<bool> RemoveFromTeamAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var url = string.Format(ApiEndpoints.AdminUserTeam, userId);
         try

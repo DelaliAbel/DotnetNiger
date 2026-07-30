@@ -4,6 +4,7 @@ using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -51,7 +52,7 @@ public class ApiPartnerService : ApiServiceBase, IPartnerService
         }
     }
 
-    public async Task<PartnerResponse?> GetByIdAsync(Guid id)
+    public async Task<PartnerResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Partners}/{id}";
         try
@@ -71,7 +72,7 @@ public class ApiPartnerService : ApiServiceBase, IPartnerService
         }
     }
 
-    public async Task<PartnerResponse?> CreateAsync(CreatePartnerRequest request)
+    public async Task<PartnerResponse?> CreateAsync(CreatePartnerRequest request, CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.Partners;
         try
@@ -91,7 +92,7 @@ public class ApiPartnerService : ApiServiceBase, IPartnerService
         }
     }
 
-    public async Task<PartnerResponse?> UpdateAsync(Guid id, UpdatePartnerRequest request)
+    public async Task<PartnerResponse?> UpdateAsync(Guid id, UpdatePartnerRequest request, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Partners}/{id}";
         try
@@ -111,7 +112,7 @@ public class ApiPartnerService : ApiServiceBase, IPartnerService
         }
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Partners}/{id}";
         try

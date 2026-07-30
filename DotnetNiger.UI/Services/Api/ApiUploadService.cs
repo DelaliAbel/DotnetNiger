@@ -5,6 +5,7 @@ using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.AspNetCore.Components.Forms;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -44,13 +45,13 @@ public class ApiUploadService : ApiServiceBase, IUploadService
         }
     }
 
-    public async Task<UploadResponse> UploadImageAsync(IBrowserFile file, UploadType type)
+    public async Task<UploadResponse> UploadImageAsync(IBrowserFile file, UploadType type, CancellationToken cancellationToken = default)
     {
         var bytes = await ReadFileBytesAsync(file);
         return await UploadImageBase64Async(Convert.ToBase64String(bytes), file.Name, type);
     }
 
-    public async Task<UploadResponse> UploadImageBase64Async(string base64Content, string fileName, UploadType type)
+    public async Task<UploadResponse> UploadImageBase64Async(string base64Content, string fileName, UploadType type, CancellationToken cancellationToken = default)
     {
         var extension = Path.GetExtension(fileName);
 
@@ -109,13 +110,13 @@ public class ApiUploadService : ApiServiceBase, IUploadService
         return new UploadResponse { Success = false, Message = "Réponse inattendue du serveur." };
     }
 
-    public async Task<bool> DeleteImageAsync(string imageUrl)
+    public async Task<bool> DeleteImageAsync(string imageUrl, CancellationToken cancellationToken = default)
     {
         var response = await Http.DeleteAsync(BuildUrl(ApiEndpoints.Upload, new Dictionary<string, string?> { ["path"] = imageUrl }));
         return response.IsSuccessStatusCode;
     }
 
-    public Task<string?> ResolveImageUrlAsync(string imageUrl)
+    public Task<string?> ResolveImageUrlAsync(string imageUrl, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(imageUrl))
             return Task.FromResult<string?>(null);

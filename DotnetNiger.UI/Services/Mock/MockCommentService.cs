@@ -1,6 +1,7 @@
 ﻿using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock;
 
@@ -11,7 +12,7 @@ public class MockCommentService : ICommentService
     private List<CommentResponse> _comments = new();
     private readonly IUserStateService _userStateService;
 
-    public Task<Guid> GetCurrentUserIdAsync() =>
+    public Task<Guid> GetCurrentUserIdAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(CurrentUserId);
 
     private Guid CurrentUserId =>
@@ -216,14 +217,14 @@ public class MockCommentService : ICommentService
         return comments;
     }
 
-    public async Task<CommentResponse?> GetCommentByIdAsync(Guid id)
+    public async Task<CommentResponse?> GetCommentByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await Task.Delay(800);
         var comment = _comments.FirstOrDefault(c => c.Id == id);
         return comment;
     }
 
-    public Task<CommentResponse?> CreateCommentAsync(CreateCommentRequest request)
+    public Task<CommentResponse?> CreateCommentAsync(CreateCommentRequest request, CancellationToken cancellationToken = default)
     {
         var newComment = new CommentResponse
         {
@@ -255,7 +256,7 @@ public class MockCommentService : ICommentService
         return Task.FromResult<CommentResponse?>(newComment);
     }
 
-    public Task<CommentResponse?> UpdateCommentAsync(UpdateCommentRequest request)
+    public Task<CommentResponse?> UpdateCommentAsync(UpdateCommentRequest request, CancellationToken cancellationToken = default)
     {
         var comment = _comments.FirstOrDefault(c => c.Id == request.Id);
         if (comment == null)
@@ -269,7 +270,7 @@ public class MockCommentService : ICommentService
         return Task.FromResult<CommentResponse?>(comment);
     }
 
-    public Task<bool> DeleteCommentAsync(DeleteCommentRequest request)
+    public Task<bool> DeleteCommentAsync(DeleteCommentRequest request, CancellationToken cancellationToken = default)
     {
         var comment = _comments.FirstOrDefault(c => c.Id == request.Id);
         if (comment == null)
@@ -308,7 +309,7 @@ public class MockCommentService : ICommentService
         };
     }
 
-    public Task<CommentResponse?> ApproveCommentAsync(Guid id)
+    public Task<CommentResponse?> ApproveCommentAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var comment = FindComment(_comments, id);
         if (comment == null)
@@ -319,7 +320,7 @@ public class MockCommentService : ICommentService
         return Task.FromResult<CommentResponse?>(comment);
     }
 
-    public Task<CommentResponse?> RejectCommentAsync(Guid id)
+    public Task<CommentResponse?> RejectCommentAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var comment = FindComment(_comments, id);
         if (comment == null)

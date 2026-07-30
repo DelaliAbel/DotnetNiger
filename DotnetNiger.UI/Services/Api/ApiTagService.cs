@@ -3,6 +3,7 @@ using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -15,7 +16,7 @@ public class ApiTagService : ApiServiceBase, ITagService
         return await GetCollectionAsync<TagDto>(ApiEndpoints.Tags);
     }
 
-    public async Task<TagDto?> GetByIdAsync(Guid id)
+    public async Task<TagDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Tags}/{id}";
         try
@@ -35,7 +36,7 @@ public class ApiTagService : ApiServiceBase, ITagService
         }
     }
 
-    public async Task<TagDto?> GetBySlugAsync(string slug)
+    public async Task<TagDto?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Tags}/{slug}";
         try
@@ -55,7 +56,7 @@ public class ApiTagService : ApiServiceBase, ITagService
         }
     }
 
-    public async Task<TagDto?> CreateAsync(string name)
+    public async Task<TagDto?> CreateAsync(string name, CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.Tags;
         try
@@ -76,7 +77,7 @@ public class ApiTagService : ApiServiceBase, ITagService
         }
     }
 
-    public async Task<TagDto?> UpdateAsync(Guid id, string name)
+    public async Task<TagDto?> UpdateAsync(Guid id, string name, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Tags}/{id}";
         try
@@ -97,7 +98,7 @@ public class ApiTagService : ApiServiceBase, ITagService
         }
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Tags}/{id}";
         try

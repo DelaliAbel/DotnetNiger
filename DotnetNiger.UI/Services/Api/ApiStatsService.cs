@@ -2,6 +2,7 @@ using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -9,7 +10,7 @@ public class ApiStatsService : ApiServiceBase, IStatsService
 {
     public ApiStatsService(HttpClient http, ILogger<ApiStatsService> logger) : base(http, logger) { }
 
-    public async Task<DashboardResponse?> GetDashboardAsync()
+    public async Task<DashboardResponse?> GetDashboardAsync(CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.Stats;
         try

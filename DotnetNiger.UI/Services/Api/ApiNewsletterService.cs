@@ -4,6 +4,7 @@ using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -11,7 +12,7 @@ public class ApiNewsletterService : ApiServiceBase, INewsletterService
 {
     public ApiNewsletterService(HttpClient http, ILogger<ApiNewsletterService> logger) : base(http, logger) { }
 
-    public async Task<bool> SubscribeAsync(SubscribeRequest request)
+    public async Task<bool> SubscribeAsync(SubscribeRequest request, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Newsletters}/subscribe";
         try
@@ -31,7 +32,7 @@ public class ApiNewsletterService : ApiServiceBase, INewsletterService
         }
     }
 
-    public async Task<bool> UnsubscribeAsync(UnsubscribeRequest request)
+    public async Task<bool> UnsubscribeAsync(UnsubscribeRequest request, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Newsletters}/unsubscribe";
         try
@@ -51,7 +52,7 @@ public class ApiNewsletterService : ApiServiceBase, INewsletterService
         }
     }
 
-    public async Task<bool> DeleteSubscriberAsync(string email)
+    public async Task<bool> DeleteSubscriberAsync(string email, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Newsletters}/{email}";
         try

@@ -1,5 +1,6 @@
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock;
 
@@ -38,7 +39,7 @@ public class MockCertificateAdminService : ICertificateAdminService
         return Task.FromResult(result);
     }
 
-    public Task<bool> ApproveAsync(Guid id, string? notes = null)
+    public Task<bool> ApproveAsync(Guid id, string? notes = null, CancellationToken cancellationToken = default)
     {
         var cert = _certificates.FirstOrDefault(c => c.Id == id);
         if (cert is null) return Task.FromResult(false);
@@ -48,7 +49,7 @@ public class MockCertificateAdminService : ICertificateAdminService
         return Task.FromResult(true);
     }
 
-    public Task<bool> RejectAsync(Guid id, string? notes = null)
+    public Task<bool> RejectAsync(Guid id, string? notes = null, CancellationToken cancellationToken = default)
     {
         var cert = _certificates.FirstOrDefault(c => c.Id == id);
         if (cert is null) return Task.FromResult(false);

@@ -1,5 +1,6 @@
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock;
 
@@ -45,7 +46,7 @@ public class MockMemberDirectoryService : IMemberDirectoryService
         };
     }
 
-    public async Task<MemberDirectoryResponse?> GetByIdAsync(Guid id)
+    public async Task<MemberDirectoryResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await Task.Delay(800);
         return _members.FirstOrDefault(m => m.Id == id);
