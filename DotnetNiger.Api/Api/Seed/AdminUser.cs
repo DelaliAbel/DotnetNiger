@@ -28,7 +28,7 @@ public static class AdminUser
         {
             admin = new ApplicationUser
             {
-                UserName = "DotnetNiger SAdmin",
+                UserName = "DotnetNiger_SAdmin",
                 Email = Email,
                 FirstName = "Admin",
                 LastName = "DotnetNiger",

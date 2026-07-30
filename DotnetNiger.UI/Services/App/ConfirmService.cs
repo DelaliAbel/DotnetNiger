@@ -1,23 +1,21 @@
 using DotnetNiger.UI.Services.Contracts;
-using Microsoft.JSInterop;
 
 namespace DotnetNiger.UI.Services.App;
 
 public class ConfirmService : IConfirmService
 {
-    private readonly IJSRuntime _js;
+    public event EventHandler<ConfirmRequest>? OnConfirm;
 
-    public ConfirmService(IJSRuntime js) => _js = js;
-
-    public async Task<bool> ShowAsync(string message)
+    public Task<bool> ShowAsync(string message)
     {
-        try
+        var request = new ConfirmRequest
         {
-            return await _js.InvokeAsync<bool>("confirm", message);
-        }
-        catch
-        {
-            return false;
-        }
+            Message = message,
+            CompletionSource = new TaskCompletionSource<bool>()
+        };
+
+        OnConfirm?.Invoke(this, request);
+
+        return request.CompletionSource.Task;
     }
 }

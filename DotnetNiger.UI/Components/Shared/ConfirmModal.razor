@@ -1,0 +1,65 @@
+@* Composant modal de confirmation réutilisable *@
+
+@if (Show)
+{
+    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        <div class="absolute inset-0 bg-black/40" @onclick="HandleCancel"></div>
+        <div class="relative w-full max-w-sm rounded-lg bg-surface p-4 sm:p-6 shadow-lg">
+            <h3 class="text-base font-semibold text-title">@Title</h3>
+            <div class="mt-2 text-sm text-gray-600">
+                @Body
+            </div>
+            <div class="mt-4 flex justify-end gap-2">
+                <button type="button"
+                        class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-title transition hover:bg-gray-50"
+                        @onclick="HandleCancel">
+                    @CancelText
+                </button>
+                <button type="button"
+                        class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-hover"
+                        disabled="@ConfirmDisabled"
+                        @onclick="HandleConfirm">
+                    @ConfirmText
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool Show { get; set; }
+
+    [Parameter]
+    public string Title { get; set; } = "Confirmation";
+
+    [Parameter]
+    public RenderFragment? Body { get; set; }
+
+    [Parameter]
+    public string CancelText { get; set; } = "Annuler";
+
+    [Parameter]
+    public string ConfirmText { get; set; } = "Confirmer";
+
+    [Parameter]
+    public bool ConfirmDisabled { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+
+    private async Task HandleCancel()
+    {
+        if (OnCancel.HasDelegate)
+            await OnCancel.InvokeAsync();
+    }
+
+    private async Task HandleConfirm()
+    {
+        if (OnConfirm.HasDelegate)
+            await OnConfirm.InvokeAsync();
+    }
+}

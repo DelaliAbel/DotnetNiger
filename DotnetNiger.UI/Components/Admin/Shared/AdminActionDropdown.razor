@@ -1,7 +1,6 @@
 ﻿@implements IDisposable
 @using DotnetNiger.UI.Models.Requests
 @using DotnetNiger.UI.Helpers
-@inject IJSRuntime JS
 
 <div class="relative inline-block text-left">
     <button type="button"
@@ -142,26 +141,32 @@
     }
 </div>
 
-@if (showConfirmModal)
-{
-    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-        <div class="absolute inset-0 bg-black/40" @onclick="CancelConfirm"></div>
-        <div class="relative w-full max-w-sm rounded-lg bg-surface p-4 sm:p-6 shadow-lg">
-            <h3 class="text-base font-semibold text-title">Changement de rôle</h3>
-            <p class="mt-2 text-sm text-gray-600">
-                Voulez-vous assigner le rôle <strong class="text-title">@AllRoles.GetValueOrDefault(pendingRoleName, pendingRoleName)</strong> à cet utilisateur ?
-            </p>
-            <div class="mt-4 flex justify-end gap-2">
-                <button type="button"
-                        class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-title transition hover:bg-gray-50"
-                        @onclick="CancelConfirm">Annuler</button>
-                <button type="button"
-                        class="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition hover:bg-hover"
-                        @onclick="ConfirmRoleAsync">Confirmer</button>
-            </div>
-        </div>
-    </div>
-}
+<ConfirmModal Show="@showConfirmModal"
+                     Title="Changement de rôle"
+                     OnCancel="CancelConfirm"
+                     OnConfirm="ConfirmRoleAsync">
+    <Body>
+        <p>
+            Voulez-vous assigner le rôle <strong class="text-title">@AllRoles.GetValueOrDefault(pendingRoleName, pendingRoleName)</strong> à cet utilisateur ?
+        </p>
+    </Body>
+</ConfirmModal>
+
+<ConfirmModal Show="@showTeamPrompt"
+                     Title="Intégrer à l'équipe"
+                     ConfirmDisabled="string.IsNullOrWhiteSpace(pendingPosition)"
+                     OnCancel="CancelTeamPrompt"
+                     OnConfirm="ConfirmTeamPromptAsync">
+    <Body>
+        <label for="team-position" class="mb-1 block text-sm font-medium text-title">Poste dans l'équipe :</label>
+        <input id="team-position"
+               type="text"
+               class="w-full rounded-lg border border-gray-300 bg-transparent px-3 py-2 text-sm text-title outline-none transition focus:border-primary focus:ring-1 focus:ring-primary"
+               placeholder="Ex: Développeur Full Stack"
+               @bind="pendingPosition"
+               @bind:event="oninput" />
+    </Body>
+</ConfirmModal>
 
 @code {
     [Parameter]
@@ -233,7 +238,9 @@
     private bool isOpen;
     private bool showChangeRoleView;
     private bool showConfirmModal;
+    private bool showTeamPrompt;
     private string pendingRoleName = string.Empty;
+    private string pendingPosition = string.Empty;
 
     private static readonly Dictionary<string, string> AllRoles = new()
     {
@@ -270,7 +277,9 @@
         isOpen = false;
         showChangeRoleView = false;
         showConfirmModal = false;
+        showTeamPrompt = false;
         pendingRoleName = string.Empty;
+        pendingPosition = string.Empty;
     }
 
     private void HandleOtherMenuOpened(Guid openedInstanceId)
@@ -337,20 +346,31 @@
         await OnChangeRole.InvokeAsync(request);
     }
 
-    private async Task AddToTeamAsync()
+    private void AddToTeamAsync()
     {
         if (ItemId != Guid.Empty && OnAddToTeam.HasDelegate)
         {
-            var position = await JS.InvokeAsync<string>("prompt", "Poste dans l'équipe :");
-            if (string.IsNullOrWhiteSpace(position))
-            {
-                isOpen = false;
-                return;
-            }
-            await OnAddToTeam.InvokeAsync((ItemId, position.Trim()));
+            pendingPosition = string.Empty;
+            showTeamPrompt = true;
         }
+    }
 
+    private void CancelTeamPrompt()
+    {
+        showTeamPrompt = false;
+        pendingPosition = string.Empty;
+    }
+
+    private async Task ConfirmTeamPromptAsync()
+    {
+        if (ItemId == Guid.Empty || !OnAddToTeam.HasDelegate || string.IsNullOrWhiteSpace(pendingPosition))
+            return;
+
+        showTeamPrompt = false;
         isOpen = false;
+
+        await OnAddToTeam.InvokeAsync((ItemId, pendingPosition.Trim()));
+        pendingPosition = string.Empty;
     }
 
     private async Task RemoveFromTeamAsync()

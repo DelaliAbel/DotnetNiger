@@ -1,0 +1,50 @@
+@using DotnetNiger.UI.Services.Contracts
+@implements IDisposable
+@inject IConfirmService ConfirmService
+
+<ConfirmModal Show="@_show"
+             Title="Confirmation"
+             OnCancel="Cancel"
+             OnConfirm="Confirm">
+    <Body>
+        <p>@_message</p>
+    </Body>
+</ConfirmModal>
+
+@code {
+    private bool _show;
+    private string _message = string.Empty;
+    private TaskCompletionSource<bool>? _tcs;
+
+    protected override void OnInitialized()
+    {
+        ConfirmService.OnConfirm += HandleConfirm;
+    }
+
+    private void HandleConfirm(object? sender, ConfirmRequest request)
+    {
+        _show = true;
+        _message = request.Message;
+        _tcs = request.CompletionSource;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void Confirm()
+    {
+        _show = false;
+        _tcs?.TrySetResult(true);
+        _tcs = null;
+    }
+
+    private void Cancel()
+    {
+        _show = false;
+        _tcs?.TrySetResult(false);
+        _tcs = null;
+    }
+
+    public void Dispose()
+    {
+        ConfirmService.OnConfirm -= HandleConfirm;
+    }
+}

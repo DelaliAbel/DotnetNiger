@@ -31,7 +31,7 @@ else
                     <span
                     class="text-[10px] sm:text-xs @StatusCss px-2 py-1 rounded whitespace-nowrap flex-shrink-0">@StatusLabel</span>
                 </div>
-                <p class="mt-2 sm:mt-3 text-xs sm:text-sm md:text-base text-body">@Project.Description</p>
+                <p class="mt-2 sm:mt-3 text-xs sm:text-sm md:text-base text-body break-words">@Project.Description</p>
 
                 @if (!string.IsNullOrWhiteSpace(Project.Technologies))
                 {

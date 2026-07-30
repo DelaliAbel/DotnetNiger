@@ -26,12 +26,23 @@ function loadCSS(href) {
   });
 }
 
+function swapSkinCSS(theme) {
+  const skinName = theme === 'dark' ? 'oxide-dark' : 'oxide';
+  document.querySelectorAll('link[href*="/skins/ui/"]').forEach(el => el.remove());
+  loadCSS(`/lib/tinymce/skins/ui/${skinName}/skin.min.css`);
+  loadCSS(`/lib/tinymce/skins/ui/${skinName}/content.min.css`);
+}
+
+window.__tinyMCEInstances = window.__tinyMCEInstances || {};
+
 window.loadTinyMCE = async (id, initialContent = '') => {
   if (typeof tinymce === 'undefined') {
+    const theme = document.documentElement.getAttribute('data-theme') || 'light';
+    const skinName = theme === 'dark' ? 'oxide-dark' : 'oxide';
     await Promise.all([
       loadScript('/lib/tinymce/tinymce.min.js'),
-      loadCSS('/lib/tinymce/skins/ui/oxide/skin.min.css'),
-      loadCSS('/lib/tinymce/skins/ui/oxide/content.min.css')
+      loadCSS(`/lib/tinymce/skins/ui/${skinName}/skin.min.css`),
+      loadCSS(`/lib/tinymce/skins/ui/${skinName}/content.min.css`)
     ]);
   }
 
@@ -46,6 +57,9 @@ window.loadTinyMCE = async (id, initialContent = '') => {
     return;
   }
 
+  const theme = document.documentElement.getAttribute('data-theme') || 'light';
+  const isDark = theme === 'dark';
+
   tinymce.init({
     selector: '#' + id,
     base_url: '/lib/tinymce',
@@ -54,8 +68,8 @@ window.loadTinyMCE = async (id, initialContent = '') => {
     menubar: true,
     plugins: 'lists link image table code',
     toolbar: 'undo redo | bold italic underline | alignleft aligncenter alignright | bullist numlist | link image | code',
-    skin_url: '/lib/tinymce/skins/ui/oxide',
-    content_css: '/lib/tinymce/skins/content/default/content.min.css',
+    skin_url: isDark ? '/lib/tinymce/skins/ui/oxide-dark' : '/lib/tinymce/skins/ui/oxide',
+    content_css: isDark ? '/lib/tinymce/skins/content/dark/content.min.css' : '/lib/tinymce/skins/content/default/content.min.css',
     init_instance_callback: (editor) => {
       if (initialContent) {
         editor.setContent(initialContent);
@@ -65,8 +79,35 @@ window.loadTinyMCE = async (id, initialContent = '') => {
       editor.on('remove', () => {
         const ta = document.getElementById(id);
         if (ta) ta.value = '';
+        delete window.__tinyMCEInstances[id];
       });
     }
+  });
+
+  window.__tinyMCEInstances[id] = { initialContent };
+};
+
+window.updateTinyMCETheme = (theme) => {
+  const isDark = theme === 'dark';
+
+  swapSkinCSS(theme);
+
+  Object.keys(window.__tinyMCEInstances).forEach(id => {
+    const editor = tinymce.get(id);
+    if (!editor) return;
+
+    const doc = editor.getDoc();
+    if (!doc) return;
+
+    const oldLink = doc.querySelector('link[href*="/skins/content/"]');
+    if (oldLink) oldLink.remove();
+
+    const newLink = doc.createElement('link');
+    newLink.rel = 'stylesheet';
+    newLink.href = isDark
+      ? '/lib/tinymce/skins/content/dark/content.min.css'
+      : '/lib/tinymce/skins/content/default/content.min.css';
+    doc.head.appendChild(newLink);
   });
 };
 
