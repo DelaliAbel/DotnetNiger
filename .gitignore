@@ -58,8 +58,8 @@ local.settings.json
 
 # Environment
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
 
 # Database
 *.mdf
@@ -118,11 +118,8 @@ __pycache__/
 # Generated Ocelot
 ocelot.json
 
-# Docs with sensitive info
-docs/HEALTH_REPORT.md
-docs/DEPLOY_GUIDE.md
-docs/DotnetNiger_Presentation*.pptx
-docs/OAUTH_PROVIDERS_SETUP.md
+# Production deployment guide (contains credentials)
+DEPLOY_PROD.md
 
 # User secrets
 user-secrets-dotnetniger.txt
