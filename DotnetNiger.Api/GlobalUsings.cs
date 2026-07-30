@@ -27,6 +27,7 @@ global using DotnetNiger.Api.Infrastructure.Data;
 global using DotnetNiger.Api.Infrastructure.Email;
 global using DotnetNiger.Api.Infrastructure.Email.Templates;
 global using DotnetNiger.Api.Infrastructure.Auth;
+global using Microsoft.Extensions.Options;
 global using DotnetNiger.Api.Options;
 global using DotnetNiger.Api.Constants;
 global using DotnetNiger.Api.Extensions;
