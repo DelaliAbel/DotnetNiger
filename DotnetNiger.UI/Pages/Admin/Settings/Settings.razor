@@ -5,6 +5,7 @@
 @inject IToastService ToastService
 @inject IUserStateService UserStateService
 @inject NavigationManager Navigation
+@inject IUploadService UploadService
 
 @if (isLoading)
 {
@@ -62,15 +63,34 @@ else
                                                    class="h-12 w-full rounded-lg bg-surface shadow-md px-4 text-base text-body focus:outline-none" />
                                     </div>
                                     <div>
-                                        <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title">URL du
+                                        <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title">Nom du
                                             logo</label>
-                                            <InputText @bind-Value="logo_url"
-                                                       class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
+                                            <InputText @bind-Value="logo_nom"
+                                                       class="h-12 w-full rounded-lg bg-surface shadow-md px-4 text-base text-body focus:outline-none" />
                                         </div>
-                                        <div class="md:col-span-2">
+                                        <div>
+                                            <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title">Logo</label>
+                                            <div class="max-w-72">
+                                             <ImageUploader UploadType="UploadType.Logo" ExistingImageUrl="@logo_url"
+                                                            OnImageUploaded="HandleLogoUploaded" OnImageDeleted="HandleLogoDeleted" Compact="true" />
+                                            </div>
+                                        </div>
+                                        <div>
                                             <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title">Email de
                                                 contact</label>
                                                 <InputText @bind-Value="contact_email"
+                                                           class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
+                                            </div>
+                                            <div>
+                                                <label
+                                                class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title">Téléphone</label>
+                                                <InputText @bind-Value="tel"
+                                                           class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
+                                            </div>
+                                            <div>
+                                                <label
+                                                class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title">Localisation</label>
+                                                <InputText @bind-Value="location"
                                                            class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
                                             </div>
                                         </div>
@@ -78,7 +98,7 @@ else
                                 }
                 else if (activeTab == "social")
                                 {
-                                    <section class="rounded-lg     bg-surface p-6 shadow-sm md:p-8">
+                                    <section class="rounded-lg bg-surface p-6 shadow-sm md:p-8">
                                         <h2 class="text-xl font-semibold text-title mb-6">Réseaux sociaux</h2>
                                         <div class="grid grid-cols-1 gap-5 md:grid-cols-2">
                                             <div>
@@ -89,61 +109,57 @@ else
                                                 </div>
                                                 <div>
                                                     <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title"><i
-                                                        class="fab fa-twitter mr-2 text-sky-500"></i>Twitter</label>
-                                                        <InputText @bind-Value="twitter_url"
-                                                                   class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none"/>
+                                                        class="fab fa-linkedin mr-2 text-blue-700"></i>LinkedIn</label>
+                                                        <InputText @bind-Value="linkedin_url"
+                                                                   class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
                                                     </div>
                                                     <div>
                                                         <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title"><i
-                                                            class="fab fa-linkedin mr-2 text-blue-700"></i>LinkedIn</label>
-                                                            <InputText @bind-Value="linkedin_url"
+                                                            class="fab fa-whatsapp mr-2 text-green-500"></i>WhatsApp</label>
+                                                            <InputText @bind-Value="whatsapp_url"
                                                                        class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
                                                         </div>
                                                         <div>
                                                             <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title"><i
-                                                                class="fab fa-github mr-2 text-gray-800"></i>GitHub</label>
-                                                                <InputText @bind-Value="github_url"
+                                                                class="fab fa-youtube mr-2 text-red-600"></i>YouTube</label>
+                                                                <InputText @bind-Value="youtube_url"
                                                                            class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
                                                             </div>
-                                                            <div>
-                                                                <label class="mb-2 block text-sm font-semibold uppercase tracking-wide text-title"><i
-                                                                    class="fab fa-youtube mr-2 text-red-600"></i>YouTube</label>
-                                                                    <InputText @bind-Value="youtube_url"
-                                                                               class="h-12 w-full rounded-lg shadow-md bg-surface px-4 text-base text-body focus:outline-none" />
-                                                                </div>
-                                                            </div>
-                                                        </section>
-                                                    }
+                                                        </div>
+                                                    </section>
+                                                }
 
 
-                                                </div>
+                                            </div>
 
-                                                <div class="mt-8 flex items-center gap-3">
-                                                    <button @onclick="SaveSettings"
-                                                            class="inline-flex h-12 items-center rounded-lg bg-primary px-8 font-semibold text-white transition hover:bg-blue-800">
-                                                        <i class="fas fa-floppy-disk mr-2"></i>
-                                                        Enregistrer les modifications
-                                                    </button>
-                                                    <button @onclick="ResetSettings"
-                                                            class="inline-flex h-12 items-center rounded-lg bg-surface px-8 font-semibold text-title transition hover:bg-gray-100">
-                                                        Annuler
-                                                    </button>
-                                                </div>
+                                            <div class="mt-8 flex items-center gap-3">
+                                                <button @onclick="SaveSettings"
+                                                        class="inline-flex h-12 items-center rounded-lg bg-primary px-8 font-semibold text-white transition hover:bg-blue-800">
+                                                    <i class="fas fa-floppy-disk mr-2"></i>
+                                                    Enregistrer les modifications
+                                                </button>
+                                                <button @onclick="ResetSettings"
+                                                        class="inline-flex h-12 items-center rounded-lg bg-surface px-8 font-semibold text-title transition hover:bg-gray-100">
+                                                    Annuler
+                                                </button>
                                             </div>
                                         </div>
-                                    }
+                                    </div>
+                                }
 
 @code {
     private bool isLoading = true;
     private string activeTab = "general";
 
     private string site_name = "";
+    private string logo_nom = "";
     private string logo_url = "";
     private string contact_email = "";
+    private string tel = "";
+    private string location = "";
     private string facebook_url = "";
-    private string twitter_url = "";
     private string linkedin_url = "";
-    private string github_url = "";
+    private string whatsapp_url = "";
     private string youtube_url = "";
 
 
@@ -180,12 +196,14 @@ else
             var dict = allSettings.ToDictionary(s => s.Key, s => s.Value, StringComparer.OrdinalIgnoreCase);
 
             site_name = dict.GetValueOrDefault("site_name", "Dotnet Niger");
+            logo_nom = dict.GetValueOrDefault("logo_nom", ".NET Niger");
             logo_url = dict.GetValueOrDefault("logo_url", "");
             contact_email = dict.GetValueOrDefault("contact_email", "");
+            tel = dict.GetValueOrDefault("tel", "");
+            location = dict.GetValueOrDefault("location", "");
             facebook_url = dict.GetValueOrDefault("facebook_url", "");
-            twitter_url = dict.GetValueOrDefault("twitter_url", "");
             linkedin_url = dict.GetValueOrDefault("linkedin_url", "");
-            github_url = dict.GetValueOrDefault("github_url", "");
+            whatsapp_url = dict.GetValueOrDefault("whatsapp_url", "");
             youtube_url = dict.GetValueOrDefault("youtube_url", "");
 
         }
@@ -200,12 +218,14 @@ else
         var batch = new Dictionary<string, string>
         {
             ["site_name"] = site_name,
+            ["logo_nom"] = logo_nom,
             ["logo_url"] = logo_url,
             ["contact_email"] = contact_email,
+            ["tel"] = tel,
+            ["location"] = location,
             ["facebook_url"] = facebook_url,
-            ["twitter_url"] = twitter_url,
             ["linkedin_url"] = linkedin_url,
-            ["github_url"] = github_url,
+            ["whatsapp_url"] = whatsapp_url,
             ["youtube_url"] = youtube_url,
 
         };
@@ -219,6 +239,16 @@ else
         {
             ToastService.ShowToast("Erreur lors de l'enregistrement.", ToastLevel.Error);
         }
+    }
+
+    private void HandleLogoUploaded(string imageUrl)
+    {
+        logo_url = imageUrl;
+    }
+
+    private void HandleLogoDeleted()
+    {
+        logo_url = "";
     }
 
     private async Task ResetSettings()

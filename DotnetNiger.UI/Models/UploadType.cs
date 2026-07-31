@@ -6,5 +6,6 @@ public enum UploadType
     Event,
     Blog,
     Resource,
-    Certificate
+    Certificate,
+    Logo
 }

@@ -1,6 +1,5 @@
-namespace DotnetNiger.Api.Application.DTOs.Responses;
+namespace DotnetNiger.UI.Models.Responses;
 
-/// <summary>Paramètres publics du site exposés via l'API anonyme.</summary>
 public class PublicSettingsResponse
 {
     public string SiteName { get; set; } = ".NET Niger";

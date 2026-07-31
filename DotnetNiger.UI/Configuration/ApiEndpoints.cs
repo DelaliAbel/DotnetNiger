@@ -28,6 +28,7 @@ public static class ApiEndpoints
     public const string Tags = "api/tags";
     public const string Stats = "api/stats";
     public const string UserInfo = "api/auth/userinfo";
+    public const string PublicSettings = "api/settings/public";
     public const string AdminSettings = "api/admin/settings";
     public const string AdminCertificates = "api/certificates";
     public const string AdminUsers = "api/admin/users";

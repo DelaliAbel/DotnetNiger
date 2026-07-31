@@ -8,6 +8,8 @@
 @inject IEventService EventService
 @inject IResourceService ResourceService
 @inject IUserStateService UserStateService
+@inject ISettingsService SettingsService
+@inject IUploadService UploadService
 
 <PageTitle>Accueil - .NET Niger</PageTitle>
 
@@ -43,7 +45,7 @@
                 <!-- Logo -->
                 <div class="mb-8">
                     <NavLink href="/" class="flex items-center justify-center">
-                        <img src="Logo.svg" alt="logo dotnet.niger" class="h-24 w-24" />
+                        <img src="@resolvedLogoUrl" alt="@(settings?.LogoNom ?? "logo dotnet.niger")" class="h-24 w-24" />
                     </NavLink>
                 </div>
 
@@ -260,13 +262,30 @@
 
             <!-- Social Links -->
             <div class="flex justify-center gap-4 sm:gap-6 mb-8 sm:mb-12">
-                <a href="#" class="text-2xl sm:text-3xl md:text-4xl text-primary hover:scale-110 transition"
-                   title="Discord"><i class="fab fa-facebook"></i></a>
-                <a href="#" class="text-2xl sm:text-3xl md:text-4xl text-primary hover:scale-110 transition"
-                   title="LinkedIn"><i class="fab fa-linkedin"></i></a>
-                <a href="#" class="text-2xl sm:text-3xl md:text-4xl text-primary hover:scale-110 transition"
-                   title="X (Twitter)"><i class="fab fa-whatsapp"></i></a>
-
+                @if (!string.IsNullOrWhiteSpace(settings?.FacebookUrl))
+                {
+                    <a href="@settings.FacebookUrl" target="_blank" rel="noopener"
+                       class="text-2xl sm:text-3xl md:text-4xl text-primary hover:scale-110 transition"
+                       title="Facebook"><i class="fab fa-facebook"></i></a>
+                }
+                @if (!string.IsNullOrWhiteSpace(settings?.LinkedInUrl))
+                {
+                    <a href="@settings.LinkedInUrl" target="_blank" rel="noopener"
+                       class="text-2xl sm:text-3xl md:text-4xl text-primary hover:scale-110 transition"
+                       title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                }
+                @if (!string.IsNullOrWhiteSpace(settings?.WhatsAppUrl))
+                {
+                    <a href="@settings.WhatsAppUrl" target="_blank" rel="noopener"
+                       class="text-2xl sm:text-3xl md:text-4xl text-primary hover:scale-110 transition"
+                       title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                }
+                @if (!string.IsNullOrWhiteSpace(settings?.YoutubeUrl))
+                {
+                    <a href="@settings.YoutubeUrl" target="_blank" rel="noopener"
+                       class="text-2xl sm:text-3xl md:text-4xl text-primary hover:scale-110 transition"
+                       title="YouTube"><i class="fab fa-youtube"></i></a>
+                }
             </div>
         </div>
     </section>
@@ -280,11 +299,24 @@
     private List<ResourceDto> PopularResources = new();
     private bool IsLoadingResources = true;
     private string? ResourcesError;
+    private PublicSettingsResponse? settings;
+    private string resolvedLogoUrl = "/Logo.svg";
 
     protected override async Task OnInitializedAsync()
     {
         IsLoading = true;
         IsLoadingResources = true;
+        try
+        {
+            settings = await SettingsService.GetPublicSettingsAsync();
+            if (settings is not null)
+                resolvedLogoUrl = await UploadService.ResolveImageUrlAsync(settings.LogoUrl) ?? "/Logo.svg";
+        }
+        catch
+        {
+            // Fallback silencieux
+        }
+
         try
         {
             var events = (await EventService.GetUpcomingEventsAsync()).Take(3).ToList();

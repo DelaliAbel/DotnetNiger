@@ -2,6 +2,7 @@
 
 @using Microsoft.AspNetCore.Components.Forms
 @inject IContactService ContactService
+@inject ISettingsService SettingsService
 @inject NavigationManager Navigation
 
 <PageTitle>Contact - .NET Niger</PageTitle>
@@ -30,56 +31,74 @@
                 <p class="mt-2 text-sm text-subtitle">Restons en contact via nos differents canaux.</p>
 
                 <div class="mt-8 space-y-6">
-                    <div class="flex items-start gap-4">
-                        <div
-                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-primary">
-                            <i class="fas fa-envelope"></i>
+                    @if (!string.IsNullOrWhiteSpace(contactEmail))
+                    {
+                        <div class="flex items-start gap-4">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-primary">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-wide text-title">Email</p>
+                                <a href="mailto:@contactEmail"
+                                   class="text-sm text-primary">@contactEmail</a>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-xs font-semibold uppercase tracking-wide text-title">Email</p>
-                            <a href="mailto:contact@dotnetniger.com"
-                               class="text-sm text-primary">contact@dotnetniger.com</a>
-                        </div>
-                    </div>
+                    }
 
-                    <div class="flex items-start gap-4">
-                        <div
-                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-primary">
-                            <i class="fas fa-phone"></i>
+                    @if (!string.IsNullOrWhiteSpace(tel))
+                    {
+                        <div class="flex items-start gap-4">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-primary">
+                                <i class="fas fa-phone"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-wide text-title">Téléphone</p>
+                                <p class="text-sm text-primary">@tel</p>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-xs font-semibold uppercase tracking-wide text-title">Téléphone</p>
-                            <p class="text-sm text-primary">+227 12 34 56 78</p>
-                        </div>
-                    </div>
+                    }
 
-                    <div class="flex items-start gap-4">
-                        <div
-                            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-primary">
-                            <i class="fas fa-location-dot"></i>
+                    @if (!string.IsNullOrWhiteSpace(location))
+                    {
+                        <div class="flex items-start gap-4">
+                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-primary">
+                                <i class="fas fa-location-dot"></i>
+                            </div>
+                            <div>
+                                <p class="text-xs font-semibold uppercase tracking-wide text-title">Adresse</p>
+                                <p class="text-sm text-primary">@location</p>
+                            </div>
                         </div>
-                        <div>
-                            <p class="text-xs font-semibold uppercase tracking-wide text-title">Adresse</p>
-                            <p class="text-sm text-primary">Niamey, Niger</p>
-                        </div>
-                    </div>
+                    }
                 </div>
 
                 <div class="mt-8 border-t pt-6">
                     <p class="text-xs font-semibold uppercase tracking-wide text-title mb-4">Suivez-nous</p>
                     <div class="flex gap-4">
-                        <a href="#"
-                           class="flex h-10 w-10 items-center justify-center rounded-full bg-surface shadow-sm text-primary transition hover:text-white hover:bg-primary"
-                           title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
-                        <a href="#"
-                           class="flex h-10 w-10 items-center justify-center rounded-full bg-surface shadow-sm text-primary transition hover:text-white hover:bg-primary"
-                           title="Discord"><i class="fab fa-discord"></i></a>
-                        <a href="#"
-                           class="flex h-10 w-10 items-center justify-center rounded-full bg-surface shadow-sm text-primary transition hover:text-white hover:bg-primary"
-                           title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-                        <a href="#"
-                           class="flex h-10 w-10 items-center justify-center rounded-full bg-surface shadow-sm text-primary transition hover:text-white hover:bg-primary"
-                           title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        @if (!string.IsNullOrWhiteSpace(settings?.LinkedInUrl))
+                        {
+                            <a href="@settings.LinkedInUrl" target="_blank" rel="noopener"
+                               class="flex h-10 w-10 items-center justify-center rounded-full bg-surface shadow-sm text-primary transition hover:text-white hover:bg-primary"
+                               title="LinkedIn"><i class="fab fa-linkedin-in"></i></a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(settings?.WhatsAppUrl))
+                        {
+                            <a href="@settings.WhatsAppUrl" target="_blank" rel="noopener"
+                               class="flex h-10 w-10 items-center justify-center rounded-full bg-surface shadow-sm text-primary transition hover:text-white hover:bg-primary"
+                               title="WhatsApp"><i class="fab fa-whatsapp"></i></a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(settings?.FacebookUrl))
+                        {
+                            <a href="@settings.FacebookUrl" target="_blank" rel="noopener"
+                               class="flex h-10 w-10 items-center justify-center rounded-full bg-surface shadow-sm text-primary transition hover:text-white hover:bg-primary"
+                               title="Facebook"><i class="fab fa-facebook-f"></i></a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(settings?.YoutubeUrl))
+                        {
+                            <a href="@settings.YoutubeUrl" target="_blank" rel="noopener"
+                               class="flex h-10 w-10 items-center justify-center rounded-full bg-surface shadow-sm text-primary transition hover:text-white hover:bg-primary"
+                               title="YouTube"><i class="fab fa-youtube"></i></a>
+                        }
                     </div>
                 </div>
             </div>
@@ -175,6 +194,40 @@
     private bool isLoading = false;
     private bool isSuccess = false;
     private string errorMessage = string.Empty;
+    private PublicSettingsResponse? settings;
+    private string contactEmail = "";
+    private string tel = "";
+    private string location = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSettingsAsync();
+    }
+
+    private async Task LoadSettingsAsync()
+    {
+        try
+        {
+            settings = await SettingsService.GetPublicSettingsAsync();
+            if (settings is not null)
+            {
+                contactEmail = settings.ContactEmail;
+                tel = settings.Tel;
+                location = settings.Location;
+            }
+        }
+        catch
+        {
+            // Fallback silencieux
+        }
+
+        if (string.IsNullOrWhiteSpace(contactEmail))
+            contactEmail = "contact@dotnetniger.com";
+        if (string.IsNullOrWhiteSpace(tel))
+            tel = "+227 12 34 56 78";
+        if (string.IsNullOrWhiteSpace(location))
+            location = "Niamey, Niger";
+    }
 
     private async Task HandleSubmit()
     {

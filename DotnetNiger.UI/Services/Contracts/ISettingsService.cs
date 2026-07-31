@@ -9,4 +9,5 @@ public interface ISettingsService
     Task<SiteSettingDto?> SetAsync(string key, string value);
     Task<bool> SetBatchAsync(Dictionary<string, string> settings);
     Task<bool> DeleteAsync(string key);
+    Task<PublicSettingsResponse?> GetPublicSettingsAsync();
 }

@@ -1,4 +1,6 @@
 ﻿@inject INewsletterService NewsletterService
+@inject ISettingsService SettingsService
+@inject IUploadService UploadService
 
 <footer class="bg-primary text-white py-12 px-4">
     <div class="max-w-6xl mx-auto">
@@ -9,11 +11,11 @@
                 <div class="flex items-center gap-3 mb-4">
                     <div class="w-16 h-16 rounded-lg flex items-center justify-center">
                         <div class="text-center">
-                            <img src="Logo.svg" alt="logo dotnet.niger" class="h-14 w-14 object-cover" />
+                            <img src="@resolvedLogoUrl" alt="@(settings?.LogoNom ?? "dotnet.niger")" class="h-14 w-14 object-cover" />
                         </div>
                     </div>
                 </div>
-                <h3 class="H4 mb-2">La communauté des développeurs .NET au Niger</h3>
+                <h3 class="H4 mb-2">@(settings?.SiteName ?? "La communauté des développeurs .NET au Niger")</h3>
                 <p class="body-small text-purple-100">Connecter les développeurs .NET, organiser des événements,
                     partager
                     des ressources techniques. La communauté Dotnet Niger est une équipe passionnée par le développement
@@ -72,38 +74,82 @@
                         <h4 class="text-lg font-bold mb-4">Contact :</h4>
                         <div class="space-y-2">
                             <p class="text-sm">
-                                <a href="mailto:contact@dotnetniger.com"
-                                   class="text-purple-100 hover:text-white transition">contact@dotnetniger.com</a>
+                                <a href="mailto:@contactEmail" 
+                                   class="text-purple-100 hover:text-white transition">@contactEmail</a>
                             </p>
-                            <p class="text-sm text-purple-100">+227 XXXXXXXX</p>
+                            @if (!string.IsNullOrWhiteSpace(tel))
+                            {
+                                <p class="text-sm text-purple-100">@tel</p>
+                            }
                         </div>
                     </div>
 
                     <!-- Social Links -->
                     <div class="flex gap-6 mb-12">
-                        <a href="#" class="text-2xl sm:text-3xl md:text-4xl hover:scale-110 transition" title="facebook"><i
-                            class="fab fa-facebook"></i></a>
-                            <a href="#" class="text-2xl sm:text-3xl md:text-4xl hover:scale-110 transition" title="LinkedIn"><i
-                                class="text-2xl fab fa-linkedin"></i></a>
-                                <a href="#" class="text-2xl sm:text-3xl md:text-4xl hover:scale-110 transition" title="whatsapp"><i
-                                    class="fab fa-whatsapp"></i></a>
-                                </div>
-                            </div>
-                        </div>
+                        @if (!string.IsNullOrWhiteSpace(settings?.FacebookUrl))
+                        {
+                            <a href="@settings.FacebookUrl" class="text-2xl sm:text-3xl md:text-4xl hover:scale-110 transition" title="facebook" target="_blank" rel="noopener"><i class="fab fa-facebook"></i></a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(settings?.LinkedInUrl))
+                        {
+                            <a href="@settings.LinkedInUrl" class="text-2xl sm:text-3xl md:text-4xl hover:scale-110 transition" title="LinkedIn" target="_blank" rel="noopener"><i class="fab fa-linkedin"></i></a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(settings?.WhatsAppUrl))
+                        {
+                            <a href="@settings.WhatsAppUrl" class="text-2xl sm:text-3xl md:text-4xl hover:scale-110 transition" title="whatsapp" target="_blank" rel="noopener"><i class="fab fa-whatsapp"></i></a>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(settings?.YoutubeUrl))
+                        {
+                            <a href="@settings.YoutubeUrl" class="text-2xl sm:text-3xl md:text-4xl hover:scale-110 transition" title="youtube" target="_blank" rel="noopener"><i class="fab fa-youtube"></i></a>
+                        }
+                    </div>
+                </div>
+            </div>
 
-                        <!-- Bottom Footer -->
-                        <div class="border-t border-purple-400 pt-6 text-center text-sm text-purple-100">
-                            <p>© 2026 .NET Niger Community | <a href="#" class="hover:text-white transition">Politique de
-                                confidentialité</a> | <a href="#" class="hover:text-white transition">Mentions légales</a></p>
-                            </div>
-                        </div>
-                    </footer>
+            <!-- Bottom Footer -->
+            <div class="border-t border-purple-400 pt-6 text-center text-sm text-purple-100">
+                <p>&copy; 2026 @(settings?.SiteName ?? ".NET Niger Community") | <a href="#" class="hover:text-white transition">Politique de
+                    confidentialité</a> | <a href="#" class="hover:text-white transition">Mentions légales</a></p>
+                </div>
+            </div>
+        </footer>
 
 @code {
     private string newsletterEmail = string.Empty;
     private string? newsletterMessage;
     private bool isNewsletterError;
     private bool isSubscribing;
+    private PublicSettingsResponse? settings;
+    private string contactEmail = "";
+    private string tel = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSettingsAsync();
+    }
+
+    private string resolvedLogoUrl = "/Logo.svg";
+
+    private async Task LoadSettingsAsync()
+    {
+        try
+        {
+            settings = await SettingsService.GetPublicSettingsAsync();
+            if (settings is not null)
+            {
+                contactEmail = settings.ContactEmail;
+                tel = settings.Tel;
+                resolvedLogoUrl = await UploadService.ResolveImageUrlAsync(settings.LogoUrl) ?? "/Logo.svg";
+            }
+        }
+        catch
+        {
+            // Fallback silencieux aux valeurs par défaut
+        }
+
+        if (string.IsNullOrWhiteSpace(contactEmail))
+            contactEmail = "contact@dotnetniger.com";
+    }
 
     private async Task SubscribeNewsletterAsync()
     {
