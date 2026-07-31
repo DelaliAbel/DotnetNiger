@@ -26,7 +26,10 @@ public class CertificateService : ICertificateService
         await using var transaction = await _db.Database.BeginTransactionAsync();
         try
         {
-            var cert = await _db.Set<Certificate>().FindAsync(id);
+            var cert = await _db.Set<Certificate>()
+                .Include(c => c.Member)
+                .Include(c => c.User)
+                .FirstOrDefaultAsync(c => c.Id == id);
             if (cert == null)
             {
                 await transaction.RollbackAsync();
@@ -60,7 +63,10 @@ public class CertificateService : ICertificateService
     /// <summary>Rejette un certificat avec une raison.</summary>
     public async Task<CertificateResponse?> RejectCertificateAsync(Guid id, string reason)
     {
-        var cert = await _db.Set<Certificate>().FindAsync(id);
+        var cert = await _db.Set<Certificate>()
+            .Include(c => c.Member)
+            .Include(c => c.User)
+            .FirstOrDefaultAsync(c => c.Id == id);
         if (cert == null) return null;
         cert.Status = "Rejected";
         cert.ReviewedNotes = reason;
@@ -72,7 +78,10 @@ public class CertificateService : ICertificateService
     /// <summary>Récupère les certificats filtrés par statut.</summary>
     public async Task<List<CertificateResponse>> GetCertificatesAsync(string? status)
     {
-        var q = _db.Set<Certificate>().AsNoTracking();
+        var q = _db.Set<Certificate>()
+            .Include(c => c.Member)
+            .Include(c => c.User)
+            .AsNoTracking();
         if (!string.IsNullOrWhiteSpace(status))
             q = q.Where(c => c.Status == status);
         var certs = await q.OrderByDescending(c => c.SubmissionDate).ToListAsync();
@@ -82,7 +91,11 @@ public class CertificateService : ICertificateService
     /// <summary>Récupère un certificat par identifiant.</summary>
     public async Task<CertificateResponse?> GetCertificateAsync(Guid id)
     {
-        var cert = await _db.Set<Certificate>().FindAsync(id);
+        var cert = await _db.Set<Certificate>()
+            .Include(c => c.Member)
+            .Include(c => c.User)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == id);
         return cert == null ? null : MapToResponse(cert);
     }
 
@@ -90,6 +103,8 @@ public class CertificateService : ICertificateService
     public async Task<CertificateResponse?> GetUserCertificateAsync(Guid userId)
     {
         var cert = await _db.Set<Certificate>()
+            .Include(c => c.Member)
+            .Include(c => c.User)
             .AsNoTracking()
             .Where(c => c.UserId == userId)
             .OrderByDescending(c => c.SubmissionDate)
@@ -100,12 +115,12 @@ public class CertificateService : ICertificateService
     /// <summary>Soumet un nouveau certificat pour validation.</summary>
     public async Task<CertificateResponse> SubmitCertificateAsync(Guid userId, CertificateSubmissionRequest request)
     {
+        var user = await _userManager.FindByIdAsync(userId.ToString());
+        if (user == null) throw new InvalidOperationException("User not found");
+
         var member = await _db.Set<Member>().FirstOrDefaultAsync(m => m.UserId == userId);
         if (member == null)
         {
-            var user = await _userManager.FindByIdAsync(userId.ToString());
-            if (user == null) throw new InvalidOperationException("User not found");
-
             member = new Member
             {
                 Id = Guid.NewGuid(),
@@ -121,6 +136,8 @@ public class CertificateService : ICertificateService
             Id = Guid.NewGuid(),
             UserId = userId,
             MemberId = member.Id,
+            Member = member,
+            User = user,
             CertificateUrl = request.CertificateUrl,
             CertificateType = request.CertificateType,
             Status = "Pending",
@@ -131,8 +148,30 @@ public class CertificateService : ICertificateService
         return MapToResponse(cert);
     }
 
-    private static CertificateResponse MapToResponse(Certificate c) => new()
+    private static CertificateResponse MapToResponse(Certificate c)
     {
-        Id = c.Id, Status = c.Status, SubmissionDate = c.SubmissionDate
-    };
+        var user = c.User;
+        var member = c.Member;
+
+        var userName = user != null ? $"{user.FirstName} {user.LastName}".Trim() : string.Empty;
+        if (string.IsNullOrWhiteSpace(userName)) userName = member?.FullName ?? string.Empty;
+        var userEmail = user?.Email ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(userEmail)) userEmail = member?.Email ?? string.Empty;
+        var avatarUrl = user?.AvatarUrl ?? string.Empty;
+
+        return new CertificateResponse
+        {
+            Id = c.Id,
+            UserId = c.UserId,
+            UserName = userName,
+            UserEmail = userEmail,
+            AvatarUrl = avatarUrl,
+            CertificateUrl = c.CertificateUrl,
+            CertificateType = c.CertificateType,
+            Status = c.Status,
+            SubmissionDate = c.SubmissionDate,
+            ReviewedNotes = c.ReviewedNotes,
+            ReviewedAt = c.ReviewedAt
+        };
+    }
 }

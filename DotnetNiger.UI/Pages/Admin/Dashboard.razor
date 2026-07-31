@@ -1,5 +1,4 @@
 @page "/admin"
-@* @attribute [Authorize] *@
 @* Page admin : tableau de bord (KPI + listes récentes) alimenté par services. *@
 @using DotnetNiger.UI.Helpers
 @using System.Security.Claims
@@ -40,7 +39,7 @@
 							class="w-full max-w-md rounded-lg bg-surface p-3 sm:p-4 shadow-md">
 							<div class="flex items-center gap-2 sm:gap-3">
 								<div
-									class="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center overflow-hidden rounded-lg bg-fond_transparent text-accent flex-shrink-0">
+									class="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center overflow-hidden rounded-lg bg-fondTransparent text-accent flex-shrink-0">
 									@if (CurrentUserHasAvatar)
 									{
 										<ResolvedImage Src="@CurrentUser?.AvatarUrl" alt="@CurrentUserDisplayName"
@@ -52,8 +51,8 @@
 									}
 								</div>
 								<div class="min-w-0">
-									<p class="truncate text-xs sm:text-sm font-semibold text-title">@CurrentUserDisplayName</p>
-									<p class="truncate text-[10px] sm:text-xs text-muted">@CurrentUserRoleLabel</p>
+									<p class= text-xs sm:text-sm font-semibold text-title">@CurrentUserDisplayName</p>
+									<p class= text-[10px] sm:text-xs text-muted">@CurrentUserRoleLabel</p>
 								</div>
 							</div>
 							<div class="mt-3 sm:mt-4 grid grid-cols-2 gap-2 sm:gap-3">
@@ -82,7 +81,7 @@
 										<div
 											class="flex flex-col items-center justify-center gap-1.5 sm:gap-3 px-2 sm:px-6 py-3 sm:py-7 text-center min-h-[90px] sm:min-h-[150px]">
 											<div
-												class="flex h-8 w-8 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-fond_transparent text-accent">
+												class="flex h-8 w-8 sm:h-12 sm:w-12 items-center justify-center rounded-lg bg-fondTransparent text-accent">
 												<i class="@metric.IconClass text-base sm:text-lg"></i>
 											</div>
 											<p class="text-lg sm:text-3xl md:text-4xl font-semibold leading-none text-title">@metric.Value</p>
@@ -101,20 +100,20 @@
 							@if (!IsCurrentUserCollaborator || IsCurrentUserAdmin)
 							{
 								<article
-									class="rounded-lg bg-surface p-4 sm:p-5 md:p-6 shadow-md">
+									class="rounded-lg bg-fondTransparent p-4 sm:p-5 md:p-6 shadow-md">
 									<div class="flex items-center justify-between gap-2 sm:gap-3">
 										<div class="flex items-center gap-2 sm:gap-3 min-w-0">
 											<div
-												class="flex h-9 w-9 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center rounded-lg bg-fond_transparent text-accent">
+												class="flex h-9 w-9 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center rounded-lg bg-fondTransparent text-accent">
 												<i class="fas fa-certificate text-sm sm:text-lg"></i>
 											</div>
 											<div class="min-w-0">
-												<h2 class="text-sm sm:text-lg font-semibold text-title truncate">Validation de certificat</h2>
-												<p class="text-xs sm:text-sm text-muted truncate">Certificats en attente de validation</p>
+												<h2 class="text-sm sm:text-lg font-semibold text-title">Validation de certificat</h2>
+												<p class="text-xs sm:text-sm text-muted">Certificats en attente de validation</p>
 											</div>
 										</div>
 										<span
-										class="rounded-full bg-fond_transparent px-2 sm:px-3 py-0.5 sm:py-1 text-xs font-semibold text-accent flex-shrink-0">@PendingCertificates.Count</span>
+										class="rounded-full bg-fondTransparent px-2 sm:px-3 py-0.5 sm:py-1 text-xs font-semibold text-accent flex-shrink-0">@PendingCertificates.Count</span>
 									</div>
 
 									<div class="mt-3 sm:mt-5 space-y-2 sm:space-y-3">
@@ -128,7 +127,7 @@
 											@foreach (var cert in PendingCertificates)
 											{
 												<div
-													class="flex items-center justify-between gap-2 sm:gap-3 rounded-lg border-gray-100 bg-surface px-2 sm:px-3 py-2 sm:py-3 shadow-sm">
+													class="flex items-center justify-between gap-2 sm:gap-3 rounded-lg border-gray-100 bg-surface shadow-sm px-2 sm:px-3 py-2 sm:py-3 shadow-sm">
 													<div class="flex min-w-0 items-center gap-2 sm:gap-3">
 														<div
 															class="flex h-8 w-8 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gray-100 text-accent">
@@ -145,9 +144,9 @@
 															}
 														</div>
 														<div class="min-w-0">
-															<p class="truncate text-xs sm:text-sm font-semibold text-title">@cert.UserName</p>
-															<p class="truncate text-[10px] sm:text-xs text-muted">@cert.UserEmail</p>
-															<p class="truncate text-[10px] sm:text-xs text-placeholder hidden sm:block">@cert.CertificateType</p>
+															<p class= "text-xs sm:text-sm font-semibold text-title break-words">@cert.UserName</p>
+															<p class= "text-[10px] sm:text-xs text-muted break-words">@cert.UserEmail</p>
+															<p class= "text-[10px] sm:text-xs text-placeholder hidden sm:block">@cert.CertificateType</p>
 														@if (!string.IsNullOrWhiteSpace(cert.CertificateUrl))
 														{
 															<a href="@cert.CertificateUrl" target="_blank" rel="noopener noreferrer"
@@ -169,7 +168,7 @@
 								</article>
 
 								<article
-									class="rounded-lg bg-surface p-4 sm:p-5 md:p-6 shadow-md">
+									class="rounded-lg bg-fondTransparent p-4 sm:p-5 md:p-6 shadow-md">
 									<div class="flex items-center justify-between gap-2 sm:gap-3">
 										<div class="flex items-center gap-2 sm:gap-3 min-w-0">
 											<div
@@ -177,8 +176,8 @@
 												<i class="fas fa-calendar-check text-sm sm:text-lg"></i>
 											</div>
 											<div class="min-w-0">
-												<h2 class="text-sm sm:text-lg font-semibold text-title truncate">File de validation</h2>
-												<p class="text-xs sm:text-sm text-muted truncate">Événements en attente</p>
+												<h2 class="text-sm sm:text-lg font-semibold text-title">File de validation</h2>
+												<p class="text-xs sm:text-sm text-muted">Événements en attente</p>
 											</div>
 										</div>
 										<span
@@ -196,7 +195,7 @@
 											@foreach (var item in PendingEvents)
 											{
 												<div
-													class="flex items-center justify-between gap-2 sm:gap-3 rounded-lg border-gray-100 bg-surface px-2 sm:px-3 py-2 sm:py-3 shadow-sm">
+													class="flex items-center justify-between gap-2 sm:gap-3 rounded-lg border-gray-100 bg-surface shadow-sm px-2 sm:px-3 py-2 sm:py-3 shadow-sm">
 													<div class="flex min-w-0 items-center gap-2 sm:gap-3">
 														<div class="h-8 w-8 sm:h-11 sm:w-11 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
 															@if (!string.IsNullOrWhiteSpace(item.CoverImageUrl))
@@ -211,8 +210,8 @@
 															}
 														</div>
 														<div class="min-w-0">
-															<p class="truncate text-xs sm:text-sm font-semibold text-title">@item.Title</p>
-															<p class="truncate text-[10px] sm:text-xs text-muted">@item.Description</p>
+															<p class= "text-xs sm:text-sm font-semibold text-title break-words">@item.Title</p>
+															<p class= "text-[10px] sm:text-xs text-muted break-words">@item.Description</p>
 														</div>
 													</div>
 													<AdminActionDropdown ItemId="item.Id" Status="Pending" ViewLabel="Voir" EditLabel="Modifier"
@@ -226,7 +225,7 @@
 								</article>
 
 								<article
-									class="rounded-lg bg-surface p-4 sm:p-5 md:p-6 shadow-md">
+									class="rounded-lg bg-fondTransparent p-4 sm:p-5 md:p-6 shadow-md">
 									<div class="flex items-center justify-between gap-2 sm:gap-3">
 										<div class="flex items-center gap-2 sm:gap-3 min-w-0">
 											<div
@@ -234,8 +233,8 @@
 												<i class="fas fa-folder-open text-sm sm:text-lg"></i>
 											</div>
 											<div class="min-w-0">
-												<h2 class="text-sm sm:text-lg font-semibold text-title truncate">Ressources récentes</h2>
-												<p class="text-xs sm:text-sm text-muted truncate">Documents les plus consultés</p>
+												<h2 class="text-sm sm:text-lg font-semibold text-title">Ressources récentes</h2>
+												<p class="text-xs sm:text-sm text-muted">Documents les plus consultés</p>
 											</div>
 										</div>
 										<span
@@ -253,15 +252,15 @@
 											@foreach (var item in RecentResources)
 											{
 												<div
-													class="flex items-center justify-between gap-2 sm:gap-3 rounded-lg border-gray-100 bg-surface px-2 sm:px-3 py-2 sm:py-3 shadow-sm">
+													class="flex items-center justify-between gap-2 sm:gap-3 rounded-lg border-gray-100 bg-surface shadow-sm px-2 sm:px-3 py-2 sm:py-3 shadow-sm">
 													<div class="flex min-w-0 items-center gap-2 sm:gap-3">
 														<div
 															class="flex h-8 w-8 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center rounded-lg bg-surface-alt text-title">
 															<i class="fas fa-folder-open text-xs sm:text-base"></i>
 														</div>
 														<div class="min-w-0">
-															<p class="truncate text-xs sm:text-sm font-semibold text-title">@item.Title</p>
-															<p class="truncate text-[10px] sm:text-xs text-muted">@item.Subtitle</p>
+															<p class="text-xs sm:text-sm font-semibold text-title break-words">@item.Title</p>
+															<p class="text-[10px] sm:text-xs text-muted break-words">@item.Subtitle</p>
 														</div>
 													</div>
 													<AdminActionDropdown ItemId="item.Id" Status="Published" ViewLabel="Voir" EditLabel="Modifier"
@@ -274,16 +273,16 @@
 								</article>
 
 								<article
-									class="rounded-lg bg-surface p-4 sm:p-5 md:p-6 shadow-md">
+									class="rounded-lg bg-fondTransparent p-4 sm:p-5 md:p-6 shadow-md">
 									<div class="flex items-center justify-between gap-2 sm:gap-3">
 										<div class="flex items-center gap-2 sm:gap-3 min-w-0">
 											<div
-												class="flex h-9 w-9 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center rounded-lg bg-fond_transparent text-accent">
+												class="flex h-9 w-9 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center rounded-lg bg-fondTransparent text-accent">
 												<i class="fas fa-code-branch text-sm sm:text-lg"></i>
 											</div>
 											<div class="min-w-0">
-												<h2 class="text-sm sm:text-lg font-semibold text-title truncate">Projets récents</h2>
-												<p class="text-xs sm:text-sm text-muted truncate">Derniers projets publiés</p>
+												<h2 class="text-sm sm:text-lg font-semibold text-title">Projets récents</h2>
+												<p class="text-xs sm:text-sm text-muted">Derniers projets publiés</p>
 											</div>
 										</div>
 										<button type="button"
@@ -302,15 +301,15 @@
 											@foreach (var item in RecentProjects)
 											{
 												<div
-													class="flex items-center justify-between gap-2 sm:gap-3 rounded-lg border-gray-100 bg-surface px-2 sm:px-3 py-2 sm:py-3 shadow-sm">
+													class="flex items-center justify-between gap-2 sm:gap-3 rounded-lg border-gray-100 bg-surface shadow-sm px-2 sm:px-3 py-2 sm:py-3 shadow-sm">
 													<div class="flex min-w-0 items-center gap-2 sm:gap-3">
 														<div
-															class="flex h-8 w-8 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center rounded-lg bg-fond_transparent text-accent">
+															class="flex h-8 w-8 sm:h-11 sm:w-11 flex-shrink-0 items-center justify-center rounded-lg bg-fondTransparent text-accent">
 															<i class="fas fa-code-branch text-xs sm:text-base"></i>
 														</div>
 														<div class="min-w-0">
-															<p class="truncate text-xs sm:text-sm font-semibold text-title">@item.Title</p>
-															<p class="truncate text-[10px] sm:text-xs text-muted">@item.Subtitle</p>
+															<p class= "text-xs sm:text-sm font-semibold text-title break-words">@item.Title</p>
+															<p class= "text-[10px] sm:text-xs text-muted break-words">@item.Subtitle</p>
 														</div>
 													</div>
 													<AdminActionDropdown ItemId="item.Id" Status="Published" ViewLabel="Voir" EditLabel="Modifier"
@@ -323,7 +322,7 @@
 								</article>
 
 								<article
-									class="rounded-lg bg-surface p-4 sm:p-5 md:p-6 shadow-md xl:col-span-2">
+									class="rounded-lg bg-fondTransparent p-4 sm:p-5 md:p-6 shadow-md xl:col-span-2">
 									<div class="flex items-center justify-between gap-2 sm:gap-3">
 										<div class="flex items-center gap-2 sm:gap-3 min-w-0">
 											<div
@@ -331,8 +330,8 @@
 												<i class="fas fa-calendar-days text-sm sm:text-lg"></i>
 											</div>
 											<div class="min-w-0">
-												<h2 class="text-sm sm:text-lg font-semibold text-title truncate">Événements récents</h2>
-												<p class="text-xs sm:text-sm text-muted truncate">Dernières publications visibles</p>
+												<h2 class="text-sm sm:text-lg font-semibold text-title">Événements récents</h2>
+												<p class="text-xs sm:text-sm text-muted">Dernières publications visibles</p>
 											</div>
 										</div>
 										<button type="button"
@@ -351,7 +350,7 @@
 											@foreach (var item in RecentEvents)
 											{
 												<div
-													class="flex items-center justify-between gap-1 sm:gap-4 rounded-lg border-gray-100 bg-surface px-1.5 sm:px-3 py-2 sm:py-3 shadow-sm">
+													class="flex items-center justify-between gap-1 sm:gap-4 rounded-lg border-gray-100 bg-surface shadow-sm px-1.5 sm:px-3 py-2 sm:py-3 shadow-sm">
 													<div class="flex min-w-0 items-center gap-1.5 sm:gap-3">
 														<div class="h-8 w-8 sm:h-12 sm:w-12 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
 															@if (!string.IsNullOrWhiteSpace(item.CoverImageUrl))
@@ -366,8 +365,8 @@
 															}
 														</div>
 														<div class="min-w-0">
-															<p class="truncate text-xs sm:text-sm font-semibold text-title">@item.Title</p>
-															<p class="truncate text-[10px] sm:text-xs text-muted">@item.Subtitle</p>
+															<p class= "text-xs sm:text-sm font-semibold text-title break-words">@item.Title</p>
+															<p class= "text-[10px] sm:text-xs text-muted break-words">@item.Subtitle</p>
 														</div>
 													</div>
 													<div class="flex items-center gap-1 sm:gap-3 flex-shrink-0">
