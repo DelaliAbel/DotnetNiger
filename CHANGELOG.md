@@ -9,6 +9,7 @@
 - **config** : connexion base prod `db61810` + revert UI appsettings (config non versionnée)
 - **feat** : enrichissement certificats avec infos utilisateur (userId, userName, userEmail, avatarUrl, certificateUrl, certificateType, reviewedNotes, reviewedAt) + chargement Member/User via Include avec fallback
 - **mise à jour** : retouches UI admin (Dashboard, MyBlog/MyEvents/MyProjects, Users — harmonisation ombres/fonds)
+- **fix** : stockage uploads vers dossier `private/uploads` (MonsterASP) — `Uploads__Path` résolu depuis le content root + endpoint `GET /uploads/{**path}` pour servir les fichiers hors `wwwroot`
 - **config** : CORS ajout `https://localhost:7104`
 - **chore** : merge origin/dev (paramètres site dynamiques, certificats)
 

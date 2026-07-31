@@ -57,6 +57,19 @@ if (app.Environment.IsDevelopment())
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
+var uploadsConfigured = app.Services.GetRequiredService<IOptions<UploadOptions>>().Value.Path;
+var uploadsRoot = Path.GetFullPath(
+    !string.IsNullOrWhiteSpace(uploadsConfigured)
+        ? Path.Combine(app.Environment.ContentRootPath, uploadsConfigured)
+        : Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads"));
+app.MapGet("/uploads/{**path}", (string path) =>
+{
+    var filePath = Path.GetFullPath(Path.Combine(uploadsRoot, path));
+    if (!filePath.StartsWith(uploadsRoot, StringComparison.OrdinalIgnoreCase) || !File.Exists(filePath))
+        return Results.NotFound();
+    return Results.File(filePath);
+});
+
 
 
 await app.RunAsync();
