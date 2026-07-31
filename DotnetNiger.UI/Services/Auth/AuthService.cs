@@ -363,7 +363,7 @@ public class AuthService : IAuthService
 
     public async Task<ApiSuccessResponse<object>> ResetPasswordAsync(ResetPasswordRequest request)
     {
-        var resetPayload = new { email = request.Email, token = request.Token, password = request.NewPassword };
+        var resetPayload = new { email = Uri.UnescapeDataString(request.Email), token = Uri.UnescapeDataString(request.Token), newPassword = request.NewPassword };
         var response = await _http.PostAsJsonAsync(ApiEndpoints.Auth.ResetPassword, resetPayload);
         if (!response.IsSuccessStatusCode)
         {
