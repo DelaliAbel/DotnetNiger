@@ -21,7 +21,7 @@
 						<i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
 						<input type="text" placeholder="Rechercher un événement..." @bind="searchQuery" @bind:event="oninput"
 							   @bind:after="() => currentPage = 1"
-							   class="w-full bg-surface text-body pl-10 pr-4 py-3 rounded-lg focus:outline-none text-sm transition" />
+							   class="w-full bg-surface shadow-md text-body pl-10 pr-4 py-3 rounded-lg focus:outline-none text-sm transition" />
 						@if (!string.IsNullOrEmpty(searchQuery))
 						{
 							<button @onclick="() => { searchQuery = string.Empty; }"
@@ -31,14 +31,14 @@
 						}
 					</div>
 					<select @bind="selectedLocation" @bind:after="() => currentPage = 1"
-							class="bg-surface text-body px-4 py-3 rounded-lg focus:outline-none text-sm min-w-[150px]">
+							class="bg-surface text-body shadow-md px-4 py-3 rounded-lg focus:outline-none text-sm min-w-[150px]">
 						<option value="">Lieu d'événement</option>
 						<option value="Online">En ligne</option>
 						<option value="Niamey">Niamey</option>
 						<option value="other">Autres villes</option>
 					</select>
 				<select @bind="selectedDateFilter" @bind:after="() => currentPage = 1"
-						class="bg-surface text-body px-4 py-3 rounded-lg focus:outline-none text-sm min-w-[150px]">
+						class="bg-surface text-body shadow-md px-4 py-3 rounded-lg focus:outline-none text-sm min-w-[150px]">
 					<option value="all">Tous</option>
 					<option value="">À venir</option>
 					<option value="week">Cette semaine</option>

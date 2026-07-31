@@ -3,14 +3,14 @@
 @using DotnetNiger.UI.Models.Responses
 
 <article
-    class="overflow-hidden rounded-lg bg-surface shadow-md">
+    class="overflow-hidden rounded-lg bg-surface shadow-md hover:shadow-lg">
     <div
         class="relative h-48 sm:h-56 md:h-64 overflow-hidden">
         <ResolvedImage Src="@Member?.AvatarUrl" Icon="fa-user" alt="@GetDisplayName()"
                        class="absolute inset-0 h-full w-full" />
     </div>
 
-    <div class="space-y-3 p-4 sm:space-y-4 sm:p-5">
+    <div class="space-y-2 p-4 sm:space-y-3 sm:p-5">
         <div>
             <h3 class="text-base sm:text-lg font-bold text-title">@GetDisplayName()</h3>
             <p class="text-xs sm:text-sm font-semibold text-warning">@GetRole()</p>

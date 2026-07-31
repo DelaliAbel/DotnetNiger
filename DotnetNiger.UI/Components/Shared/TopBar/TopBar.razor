@@ -1,4 +1,6 @@
 ﻿@* Composant partagé : barre de navigation principale du site public (desktop + mobile). *@
+@inject ISettingsService SettingsService
+@inject IUploadService UploadService
 
 <nav class="sticky z-50 w-full bg-background shadow-lg">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -6,7 +8,7 @@
             <!-- Logo / Marque -->
             <div class="flex items-center">
                 <NavLink href="/" class="flex items-center space-x-2">
-                    <img src="/Logo.svg" alt="logo dotnet.niger" class="h-9 w-9">
+                    <img src="@resolvedLogoUrl" alt="@(settings?.LogoNom ?? "dotnet.niger")" class="h-9 w-9">
                 </NavLink>
             </div>
 
@@ -60,6 +62,22 @@
 
 @code {
     private bool mobileMenuOpen = false;
+    private PublicSettingsResponse? settings;
+    private string resolvedLogoUrl = "/Logo.svg";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            settings = await SettingsService.GetPublicSettingsAsync();
+            if (settings is not null)
+                resolvedLogoUrl = await UploadService.ResolveImageUrlAsync(settings.LogoUrl) ?? "/Logo.svg";
+        }
+        catch
+        {
+            // Fallback silencieux
+        }
+    }
 
     private void ToggleMobileMenu()
     {

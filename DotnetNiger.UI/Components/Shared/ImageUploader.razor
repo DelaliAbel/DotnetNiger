@@ -3,22 +3,22 @@
 @inject IUploadService UploadService
 @inject IJSRuntime JS
 
-<div class="w-full shadow-md">
+<div class="w-full @(Compact ? "" : "shadow-md")">
     @if (isLoading)
     {
-        <div class="flex flex-col items-center gap-3 py-8 border-2 border-dashed rounded-lg
+        <div class="flex flex-col items-center gap-3 @(Compact ? "py-4" : "py-8") border-2 border-dashed rounded-lg
                     border-gray-300 bg-surface">
-            <i class="fa-solid fa-spinner fa-spin text-4xl text-primary"></i>
-            <p class="text-subtitle font-medium">Upload en cours...</p>
+            <i class="fa-solid fa-spinner fa-spin @(Compact ? "text-2xl" : "text-4xl") text-primary"></i>
+            <p class="text-subtitle @(Compact ? "text-xs" : "font-medium")">Upload en cours...</p>
         </div>
     }
     else if (!string.IsNullOrWhiteSpace(PreviewUrl))
     {
-        <div class="relative border-2 border-green-300 bg-surface border-dashed rounded-lg p-6 text-center">
-            <div class="relative inline-block w-full max-w-2xl">
+        <div class="relative @(Compact ? "border p-3" : "border-2 border-green-300 p-6") bg-surface border-dashed rounded-lg text-center">
+            <div class="relative inline-block @(Compact ? "w-full max-w-xs" : "w-full max-w-2xl")">
                 <img src="@PreviewUrl"
                      alt="Prévisualisation"
-                     class="w-full rounded-lg object-contain shadow-md aspect-video" />
+                     class="w-full rounded-lg object-contain shadow-md @(Compact ? "h-32" : "aspect-video")" />
                 <button type="button"
                         @onclick="RemoveImage"
                         class="absolute -top-3 -right-3 bg-red-500 hover:bg-red-600 text-white w-8 h-8 rounded-full flex items-center justify-center shadow-lg transition-colors"
@@ -30,16 +30,16 @@
     }
     else
     {
-        <label class="relative block border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 cursor-pointer
+        <label class="relative block border-2 border-dashed rounded-lg @(Compact ? "p-4" : "p-6") text-center transition-all duration-200 cursor-pointer
                        border-gray-300 hover:border-primary bg-surface overflow-hidden">
-            <div class="flex flex-col items-center gap-3 py-8 pointer-events-none">
-                <i class="fa-solid fa-cloud-upload-alt text-5xl text-gray-400"></i>
+            <div class="flex flex-col items-center gap-3 @(Compact ? "py-2" : "py-8") pointer-events-none">
+                <i class="fa-solid fa-cloud-upload-alt @(Compact ? "text-3xl" : "text-5xl") text-gray-400"></i>
                 <div>
-                    <p class="text-subtitle font-medium">
+                    <p class="@(Compact ? "text-xs" : "text-subtitle font-medium")">
                         <span class="text-primary underline">Cliquez</span> pour sélectionner un fichier
                     </p>
-                    <p class="text-gray-400 text-sm mt-1">
-                        Formats : JPG, PNG, WebP, GIF &mdash; Max 3 Mo
+                    <p class="text-gray-400 text-xs mt-1">
+                        @(Compact ? "JPG, PNG, WebP, GIF" : "Formats : JPG, PNG, WebP, GIF &mdash; Max 3 Mo")
                     </p>
                 </div>
             </div>
@@ -79,6 +79,7 @@
     [Parameter] public EventCallback<string> OnImageUploaded { get; set; }
     [Parameter] public EventCallback OnImageDeleted { get; set; }
     [Parameter] public string? ExistingImageUrl { get; set; }
+    [Parameter] public bool Compact { get; set; }
 
 
     protected override async Task OnParametersSetAsync()

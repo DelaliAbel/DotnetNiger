@@ -93,8 +93,15 @@ public class SettingsService : ISettingsService
         {
             SiteName = dict.GetValueOrDefault("site_name", ".NET Niger"),
             DefaultOgImage = dict.GetValueOrDefault("default_og_image", "/images/og-default.jpg"),
+            LogoNom = dict.GetValueOrDefault("logo_nom", ".NET Niger"),
             LogoUrl = dict.GetValueOrDefault("logo_url", ""),
-            ContactEmail = dict.GetValueOrDefault("contact_email", "")
+            ContactEmail = dict.GetValueOrDefault("contact_email", ""),
+            Tel = dict.GetValueOrDefault("tel", ""),
+            Location = dict.GetValueOrDefault("location", ""),
+            FacebookUrl = dict.GetValueOrDefault("facebook_url", ""),
+            LinkedInUrl = dict.GetValueOrDefault("linkedin_url", ""),
+            WhatsAppUrl = dict.GetValueOrDefault("whatsapp_url", ""),
+            YoutubeUrl = dict.GetValueOrDefault("youtube_url", "")
         };
     }
 

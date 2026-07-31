@@ -97,4 +97,23 @@ public class ApiSettingsService : ApiServiceBase, ISettingsService
             return false;
         }
     }
+
+    public async Task<PublicSettingsResponse?> GetPublicSettingsAsync()
+    {
+        try
+        {
+            var response = await Http.GetAsync(ApiEndpoints.PublicSettings);
+            if (!response.IsSuccessStatusCode)
+            {
+                Logger.LogWarning("Failed {StatusCode} on GET {Url}", (int)response.StatusCode, ApiEndpoints.PublicSettings);
+                return null;
+            }
+            return await ApiResponseReader.ReadAsync<PublicSettingsResponse>(response);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error on GET {Url}", ApiEndpoints.PublicSettings);
+            return null;
+        }
+    }
 }

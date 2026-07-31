@@ -2,6 +2,8 @@
 @using DotnetNiger.UI.Helpers
 @inject IUserStateService UserStateService
 @inject IUploadService UploadService
+@inject ISettingsService SettingsService
+@inject IUploadService UploadService
 
 <div class="h-full">
       <aside
@@ -256,8 +258,8 @@
             class="fixed top-0 left-0 z-50 flex h-full w-64 flex-col justify-between bg-primary text-white shadow-lg transition-transform duration-300 sm:hidden @(IsOpen ? "translate-x-0" : "-translate-x-full")">
             <div class="flex flex-1 flex-col overflow-hidden">
                   <div class="flex h-16 items-center gap-3 bg-active px-5 text-2xl font-bold">
-                        <img src="/Logo.svg" alt="Logo du Dotnet Niger" class="h-10 w-10">
-                        <span class="Link">Dotnet Niger</span>
+                        <img src="@resolvedLogoUrl" alt="@(settings?.LogoNom ?? "Logo du Dotnet Niger")" class="h-10 w-10">
+                        <span class="Link">@(settings?.SiteName ?? "Dotnet Niger")</span>
                   </div>
 
                   <NavLink href="/admin/profile" class="mt-4 flex items-center gap-3 px-5 py-3"
@@ -485,9 +487,23 @@ UserStateService.CurrentUser.Username;
 
       private string UserInitial => DisplayName.Substring(0, 1).ToUpperInvariant();
 
+      private PublicSettingsResponse? settings;
+      private string resolvedLogoUrl = "/Logo.svg";
+
       protected override async Task OnInitializedAsync()
       {
             if (UserStateService.CurrentUser is null)
                   await UserStateService.LoadUserFromStorageAsync();
+
+            try
+            {
+                  settings = await SettingsService.GetPublicSettingsAsync();
+                  if (settings is not null)
+                        resolvedLogoUrl = await UploadService.ResolveImageUrlAsync(settings.LogoUrl) ?? "/Logo.svg";
+            }
+            catch
+            {
+                  // Fallback silencieux
+            }
       }
 }

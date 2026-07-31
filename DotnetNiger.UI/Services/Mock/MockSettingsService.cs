@@ -51,4 +51,22 @@ public class MockSettingsService : ISettingsService
         var removed = _settings.RemoveAll(s => s.Key == key);
         return Task.FromResult(removed > 0);
     }
+
+    public Task<PublicSettingsResponse?> GetPublicSettingsAsync()
+    {
+        var dict = _settings.ToDictionary(s => s.Key, s => s.Value, StringComparer.OrdinalIgnoreCase);
+        return Task.FromResult<PublicSettingsResponse?>(new PublicSettingsResponse
+        {
+            SiteName = dict.GetValueOrDefault("site_name", ".NET Niger"),
+            LogoNom = dict.GetValueOrDefault("logo_nom", ".NET Niger"),
+            LogoUrl = dict.GetValueOrDefault("logo_url", ""),
+            ContactEmail = dict.GetValueOrDefault("contact_email", ""),
+            Tel = dict.GetValueOrDefault("tel", ""),
+            Location = dict.GetValueOrDefault("location", ""),
+            FacebookUrl = dict.GetValueOrDefault("facebook_url", ""),
+            LinkedInUrl = dict.GetValueOrDefault("linkedin_url", ""),
+            WhatsAppUrl = dict.GetValueOrDefault("whatsapp_url", ""),
+            YoutubeUrl = dict.GetValueOrDefault("youtube_url", "")
+        });
+    }
 }
