@@ -13,7 +13,7 @@ public class MockSettingsService : ISettingsService
         new SiteSettingDto { Key = "site.theme", Value = "light", Type = "string", Description = "Thème par défaut" }
     };
 
-    public Task<List<SiteSettingDto>> GetAllAsync() => Task.FromResult(_settings.ToList());
+    public Task<List<SiteSettingDto>> GetAllAsync(CancellationToken cancellationToken = default) => Task.FromResult(_settings.ToList());
 
     public Task<SiteSettingDto?> GetByKeyAsync(string key, CancellationToken cancellationToken = default) =>
         Task.FromResult(_settings.FirstOrDefault(s => s.Key == key));

@@ -170,7 +170,7 @@ public class AccountController : BaseController
     [HttpGet("external-login")]
     public ActionResult ExternalLogin([FromQuery] string provider)
     {
-        var callbackUrl = $"{_smtp.FrontendBaseUrl.TrimEnd('/')}/api/auth/external-callback";
+        var callbackUrl = $"{Request.Scheme}://{Request.Host}/api/auth/external-callback";
 
         var properties = new AuthenticationProperties
         {

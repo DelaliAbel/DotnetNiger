@@ -11,7 +11,7 @@ public class ApiSettingsService : ApiServiceBase, ISettingsService
 {
     public ApiSettingsService(HttpClient http, ILogger<ApiSettingsService> logger) : base(http, logger) { }
 
-    public async Task<List<SiteSettingDto>> GetAllAsync()
+    public async Task<List<SiteSettingDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         return await GetCollectionAsync<SiteSettingDto>(ApiEndpoints.AdminSettings);
     }
