@@ -9,8 +9,8 @@
 - **config** : connexion base prod `db61810` + revert UI appsettings (config non versionnée)
 - **feat** : enrichissement certificats avec infos utilisateur (userId, userName, userEmail, avatarUrl, certificateUrl, certificateType, reviewedNotes, reviewedAt) + chargement Member/User via Include avec fallback
 - **mise à jour** : retouches UI admin (Dashboard, MyBlog/MyEvents/MyProjects, Users — harmonisation ombres/fonds)
-- **fix** : stockage uploads vers dossier `private/uploads` (MonsterASP) — `Uploads__Path` résolu depuis le content root + endpoint `GET /uploads/{**path}` pour servir les fichiers hors `wwwroot`
-- **config** : CORS ajout `https://localhost:7104`
+- **fix** : stockage uploads dans `wwwroot/uploads` résolu depuis le content root (indépendant du CWD) + endpoint `GET /uploads/{**path}` sécurisé (anti-traversal) pour servir les fichiers
+- **config** : CORS ajout `https://localhost:7104`, `https://dotnetnigertest.vercel.app`
 - **chore** : merge origin/dev (paramètres site dynamiques, certificats)
 
 ## 2026-07-30
