@@ -10,6 +10,7 @@
 - **feat** : enrichissement certificats avec infos utilisateur (userId, userName, userEmail, avatarUrl, certificateUrl, certificateType, reviewedNotes, reviewedAt) + chargement Member/User via Include avec fallback
 - **mise à jour** : retouches UI admin (Dashboard, MyBlog/MyEvents/MyProjects, Users — harmonisation ombres/fonds)
 - **fix** : stockage uploads dans `wwwroot/uploads` résolu depuis le content root (indépendant du CWD) + endpoint `GET /uploads/{**path}` sécurisé (anti-traversal) pour servir les fichiers
+- **clean** : suppression package `Microsoft.AspNetCore.Identity.UI` (assets statiques `wwwroot/Identity` non utilisés, auth custom JWT)
 - **config** : CORS ajout `https://localhost:7104`, `https://dotnetnigertest.vercel.app`
 - **chore** : merge origin/dev (paramètres site dynamiques, certificats)
 
