@@ -7,7 +7,10 @@
 - **fix** : reset password — champ token masqué (lu depuis l'URL), toggle visibilité mot de passe, payload `newPassword` (binding API) + décodage URL token/email, validation frontend alignée sur les règles Identity
 - **config** : `Uploads__Path` configurable (`UploadOptions`) — uploads vers `private/uploads` en prod
 - **config** : connexion base prod `db61810` + revert UI appsettings (config non versionnée)
-- **chore** : merge origin/dev (paramètres site dynamiques)
+- **feat** : enrichissement certificats avec infos utilisateur (userId, userName, userEmail, avatarUrl, certificateUrl, certificateType, reviewedNotes, reviewedAt) + chargement Member/User via Include avec fallback
+- **mise à jour** : retouches UI admin (Dashboard, MyBlog/MyEvents/MyProjects, Users — harmonisation ombres/fonds)
+- **config** : CORS ajout `https://localhost:7104`
+- **chore** : merge origin/dev (paramètres site dynamiques, certificats)
 
 ## 2026-07-30
 - **fix** : suppression des inscriptions et commentaires avant de supprimer un événement (FK restrict)
