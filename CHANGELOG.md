@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-31
+- **feat** : dynamisation des paramètres site avec upload logo et harmonisation réseaux sociaux (PublicSettingsResponse, Settings admin, Footer/TopBar/Home/Contact)
+- **fix** : callback OAuth `external-login` construit depuis l'API (`Request.Scheme://{Request.Host}/api/auth/external-callback`) au lieu de `FrontendBaseUrl` (404 sur le frontend)
+- **fix** : harmonisation `CancellationToken` sur `ISettingsService` (GetAllAsync/GetByKeyAsync/SetAsync/SetBatchAsync/DeleteAsync)
+- **fix** : reset password — champ token masqué (lu depuis l'URL), toggle visibilité mot de passe, payload `newPassword` (binding API) + décodage URL token/email, validation frontend alignée sur les règles Identity
+- **config** : `Uploads__Path` configurable (`UploadOptions`) — uploads vers `private/uploads` en prod
+- **config** : connexion base prod `db61810` + revert UI appsettings (config non versionnée)
+- **chore** : merge origin/dev (paramètres site dynamiques)
+
 ## 2026-07-30
 - **fix** : suppression des inscriptions et commentaires avant de supprimer un événement (FK restrict)
 - **fix** : CancellationToken ajouté à toutes les méthodes `async Task` dans Services/ (82 fichiers)
