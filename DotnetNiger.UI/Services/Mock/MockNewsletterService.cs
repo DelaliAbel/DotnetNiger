@@ -1,6 +1,7 @@
 using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock;
 
@@ -14,7 +15,7 @@ public class MockNewsletterService : INewsletterService
         ("diana@example.com", DateTime.Now.AddDays(-1)),
     };
 
-    public Task<bool> SubscribeAsync(SubscribeRequest request)
+    public Task<bool> SubscribeAsync(SubscribeRequest request, CancellationToken cancellationToken = default)
     {
         if (_subscribers.Any(s => s.Email.Equals(request.Email, StringComparison.OrdinalIgnoreCase)))
             return Task.FromResult(false);
@@ -22,14 +23,14 @@ public class MockNewsletterService : INewsletterService
         return Task.FromResult(true);
     }
 
-    public Task<bool> UnsubscribeAsync(UnsubscribeRequest request)
+    public Task<bool> UnsubscribeAsync(UnsubscribeRequest request, CancellationToken cancellationToken = default)
     {
         var removed = _subscribers.RemoveAll(s =>
             s.Email.Equals(request.Email, StringComparison.OrdinalIgnoreCase)) > 0;
         return Task.FromResult(removed);
     }
 
-    public Task<bool> DeleteSubscriberAsync(string email)
+    public Task<bool> DeleteSubscriberAsync(string email, CancellationToken cancellationToken = default)
     {
         var removed = _subscribers.RemoveAll(s =>
             s.Email.Equals(email, StringComparison.OrdinalIgnoreCase)) > 0;

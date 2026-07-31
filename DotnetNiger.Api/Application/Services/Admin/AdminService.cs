@@ -174,7 +174,7 @@ public class AdminService : IAdminService
         var registrations = await _db.EventRegistrations.Where(r => r.UserId == id).ToListAsync();
         _db.EventRegistrations.RemoveRange(registrations);
 
-        var comments = await _db.Comments.Where(c => c.AuthorId == id).ToListAsync();
+        var comments = await _db.Comments.Where(c => c.UserId == id).ToListAsync();
         _db.Comments.RemoveRange(comments);
 
         var certificates = await _db.Certificates.Where(c => c.UserId == id).ToListAsync();

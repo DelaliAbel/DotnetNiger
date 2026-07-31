@@ -2,6 +2,7 @@ using DotnetNiger.UI.Models;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.AspNetCore.Components.Forms;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock;
 
@@ -25,7 +26,7 @@ public class MockUploadService : IUploadService
         _localStorage = localStorage;
     }
 
-    public async Task<UploadResponse> UploadImageAsync(IBrowserFile file, UploadType type)
+    public async Task<UploadResponse> UploadImageAsync(IBrowserFile file, UploadType type, CancellationToken cancellationToken = default)
     {
         var extension = Path.GetExtension(file.Name);
         var mimeType = file.ContentType;
@@ -88,7 +89,7 @@ public class MockUploadService : IUploadService
         };
     }
 
-    public async Task<UploadResponse> UploadImageBase64Async(string base64Content, string fileName, UploadType type)
+    public async Task<UploadResponse> UploadImageBase64Async(string base64Content, string fileName, UploadType type, CancellationToken cancellationToken = default)
     {
         var extension = Path.GetExtension(fileName);
 
@@ -138,7 +139,7 @@ public class MockUploadService : IUploadService
         };
     }
 
-    public async Task<bool> DeleteImageAsync(string imageUrl)
+    public async Task<bool> DeleteImageAsync(string imageUrl, CancellationToken cancellationToken = default)
     {
         var key = $"{StorageKeyPrefix}:{imageUrl}";
         await _localStorage.RemoveItemAsync(key);
@@ -153,7 +154,7 @@ public class MockUploadService : IUploadService
         return true;
     }
 
-    public async Task<string?> ResolveImageUrlAsync(string imageUrl)
+    public async Task<string?> ResolveImageUrlAsync(string imageUrl, CancellationToken cancellationToken = default)
     {
         var key = $"{StorageKeyPrefix}:{imageUrl}";
         var data = await _localStorage.GetItemAsync<MockImageData>(key);

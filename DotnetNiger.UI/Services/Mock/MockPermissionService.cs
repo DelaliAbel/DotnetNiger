@@ -1,5 +1,6 @@
 using DotnetNiger.UI.Helpers;
 using DotnetNiger.UI.Services.Contracts;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock;
 
@@ -18,7 +19,7 @@ public class MockPermissionService : IPermissionService
 
     public bool HasPermission(string permissionName) => _permissions.Contains(permissionName);
 
-    public async Task LoadPermissionsAsync()
+    public async Task LoadPermissionsAsync(CancellationToken cancellationToken = default)
     {
         await Task.Delay(100);
 

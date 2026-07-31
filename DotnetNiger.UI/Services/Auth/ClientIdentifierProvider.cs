@@ -1,5 +1,6 @@
 ﻿using Microsoft.JSInterop;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Auth;
 
@@ -16,7 +17,7 @@ public class ClientIdentifierProvider
         _logger = logger;
     }
 
-    public async Task<string> GetClientIdAsync()
+    public async Task<string> GetClientIdAsync(CancellationToken cancellationToken = default)
     {
         if (!string.IsNullOrWhiteSpace(_cachedClientId))
         {

@@ -3,6 +3,7 @@ using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Auth;
 using DotnetNiger.UI.Services.Contracts;
 using DotnetNiger.UI.Helpers;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock
 {
@@ -67,7 +68,7 @@ namespace DotnetNiger.UI.Services.Mock
             };
         }
 
-        public async Task<PostDto?> CreatePostAsync(CreatePostRequest request, Guid CurrentId)
+        public async Task<PostDto?> CreatePostAsync(CreatePostRequest request, Guid CurrentId, CancellationToken cancellationToken = default)
         {
             var newPost = new PostDto
             {
@@ -92,7 +93,7 @@ namespace DotnetNiger.UI.Services.Mock
             return await Task.FromResult(newPost);
         }
 
-        public async Task<bool> DeletePostAsync(Guid id)
+        public async Task<bool> DeletePostAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var post = _posts.FirstOrDefault(p => p.Id == id);
             if (post == null)
@@ -145,7 +146,7 @@ namespace DotnetNiger.UI.Services.Mock
             return await Task.FromResult(posts);
         }
 
-        public async Task<PostDto?> GetPostByIdAsync(Guid id)
+        public async Task<PostDto?> GetPostByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             await Task.Delay(800);
             var post = _posts.FirstOrDefault(p => p.Id == id);
@@ -156,7 +157,7 @@ namespace DotnetNiger.UI.Services.Mock
             return await Task.FromResult<PostDto?>(post);
         }
 
-        public async Task<PostDto?> GetPostBySlugAsync(string slug)
+        public async Task<PostDto?> GetPostBySlugAsync(string slug, CancellationToken cancellationToken = default)
         {
             await Task.Delay(2000);
             var post = _posts.FirstOrDefault(p => p.Slug == slug);
@@ -167,14 +168,14 @@ namespace DotnetNiger.UI.Services.Mock
             return await Task.FromResult<PostDto?>(post);
         }
 
-        public async Task IncrementViewCountAsync(Guid id)
+        public async Task IncrementViewCountAsync(Guid id, CancellationToken cancellationToken = default)
         {
             var post = _posts.FirstOrDefault(p => p.Id == id);
             if (post is not null) post.ViewCount++;
             await Task.CompletedTask;
         }
 
-        public async Task<PostDto?> UpdatePostAsync(Guid id, UpdatePostRequest request)
+        public async Task<PostDto?> UpdatePostAsync(Guid id, UpdatePostRequest request, CancellationToken cancellationToken = default)
         {
             var post = _posts.FirstOrDefault(p => p.Id == id);
 
@@ -207,7 +208,7 @@ namespace DotnetNiger.UI.Services.Mock
 
         // nouveaux fonctionnalité
 
-        public async Task<bool> PublishPostAsync(Guid postId)
+        public async Task<bool> PublishPostAsync(Guid postId, CancellationToken cancellationToken = default)
         {
             await Task.Delay(300);
             var post = _posts.FirstOrDefault(p => p.Id == postId);
@@ -217,7 +218,7 @@ namespace DotnetNiger.UI.Services.Mock
             return true;
         }
 
-        public async Task<bool> UnPublishPostAsync (Guid postId)
+        public async Task<bool> UnPublishPostAsync (Guid postId, CancellationToken cancellationToken = default)
         {
             await Task.Delay(300);
             var post = _posts.FirstOrDefault(p => p.Id == postId);

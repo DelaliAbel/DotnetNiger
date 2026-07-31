@@ -4,6 +4,7 @@ using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Api;
 

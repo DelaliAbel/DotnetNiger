@@ -1,5 +1,6 @@
 ﻿// Services/IUserStateService.cs
 using DotnetNiger.UI.Models.Responses;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Contracts;
 
@@ -19,9 +20,9 @@ public interface IUserStateService
     
     // Méthodes
     bool HasRole(string role);
-    Task LoadUserFromStorageAsync();
-    Task SetUserAsync(UserDto user);
-    Task UpdateUserAsync(UserDto updatedUser);
-    Task ClearUserAsync();
-    Task RefreshUserAsync();
+    Task LoadUserFromStorageAsync(CancellationToken cancellationToken = default);
+    Task SetUserAsync(UserDto user, CancellationToken cancellationToken = default);
+    Task UpdateUserAsync(UserDto updatedUser, CancellationToken cancellationToken = default);
+    Task ClearUserAsync(CancellationToken cancellationToken = default);
+    Task RefreshUserAsync(CancellationToken cancellationToken = default);
 }

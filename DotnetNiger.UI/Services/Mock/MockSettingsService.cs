@@ -1,5 +1,6 @@
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock;
 
@@ -14,10 +15,10 @@ public class MockSettingsService : ISettingsService
 
     public Task<List<SiteSettingDto>> GetAllAsync() => Task.FromResult(_settings.ToList());
 
-    public Task<SiteSettingDto?> GetByKeyAsync(string key) =>
+    public Task<SiteSettingDto?> GetByKeyAsync(string key, CancellationToken cancellationToken = default) =>
         Task.FromResult(_settings.FirstOrDefault(s => s.Key == key));
 
-    public Task<SiteSettingDto?> SetAsync(string key, string value)
+    public Task<SiteSettingDto?> SetAsync(string key, string value, CancellationToken cancellationToken = default)
     {
         var setting = _settings.FirstOrDefault(s => s.Key == key);
         if (setting is null)
@@ -32,7 +33,7 @@ public class MockSettingsService : ISettingsService
         return Task.FromResult<SiteSettingDto?>(setting);
     }
 
-    public Task<bool> SetBatchAsync(Dictionary<string, string> settings)
+    public Task<bool> SetBatchAsync(Dictionary<string, string> settings, CancellationToken cancellationToken = default)
     {
         foreach (var kv in settings)
         {
@@ -45,7 +46,7 @@ public class MockSettingsService : ISettingsService
         return Task.FromResult(true);
     }
 
-    public Task<bool> DeleteAsync(string key)
+    public Task<bool> DeleteAsync(string key, CancellationToken cancellationToken = default)
     {
         var removed = _settings.RemoveAll(s => s.Key == key);
         return Task.FromResult(removed > 0);

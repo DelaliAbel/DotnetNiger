@@ -11,8 +11,6 @@ public class Comment
     public string Content { get; set; } = string.Empty;
     /// <summary>Identifiant de l'utilisateur auteur.</summary>
     public Guid UserId { get; set; }
-    /// <summary>Identifiant de l'auteur.</summary>
-    public Guid AuthorId { get; set; }
     /// <summary>Nom de l'auteur.</summary>
     public string AuthorName { get; set; } = string.Empty;
     /// <summary>Avatar de l'auteur.</summary>

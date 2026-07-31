@@ -1,6 +1,7 @@
 ﻿using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock;
 
@@ -46,13 +47,13 @@ public class MockPartnerService : IPartnerService
         return _partners.OrderBy(p => p.SortOrder).ToList();
     }
 
-    public async Task<PartnerResponse?> GetByIdAsync(Guid id)
+    public async Task<PartnerResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await Task.Delay(500);
         return _partners.FirstOrDefault(p => p.Id == id);
     }
 
-    public async Task<PartnerResponse?> CreateAsync(CreatePartnerRequest request)
+    public async Task<PartnerResponse?> CreateAsync(CreatePartnerRequest request, CancellationToken cancellationToken = default)
     {
         await Task.Delay(500);
         var partner = new PartnerResponse
@@ -72,7 +73,7 @@ public class MockPartnerService : IPartnerService
         return partner;
     }
 
-    public async Task<PartnerResponse?> UpdateAsync(Guid id, UpdatePartnerRequest request)
+    public async Task<PartnerResponse?> UpdateAsync(Guid id, UpdatePartnerRequest request, CancellationToken cancellationToken = default)
     {
         await Task.Delay(500);
         var existing = _partners.FirstOrDefault(p => p.Id == id);
@@ -88,7 +89,7 @@ public class MockPartnerService : IPartnerService
         return existing;
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await Task.Delay(500);
         var existing = _partners.FirstOrDefault(p => p.Id == id);

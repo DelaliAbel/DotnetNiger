@@ -1,11 +1,12 @@
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock;
 
 public class MockStatsService : IStatsService
 {
-    public Task<DashboardResponse?> GetDashboardAsync()
+    public Task<DashboardResponse?> GetDashboardAsync(CancellationToken cancellationToken = default)
     {
         return Task.FromResult<DashboardResponse?>(new DashboardResponse
         {

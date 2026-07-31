@@ -1,6 +1,7 @@
 using DotnetNiger.UI.Helpers;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.App;
 
@@ -32,20 +33,20 @@ public class UserStateService : IUserStateService
         _currentUser?.Roles.Any(r => r.Equals(role, StringComparison.OrdinalIgnoreCase)) ?? false;
     
     // Méthodes
-    public async Task LoadUserFromStorageAsync()
+    public async Task LoadUserFromStorageAsync(CancellationToken cancellationToken = default)
     {
         _currentUser = await _localStorage.GetItemAsync<UserDto>("dn_wasm_runtime_registry_member");
         OnChange?.Invoke();
     }
     
-    public async Task SetUserAsync(UserDto user)
+    public async Task SetUserAsync(UserDto user, CancellationToken cancellationToken = default)
     {
         _currentUser = user;
         await _localStorage.SetItemAsync("dn_wasm_runtime_registry_member", user);
         OnChange?.Invoke();
     }
     
-    public async Task UpdateUserAsync(UserDto updatedUser)
+    public async Task UpdateUserAsync(UserDto updatedUser, CancellationToken cancellationToken = default)
     {
         if (_currentUser != null && _currentUser.Id == updatedUser.Id)
         {
@@ -55,14 +56,14 @@ public class UserStateService : IUserStateService
         }
     }
     
-    public async Task ClearUserAsync()
+    public async Task ClearUserAsync(CancellationToken cancellationToken = default)
     {
         _currentUser = null;
         await _localStorage.RemoveItemAsync("dn_wasm_runtime_registry_member");
         OnChange?.Invoke();
     }
     
-    public async Task RefreshUserAsync()
+    public async Task RefreshUserAsync(CancellationToken cancellationToken = default)
     {
         if (_currentUser != null)
         {

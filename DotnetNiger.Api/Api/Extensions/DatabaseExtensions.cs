@@ -36,6 +36,7 @@ public static class DatabaseExtensions
         .AddDefaultTokenProviders();
 
         services.Configure<SmtpOptions>(configuration.GetSection("Smtp"));
+        services.Configure<UploadOptions>(configuration.GetSection("Uploads"));
 
         return services;
     }

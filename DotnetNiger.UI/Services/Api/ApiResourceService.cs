@@ -4,6 +4,7 @@ using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -16,7 +17,7 @@ public class ApiResourceService : ApiServiceBase, IResourceService
         return await GetCollectionAsync<ResourceDto>(ApiEndpoints.Resources);
     }
 
-    public async Task<ResourceDto?> GetResourceByIdAsync(Guid id)
+    public async Task<ResourceDto?> GetResourceByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Resources}/{id}";
         try
@@ -36,7 +37,7 @@ public class ApiResourceService : ApiServiceBase, IResourceService
         }
     }
 
-    public async Task<ResourceDto?> GetResourceBySlugAsync(string slug)
+    public async Task<ResourceDto?> GetResourceBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Resources}/{slug}";
         try
@@ -124,7 +125,7 @@ public class ApiResourceService : ApiServiceBase, IResourceService
         }
     }
 
-    public async Task<ResourceDto?> CreateResourceAsync(CreateResourceRequest request)
+    public async Task<ResourceDto?> CreateResourceAsync(CreateResourceRequest request, CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.Resources;
         try
@@ -144,7 +145,7 @@ public class ApiResourceService : ApiServiceBase, IResourceService
         }
     }
 
-    public async Task<ResourceDto?> AddResourceAsync(CreateResourceRequest request)
+    public async Task<ResourceDto?> AddResourceAsync(CreateResourceRequest request, CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.Resources;
         try
@@ -164,7 +165,7 @@ public class ApiResourceService : ApiServiceBase, IResourceService
         }
     }
 
-    public async Task<ResourceDto?> UpdateResourceAsync(Guid id, CreateResourceRequest request)
+    public async Task<ResourceDto?> UpdateResourceAsync(Guid id, CreateResourceRequest request, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Resources}/{id}";
         try
@@ -184,7 +185,7 @@ public class ApiResourceService : ApiServiceBase, IResourceService
         }
     }
 
-    public async Task<bool> DeleteResourceAsync(Guid id)
+    public async Task<bool> DeleteResourceAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Resources}/{id}";
         try
@@ -204,7 +205,7 @@ public class ApiResourceService : ApiServiceBase, IResourceService
         }
     }
 
-    public async Task IncrementViewCountAsync(Guid id)
+    public async Task IncrementViewCountAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Resources}/{id}/views";
         try

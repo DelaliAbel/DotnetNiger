@@ -3,6 +3,7 @@ using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -32,7 +33,7 @@ public class ApiNotificationService : ApiServiceBase, INotificationService
         }
     }
 
-    public async Task<int> GetUnreadCountAsync(Guid userId)
+    public async Task<int> GetUnreadCountAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Notifications}/{userId}/unread-count";
         try
@@ -53,7 +54,7 @@ public class ApiNotificationService : ApiServiceBase, INotificationService
         }
     }
 
-    public async Task SendNotificationAsync(Guid userId, string message)
+    public async Task SendNotificationAsync(Guid userId, string message, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Notifications}/{userId}";
         try
@@ -72,7 +73,7 @@ public class ApiNotificationService : ApiServiceBase, INotificationService
         }
     }
 
-    public async Task MarkAsReadAsync(Guid userId, Guid notificationId)
+    public async Task MarkAsReadAsync(Guid userId, Guid notificationId, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Notifications}/{userId}/{notificationId}/read";
         try
@@ -91,7 +92,7 @@ public class ApiNotificationService : ApiServiceBase, INotificationService
         }
     }
 
-    public async Task MarkAllAsReadAsync(Guid userId)
+    public async Task MarkAllAsReadAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Notifications}/{userId}/read-all";
         try

@@ -3,6 +3,7 @@ using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Auth;
 using DotnetNiger.UI.Services.Contracts;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock;
 
@@ -159,7 +160,7 @@ public class MockAuthService : IAuthService
         }
     }
 
-    public async Task LogoutAsync()
+    public async Task LogoutAsync(CancellationToken cancellationToken = default)
     {
         await Task.Delay(200);
         
@@ -180,7 +181,7 @@ public class MockAuthService : IAuthService
 
     #region Gestion de compte
 
-    public async Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request)
+    public async Task<bool> ForgotPasswordAsync(ForgotPasswordRequest request, CancellationToken cancellationToken = default)
     {
         await Task.Delay(500);
         
@@ -231,7 +232,7 @@ public class MockAuthService : IAuthService
         };
     }
 
-    public async Task<bool> RequestEmailVerificationAsync(RequestEmailVerificationRequest request)
+    public async Task<bool> RequestEmailVerificationAsync(RequestEmailVerificationRequest request, CancellationToken cancellationToken = default)
     {
         await Task.Delay(500);
         
@@ -246,7 +247,7 @@ public class MockAuthService : IAuthService
         return true;
     }
 
-    public async Task<(bool Success, string? Error)> VerifyEmailAsync(VerifyEmailRequest request)
+    public async Task<(bool Success, string? Error)> VerifyEmailAsync(VerifyEmailRequest request, CancellationToken cancellationToken = default)
     {
         await Task.Delay(500);
         
@@ -271,7 +272,7 @@ public class MockAuthService : IAuthService
 
     #region Refresh Token
 
-    public async Task<AuthDto?> RefreshTokenAsync()
+    public async Task<AuthDto?> RefreshTokenAsync(CancellationToken cancellationToken = default)
     {
         await Task.Delay(500);
 
@@ -291,25 +292,25 @@ public class MockAuthService : IAuthService
 
     #region État utilisateur
 
-    public async Task<UserDto?> GetCurrentUserAsync()
+    public async Task<UserDto?> GetCurrentUserAsync(CancellationToken cancellationToken = default)
     {
         await Task.Delay(100);
         return _currentUser;
     }
 
-    public async Task<bool> IsAuthenticatedAsync()
+    public async Task<bool> IsAuthenticatedAsync(CancellationToken cancellationToken = default)
     {
         await Task.Delay(50);
         return _currentUser != null && _tokenExpiry > DateTime.Now;
     }
 
-    public async Task<bool> IsAdminAsync()
+    public async Task<bool> IsAdminAsync(CancellationToken cancellationToken = default)
     {
         await Task.Delay(50);
         return _currentUser?.Roles.Any(r => RoleConstants.IsAdminRole(r)) ?? false;
     }
 
-    public async Task<string?> GetAccessTokenAsync()
+    public async Task<string?> GetAccessTokenAsync(CancellationToken cancellationToken = default)
     {
         await Task.Delay(50);
         

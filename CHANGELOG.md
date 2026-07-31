@@ -2,8 +2,21 @@
 
 ## 2026-07-30
 - **fix** : suppression des inscriptions et commentaires avant de supprimer un événement (FK restrict)
+- **fix** : CancellationToken ajouté à toutes les méthodes `async Task` dans Services/ (82 fichiers)
+- **fix** : packages Asp.Versioning.Mvc/Mvc.ApiExplorer supprimés du `.csproj` (dead code)
+- **fix** : migration `RemoveRedundantBooleanFields` (Post.IsPublished, Event.IsPublished/IsArchived, Comment.AuthorId)
+- **fix** : mot de passe admin déplacé de la constante hardcodée vers `appsettings.json:AdminPassword`
+- **fix** : PermissionNames alias CRUD pointent vers `content.events.moderate` (au lieu de `admin.dashboard.view`)
+- **fix** : middleware gère `UnauthorizedAccessException`→403, `KeyNotFoundException`→404, `InvalidOperationException`→400 (JSON d'erreur standardisé)
+- **fix** : `ApiCommentService.CreateCommentAsync` et `ApiProjectService.CreateAsync` lancent `InvalidOperationException` (pattern cohérent avec Post/Event)
+- **fix** : `LogoutAsync` appelle `ClearTokensAsync(clearAllStorage: false)` (préserve localStorage non-auth)
+- **fix** : `ConfirmService.ShowAsync` fusionné (CancellationToken + IJSRuntime, merge conflit origin/dev)
 - **mise à jour** : thème (pages auth, community)
+- **mise à jour** : ConfirmModal component + container
+- **mise à jour** : AdminActionDropdown, Editor, ImageUploader, TinyMCE init
 - **clean** : suppression `.dockerignore`, mise à jour `.md` (README, CHANGELOG, CONTRIBUTING, SECURITY)
+- **clean** : suppression workflows deploy (frontend GitHub Pages, backend MonsterASP)
+- **docs** : README rôles membres mis à jour, section déploiement supprimée
 
 ## 2026-07-29
 - **fix** : envoie `UpdateEventRequest` au PUT API pour corriger la mise à jour des événements

@@ -4,6 +4,7 @@ using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -57,7 +58,7 @@ public class ApiProjectService : ApiServiceBase, IProjectService
         }
     }
 
-    public async Task<ProjectResponse?> GetByIdAsync(Guid id)
+    public async Task<ProjectResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Projects}/{id}";
         try
@@ -77,7 +78,7 @@ public class ApiProjectService : ApiServiceBase, IProjectService
         }
     }
 
-    public async Task<ProjectResponse?> GetBySlugAsync(string slug)
+    public async Task<ProjectResponse?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Projects}/slug/{slug}";
         try
@@ -97,27 +98,19 @@ public class ApiProjectService : ApiServiceBase, IProjectService
         }
     }
 
-    public async Task<ProjectResponse?> CreateAsync(CreateProjectRequest request)
+    public async Task<ProjectResponse?> CreateAsync(CreateProjectRequest request, CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.Projects;
-        try
+        var response = await Http.PostAsJsonAsync(url, request);
+        if (!response.IsSuccessStatusCode)
         {
-            var response = await Http.PostAsJsonAsync(url, request);
-            if (!response.IsSuccessStatusCode)
-            {
-                Logger.LogWarning("Failed {StatusCode} on POST {Url}", (int)response.StatusCode, url);
-                return null;
-            }
-            return await ApiResponseReader.ReadAsync<ProjectResponse>(response);
+            var error = await ApiResponseReader.ReadErrorAsync(response);
+            throw new InvalidOperationException(error ?? $"Erreur {(int)response.StatusCode} lors de la création du projet.");
         }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error on POST {Url}", url);
-            return null;
-        }
+        return await ApiResponseReader.ReadAsync<ProjectResponse>(response);
     }
 
-    public async Task<ProjectResponse?> UpdateAsync(Guid id, UpdateProjectRequest request)
+    public async Task<ProjectResponse?> UpdateAsync(Guid id, UpdateProjectRequest request, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Projects}/{id}";
         try
@@ -137,7 +130,7 @@ public class ApiProjectService : ApiServiceBase, IProjectService
         }
     }
 
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Projects}/{id}";
         try

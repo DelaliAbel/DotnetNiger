@@ -1,5 +1,6 @@
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock;
 
@@ -15,13 +16,13 @@ public class MockCategoryService : ICategoryService
 
     public Task<List<CategoryDto>> GetAllAsync() => Task.FromResult(_categories.ToList());
 
-    public Task<CategoryDto?> GetByIdAsync(Guid id) =>
+    public Task<CategoryDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         Task.FromResult(_categories.FirstOrDefault(c => c.Id == id));
 
-    public Task<CategoryDto?> GetBySlugAsync(string slug) =>
+    public Task<CategoryDto?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default) =>
         Task.FromResult(_categories.FirstOrDefault(c => c.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase)));
 
-    public Task<CategoryDto?> CreateAsync(string name, string description)
+    public Task<CategoryDto?> CreateAsync(string name, string description, CancellationToken cancellationToken = default)
     {
         var category = new CategoryDto
         {
@@ -34,7 +35,7 @@ public class MockCategoryService : ICategoryService
         return Task.FromResult<CategoryDto?>(category);
     }
 
-    public Task<CategoryDto?> UpdateAsync(Guid id, string name, string description)
+    public Task<CategoryDto?> UpdateAsync(Guid id, string name, string description, CancellationToken cancellationToken = default)
     {
         var category = _categories.FirstOrDefault(c => c.Id == id);
         if (category is null) return Task.FromResult<CategoryDto?>(null);
@@ -43,7 +44,7 @@ public class MockCategoryService : ICategoryService
         return Task.FromResult<CategoryDto?>(category);
     }
 
-    public Task<bool> DeleteAsync(Guid id)
+    public Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var removed = _categories.RemoveAll(c => c.Id == id);
         return Task.FromResult(removed > 0);

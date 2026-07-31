@@ -1,6 +1,7 @@
 ﻿using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock;
 
@@ -52,20 +53,20 @@ public class MockProjectService : IProjectService
         return _projects.Where(p => p.IsFeatured).ToList();
     }
 
-    public async Task<ProjectResponse?> GetByIdAsync(Guid id)
+    public async Task<ProjectResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await Task.Delay(800);
         return _projects.FirstOrDefault(p => p.Id == id);
     }
 
-    public async Task<ProjectResponse?> GetBySlugAsync(string slug)
+    public async Task<ProjectResponse?> GetBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
         await Task.Delay(800);
         return _projects.FirstOrDefault(p =>
             p.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase));
     }
 
-    public Task<ProjectResponse?> CreateAsync(CreateProjectRequest request)
+    public Task<ProjectResponse?> CreateAsync(CreateProjectRequest request, CancellationToken cancellationToken = default)
     {
         var project = new ProjectResponse
         {
@@ -86,7 +87,7 @@ public class MockProjectService : IProjectService
         return Task.FromResult<ProjectResponse?>(project);
     }
 
-    public Task<ProjectResponse?> UpdateAsync(Guid id, UpdateProjectRequest request)
+    public Task<ProjectResponse?> UpdateAsync(Guid id, UpdateProjectRequest request, CancellationToken cancellationToken = default)
     {
         var existing = _projects.FirstOrDefault(p => p.Id == id);
         if (existing is null) return Task.FromResult<ProjectResponse?>(null);
@@ -103,7 +104,7 @@ public class MockProjectService : IProjectService
         return Task.FromResult<ProjectResponse?>(existing);
     }
 
-    public Task<bool> DeleteAsync(Guid id)
+    public Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var removed = _projects.RemoveAll(p => p.Id == id) > 0;
         return Task.FromResult(removed);

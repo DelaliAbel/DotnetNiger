@@ -2,6 +2,7 @@ using DotnetNiger.UI.Services.Contracts;
 using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Services.Auth;
 using System.Security.Claims;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.App;
 
@@ -22,7 +23,7 @@ public class PermissionService : IPermissionService
     public bool HasPermission(string permissionName) =>
         _permissions.Contains(permissionName);
 
-    public async Task LoadPermissionsAsync()
+    public async Task LoadPermissionsAsync(CancellationToken cancellationToken = default)
     {
         try
         {

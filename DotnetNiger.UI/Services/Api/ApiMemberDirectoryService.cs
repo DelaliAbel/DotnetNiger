@@ -2,6 +2,7 @@ using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Configuration;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -35,7 +36,7 @@ public class ApiMemberDirectoryService : ApiServiceBase, IMemberDirectoryService
         }
     }
 
-    public async Task<MemberDirectoryResponse?> GetByIdAsync(Guid id)
+    public async Task<MemberDirectoryResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Members}/{id}";
         try

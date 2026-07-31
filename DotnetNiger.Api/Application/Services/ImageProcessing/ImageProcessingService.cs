@@ -6,9 +6,12 @@ public class ImageProcessingService : IImageProcessingService
 {
     private readonly string _uploadPath;
 
-    public ImageProcessingService()
+    public ImageProcessingService(IOptions<UploadOptions> uploadOptions)
     {
-        _uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+        var configured = uploadOptions.Value.Path;
+        _uploadPath = !string.IsNullOrWhiteSpace(configured)
+            ? configured
+            : Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
         if (!Directory.Exists(_uploadPath))
             Directory.CreateDirectory(_uploadPath);
     }
@@ -42,9 +45,8 @@ public class ImageProcessingService : IImageProcessingService
     public bool Delete(string path)
     {
         if (string.IsNullOrWhiteSpace(path)) return false;
-        var uploadsRoot = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads"));
-        var filePath = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", path.TrimStart('/')));
-        if (!filePath.StartsWith(uploadsRoot, StringComparison.OrdinalIgnoreCase)) return false;
+        var filePath = Path.GetFullPath(Path.Combine(_uploadPath, path.TrimStart('/')));
+        if (!filePath.StartsWith(Path.GetFullPath(_uploadPath), StringComparison.OrdinalIgnoreCase)) return false;
         if (!File.Exists(filePath)) return false;
         File.Delete(filePath);
         return true;

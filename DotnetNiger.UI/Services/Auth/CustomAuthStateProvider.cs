@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.JSInterop;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Auth;
 
@@ -101,7 +102,7 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         return new AuthenticationState(new ClaimsPrincipal(identity));
     }
 
-    public async Task<string?> GetAccessTokenAsync()
+    public async Task<string?> GetAccessTokenAsync(CancellationToken cancellationToken = default)
     {
         if (!string.IsNullOrWhiteSpace(_accessToken))
             return _accessToken;
@@ -117,7 +118,7 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         }
     }
 
-    public async Task<string?> GetRefreshTokenAsync()
+    public async Task<string?> GetRefreshTokenAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -129,7 +130,7 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         }
     }
 
-    public async Task SaveTokensAsync(string accessToken, string refreshToken)
+    public async Task SaveTokensAsync(string accessToken, string refreshToken, CancellationToken cancellationToken = default)
     {
         _accessToken = accessToken;
 
@@ -152,7 +153,7 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         return new AuthenticationState(new ClaimsPrincipal(identity));
     }
 
-    public async Task ClearTokensAsync(bool clearAllStorage = true)
+    public async Task ClearTokensAsync(bool clearAllStorage = true, CancellationToken cancellationToken = default)
     {
         _accessToken = null;
 

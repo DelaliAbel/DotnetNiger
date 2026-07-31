@@ -6,6 +6,7 @@ using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Auth;
 using DotnetNiger.UI.Services.Contracts;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -19,7 +20,7 @@ public class ApiCommentService : ApiServiceBase, ICommentService
         _authProvider = authProvider;
     }
 
-    public async Task<Guid> GetCurrentUserIdAsync()
+    public async Task<Guid> GetCurrentUserIdAsync(CancellationToken cancellationToken = default)
     {
         if (_currentUserId.HasValue)
             return _currentUserId.Value;
@@ -75,7 +76,7 @@ public class ApiCommentService : ApiServiceBase, ICommentService
         }
     }
 
-    public async Task<CommentResponse?> GetCommentByIdAsync(Guid id)
+    public async Task<CommentResponse?> GetCommentByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Comments}/{id}";
         try
@@ -95,27 +96,19 @@ public class ApiCommentService : ApiServiceBase, ICommentService
         }
     }
 
-    public async Task<CommentResponse?> CreateCommentAsync(CreateCommentRequest request)
+    public async Task<CommentResponse?> CreateCommentAsync(CreateCommentRequest request, CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.Comments;
-        try
+        var response = await Http.PostAsJsonAsync(url, request);
+        if (!response.IsSuccessStatusCode)
         {
-            var response = await Http.PostAsJsonAsync(url, request);
-            if (!response.IsSuccessStatusCode)
-            {
-                Logger.LogWarning("Failed {StatusCode} on POST {Url}", (int)response.StatusCode, url);
-                return null;
-            }
-            return await ApiResponseReader.ReadAsync<CommentResponse>(response);
+            var error = await ApiResponseReader.ReadErrorAsync(response);
+            throw new InvalidOperationException(error ?? $"Erreur {(int)response.StatusCode} lors de la création du commentaire.");
         }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error on POST {Url}", url);
-            return null;
-        }
+        return await ApiResponseReader.ReadAsync<CommentResponse>(response);
     }
 
-    public async Task<CommentResponse?> UpdateCommentAsync(UpdateCommentRequest request)
+    public async Task<CommentResponse?> UpdateCommentAsync(UpdateCommentRequest request, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Comments}/{request.Id}";
         try
@@ -155,7 +148,7 @@ public class ApiCommentService : ApiServiceBase, ICommentService
         }
     }
 
-    public async Task<CommentResponse?> ApproveCommentAsync(Guid id)
+    public async Task<CommentResponse?> ApproveCommentAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Comments}/{id}/approve";
         try
@@ -175,7 +168,7 @@ public class ApiCommentService : ApiServiceBase, ICommentService
         }
     }
 
-    public async Task<CommentResponse?> RejectCommentAsync(Guid id)
+    public async Task<CommentResponse?> RejectCommentAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Comments}/{id}/reject";
         try
@@ -196,7 +189,7 @@ public class ApiCommentService : ApiServiceBase, ICommentService
     }
 
 
-    public async Task<bool> DeleteCommentAsync(DeleteCommentRequest request)
+    public async Task<bool> DeleteCommentAsync(DeleteCommentRequest request, CancellationToken cancellationToken = default)
     {
         var url = request.DeleteAllReplies
             ? $"{ApiEndpoints.Comments}/{request.Id}?deleteAllReplies=true"

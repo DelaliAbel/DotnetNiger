@@ -4,6 +4,7 @@ using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -48,7 +49,7 @@ public class ApiPostService : ApiServiceBase, IPostService
             .ToList();
     }
 
-    public async Task<PostDto?> GetPostByIdAsync(Guid id)
+    public async Task<PostDto?> GetPostByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Posts}/{id}";
         try
@@ -68,7 +69,7 @@ public class ApiPostService : ApiServiceBase, IPostService
         }
     }
 
-    public async Task<PostDto?> GetPostBySlugAsync(string slug)
+    public async Task<PostDto?> GetPostBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Posts}/{slug}";
         try
@@ -88,7 +89,7 @@ public class ApiPostService : ApiServiceBase, IPostService
         }
     }
 
-    public async Task<PostDto?> CreatePostAsync(CreatePostRequest request, Guid currentId)
+    public async Task<PostDto?> CreatePostAsync(CreatePostRequest request, Guid currentId, CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.Posts;
         var response = await Http.PostAsJsonAsync(url, request);
@@ -100,7 +101,7 @@ public class ApiPostService : ApiServiceBase, IPostService
         return await ApiResponseReader.ReadAsync<PostDto>(response);
     }
 
-    public async Task<PostDto?> UpdatePostAsync(Guid id, UpdatePostRequest request)
+    public async Task<PostDto?> UpdatePostAsync(Guid id, UpdatePostRequest request, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Posts}/{id}";
         try
@@ -120,7 +121,7 @@ public class ApiPostService : ApiServiceBase, IPostService
         }
     }
 
-    public async Task<bool> DeletePostAsync(Guid id)
+    public async Task<bool> DeletePostAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Posts}/{id}";
         try
@@ -148,7 +149,7 @@ public class ApiPostService : ApiServiceBase, IPostService
         });
     }
 
-    public async Task<bool> PublishPostAsync(Guid postId)
+    public async Task<bool> PublishPostAsync(Guid postId, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Posts}/{postId}/publish";
         try
@@ -168,7 +169,7 @@ public class ApiPostService : ApiServiceBase, IPostService
         }
     }
 
-    public async Task<bool> UnPublishPostAsync(Guid postId)
+    public async Task<bool> UnPublishPostAsync(Guid postId, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Posts}/{postId}/unpublish";
         try
@@ -188,7 +189,7 @@ public class ApiPostService : ApiServiceBase, IPostService
         }
     }
 
-    public async Task IncrementViewCountAsync(Guid id)
+    public async Task IncrementViewCountAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.Posts}/{id}/views";
         try

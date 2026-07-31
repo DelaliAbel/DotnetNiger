@@ -1,6 +1,7 @@
 ﻿using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock;
 
@@ -22,10 +23,10 @@ public class MockProfileService : IProfileService
             SocialLinks = new List<SocialLinkDto>()
         };
 
-    public async Task<UserDto> GetProfileAsync()
+    public async Task<UserDto> GetProfileAsync(CancellationToken cancellationToken = default)
         => await Task.FromResult(ResolveUser());
 
-    public async Task<UserDto> UpdateProfileAsync(UpdateProfileRequest request)
+    public async Task<UserDto> UpdateProfileAsync(UpdateProfileRequest request, CancellationToken cancellationToken = default)
     {
         var user = ResolveUser();
 
@@ -46,7 +47,7 @@ public class MockProfileService : IProfileService
     public async Task<List<SocialLinkDto>> GetSocialLinksAsync()
         => await Task.FromResult(ResolveUser().SocialLinks);
 
-    public async Task<SocialLinkDto?> AddSocialLinkAsync(AddSocialLinkRequest request)
+    public async Task<SocialLinkDto?> AddSocialLinkAsync(AddSocialLinkRequest request, CancellationToken cancellationToken = default)
     {
         var user = ResolveUser();
         var link = new SocialLinkDto
@@ -62,7 +63,7 @@ public class MockProfileService : IProfileService
         return await Task.FromResult(link);
     }
 
-    public async Task<bool> DeleteSocialLinkAsync(Guid id)
+    public async Task<bool> DeleteSocialLinkAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var user = ResolveUser();
         var removed = user.SocialLinks.RemoveAll(link => link.Id == id) > 0;
@@ -73,21 +74,21 @@ public class MockProfileService : IProfileService
         return await Task.FromResult(removed);
     }
 
-    public async Task<bool> ChangePasswordAsync(ChangePasswordRequest request)
+    public async Task<bool> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken = default)
         => await Task.FromResult(true);
 
-    public async Task<bool> ChangeEmailAsync(ChangeEmailRequest request)
+    public async Task<bool> ChangeEmailAsync(ChangeEmailRequest request, CancellationToken cancellationToken = default)
         => await Task.FromResult(true);
 
-    public async Task<bool> ConfirmChangeEmailAsync(ConfirmChangeEmailRequest request)
+    public async Task<bool> ConfirmChangeEmailAsync(ConfirmChangeEmailRequest request, CancellationToken cancellationToken = default)
         => await Task.FromResult(true);
 
-    public async Task<bool> DeleteProfileAsync()
+    public async Task<bool> DeleteProfileAsync(CancellationToken cancellationToken = default)
         => await Task.FromResult(true);
 
-    public async Task<bool> RequestDeletionAsync()
+    public async Task<bool> RequestDeletionAsync(CancellationToken cancellationToken = default)
         => await Task.FromResult(true);
 
-    public async Task<bool> CancelDeletionAsync()
+    public async Task<bool> CancelDeletionAsync(CancellationToken cancellationToken = default)
         => await Task.FromResult(true);
 }

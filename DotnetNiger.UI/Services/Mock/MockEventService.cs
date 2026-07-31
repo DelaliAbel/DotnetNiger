@@ -3,6 +3,7 @@ using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Auth;
 using DotnetNiger.UI.Services.Contracts;
 using DotnetNiger.UI.Helpers;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock;
 
@@ -127,14 +128,14 @@ public class MockEventService : IEventService
                    .ToList());
     }
 
-    public async Task<EventDto?> GetEventByIdAsync(Guid id)
+    public async Task<EventDto?> GetEventByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         await Task.Delay(800);
         var ev = _events.FirstOrDefault(e => e.Id == id);
         return await Task.FromResult(ev);
     }
 
-    public async Task<EventDto?> GetEventBySlugAsync(string slug)
+    public async Task<EventDto?> GetEventBySlugAsync(string slug, CancellationToken cancellationToken = default)
     {
         await Task.Delay(800);
         var ev = _events.FirstOrDefault(e => e.Slug == slug);
@@ -166,7 +167,7 @@ public class MockEventService : IEventService
     // ---- Création / Mise à jour / Suppression -------------------------------------------------
 
 
-    public async Task<EventDto?> CreateEventAsync(CreateEventRequest request, Guid currentUserId, bool isAdmin)
+    public async Task<EventDto?> CreateEventAsync(CreateEventRequest request, Guid currentUserId, bool isAdmin, CancellationToken cancellationToken = default)
     {
         await Task.Delay(500); // simuler appel API
 
@@ -242,7 +243,7 @@ public class MockEventService : IEventService
         return _events.Where(e => e.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
     }
 
-    public async Task<bool> ApproveEventAsync(Guid eventId, string? adminComment = null)
+    public async Task<bool> ApproveEventAsync(Guid eventId, string? adminComment = null, CancellationToken cancellationToken = default)
     {
         await Task.Delay(500);
         var evt = _events.FirstOrDefault(e => e.Id == eventId);
@@ -254,7 +255,7 @@ public class MockEventService : IEventService
         return true;
     }
 
-    public async Task<bool> RejectEventAsync(Guid eventId, string reason)
+    public async Task<bool> RejectEventAsync(Guid eventId, string reason, CancellationToken cancellationToken = default)
     {
         await Task.Delay(500);
         var evt = _events.FirstOrDefault(e => e.Id == eventId);
@@ -290,7 +291,7 @@ public class MockEventService : IEventService
         return _events.Where(e => e.SubmittedBy == user.Id).OrderByDescending(e => e.SubmittedAt).ToList();
     }
 
-    public async Task<EventDto?> UpdateEventAsync(Guid id, UpdateEventRequest request)
+    public async Task<EventDto?> UpdateEventAsync(Guid id, UpdateEventRequest request, CancellationToken cancellationToken = default)
     {
         var ev = _events.FirstOrDefault(e => e.Id == id);
         if (ev is null) return await Task.FromResult<EventDto?>(null);
@@ -347,7 +348,7 @@ public class MockEventService : IEventService
         return await Task.FromResult<EventDto?>(ev);
     }
 
-    public async Task<bool> DeleteEventAsync(Guid id)
+    public async Task<bool> DeleteEventAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var ev = _events.FirstOrDefault(e => e.Id == id);
         if (ev is null) return await Task.FromResult(false);
@@ -356,7 +357,7 @@ public class MockEventService : IEventService
         return await Task.FromResult(true);
     }
 
-    public async Task<bool> TogglePublishAsync(Guid id)
+    public async Task<bool> TogglePublishAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var ev = _events.FirstOrDefault(e => e.Id == id);
         if (ev is null) return await Task.FromResult(false);
@@ -367,7 +368,7 @@ public class MockEventService : IEventService
 
     // -- Inscriptions -------------------------------------------
 
-    public async Task<EventRegistrationDto?> RegisterToEventAsync(RegisterEventRequest request, Guid userId, string userName)
+    public async Task<EventRegistrationDto?> RegisterToEventAsync(RegisterEventRequest request, Guid userId, string userName, CancellationToken cancellationToken = default)
     {
         var ev = _events.FirstOrDefault(e => e.Id == request.EventId);
         if (ev is null || ev.RegisteredCount >= ev.Capacity)
@@ -396,7 +397,7 @@ public class MockEventService : IEventService
         return await Task.FromResult<EventRegistrationDto?>(registration);
     }
 
-    public async Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId)
+    public async Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId, CancellationToken cancellationToken = default)
     {
         var reg = _registrations.FirstOrDefault(r => r.EventId == eventId && r.UserId == userId);
         if (reg is null) return await Task.FromResult(false);

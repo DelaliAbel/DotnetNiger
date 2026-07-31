@@ -2,6 +2,7 @@ using DotnetNiger.UI.Models.Requests;
 using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using DotnetNiger.UI.Helpers;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Mock;
 
@@ -9,7 +10,7 @@ public class MockUserService : IUserService
 {
     private static readonly List<UserDto> Users = MockDataStore.Users;
 
-    public async Task<UserDto?> GetUserByIdAsync(Guid userId)
+    public async Task<UserDto?> GetUserByIdAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         await Task.Delay(800);
         return Users.FirstOrDefault(user => user.Id == userId);
@@ -27,7 +28,7 @@ public class MockUserService : IUserService
         return Users.Where(user => !user.IsActive).ToList();
     }
 
-    public async Task<UserDto?> GetUserByEmailAsync(string email)
+    public async Task<UserDto?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         await Task.Delay(800);
         return Users.FirstOrDefault(user => user.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
@@ -66,19 +67,19 @@ public class MockUserService : IUserService
         return filteredUsers;
     }
 
-    public async Task<int> GetUsersCountAsync()
+    public async Task<int> GetUsersCountAsync(CancellationToken cancellationToken = default)
     {
         await Task.Delay(800);
         return Users.Count;
     }
 
-    public async Task<int> GetActiveUsersCountAsync()
+    public async Task<int> GetActiveUsersCountAsync(CancellationToken cancellationToken = default)
     {
         await Task.Delay(800);
         return Users.Count(user => user.IsActive);
     }
 
-    public Task<UserDto?> CreateUserAsync(CreateUserRequest user)
+    public Task<UserDto?> CreateUserAsync(CreateUserRequest user, CancellationToken cancellationToken = default)
     {
         var newUser = new UserDto
         {
@@ -105,7 +106,7 @@ public class MockUserService : IUserService
         return Task.FromResult<UserDto?>(newUser);
     }
 
-    public Task<UserDto?> UpdateUserAsync(UserDto user)
+    public Task<UserDto?> UpdateUserAsync(UserDto user, CancellationToken cancellationToken = default)
     {
         var existing = Users.FirstOrDefault(item => item.Id == user.Id);
         if (existing is null)
@@ -131,13 +132,13 @@ public class MockUserService : IUserService
         return Task.FromResult<UserDto?>(existing);
     }
 
-    public Task<bool> DeleteUserAsync(Guid userId)
+    public Task<bool> DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var removed = Users.RemoveAll(user => user.Id == userId) > 0;
         return Task.FromResult(removed);
     }
 
-    public Task<bool> ApproveUserAsync(Guid userId)
+    public Task<bool> ApproveUserAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var user = Users.FirstOrDefault(item => item.Id == userId);
         if (user is null)
@@ -152,7 +153,7 @@ public class MockUserService : IUserService
         return Task.FromResult(true);
     }
 
-    public Task<bool> RejectUserAsync(Guid userId)
+    public Task<bool> RejectUserAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var removed = Users.RemoveAll(user => user.Id == userId && !user.IsActive) > 0;
         return Task.FromResult(removed);
@@ -167,7 +168,7 @@ public class MockUserService : IUserService
         ).ToList());
     }
 
-    public Task<bool> AssignRoleAsync(Guid userId, string roleName)
+    public Task<bool> AssignRoleAsync(Guid userId, string roleName, CancellationToken cancellationToken = default)
     {
         var user = Users.FirstOrDefault(u => u.Id == userId);
         if (user is null) return Task.FromResult(false);
@@ -177,7 +178,7 @@ public class MockUserService : IUserService
         return Task.FromResult(true);
     }
 
-    public Task<bool> AddToTeamAsync(Guid userId, string position)
+    public Task<bool> AddToTeamAsync(Guid userId, string position, CancellationToken cancellationToken = default)
     {
         var user = Users.FirstOrDefault(u => u.Id == userId);
         if (user is null) return Task.FromResult(false);
@@ -187,7 +188,7 @@ public class MockUserService : IUserService
         return Task.FromResult(true);
     }
 
-    public Task<bool> RemoveFromTeamAsync(Guid userId)
+    public Task<bool> RemoveFromTeamAsync(Guid userId, CancellationToken cancellationToken = default)
     {
         var user = Users.FirstOrDefault(u => u.Id == userId);
         if (user is null) return Task.FromResult(false);

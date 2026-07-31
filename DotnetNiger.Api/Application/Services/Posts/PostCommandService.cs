@@ -30,8 +30,7 @@ public class PostCommandService : IPostCommandService
             AuthorName = authorName,
             AuthorAvatar = "",
             PostType = request.PostType,
-            IsPublished = request.IsPublished,
-            Status = isAdmin || isCollaborator ? PostStatus.Published : PostStatus.Draft
+            Status = request.IsPublished || isAdmin || isCollaborator ? PostStatus.Published : PostStatus.Draft
         };
 
         await SyncPostTagsAsync(post, request.TagNames, request.TagIds);
@@ -60,7 +59,7 @@ public class PostCommandService : IPostCommandService
         if (request.Excerpt != null) post.Excerpt = request.Excerpt;
         if (request.CoverImageUrl != null) post.CoverImageUrl = request.CoverImageUrl;
         if (request.PostType != null) post.PostType = request.PostType;
-        if (request.IsPublished.HasValue) post.IsPublished = request.IsPublished.Value;
+        if (request.IsPublished.HasValue) post.Status = request.IsPublished.Value ? PostStatus.Published : PostStatus.Draft;
 
         if (request.TagNames != null)
             await SyncPostTagsAsync(post, request.TagNames, null);

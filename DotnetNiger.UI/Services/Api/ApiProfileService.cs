@@ -4,6 +4,7 @@ using DotnetNiger.UI.Models.Responses;
 using DotnetNiger.UI.Services.Contracts;
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
+using System.Threading;
 
 namespace DotnetNiger.UI.Services.Api;
 
@@ -14,7 +15,7 @@ public class ApiProfileService : ApiServiceBase, IProfileService
     {
     }
 
-    public async Task<UserDto> GetProfileAsync()
+    public async Task<UserDto> GetProfileAsync(CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.Profile;
         try
@@ -34,7 +35,7 @@ public class ApiProfileService : ApiServiceBase, IProfileService
         }
     }
 
-    public async Task<UserDto> UpdateProfileAsync(UpdateProfileRequest request)
+    public async Task<UserDto> UpdateProfileAsync(UpdateProfileRequest request, CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.Profile;
         try
@@ -75,7 +76,7 @@ public class ApiProfileService : ApiServiceBase, IProfileService
         }
     }
 
-    public async Task<SocialLinkDto?> AddSocialLinkAsync(AddSocialLinkRequest request)
+    public async Task<SocialLinkDto?> AddSocialLinkAsync(AddSocialLinkRequest request, CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.SocialLinks;
         try
@@ -104,7 +105,7 @@ public class ApiProfileService : ApiServiceBase, IProfileService
         }
     }
 
-    public async Task<bool> DeleteSocialLinkAsync(Guid id)
+    public async Task<bool> DeleteSocialLinkAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var url = $"{ApiEndpoints.SocialLinks}/{id}";
         try
@@ -124,7 +125,7 @@ public class ApiProfileService : ApiServiceBase, IProfileService
         }
     }
 
-    public async Task<bool> ChangePasswordAsync(ChangePasswordRequest request)
+    public async Task<bool> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.ProfileChangePassword;
         try
@@ -144,7 +145,7 @@ public class ApiProfileService : ApiServiceBase, IProfileService
         }
     }
 
-    public async Task<bool> ChangeEmailAsync(ChangeEmailRequest request)
+    public async Task<bool> ChangeEmailAsync(ChangeEmailRequest request, CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.ProfileChangeEmail;
         try
@@ -164,7 +165,7 @@ public class ApiProfileService : ApiServiceBase, IProfileService
         }
     }
 
-    public async Task<bool> ConfirmChangeEmailAsync(ConfirmChangeEmailRequest request)
+    public async Task<bool> ConfirmChangeEmailAsync(ConfirmChangeEmailRequest request, CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.ProfileConfirmChangeEmail;
         try
@@ -184,7 +185,7 @@ public class ApiProfileService : ApiServiceBase, IProfileService
         }
     }
 
-    public async Task<bool> DeleteProfileAsync()
+    public async Task<bool> DeleteProfileAsync(CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.Profile;
         try
@@ -204,7 +205,7 @@ public class ApiProfileService : ApiServiceBase, IProfileService
         }
     }
 
-    public async Task<bool> RequestDeletionAsync()
+    public async Task<bool> RequestDeletionAsync(CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.ProfileDeleteRequest;
         try
@@ -224,7 +225,7 @@ public class ApiProfileService : ApiServiceBase, IProfileService
         }
     }
 
-    public async Task<bool> CancelDeletionAsync()
+    public async Task<bool> CancelDeletionAsync(CancellationToken cancellationToken = default)
     {
         var url = ApiEndpoints.ProfileCancelDeletion;
         try
