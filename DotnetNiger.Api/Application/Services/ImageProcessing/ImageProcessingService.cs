@@ -6,12 +6,13 @@ public class ImageProcessingService : IImageProcessingService
 {
     private readonly string _uploadPath;
 
-    public ImageProcessingService(IOptions<UploadOptions> uploadOptions)
+    public ImageProcessingService(IOptions<UploadOptions> uploadOptions, IWebHostEnvironment environment)
     {
         var configured = uploadOptions.Value.Path;
-        _uploadPath = !string.IsNullOrWhiteSpace(configured)
-            ? configured
-            : Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+        _uploadPath = Path.GetFullPath(
+            !string.IsNullOrWhiteSpace(configured)
+                ? Path.Combine(environment.ContentRootPath, configured)
+                : Path.Combine(environment.ContentRootPath, "wwwroot", "uploads"));
         if (!Directory.Exists(_uploadPath))
             Directory.CreateDirectory(_uploadPath);
     }
