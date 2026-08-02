@@ -1,5 +1,8 @@
 # Changelog
 
+## 2026-08-02
+- **fix** : crash frontend `/admin` `InvalidCharacterError` — attributs `class` mal formés (guillemets manquants) introduits par les retouches Dashboard (`class= text-xs ...` et `class= "..."` produisaient des noms d'attributs invalides dans le DOM Blazor WASM)
+
 ## 2026-07-31
 - **feat** : dynamisation des paramètres site avec upload logo et harmonisation réseaux sociaux (PublicSettingsResponse, Settings admin, Footer/TopBar/Home/Contact)
 - **fix** : callback OAuth `external-login` construit depuis l'API (`Request.Scheme://{Request.Host}/api/auth/external-callback`) au lieu de `FrontendBaseUrl` (404 sur le frontend)
