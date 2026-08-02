@@ -19,7 +19,7 @@
 
         <div class="grid grid-cols-1 gap-6 xl:grid-cols-[390px_1fr]">
             <div class="space-y-6">
-                <section class="rounded-lg   border-slate-200 bg-surface p-8 shadow-sm">
+                <section class="rounded-lg    bg-surface p-8 shadow-sm">
                     <div class="mb-5 flex justify-center">
                         <div class="relative">
                             <ResolvedImage Src="@CurrentUser?.AvatarUrl" Icon="fa-user" alt="Avatar"
@@ -88,7 +88,7 @@
                         </div>
                     </section>
 
-                    <section class="rounded-lg border-slate-200 bg-surface p-6 shadow-sm">
+                    <section class="rounded-lg  bg-surface p-6 shadow-sm">
                         <div class="mb-4 flex items-center justify-between">
                             <h3 class="text-lg font-semibold text-title">Reseaux sociaux</h3>
                             <button @onclick='() => Navigation.NavigateTo("/profile/informations")'
@@ -157,12 +157,12 @@
                                             _ => "En attente de validation"
                                         })</span>
                                     </div>
-                                    <p class="text-slate-600">Type : @cert.CertificateType</p>
-                                    <p class="text-slate-600">Soumis le : @cert.SubmissionDate.ToLocalTime().ToString("dd/MM/yyyy")</p>
+                                    <p class="text-muted">Type : @cert.CertificateType</p>
+                                    <p class="text-muted">Soumis le : @cert.SubmissionDate.ToLocalTime().ToString("dd/MM/yyyy")</p>
 
                                     @if (!string.IsNullOrWhiteSpace(cert.ReviewedNotes))
                                     {
-                                        <div class="rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+                                        <div class="rounded-lg bg-surface p-3 text-xs text-muted">
                                             <span class="font-semibold">Motif :</span> @cert.ReviewedNotes
                                         </div>
                                     }
@@ -170,7 +170,7 @@
                                     @if (cert.Status is "Rejected")
                                     {
                                         <button @onclick='() => showCertifForm = true'
-                                                class="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg-purple-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-purple-800">
+                                                class="mt-2 inline-flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-purple-800">
                                             <i class="fas fa-redo"></i>
                                             Renvoyer mon certificat
                                         </button>
@@ -180,23 +180,23 @@
 
                             @if (showCertifForm)
                             {
-                                <div class="mt-4 border-t border-slate-200 pt-4">
+                                <div class="mt-4 border-t  pt-4">
                                     @if (!isCertifSubmitted)
                                     {
                                         <EditForm Model="certifModel" OnValidSubmit="HandleCertifSubmit">
                                             <DataAnnotationsValidator />
 
                                             <div class="mb-3">
-                                                <label class="block text-xs font-medium text-body mb-1">URL de la certification</label>
+                                                <label class="block text-xs font-medium text-title mb-1">URL de la certification</label>
                                                 <InputText @bind-Value="certifModel.CertificateUrl"
                                                            placeholder="https://www.freecodecamp.org/certification/..."
-                                                           class="w-full rounded-lg  bg-surface text-body shadow-md px-4 py-2.5 text-sm" />
+                                                           class="w-full rounded-lg bg-surface text-body shadow-md px-4 py-2.5 text-sm" />
                                                 <ValidationMessage For="@(() => certifModel.CertificateUrl)"
                                                                    class="text-xs text-red-500 mt-1" />
                                             </div>
 
                                             <div class="mb-3">
-                                                <label class="block text-xs font-medium text-body mb-1">Type de certificat</label>
+                                                <label class="block text-xs font-medium text-title mb-1">Type de certificat</label>
                                                 <InputSelect @bind-Value="certifModel.CertificateType"
                                                              class="w-full rounded-lg shadow-md text-body px-4 py-2.5 text-sm bg-surface">
                                                     <option value="">Sélectionnez un type</option>
@@ -216,11 +216,11 @@
 
                                                 <div class="flex gap-2">
                                                     <button type="button" @onclick='() => showCertifForm = false'
-                                                            class="flex-1 rounded-full     py-2.5 text-sm text-slate-600 transition hover:bg-slate-50">
+                                                            class="flex-1 rounded-lg py-2.5 text-sm bg-surface text-subtitle transition hover:bg-fondTransparent">
                                                         Annuler
                                                     </button>
                                                     <button type="submit" disabled="@isCertifLoading"
-                                                            class="flex-1 rounded-full bg-purple-700 py-2.5 text-sm font-semibold text-white transition hover:bg-purple-800 disabled:opacity-70">
+                                                            class="flex-1 rounded-full bg-primary py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800 disabled:opacity-70">
                                                         @(isCertifLoading ? "Soumission..." : "Envoyer")
                                                     </button>
                                                 </div>
@@ -230,9 +230,9 @@
                                         {
                                             <div class="text-center py-4">
                                                 <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-purple-50">
-                                                    <i class="fas fa-clock text-purple-600 text-xl"></i>
+                                                    <i class="fas fa-clock text-primary text-xl"></i>
                                                 </div>
-                                                <p class="text-sm font-semibold text-gray-800">Certification soumise</p>
+                                                <p class="text-sm font-semibold text-title">Certification soumise</p>
                                                 <p class="mt-1 text-xs text-body">
                                                     Statut : <span class="font-semibold">@(certifStatus?.Status ?? "En attente")</span>
                                                 </p>
@@ -243,7 +243,7 @@
                                                         <p class="text-xs text-body">Délai estimé : @certifStatus.EstimatedWaitTime</p>
                                                     }
                                                     <button @onclick='() => { showCertifForm = false; StateHasChanged(); }'
-                                                            class="mt-3 rounded-full bg-purple-700 px-6 py-2 text-xs font-semibold text-white transition hover:bg-purple-800">
+                                                            class="mt-3 rounded-full bg-primary px-6 py-2 text-xs font-semibold text-white transition hover:bg-purple-800">
                                                         Fermer
                                                     </button>
                                                 </div>
@@ -255,12 +255,12 @@
                             </div>
 
                             <div class="space-y-6">
-                                <section class="rounded-lg border-slate-200 bg-surface p-8 shadow-sm">
+                                <section class="rounded-lg bg-surface p-8 shadow-sm">
                                     <div class="mb-4 flex items-center justify-between gap-4">
                                         <h2 class="text-lg font-semibold tracking-tight text-title">A propos</h2>
                                         <button @onclick='() => Navigation.NavigateTo("/profile/informations")'
                                                 title="Modifier la biographie"
-                                                class="inline-flex h-10 w-10 items-center justify-center rounded-full text-subtitle transition hover:bg-surface text-body hover:text-title">
+                                                class="inline-flex h-10 w-10 items-center justify-center rounded-full text-subtitle transition hover:bg-surface hover:text-title">
                                             <i class="fas fa-pen"></i>
                                         </button>
                                     </div>
@@ -274,12 +274,12 @@
                                         }
                                     </section>
 
-                                    <section class="rounded-lg border-slate-200 bg-surface p-8 shadow-sm">
+                                    <section class="rounded-lg bg-surface p-8 shadow-sm">
                                         <div class="mb-4 flex items-start justify-between gap-4">
                                             <h2 class="text-lg font-semibold tracking-tight text-title">Competences et technologies</h2>
                                             <button @onclick='() => Navigation.NavigateTo("/profile/informations")'
                                                     title="Modifier les competences"
-                                                    class="inline-flex h-10 w-10 items-center justify-center rounded-full text-subtitle transition hover:bg-surface text-body hover:text-title">
+                                                    class="inline-flex h-10 w-10 items-center justify-center rounded-full text-subtitle transition hover:bg-surface hover:text-title">
                                                 <i class="fas fa-pen"></i>
                                             </button>
                                         </div>
@@ -289,7 +289,7 @@
                                             <div class="flex flex-wrap gap-3">
                                                 @foreach (var skill in CurrentUser.Skills)
                                                 {
-                                                    <span class="rounded-lg bg-indigo-100 px-4 py-2 text-sm font-semibold text-indigo-700">@skill</span>
+                                                    <span class="rounded-lg bg-indigo-100 px-4 py-2 text-sm font-semibold text-primary">@skill</span>
                                                 }
                                             </div>
                                         }
@@ -312,7 +312,7 @@ else
 
                             <div class="grid grid-cols-1 gap-6 xl:grid-cols-[390px_1fr]">
                                 <div class="space-y-6">
-                                    <section class="rounded-lg   border-slate-200 bg-surface p-8 shadow-sm">
+                                    <section class="rounded-lg bg-surface p-8 shadow-sm">
                                         <div class="flex flex-col items-center space-y-4">
                                             <Skeleton Type="SkeletonType.Custom" Class="h-32 rounded-lg w-full" />
                                             <Skeleton Type="SkeletonType.Avatar" Size="96px" Class="h-24 w-24" />
@@ -324,7 +324,7 @@ else
                                         </div>
                                     </section>
 
-                                    <section class="rounded-lg   border-slate-200 bg-surface p-6 shadow-sm">
+                                    <section class="rounded-lg bg-surface p-6 shadow-sm">
                                         <Skeleton Type="SkeletonType.Title" Class="w-1/3 mb-4" />
                                         <div class="flex flex-wrap gap-3">
                                             <Skeleton Type="SkeletonType.Badge" Width="40px" />
@@ -335,7 +335,7 @@ else
                                 </div>
 
                                 <div class="space-y-6">
-                                    <section class="rounded-lg   border-slate-200 bg-surface p-8 shadow-sm">
+                                    <section class="rounded-lg bg-surface p-8 shadow-sm">
                                         <div class="mb-4 flex items-center justify-between">
                                             <Skeleton Type="SkeletonType.Title" Class="w-1/4" />
                                             <Skeleton Type="SkeletonType.Button" Width="40px" />
@@ -343,7 +343,7 @@ else
                                         <Skeleton Type="SkeletonType.Text" Lines="3" />
                                     </section>
 
-                                    <section class="rounded-lg   border-slate-200 bg-surface p-8 shadow-sm">
+                                    <section class="rounded-lg bg-surface p-8 shadow-sm">
                                         <div class="mb-4 flex items-start justify-between">
                                             <Skeleton Type="SkeletonType.Title" Class="w-1/3" />
                                             <Skeleton Type="SkeletonType.Button" Width="40px" />
