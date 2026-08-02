@@ -13,9 +13,13 @@ public class CommentService : ICommentService
 
     public CommentService(DotnetNigerDbContext db) => _db = db;
 
-    /// <summary>Récupère les commentaires racines d'un article.</summary>
+    /// <summary>Récupère les commentaires racines d'un article publié.</summary>
     public async Task<List<CommentResponse>> GetByPostIdAsync(Guid postId)
     {
+        var postPublished = await _db.Posts.AsNoTracking()
+            .AnyAsync(p => p.Id == postId && p.Status == PostStatus.Published);
+        if (!postPublished) return [];
+
         var comments = await _db.Comments.AsNoTracking()
             .Include(c => c.Replies)
             .Where(c => c.PostId == postId && c.ParentCommentId == null)
@@ -24,9 +28,13 @@ public class CommentService : ICommentService
         return comments.Select(MapToResponse).ToList();
     }
 
-    /// <summary>Récupère les commentaires racines d'un événement.</summary>
+    /// <summary>Récupère les commentaires racines d'un événement publié.</summary>
     public async Task<List<CommentResponse>> GetByEventIdAsync(Guid eventId)
     {
+        var eventPublished = await _db.Events.AsNoTracking()
+            .AnyAsync(e => e.Id == eventId && e.Status == EventStatus.Published);
+        if (!eventPublished) return [];
+
         var comments = await _db.Comments.AsNoTracking()
             .Include(c => c.Replies)
             .Where(c => c.EventId == eventId && c.ParentCommentId == null)
@@ -41,12 +49,36 @@ public class CommentService : ICommentService
         var comment = await _db.Comments
             .Include(c => c.Replies)
             .FirstOrDefaultAsync(c => c.Id == id);
-        return comment == null ? null : MapToResponse(comment);
+        if (comment == null) return null;
+
+        var published = (comment.PostId.HasValue
+                && await _db.Posts.AsNoTracking().AnyAsync(p => p.Id == comment.PostId && p.Status == PostStatus.Published))
+            || (comment.EventId.HasValue
+                && await _db.Events.AsNoTracking().AnyAsync(e => e.Id == comment.EventId && e.Status == EventStatus.Published));
+        return published ? MapToResponse(comment) : null;
     }
 
-    /// <summary>Crée un commentaire sur un article ou un événement.</summary>
+    /// <summary>Crée un commentaire sur un article ou un événement publié.</summary>
     public async Task<CommentResponse> CreateAsync(CreateCommentRequest request, Guid userId, string userName, string? avatar)
     {
+        if (request.PostId.HasValue == request.EventId.HasValue)
+            throw new InvalidOperationException("Le commentaire doit être lié à un article OU à un événement.");
+
+        if (request.PostId.HasValue)
+        {
+            var postPublished = await _db.Posts.AsNoTracking()
+                .AnyAsync(p => p.Id == request.PostId && p.Status == PostStatus.Published);
+            if (!postPublished)
+                throw new InvalidOperationException("Impossible de commenter un article non publié.");
+        }
+        else
+        {
+            var eventPublished = await _db.Events.AsNoTracking()
+                .AnyAsync(e => e.Id == request.EventId && e.Status == EventStatus.Published);
+            if (!eventPublished)
+                throw new InvalidOperationException("Impossible de commenter un événement non publié.");
+        }
+
         var comment = new Comment
         {
             Id = Guid.NewGuid(),
@@ -75,7 +107,7 @@ public class CommentService : ICommentService
         return MapToResponse(comment);
     }
 
-    /// <summary>Supprime un commentaire (suppression définitive).</summary>
+    /// <summary>Supprime un commentaire et sa filiale de réponses (suppression définitive).</summary>
     public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin, bool deleteAllReplies)
     {
         var comment = await _db.Comments
@@ -85,8 +117,10 @@ public class CommentService : ICommentService
         if (!isAdmin && comment.UserId != userId)
             throw new UnauthorizedAccessException("Vous ne pouvez supprimer que vos propres commentaires.");
 
-        if (deleteAllReplies && comment.Replies != null && comment.Replies.Count != 0)
+        if (comment.Replies != null && comment.Replies.Count != 0)
         {
+            if (!isAdmin && !deleteAllReplies)
+                throw new UnauthorizedAccessException("Ce commentaire possède des réponses. Supprimez d'abord les réponses ou choisissez la suppression de la discussion.");
             _db.Comments.RemoveRange(comment.Replies);
         }
 

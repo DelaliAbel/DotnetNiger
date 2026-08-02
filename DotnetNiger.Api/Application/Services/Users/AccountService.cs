@@ -239,11 +239,29 @@ public class AccountService
             roles);
     }
 
-    /// <summary>Supprime le profil utilisateur.</summary>
+    /// <summary>Supprime le profil utilisateur après purge complète de ses données.</summary>
     public async Task DeleteProfileAsync(Guid userId)
     {
         var user = await FindUserOrThrowAsync(userId);
-        await _userManager.DeleteAsync(user);
+        await UserDataPurger.PurgeAsync(_db, userId);
+        var result = await _userManager.DeleteAsync(user);
+        if (!result.Succeeded)
+            throw new InvalidOperationException(
+                string.Join("; ", result.Errors.Select(e => e.Description)));
+    }
+
+    /// <summary>Vérifie le mot de passe de l'utilisateur (ré-authentification avant suppression définitive).</summary>
+    public async Task<bool> VerifyPasswordAsync(Guid userId, string password)
+    {
+        var user = await FindUserOrThrowAsync(userId);
+        return await _userManager.CheckPasswordAsync(user, password);
+    }
+
+    /// <summary>Indique si l'utilisateur possède un mot de passe local (compte local, pas uniquement externe).</summary>
+    public async Task<bool> HasPasswordAsync(Guid userId)
+    {
+        var user = await FindUserOrThrowAsync(userId);
+        return await _userManager.HasPasswordAsync(user);
     }
 
     // ============================================================
@@ -293,11 +311,21 @@ public class AccountService
 
         foreach (var request in pending)
         {
-            if (request.User != null)
-                await _userManager.DeleteAsync(request.User);
-            request.IsProcessed = true;
+            try
+            {
+                if (request.User != null)
+                {
+                    await UserDataPurger.PurgeAsync(_db, request.User.Id);
+                    await _userManager.DeleteAsync(request.User);
+                }
+                request.IsProcessed = true;
+                await _db.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Échec du traitement de la demande de suppression {DeletionRequestId}", request.Id);
+            }
         }
-        await _db.SaveChangesAsync();
     }
 
     // ============================================================
@@ -317,13 +345,11 @@ public class AccountService
     {
         if (string.IsNullOrEmpty(_smtp.Host))
         {
-            _logger.LogWarning("[DEV] CODE DE CONFIRMATION EMAIL | Email: {Email} | Code: {Code}", user.Email, code);
-            Console.WriteLine($"[DEV] CODE DE CONFIRMATION EMAIL | Email: {user.Email} | Code: {code}");
+            _logger.LogWarning(
+                "[DEV] SMTP non configuré — code de confirmation affiché uniquement pour le développement | Email: {Email}",
+                user.Email);
             return;
         }
-
-        _logger.LogWarning("[DEV] CODE DE CONFIRMATION EMAIL | Email: {Email} | Code: {Code}", user.Email, code);
-        Console.WriteLine($"[DEV] CODE DE CONFIRMATION EMAIL | Email: {user.Email} | Code: {code}");
 
         var confirmUrl = $"{_smtp.FrontendBaseUrl.TrimEnd('/')}/verify-email?email={Uri.EscapeDataString(user.Email!)}&token={Uri.EscapeDataString(code)}";
 

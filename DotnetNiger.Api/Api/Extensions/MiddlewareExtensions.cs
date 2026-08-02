@@ -99,6 +99,14 @@ public static class MiddlewareExtensions
         }
 
         app.UseJsonErrorHandling();
+        app.Use(async (context, next) =>
+        {
+            context.Response.Headers.XContentTypeOptions = "nosniff";
+            context.Response.Headers.XFrameOptions = "DENY";
+            context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+            context.Response.Headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()";
+            await next();
+        });
         app.UseStaticFiles();
         app.UseHttpsRedirection();
         app.UseCors();

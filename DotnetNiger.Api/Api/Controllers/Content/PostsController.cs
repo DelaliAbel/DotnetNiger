@@ -21,7 +21,7 @@ public class PostsController(
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
-        published ??= "true";
+        published = published == "true" ? published : "true";
         return Success(await postQuery.GetAllAsync(published, category, tag, query, page, pageSize, after));
     }
 
@@ -52,6 +52,8 @@ public class PostsController(
     {
         var post = await postQuery.GetByIdAsync(id);
         if (post is null) return NotFound(Messages.Post.NotFound);
+        if (post.Status != nameof(PostStatus.Published) && !CanViewUnpublished(post))
+            return NotFound(Messages.Post.NotFound);
         return Success(post);
     }
 
@@ -61,6 +63,8 @@ public class PostsController(
     {
         var post = await postQuery.GetBySlugAsync(slug);
         if (post is null) return NotFound(Messages.Post.NotFound);
+        if (post.Status != nameof(PostStatus.Published) && !CanViewUnpublished(post))
+            return NotFound(Messages.Post.NotFound);
         return Success(post);
     }
 
@@ -70,7 +74,16 @@ public class PostsController(
     {
         var post = await postQuery.GetBySlugAsync(slug);
         if (post is null) return NotFound(Messages.Post.NotFound);
+        if (post.Status != nameof(PostStatus.Published) && !CanViewUnpublished(post))
+            return NotFound(Messages.Post.NotFound);
         return Success(new OGMetadata { Title = post.Title, Description = post.Excerpt, ImageUrl = post.CoverImageUrl, UpdatedAt = post.UpdatedAt });
+    }
+
+    private bool CanViewUnpublished(PostResponse post)
+    {
+        if (!User.Identity?.IsAuthenticated == true) return false;
+        var userId = GetUserId();
+        return IsAdmin() || IsCollaborator() || post.AuthorId == userId;
     }
 
     /// <summary>Crée un nouvel article.</summary>

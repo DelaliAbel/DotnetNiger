@@ -18,10 +18,11 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<DotnetNige
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true)
             .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development"}.json", optional: true)
+            .AddEnvironmentVariables()
             .Build();
 
         var connectionString = config.GetConnectionString("DefaultConnection")
-            ?? "Server=localhost; Database=DotnetNiger; User Id=SA; Password=SqlServer2026!; TrustServerCertificate=True;";
+            ?? throw new InvalidOperationException("La chaîne de connexion 'DefaultConnection' est introuvable dans la configuration.");
 
         var optionsBuilder = new DbContextOptionsBuilder<DotnetNigerDbContext>();
         optionsBuilder.UseSqlServer(connectionString);

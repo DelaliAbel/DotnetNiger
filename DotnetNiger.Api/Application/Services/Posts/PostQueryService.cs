@@ -24,6 +24,7 @@ public class PostQueryService : IPostQueryService
 
         if (published == "true") q = q.Where(p => p.Status == PostStatus.Published);
         else if (published == "false") q = q.Where(p => p.Status == PostStatus.Draft || p.Status == PostStatus.PendingReview);
+        else if (published != null) q = q.Where(p => p.Status == PostStatus.Published);
 
         if (authorId.HasValue) q = q.Where(p => p.AuthorId == authorId.Value);
         if (!string.IsNullOrWhiteSpace(query))

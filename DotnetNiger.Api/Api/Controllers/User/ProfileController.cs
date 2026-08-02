@@ -44,12 +44,20 @@ public class ProfileController : BaseController
         return Success(profile);
     }
 
-    /// <summary>Supprime le profil de l'utilisateur connecté.</summary>
+    /// <summary>Supprime le profil de l'utilisateur connecté après vérification du mot de passe.</summary>
     [HttpDelete]
-    public async Task<IActionResult> DeleteProfile()
+    public async Task<IActionResult> DeleteProfile([FromBody] DeleteProfileRequest? request)
     {
         var userId = GetUserIdFromClaims();
         if (userId is null) return Unauthorized();
+
+        if (await _accountService.HasPasswordAsync(userId.Value))
+        {
+            var password = request?.Password ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(password) || !await _accountService.VerifyPasswordAsync(userId.Value, password))
+                return BadRequest("Mot de passe incorrect. La suppression du compte requiert votre mot de passe.");
+        }
+
         await _accountService.DeleteProfileAsync(userId.Value);
         return NoContent();
     }

@@ -22,7 +22,9 @@ public class EventsController(
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
-        status ??= "Published";
+        status = string.Equals(status, nameof(EventStatus.Published), StringComparison.OrdinalIgnoreCase)
+            ? nameof(EventStatus.Published)
+            : nameof(EventStatus.Published);
         var result = await eventQuery.GetAllAsync(status, query, null, null, null, null, null, null, page, pageSize);
         return Success(result);
     }
@@ -57,6 +59,8 @@ public class EventsController(
     {
         var ev = await eventQuery.GetByIdAsync(id);
         if (ev is null) return NotFound(Messages.Event.NotFound);
+        if (ev.Status != nameof(EventStatus.Published) && !CanViewUnpublished(ev))
+            return NotFound(Messages.Event.NotFound);
         return Success(ev);
     }
 
@@ -67,7 +71,16 @@ public class EventsController(
     {
         var ev = await eventQuery.GetBySlugAsync(slug);
         if (ev is null) return NotFound(Messages.Event.NotFound);
+        if (ev.Status != nameof(EventStatus.Published) && !CanViewUnpublished(ev))
+            return NotFound(Messages.Event.NotFound);
         return Success(ev);
+    }
+
+    private bool CanViewUnpublished(EventResponse ev)
+    {
+        if (!User.Identity?.IsAuthenticated == true) return false;
+        var userId = GetUserId();
+        return IsAdmin() || IsCollaborator() || ev.CreatedBy == userId;
     }
 
     /// <summary>Crée un nouvel événement.</summary>

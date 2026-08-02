@@ -191,6 +191,8 @@ public class AccountController : BaseController
     public async Task ExternalCallback()
     {
         Response.ContentType = "text/html";
+        Response.Headers.CacheControl = "no-store, no-cache, max-age=0";
+        Response.Headers.Pragma = "no-cache";
 
         var info = await _signInManager.GetExternalLoginInfoAsync();
         if (info is null)
@@ -249,8 +251,15 @@ public class AccountController : BaseController
     [HttpPost("confirm-email")]
     public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request)
     {
-        await _accountService.ConfirmEmailAsync(request.Email, request.Code);
-        return Success<object?>(null, "Email confirmé avec succès. Vous pouvez maintenant vous connecter.");
+        try
+        {
+            await _accountService.ConfirmEmailAsync(request.Email, request.Code);
+            return Success<object?>(null, "Email confirmé avec succès. Vous pouvez maintenant vous connecter.");
+        }
+        catch (InvalidOperationException)
+        {
+            return BadRequest("Code de confirmation invalide ou expiré.");
+        }
     }
 
     /// <summary>Confirmation email via lien cliqué dans le mail (GET).</summary>
@@ -258,8 +267,15 @@ public class AccountController : BaseController
     public async Task<IActionResult> ConfirmEmailGet(
         [FromQuery] string email, [FromQuery] string code)
     {
-        await _accountService.ConfirmEmailAsync(email, code);
         var redirectUrl = $"{_smtp.FrontendBaseUrl.TrimEnd('/')}/login?emailConfirmed=true";
+        try
+        {
+            await _accountService.ConfirmEmailAsync(email, code);
+        }
+        catch (InvalidOperationException)
+        {
+            redirectUrl = $"{_smtp.FrontendBaseUrl.TrimEnd('/')}/login?emailConfirmed=false";
+        }
         return Redirect(redirectUrl);
     }
 
@@ -271,8 +287,15 @@ public class AccountController : BaseController
     [HttpPost("resend-code")]
     public async Task<IActionResult> ResendCode([FromBody] ForgotPasswordRequest request)
     {
-        await _accountService.ResendConfirmationCodeAsync(request.Email);
-        return Success<object?>(null, "Un nouveau code de confirmation vous a été envoyé.");
+        try
+        {
+            await _accountService.ResendConfirmationCodeAsync(request.Email);
+        }
+        catch (InvalidOperationException)
+        {
+            // Message générique : ne pas révéler l'existence du compte.
+        }
+        return Success<object?>(null, "Si le compte existe et que l'email n'est pas confirmé, un nouveau code vous a été envoyé.");
     }
 
     // ============================================================
@@ -288,9 +311,9 @@ public class AccountController : BaseController
             await _accountService.ConfirmEmailAsync(request.Email, request.Code);
             return Success<object?>(null, "Email confirmé avec succès.");
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException)
         {
-            return BadRequest(ex.Message);
+            return BadRequest("Code de confirmation invalide ou expiré.");
         }
     }
 
@@ -298,8 +321,15 @@ public class AccountController : BaseController
     [HttpPost("request-email-verification")]
     public async Task<IActionResult> RequestEmailVerification([FromBody] ForgotPasswordRequest request)
     {
-        await _accountService.ResendConfirmationCodeAsync(request.Email);
-        return Success<object?>(null, "Un nouveau code de vérification vous a été envoyé.");
+        try
+        {
+            await _accountService.ResendConfirmationCodeAsync(request.Email);
+        }
+        catch (InvalidOperationException)
+        {
+            // Message générique : ne pas révéler l'existence du compte.
+        }
+        return Success<object?>(null, "Si le compte existe et que l'email n'est pas confirmé, un nouveau code vous a été envoyé.");
     }
 
     // ============================================================

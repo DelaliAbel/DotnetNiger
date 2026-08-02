@@ -35,7 +35,7 @@ public class MemberDirectoryService : IMemberDirectoryService
         {
             member = new Member
             {
-                Id = Guid.NewGuid(),
+                Id = userId,
                 UserId = userId,
                 DisplayName = request.DisplayName ?? "",
                 Bio = request.Bio ?? string.Empty,
@@ -66,7 +66,7 @@ public class MemberDirectoryService : IMemberDirectoryService
 
         member = new Member
         {
-            Id = Guid.NewGuid(),
+            Id = userId,
             UserId = userId,
             DisplayName = request.DisplayName,
             Bio = request.Bio ?? string.Empty,
