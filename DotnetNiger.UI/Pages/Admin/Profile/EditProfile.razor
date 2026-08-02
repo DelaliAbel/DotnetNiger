@@ -23,7 +23,7 @@
             </header>
 
             <div class="space-y-6">
-                <section class="rounded-lg border-slate-200 bg-fondTransparent p-6 shadow-sm md:p-8">
+                <section class="rounded-lg bg-fondTransparent p-6 shadow-sm md:p-8">
                     <div class="grid grid-cols-1 gap-6 md:grid-cols-[340px_1fr] md:gap-8">
                         <div>
                             <h2 class="text-2xl font-semibold tracking-tight text-title sm:text-3xl">Informations
@@ -67,13 +67,13 @@
                                             </div>
                                         </div>
                                         <button type="button" @onclick="SavePersonalInfoAsync"
-                                                class="mt-5 inline-flex h-8 items-center rounded-lg bg-primary px-4 text-xs font-semibold text-white hover:bg-primary-500 sm:h-10 sm:px-6 sm:text-sm">
+                                                class="mt-5 inline-flex h-8 items-center rounded-lg bg-primary px-4 text-xs font-semibold text-white hover:bg-blue-500 sm:h-10 sm:px-6 sm:text-sm">
                                             <i class="fa-solid fa-floppy-disk mr-2"></i>Sauvegarder
                                         </button>
                                     </div>
                                 </section>
 
-                                <section class="rounded-lg   border-slate-200 bg-fondTransparent p-6 shadow-sm md:p-8">
+                                <section class="rounded-lg bg-fondTransparent p-6 shadow-sm md:p-8">
                                     <div class="grid grid-cols-1 gap-6 md:grid-cols-[340px_1fr] md:gap-8">
                                         <div>
                                             <h2 class="text-2xl font-semibold tracking-tight text-title sm:text-3xl">Biographie</h2>
@@ -88,14 +88,14 @@
                                                     <Editor @ref="EditorRef" EditorId="bioEditor" InitialContent="@(model.Bio ?? string.Empty)" />
                                                 </div>
                                                 <button type="button" @onclick="SaveBioAsync"
-                                                        class="inline-flex h-8 items-center rounded-lg bg-primary px-4 text-xs font-semibold text-white hover:bg-primary-500 sm:h-10 sm:px-6 sm:text-sm">
+                                                        class="inline-flex h-8 items-center rounded-lg bg-primary px-4 text-xs font-semibold text-white hover:bg-blue-500 sm:h-10 sm:px-6 sm:text-sm">
                                                     <i class="fa-solid fa-floppy-disk mr-2"></i>Sauvegarder
                                                 </button>
                                             </div>
                                         </div>
                                     </section>
 
-                                    <section class="rounded-lg   border-slate-200 bg-fondTransparent p-6 shadow-sm md:p-8">
+                                    <section class="rounded-lg bg-fondTransparent p-6 shadow-sm md:p-8">
                                         <div class="grid grid-cols-1 gap-6 md:grid-cols-[340px_1fr] md:gap-8">
                                             <div>
                                                 <h2 class="text-2xl font-semibold tracking-tight text-title sm:text-3xl">Compétences</h2>
@@ -105,14 +105,14 @@
                                                 <div>
                                                     <SkillsEditor @bind-Skills="model.Skills" />
                                                     <button type="button" @onclick="SaveSkillsAsync"
-                                                            class="mt-5 inline-flex h-8 items-center rounded-lg bg-primary px-4 text-xs font-semibold text-white hover:bg-primary-500 sm:h-10 sm:px-6 sm:text-sm">
-                                                        <i class="fa-solid fa-floppy-disk mr-2"></i>Sauvegarder les compétences
+                                                            class="mt-5 inline-flex h-8 items-center rounded-lg bg-primary px-4 text-xs font-semibold text-white hover:bg-blue-500 sm:h-10 sm:px-6 sm:text-sm">
+                                                        <i class="fa-solid fa-floppy-disk mr-2"></i>Sauvegarder
                                                     </button>
                                                 </div>
                                             </div>
                                         </section>
 
-                                        <section class="rounded-lg border-slate-200 bg-fondTransparent p-6 shadow-sm md:p-8">
+                                        <section class="rounded-lg bg-fondTransparent p-6 shadow-sm md:p-8">
                                             <div class="mb-5 flex items-center justify-between gap-3">
                                                 <h2 class="text-2xl font-semibold tracking-tight text-title sm:text-3xl">Liens sociaux</h2>
                                                 <span class="text-xs text-subtitle sm:text-sm">Renseigne les URLs de tes reseaux</span>
@@ -122,21 +122,21 @@
                                                 @foreach (var item in socialLinksEdit)
                                                 {
                                                     <div
-                                                        class="flex flex-wrap items-center gap-2 rounded-lg border-slate-200 bg-surface px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
+                                                        class="flex flex-wrap items-center gap-2 rounded-lg shadow-md bg-surface px-3 py-2 sm:gap-3 sm:px-4 sm:py-3">
                                                         <div class="text-xl sm:text-2xl md:text-3xl text-black w-8 text-center">
                                                             <i class="@GetIconeForPlatform(item.Platform)"></i>
                                                         </div>
                                                         <span
                                                         class="w-16 text-xs font-semibold text-body sm:w-20 sm:text-sm md:w-24">@item.Platform</span>
                                                         <input @bind="item.Url" placeholder="https://"
-                                                               class="flex-1 min-w-[120px] h-8 rounded-lg bg-surface px-2 text-xs text-body focus:outline-none sm:min-w-[200px] sm:h-10 sm:px-3 sm:text-sm" />
+                                                               class="flex-1 min-w-[120px] h-8 rounded-lg bg-surface shadow-md px-2 text-xs text-body focus:outline-none sm:min-w-[200px] sm:h-10 sm:px-3 sm:text-sm" />
                                                     </div>
                                                 }
                                             </div>
 
                                             <div class="mt-5">
                                                 <button type="button" @onclick="SaveSocialLinksAsync"
-                                                        class="inline-flex h-8 items-center rounded-lg bg-primary px-4 text-xs font-semibold text-white hover:bg-indigo-500 sm:h-10 sm:px-6 sm:text-sm">
+                                                        class="inline-flex h-8 items-center rounded-lg bg-primary px-4 text-xs font-semibold text-white hover:bg-blue-500 sm:h-10 sm:px-6 sm:text-sm">
                                                     Enregistrer
                                                 </button>
                                             </div>
@@ -157,7 +157,7 @@ else
                                     <AdminBreadcrumb />
 
                                     <div class="space-y-6">
-                                        <section class="rounded-lg   border-slate-200 bg-fondTransparent p-6 shadow-sm md:p-8">
+                                        <section class="rounded-lg   bg-fondTransparent p-6 shadow-sm md:p-8">
                                             <div class="mb-5">
                                                 <Skeleton Type="SkeletonType.Title" Class="w-1/3" />
                                             </div>
