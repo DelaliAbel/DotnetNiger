@@ -1,0 +1,143 @@
+# OS
+*.swp
+*.swo
+*~
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+$RECYCLE.BIN/
+
+# Build
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.sln.docstates
+*.suo
+*.user
+*.userosscache
+*.rsuser
+*.code-workspace
+.history/
+*.sln.iml
+
+# NuGet
+*.nuget.props
+*.nuget.targets
+packages/
+.nuget/
+
+# Test
+TestResults/
+*.trx
+coverage/
+*.coverage
+*.coveragexml
+
+# Config with secrets
+**/appsettings.Local.json
+**/appsettings.Development.json
+**/appsettings.Production.json
+appsettings.Local.json
+appsettings.Development.json
+appsettings.Production.json
+local.settings.json
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Database
+*.mdf
+*.ldf
+*.ndf
+*.db
+*.db-shm
+*.db-wal
+
+# Uploads
+**/wwwroot/uploads/*
+!**/wwwroot/uploads/.gitkeep
+wwwroot/uploads/*
+!wwwroot/uploads/.gitkeep
+/wwwroot/uploads/*
+!/wwwroot/uploads/.gitkeep
+
+# Logs
+*.log
+npm-debug.log
+yarn-error.log
+
+# Temp
+tmp/
+temp/
+*.tmp
+*.bak
+*.backup
+*.orig
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Windows
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Azure
+.azure/
+
+# Certificates
+*.pem
+*.key
+*.crt
+*.pfx
+!.gitkeep
+
+# .NET
+.fake
+
+# Generated Ocelot
+ocelot.json
+
+# Production deployment guide (contains credentials)
+DEPLOY_PROD.md
+
+# User secrets
+user-secrets-dotnetniger.txt
+
+# Production configs
+prod-configs/
+
+
+
+# Local DB manager
+DotnetNiger.DbManager/
+
+# Docker
+.docker/
