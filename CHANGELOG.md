@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-08-12
+- **fix** : réactivation d'attributs `[Authorize(Roles = "Admin,SuperAdmin")]` cohérents sur toutes les pages admin (`/admin/*`) ; `[Authorize(Roles = "Admin,SuperAdmin,Collaborator")]` conservé sur les prévisualisations partagées `/preview/*`
+- **clean** : suppression complète du système de brouillons (`FormDraft`, `_draft`, `GetSnapshot`, `HandleDraftRestored`) des formulaires admin et collaborateur
+- **fix** : liens morts du dashboard admin — « Certificats » pointe vers `/admin/Users` (gestion des certificats), ressources vers `/admin/ressources` (le chemin `/admin/ressources/edit/{id}` n'existait pas)
+- **fix** : page Users — actions réservées au SuperAdmin (suppression, changement de rôle, gestion équipe) masquées pour un Admin standard (`CanManage`, aligné sur les permissions API)
+- **fix** : changement de rôle reflété sans reconnexion (rafraîchissement du profil depuis l'API)
+- **clean** : suppression de la constante de rôle `Client` inutilisée et nettoyage des alias trompeurs de `PermissionNames`
+- **docs** : README — section « Rôles & permissions » ajoutée, liste des rôles corrigée
+
 ## 2026-08-02
 - **fix** : crash frontend `/admin` `InvalidCharacterError` — attributs `class` mal formés (guillemets manquants) introduits par les retouches Dashboard (`class= text-xs ...` et `class= "..."` produisaient des noms d'attributs invalides dans le DOM Blazor WASM)
 

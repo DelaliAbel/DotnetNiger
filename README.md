@@ -11,7 +11,7 @@ Elle permet aux membres de partager des articles, projets, événements, ressour
 - **Événements** — Création, inscription, suivi des participants
 - **Projets** — Showcase des projets open-source des membres
 - **Ressources** — Partages de ressources (vidéos, livres, outils)
-- **Annuaire** — Profils membres avec rôles (Admin, Collaborateur,User, SuperAdmin)
+- **Annuaire** — Profils membres avec rôles (User, Collaborateur, Admin, SuperAdmin)
 - **Partenaires** — Gestion des sponsors et partenaires
 - **Newsletter** — Inscription et envoi de newsletters
 - **Messagerie** — Système de contact et notifications
@@ -40,6 +40,21 @@ DotnetNiger.UI/            Blazor WebAssembly (net8.0)
 ├── Pages/                 Pages de l'application
 └── Models/                Modèles côté client
 ```
+
+---
+
+## Rôles & permissions
+
+| Rôle | Accès principal |
+|------|-----------------|
+| `User` | Parcours public, profil, inscription aux événements, soumission de certificat |
+| `Collaborator` | Espace collaborateur (dashboard, événements, articles, projets, ressources) — obtenu après approbation d'un certificat par un admin |
+| `Admin` | Espace admin (dashboard, modération, gestion des utilisateurs et contenus) |
+| `SuperAdmin` | Tout Admin + gestion des rôles, suppression d'utilisateurs, invitations, paramètres du site |
+
+- Les permissions sont émises dans le **JWT** sous forme de claims `permission` (cf. `Permissions.cs`) et vérifiées côté API par des politiques (`PermissionAuthorizationHandler`).
+- Côté client, les zones `/admin`, `/collaborator` et `/users` sont délimitées par `AdminLayout` (redirection par préfixe d'URL) ; les pages admin portent `[Authorize(Roles = "Admin,SuperAdmin")]`, les pages de prévisualisation `[Authorize(Roles = "Admin,SuperAdmin,Collaborator")]`.
+- Enregistrement → rôle `User` ; approbation d'un certificat → rôle `Collaborator` ; les rôles sont attribués/modifiés via la page admin des utilisateurs.
 
 ---
 
