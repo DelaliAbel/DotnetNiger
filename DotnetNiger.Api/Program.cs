@@ -52,24 +52,11 @@ if (app.Environment.IsDevelopment())
 {
     var adminPassword = builder.Configuration.GetValue<string>("AdminPassword")
         ?? throw new InvalidOperationException("AdminPassword must be configured in appsettings.json or environment variables.");
-    await SeedData.InitializeAsync(app.Services, adminPassword);
+    // await SeedData.InitializeAsync(app.Services, adminPassword);
 }
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));
 
-var uploadsConfigured = app.Services.GetRequiredService<IOptions<UploadOptions>>().Value.Path;
-var uploadsRoot = Path.GetFullPath(
-    !string.IsNullOrWhiteSpace(uploadsConfigured)
-        ? Path.Combine(app.Environment.ContentRootPath, uploadsConfigured)
-        : Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads"));
-app.MapGet("/uploads/{**path}", (string path) =>
-{
-    var filePath = Path.GetFullPath(Path.Combine(uploadsRoot, path));
-    if (!filePath.StartsWith(uploadsRoot, StringComparison.OrdinalIgnoreCase) || !File.Exists(filePath))
-        return Results.NotFound();
-    return Results.File(filePath);
-});
-
-
+app.MapUploadsEndpoints();
 
 await app.RunAsync();
