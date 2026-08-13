@@ -10,38 +10,37 @@ namespace DotnetNiger.Api.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(@"
-                IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Tags' AND COLUMN_NAME = 'IsDeleted')
-                    ALTER TABLE [Tags] DROP COLUMN [IsDeleted];
-            ");
-            migrationBuilder.Sql(@"
-                IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Resources' AND COLUMN_NAME = 'IsDeleted')
-                    ALTER TABLE [Resources] DROP COLUMN [IsDeleted];
-            ");
-            migrationBuilder.Sql(@"
-                IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Projects' AND COLUMN_NAME = 'IsDeleted')
-                    ALTER TABLE [Projects] DROP COLUMN [IsDeleted];
-            ");
-            migrationBuilder.Sql(@"
-                IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Posts' AND COLUMN_NAME = 'IsDeleted')
-                    ALTER TABLE [Posts] DROP COLUMN [IsDeleted];
-            ");
-            migrationBuilder.Sql(@"
-                IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Partners' AND COLUMN_NAME = 'IsDeleted')
-                    ALTER TABLE [Partners] DROP COLUMN [IsDeleted];
-            ");
-            migrationBuilder.Sql(@"
-                IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Events' AND COLUMN_NAME = 'IsDeleted')
-                    ALTER TABLE [Events] DROP COLUMN [IsDeleted];
-            ");
-            migrationBuilder.Sql(@"
-                IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Comments' AND COLUMN_NAME = 'IsDeleted')
-                    ALTER TABLE [Comments] DROP COLUMN [IsDeleted];
-            ");
-            migrationBuilder.Sql(@"
-                IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'Categories' AND COLUMN_NAME = 'IsDeleted')
-                    ALTER TABLE [Categories] DROP COLUMN [IsDeleted];
-            ");
+            migrationBuilder.DropColumn(
+                name: "IsDeleted",
+                table: "Tags");
+
+            migrationBuilder.DropColumn(
+                name: "IsDeleted",
+                table: "Resources");
+
+            migrationBuilder.DropColumn(
+                name: "IsDeleted",
+                table: "Projects");
+
+            migrationBuilder.DropColumn(
+                name: "IsDeleted",
+                table: "Posts");
+
+            migrationBuilder.DropColumn(
+                name: "IsDeleted",
+                table: "Partners");
+
+            migrationBuilder.DropColumn(
+                name: "IsDeleted",
+                table: "Events");
+
+            migrationBuilder.DropColumn(
+                name: "IsDeleted",
+                table: "Comments");
+
+            migrationBuilder.DropColumn(
+                name: "IsDeleted",
+                table: "Categories");
         }
 
         /// <inheritdoc />

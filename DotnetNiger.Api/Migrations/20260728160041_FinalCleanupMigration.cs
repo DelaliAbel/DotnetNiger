@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -10,22 +11,22 @@ namespace DotnetNiger.Api.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.Sql(@"
-                IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_SocialLinks_Members_MemberId1')
-                    ALTER TABLE [SocialLinks] DROP CONSTRAINT [FK_SocialLinks_Members_MemberId1];
-            ");
-            migrationBuilder.Sql(@"
-                IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_SocialLinks_MemberId1' AND object_id = OBJECT_ID('SocialLinks'))
-                    DROP INDEX [IX_SocialLinks_MemberId1] ON [SocialLinks];
-            ");
-            migrationBuilder.Sql(@"
-                IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'SocialLinks' AND COLUMN_NAME = 'MemberId1')
-                    ALTER TABLE [SocialLinks] DROP COLUMN [MemberId1];
-            ");
-            migrationBuilder.Sql(@"
-                IF EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'ContactMessages' AND COLUMN_NAME = 'Name')
-                    ALTER TABLE [ContactMessages] DROP COLUMN [Name];
-            ");
+            migrationBuilder.DropForeignKey(
+                name: "FK_SocialLinks_Members_MemberId1",
+                table: "SocialLinks");
+
+            migrationBuilder.DropIndex(
+                name: "IX_SocialLinks_MemberId1",
+                table: "SocialLinks");
+
+            migrationBuilder.DropColumn(
+                name: "MemberId1",
+                table: "SocialLinks");
+
+            migrationBuilder.DropColumn(
+                name: "Name",
+                table: "ContactMessages");
+
             migrationBuilder.AlterColumn<string>(
                 name: "FullName",
                 table: "ContactMessages",
