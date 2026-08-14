@@ -1,3 +1,4 @@
+using System.Threading;
 using DotnetNiger.Api.Application.DTOs.Requests;
 using DotnetNiger.Api.Application.DTOs.Responses;
 
@@ -7,13 +8,13 @@ namespace DotnetNiger.Api.Application.Interfaces;
 public interface IProfileService
 {
     /// <summary>Récupère le profil d'un utilisateur.</summary>
-    Task<ProfileResponse?> GetAsync(Guid userId);
+    Task<ProfileResponse?> GetAsync(Guid userId, CancellationToken ct = default);
     /// <summary>Met à jour le profil utilisateur.</summary>
-    Task<ProfileResponse?> UpdateAsync(Guid userId, UpdateProfileRequest request);
+    Task<ProfileResponse?> UpdateAsync(Guid userId, UpdateProfileRequest request, CancellationToken ct = default);
     /// <summary>Récupère les liens sociaux du profil.</summary>
-    Task<List<SocialLinkResponse>> GetSocialLinksAsync(Guid userId);
+    Task<List<SocialLinkResponse>> GetSocialLinksAsync(Guid userId, CancellationToken ct = default);
     /// <summary>Ajoute un lien social au profil.</summary>
-    Task<SocialLinkResponse> AddSocialLinkAsync(Guid userId, AddSocialLinkRequest request);
+    Task<SocialLinkResponse> AddSocialLinkAsync(Guid userId, AddSocialLinkRequest request, CancellationToken ct = default);
     /// <summary>Supprime un lien social du profil.</summary>
-    Task<bool> DeleteSocialLinkAsync(Guid userId, Guid linkId);
+    Task<bool> DeleteSocialLinkAsync(Guid userId, Guid linkId, CancellationToken ct = default);
 }

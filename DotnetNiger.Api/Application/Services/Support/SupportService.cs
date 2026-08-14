@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using DotnetNiger.Api.Infrastructure.Email;
@@ -22,7 +23,7 @@ public class SupportService : ISupportService
     }
 
     /// <summary>Envoie un signalement de support par email.</summary>
-    public async Task<SupportReportResult> ReportAsync(SupportReportRequest request, string userId, string userEmail)
+    public async Task<SupportReportResult> ReportAsync(SupportReportRequest request, string userId, string userEmail, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Description))
             return new SupportReportResult { Success = false, Error = "Le titre et la description sont requis." };

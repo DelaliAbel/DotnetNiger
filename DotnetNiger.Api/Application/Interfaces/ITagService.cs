@@ -1,3 +1,4 @@
+using System.Threading;
 using DotnetNiger.Api.Application.DTOs.Responses;
 
 namespace DotnetNiger.Api.Application.Interfaces;
@@ -6,15 +7,15 @@ namespace DotnetNiger.Api.Application.Interfaces;
 public interface ITagService
 {
     /// <summary>Récupère tous les tags.</summary>
-    Task<List<TagResponse>> GetAllAsync();
+    Task<List<TagResponse>> GetAllAsync(CancellationToken ct = default);
     /// <summary>Récupère un tag par identifiant.</summary>
-    Task<TagResponse?> GetByIdAsync(Guid id);
+    Task<TagResponse?> GetByIdAsync(Guid id, CancellationToken ct = default);
     /// <summary>Récupère un tag par slug.</summary>
-    Task<TagResponse?> GetBySlugAsync(string slug);
+    Task<TagResponse?> GetBySlugAsync(string slug, CancellationToken ct = default);
     /// <summary>Crée un tag.</summary>
-    Task<TagResponse> CreateAsync(string name);
+    Task<TagResponse> CreateAsync(string name, CancellationToken ct = default);
     /// <summary>Met à jour un tag.</summary>
-    Task<TagResponse?> UpdateAsync(Guid id, string name);
+    Task<TagResponse?> UpdateAsync(Guid id, string name, CancellationToken ct = default);
     /// <summary>Supprime un tag.</summary>
-    Task<bool> DeleteAsync(Guid id);
+    Task<bool> DeleteAsync(Guid id, CancellationToken ct = default);
 }

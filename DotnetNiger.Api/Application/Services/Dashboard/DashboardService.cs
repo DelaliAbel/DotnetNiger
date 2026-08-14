@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using DotnetNiger.Api.Application.DTOs.Responses;
@@ -19,17 +20,17 @@ public class DashboardService
     }
 
     /// <summary>Récupère les statistiques globales du système (mis en cache 5 min).</summary>
-    public async Task<SystemStatsResponse> GetSystemStatsAsync()
+    public async Task<SystemStatsResponse> GetSystemStatsAsync(CancellationToken ct = default)
     {
         var stats = await _cache.GetOrCreateAsync("SystemStats", async entry =>
         {
             entry.AbsoluteExpirationRelativeToNow = CacheDuration;
 
-            var totalUsers = await _db.Users.CountAsync();
-            var totalRoles = await _db.Roles.CountAsync();
-            var totalPermissions = await _db.Permissions.CountAsync();
-            var totalRefreshTokens = await _db.RefreshTokens.CountAsync();
-            var totalServices = await _db.ExternalServices.CountAsync();
+            var totalUsers = await _db.Users.CountAsync(ct);
+            var totalRoles = await _db.Roles.CountAsync(ct);
+            var totalPermissions = await _db.Permissions.CountAsync(ct);
+            var totalRefreshTokens = await _db.RefreshTokens.CountAsync(ct);
+            var totalServices = await _db.ExternalServices.CountAsync(ct);
 
             return new SystemStatsResponse(totalUsers, totalRoles, totalPermissions, totalRefreshTokens, totalServices);
         });
@@ -37,12 +38,12 @@ public class DashboardService
     }
 
     /// <summary>Récupère les statistiques personnelles d'un utilisateur.</summary>
-    public async Task<MyStatsResponse> GetMyStatsAsync(Guid userId)
+    public async Task<MyStatsResponse> GetMyStatsAsync(Guid userId, CancellationToken ct = default)
     {
-        var myEvents = await _db.Events.CountAsync(e => e.OrganizerId == userId);
-        var myPosts = await _db.Posts.CountAsync(p => p.AuthorId == userId);
-        var myResources = await _db.Resources.CountAsync(r => r.AuthorId == userId);
-        var myProjects = await _db.Projects.CountAsync(p => p.CreatedBy == userId);
+        var myEvents = await _db.Events.CountAsync(e => e.OrganizerId == userId, ct);
+        var myPosts = await _db.Posts.CountAsync(p => p.AuthorId == userId, ct);
+        var myResources = await _db.Resources.CountAsync(r => r.AuthorId == userId, ct);
+        var myProjects = await _db.Projects.CountAsync(p => p.CreatedBy == userId, ct);
 
         return new MyStatsResponse(myEvents, myPosts, myResources, myProjects);
     }

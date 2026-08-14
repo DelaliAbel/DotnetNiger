@@ -1,3 +1,5 @@
+using System.Threading;
+
 namespace DotnetNiger.Api.Application.Services.ImageProcessing;
 
 /// <summary>Service de traitement et stockage des images uploadées.
@@ -19,9 +21,9 @@ public class ImageProcessingService : IImageProcessingService
 
     /// <summary>Sauvegarde un fichier image dans le sous-dossier correspondant au type.
     /// Valide le contenu (magic bytes) et n'autorise que les formats d'image raster.</summary>
-    public async Task<string> SaveAsync(Stream stream, string fileName, string type)
+    public async Task<string> SaveAsync(Stream stream, string fileName, string type, CancellationToken ct = default)
     {
-        var detectedExt = await DetectImageExtensionAsync(stream);
+        var detectedExt = await DetectImageExtensionAsync(stream, ct);
         if (detectedExt is null)
             throw new InvalidOperationException("Fichier image invalide ou format non supporté (JPG, PNG, GIF, WebP uniquement).");
 
@@ -47,11 +49,11 @@ public class ImageProcessingService : IImageProcessingService
     }
 
     /// <summary>Détecte le format image à partir des magic bytes du fichier.</summary>
-    private static async Task<string?> DetectImageExtensionAsync(Stream stream)
+    private static async Task<string?> DetectImageExtensionAsync(Stream stream, CancellationToken ct = default)
     {
         const int headerSize = 12;
         var header = new byte[headerSize];
-        var read = await stream.ReadAsync(header.AsMemory(0, headerSize));
+        var read = await stream.ReadAsync(header.AsMemory(0, headerSize), ct);
         if (read < headerSize) return null;
         if (stream.CanSeek) stream.Position = 0;
 

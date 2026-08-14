@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Threading;
 using DotnetNiger.Api.Domain.Entities;
 using DotnetNiger.Api.Infrastructure.Data;
 using Microsoft.AspNetCore.Http;
@@ -18,7 +19,7 @@ public class AuditLogService : IAuditLogService
     }
 
     /// <summary>Enregistre une entrée d'audit avec les informations de contexte HTTP.</summary>
-    public async Task LogAsync(string entityType, Guid entityId, string action, string? description = null)
+    public async Task LogAsync(string entityType, Guid entityId, string action, string? description = null, CancellationToken ct = default)
     {
         var httpContext = _httpContextAccessor.HttpContext;
         var userId = httpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -37,13 +38,13 @@ public class AuditLogService : IAuditLogService
         };
 
         _db.AuditLogs.Add(entry);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
     }
 
     /// <summary>Enregistre une entrée d'audit pré-construite.</summary>
-    public async Task LogAsync(AuditLog entry)
+    public async Task LogAsync(AuditLog entry, CancellationToken ct = default)
     {
         _db.AuditLogs.Add(entry);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
     }
 }

@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace DotnetNiger.Api.Infrastructure.Email;
 
 /// <summary>
@@ -5,9 +7,10 @@ namespace DotnetNiger.Api.Infrastructure.Email;
 /// </summary>
 public class SmtpOptions
 {
-    /// <summary>Adresse du serveur SMTP.</summary>
+    /// <summary>Adresse du serveur SMTP (peut être vide en développement : l'envoi est alors journalisé).</summary>
     public string Host { get; set; } = "";
     /// <summary>Port du serveur SMTP.</summary>
+    [Range(1, 65535, ErrorMessage = "Smtp:Port doit être compris entre 1 et 65535.")]
     public int Port { get; set; } = 587;
     /// <summary>Nom d'utilisateur SMTP.</summary>
     public string Username { get; set; } = "";

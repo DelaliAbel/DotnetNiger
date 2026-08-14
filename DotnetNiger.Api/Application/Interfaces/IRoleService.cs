@@ -1,3 +1,4 @@
+using System.Threading;
 using DotnetNiger.Api.Application.DTOs.Requests;
 using DotnetNiger.Api.Application.DTOs.Responses;
 
@@ -7,19 +8,19 @@ namespace DotnetNiger.Api.Application.Interfaces;
 public interface IRoleService
 {
     /// <summary>Crée un nouveau rôle.</summary>
-    Task<RoleResponse> CreateAsync(CreateRoleRequest request);
+    Task<RoleResponse> CreateAsync(CreateRoleRequest request, CancellationToken ct = default);
     /// <summary>Récupère la liste paginée des rôles.</summary>
-    Task<PaginatedResponse<RoleResponse>> GetAllAsync(PaginationQuery pagination);
+    Task<PaginatedResponse<RoleResponse>> GetAllAsync(PaginationQuery pagination, CancellationToken ct = default);
     /// <summary>Met à jour un rôle existant.</summary>
-    Task<RoleResponse> UpdateAsync(Guid id, UpdateRoleRequest request);
+    Task<RoleResponse> UpdateAsync(Guid id, UpdateRoleRequest request, CancellationToken ct = default);
     /// <summary>Supprime un rôle.</summary>
-    Task DeleteAsync(Guid id);
+    Task DeleteAsync(Guid id, CancellationToken ct = default);
     /// <summary>Récupère un rôle par identifiant.</summary>
-    Task<RoleResponse?> GetByIdAsync(Guid id);
+    Task<RoleResponse?> GetByIdAsync(Guid id, CancellationToken ct = default);
     /// <summary>Assigne un rôle à un utilisateur.</summary>
-    Task AssignToUserAsync(Guid userId, Guid roleId);
+    Task AssignToUserAsync(Guid userId, Guid roleId, CancellationToken ct = default);
     /// <summary>Retire un rôle à un utilisateur.</summary>
-    Task RemoveFromUserAsync(Guid userId, Guid roleId);
+    Task RemoveFromUserAsync(Guid userId, Guid roleId, CancellationToken ct = default);
     /// <summary>Récupère les rôles d'un utilisateur.</summary>
-    Task<List<RoleResponse>> GetUserRolesAsync(Guid userId);
+    Task<List<RoleResponse>> GetUserRolesAsync(Guid userId, CancellationToken ct = default);
 }

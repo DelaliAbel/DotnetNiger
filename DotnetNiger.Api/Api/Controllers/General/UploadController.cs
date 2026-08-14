@@ -1,3 +1,4 @@
+using System.Threading;
 using DotnetNiger.Api.Constants;
 using DotnetNiger.Api.Application.DTOs.Requests;
 using DotnetNiger.Api.Application.Interfaces;
@@ -19,7 +20,7 @@ public class UploadController(IImageProcessingService imageService) : BaseContro
     /// <summary>Upload un fichier image via un formulaire multipart.</summary>
     [HttpPost]
     [RequestSizeLimit(MaxFileSize)]
-    public async Task<IActionResult> Upload(IFormFile file, [FromQuery] string type = "Blog")
+    public async Task<IActionResult> Upload(IFormFile file, [FromQuery] string type = "Blog", CancellationToken ct = default)
     {
         if (file is null || file.Length == 0)
             return BadRequest(Messages.Upload.NoFile);
@@ -28,7 +29,7 @@ public class UploadController(IImageProcessingService imageService) : BaseContro
         {
             using var ms = new MemoryStream();
             await file.CopyToAsync(ms);
-            var imageUrl = await imageService.SaveAsync(ms, file.FileName, type);
+            var imageUrl = await imageService.SaveAsync(ms, file.FileName, type, ct);
             return Success(new { ImageUrl = imageUrl }, Messages.Upload.Uploaded);
         }
         catch (InvalidOperationException ex)
@@ -40,7 +41,7 @@ public class UploadController(IImageProcessingService imageService) : BaseContro
     /// <summary>Upload une image encodée en Base64.</summary>
     [HttpPost("base64")]
     [RequestSizeLimit(MaxFileSize)]
-    public async Task<IActionResult> UploadBase64([FromBody] UploadBase64Request request)
+    public async Task<IActionResult> UploadBase64([FromBody] UploadBase64Request request, CancellationToken ct = default)
     {
         byte[] data;
         try
@@ -58,7 +59,7 @@ public class UploadController(IImageProcessingService imageService) : BaseContro
         try
         {
             using var ms = new MemoryStream(data);
-            var imageUrl = await imageService.SaveAsync(ms, request.FileName, request.Type);
+            var imageUrl = await imageService.SaveAsync(ms, request.FileName, request.Type, ct);
             return Success(new { ImageUrl = imageUrl }, Messages.Upload.Uploaded);
         }
         catch (InvalidOperationException ex)

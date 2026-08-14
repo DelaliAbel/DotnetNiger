@@ -35,8 +35,13 @@ public static class DatabaseExtensions
         .AddEntityFrameworkStores<DotnetNigerDbContext>()
         .AddDefaultTokenProviders();
 
-        services.Configure<SmtpOptions>(configuration.GetSection("Smtp"));
-        services.Configure<UploadOptions>(configuration.GetSection("Uploads"));
+        services.AddOptions<SmtpOptions>()
+            .Bind(configuration.GetSection("Smtp"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        services.AddOptions<UploadOptions>()
+            .Bind(configuration.GetSection("Uploads"))
+            .ValidateOnStart();
 
         return services;
     }

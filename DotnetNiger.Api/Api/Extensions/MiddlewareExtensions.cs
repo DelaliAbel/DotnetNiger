@@ -1,4 +1,7 @@
+using System.Security.Claims;
 using System.Threading.RateLimiting;
+using DotnetNiger.Api.Middleware;
+using DotnetNiger.Api.Middleware.ExceptionHandlers;
 using DotnetNiger.Api.Options;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.RateLimiting;
@@ -8,6 +11,19 @@ namespace DotnetNiger.Api.Extensions;
 
 public static class MiddlewareExtensions
 {
+    /// <summary>
+    /// Enregistre les gestionnaires d'exceptions composables, dans l'ordre de priorité :
+    /// chaque handler retourne false s'il ne gère pas l'exception et laisse la main au suivant.
+    /// </summary>
+    public static IServiceCollection AddExceptionHandlers(this IServiceCollection services)
+    {
+        services.AddExceptionHandler<UnauthorizedExceptionHandler>();
+        services.AddExceptionHandler<NotFoundExceptionHandler>();
+        services.AddExceptionHandler<InvalidOperationExceptionHandler>();
+        services.AddExceptionHandler<GlobalExceptionHandler>();
+        return services;
+    }
+
     public static IServiceCollection AddCorsFromConfig(this IServiceCollection services, IConfiguration configuration, bool isDevelopment)
     {
         services.AddCors(options =>
@@ -32,7 +48,10 @@ public static class MiddlewareExtensions
 
     public static IServiceCollection AddRateLimiting(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<RateLimitingOptions>(configuration.GetSection(RateLimitingOptions.SectionName));
+        services.AddOptions<RateLimitingOptions>()
+            .Bind(configuration.GetSection(RateLimitingOptions.SectionName))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
         var rateLimitOptions = configuration.GetSection(RateLimitingOptions.SectionName).Get<RateLimitingOptions>()
             ?? new RateLimitingOptions();
 
@@ -72,10 +91,14 @@ public static class MiddlewareExtensions
 
             options.AddPolicy("Auth", httpContext =>
             {
-                var clientId = httpContext.Request.Headers["ClientId"].FirstOrDefault() ?? "unknown";
-                var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+                // Partition par utilisateur connecté (un abus ne pénalise pas tout le monde),
+                // sinon par IP + ClientId.
+                var userId = httpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var partitionKey = !string.IsNullOrEmpty(userId)
+                    ? $"auth:user:{userId}"
+                    : $"auth:{ipOrDefault(httpContext)}:{clientIdOrDefault(httpContext)}";
                 return RateLimitPartition.GetTokenBucketLimiter(
-                    $"auth:{ip}:{clientId}",
+                    partitionKey,
                     _ => new TokenBucketRateLimiterOptions
                     {
                         TokenLimit = rateLimitOptions.AuthPermitLimit,
@@ -105,6 +128,12 @@ public static class MiddlewareExtensions
         return services;
     }
 
+    private static string ipOrDefault(HttpContext httpContext) =>
+        httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+    private static string clientIdOrDefault(HttpContext httpContext) =>
+        httpContext.Request.Headers["ClientId"].FirstOrDefault() ?? "unknown";
+
     public static WebApplication UsePipeline(this WebApplication app, bool isDevelopment)
     {
         if (isDevelopment)
@@ -114,7 +143,9 @@ public static class MiddlewareExtensions
             app.UseSwaggerUI();
         }
 
-        app.UseJsonErrorHandling();
+        // L'exception handler doit être le premier : il ne peut pas attraper ce qui a déjà tourné.
+        app.UseExceptionHandler();
+        app.UseEmptyErrorResponses();
         app.Use(async (context, next) =>
         {
             context.Response.Headers.XContentTypeOptions = "nosniff";

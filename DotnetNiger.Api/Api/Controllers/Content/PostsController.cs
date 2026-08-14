@@ -1,3 +1,4 @@
+using System.Threading;
 using DotnetNiger.Api.Application.Interfaces;
 using DotnetNiger.Api.Constants;
 using DotnetNiger.Api.Application.DTOs.Requests;
@@ -17,40 +18,40 @@ public class PostsController(
 {
     /// <summary>Récupère la liste paginée des articles avec filtres optionnels.</summary>
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? published, [FromQuery] string? category, [FromQuery] string? tag, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 6, [FromQuery] Guid? after = null)
+    public async Task<IActionResult> GetAll([FromQuery] string? published, [FromQuery] string? category, [FromQuery] string? tag, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 6, [FromQuery] Guid? after = null, CancellationToken ct = default)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
         published = "true";
-        return Success(await postQuery.GetAllAsync(published, category, tag, query, page, pageSize, after));
+        return Success(await postQuery.GetAllAsync(published, category, tag, query, page, pageSize, after, ct: ct));
     }
 
     /// <summary>Récupère les articles de l'utilisateur connecté.</summary>
     [HttpGet("mine")]
     [Authorize]
-    public async Task<IActionResult> GetMine([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetMine([FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
         var userId = GetUserId();
-        return Success(await postQuery.GetAllAsync(null, null, null, null, page, pageSize, null, userId));
+        return Success(await postQuery.GetAllAsync(null, null, null, null, page, pageSize, null, userId, ct));
     }
 
     /// <summary>Récupère tous les articles (admin - tous statuts).</summary>
     [HttpGet("admin")]
     [Authorize(Policy = "admin.dashboard.view")]
-    public async Task<IActionResult> GetAdminAll([FromQuery] string? published, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 20)
+    public async Task<IActionResult> GetAdminAll([FromQuery] string? published, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 20, CancellationToken ct = default)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
-        return Success(await postQuery.GetAllAsync(published, null, null, query, page, pageSize, null));
+        return Success(await postQuery.GetAllAsync(published, null, null, query, page, pageSize, null, ct: ct));
     }
 
     /// <summary>Récupère un article par son identifiant.</summary>
     [HttpGet("{id:guid}", Order = 1)]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken ct = default)
     {
-        var post = await postQuery.GetByIdAsync(id);
+        var post = await postQuery.GetByIdAsync(id, ct);
         if (post is null) return NotFound(Messages.Post.NotFound);
         if (post.Status != nameof(PostStatus.Published) && !CanViewUnpublished(post))
             return NotFound(Messages.Post.NotFound);
@@ -59,9 +60,9 @@ public class PostsController(
 
     /// <summary>Récupère un article par son slug.</summary>
     [HttpGet("{slug:regex(^[[a-z0-9]]+(?:-[[a-z0-9]]+)*$)}", Order = 2)]
-    public async Task<IActionResult> GetBySlug(string slug)
+    public async Task<IActionResult> GetBySlug(string slug, CancellationToken ct = default)
     {
-        var post = await postQuery.GetBySlugAsync(slug);
+        var post = await postQuery.GetBySlugAsync(slug, ct);
         if (post is null) return NotFound(Messages.Post.NotFound);
         if (post.Status != nameof(PostStatus.Published) && !CanViewUnpublished(post))
             return NotFound(Messages.Post.NotFound);
@@ -70,9 +71,9 @@ public class PostsController(
 
     /// <summary>Récupère les métadonnées Open Graph d'un article par son slug.</summary>
     [HttpGet("by-slug/{slug}")]
-    public async Task<IActionResult> GetOGBySlug(string slug)
+    public async Task<IActionResult> GetOGBySlug(string slug, CancellationToken ct = default)
     {
-        var post = await postQuery.GetBySlugAsync(slug);
+        var post = await postQuery.GetBySlugAsync(slug, ct);
         if (post is null) return NotFound(Messages.Post.NotFound);
         if (post.Status != nameof(PostStatus.Published) && !CanViewUnpublished(post))
             return NotFound(Messages.Post.NotFound);
@@ -89,12 +90,12 @@ public class PostsController(
     /// <summary>Crée un nouvel article.</summary>
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> Create([FromBody] CreatePostRequest request)
+    public async Task<IActionResult> Create([FromBody] CreatePostRequest request, CancellationToken ct = default)
     {
         var userId = GetUserId();
         try
         {
-            var post = await postCommand.CreateAsync(request, userId, GetUserName(), IsAdmin(), IsCollaborator());
+            var post = await postCommand.CreateAsync(request, userId, GetUserName(), IsAdmin(), IsCollaborator(), ct);
             return CreatedAtAction(nameof(GetById), new { id = post.Id }, new { success = true, data = post, message = (string?)null });
         }
         catch (InvalidOperationException ex)
@@ -106,11 +107,11 @@ public class PostsController(
     /// <summary>Met à jour un article existant.</summary>
     [HttpPut("{id:guid}")]
     [Authorize]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePostRequest request)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePostRequest request, CancellationToken ct = default)
     {
         try
         {
-            var post = await postCommand.UpdateAsync(id, request, GetUserId(), IsAdmin());
+            var post = await postCommand.UpdateAsync(id, request, GetUserId(), IsAdmin(), ct);
             if (post is null) return NotFound(Messages.Post.NotFound);
             return Success(post);
         }
@@ -127,11 +128,11 @@ public class PostsController(
     /// <summary>Publie un article (le rend visible).</summary>
     [HttpPatch("{id:guid}/publish")]
     [Authorize]
-    public async Task<IActionResult> Publish(Guid id)
+    public async Task<IActionResult> Publish(Guid id, CancellationToken ct = default)
     {
         try
         {
-            var post = await postModeration.PublishAsync(id, GetUserId(), IsAdmin());
+            var post = await postModeration.PublishAsync(id, GetUserId(), IsAdmin(), ct);
             if (post is null) return NotFound(Messages.Post.NotFound);
             return Success(post);
         }
@@ -144,11 +145,11 @@ public class PostsController(
     /// <summary>Dépublie un article (le rend invisible).</summary>
     [HttpPatch("{id:guid}/unpublish")]
     [Authorize]
-    public async Task<IActionResult> Unpublish(Guid id)
+    public async Task<IActionResult> Unpublish(Guid id, CancellationToken ct = default)
     {
         try
         {
-            var post = await postModeration.UnpublishAsync(id, GetUserId(), IsAdmin());
+            var post = await postModeration.UnpublishAsync(id, GetUserId(), IsAdmin(), ct);
             if (post is null) return NotFound(Messages.Post.NotFound);
             return Success(post);
         }
@@ -160,9 +161,9 @@ public class PostsController(
 
     /// <summary>Incrémente le compteur de vues d'un article.</summary>
     [HttpPost("{id:guid}/views")]
-    public async Task<IActionResult> IncrementViewCount(Guid id)
+    public async Task<IActionResult> IncrementViewCount(Guid id, CancellationToken ct = default)
     {
-        var post = await postCommand.IncrementViewCountAsync(id);
+        var post = await postCommand.IncrementViewCountAsync(id, ct);
         if (post is null) return NotFound(Messages.Post.NotFound);
         return Success(post);
     }
@@ -170,11 +171,11 @@ public class PostsController(
     /// <summary>Supprime un article.</summary>
     [HttpDelete("{id:guid}")]
     [Authorize]
-    public async Task<IActionResult> Delete(Guid id)
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct = default)
     {
         try
         {
-            var deleted = await postCommand.DeleteAsync(id, GetUserId(), IsAdmin());
+            var deleted = await postCommand.DeleteAsync(id, GetUserId(), IsAdmin(), ct);
             if (!deleted) return NotFound(Messages.Post.NotFound);
             return Success<object?>(null, Messages.Post.Deleted);
         }

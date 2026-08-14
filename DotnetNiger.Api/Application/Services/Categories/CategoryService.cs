@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Api.Application.DTOs.Requests;
 using DotnetNiger.Api.Application.DTOs.Responses;
@@ -14,9 +15,9 @@ public class CategoryService : ICategoryService
     public CategoryService(DotnetNigerDbContext db) => _db = db;
 
     /// <summary>Crée une nouvelle catégorie.</summary>
-    public async Task<CategoryResponse> CreateAsync(string name, string? description)
+    public async Task<CategoryResponse> CreateAsync(string name, string? description, CancellationToken ct = default)
     {
-        var slug = await GenerateUniqueSlug(name);
+        var slug = await GenerateUniqueSlug(name, ct);
 
         var category = new Category
         {
@@ -26,66 +27,66 @@ public class CategoryService : ICategoryService
             Description = description ?? string.Empty
         };
         _db.Categories.Add(category);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return MapToResponse(category);
     }
 
     /// <summary>Récupère toutes les catégories.</summary>
-    public async Task<PaginatedResponse<CategoryResponse>> GetAllAsync()
+    public async Task<PaginatedResponse<CategoryResponse>> GetAllAsync(CancellationToken ct = default)
     {
         var query = _db.Categories.AsNoTracking();
-        var totalCount = await query.CountAsync();
+        var totalCount = await query.CountAsync(ct);
         var items = await query
             .OrderBy(c => c.Name)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return new PaginatedResponse<CategoryResponse>(
             items.Select(MapToResponse).ToList(), totalCount, 1, totalCount);
     }
 
     /// <summary>Récupère une catégorie par identifiant.</summary>
-    public async Task<CategoryResponse?> GetByIdAsync(Guid id)
+    public async Task<CategoryResponse?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
-        var category = await _db.Categories.FindAsync(id);
+        var category = await _db.Categories.FindAsync(id, ct);
         return category == null ? null : MapToResponse(category);
     }
 
     /// <summary>Récupère une catégorie par slug.</summary>
-    public async Task<CategoryResponse?> GetBySlugAsync(string slug)
+    public async Task<CategoryResponse?> GetBySlugAsync(string slug, CancellationToken ct = default)
     {
-        var category = await _db.Categories.FirstOrDefaultAsync(c => c.Slug == slug);
+        var category = await _db.Categories.FirstOrDefaultAsync(c => c.Slug == slug, ct);
         return category == null ? null : MapToResponse(category);
     }
 
     /// <summary>Met à jour le nom et la description d'une catégorie.</summary>
-    public async Task<CategoryResponse?> UpdateAsync(Guid id, string name, string? description)
+    public async Task<CategoryResponse?> UpdateAsync(Guid id, string name, string? description, CancellationToken ct = default)
     {
-        var category = await _db.Categories.FirstOrDefaultAsync(c => c.Id == id);
+        var category = await _db.Categories.FirstOrDefaultAsync(c => c.Id == id, ct);
         if (category == null) return null;
 
         category.Name = name;
-        category.Slug = await EnsureUniqueSlug(name, id);
+        category.Slug = await EnsureUniqueSlug(name, id, ct);
         category.Description = description ?? string.Empty;
         category.UpdatedAt = DateTime.UtcNow;
 
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return MapToResponse(category);
     }
 
     /// <summary>Supprime une catégorie (suppression définitive).</summary>
-    public async Task<bool> DeleteAsync(Guid id)
+    public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        var category = await _db.Categories.FirstOrDefaultAsync(c => c.Id == id);
+        var category = await _db.Categories.FirstOrDefaultAsync(c => c.Id == id, ct);
         if (category == null) return false;
         _db.Categories.Remove(category);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return true;
     }
 
     private static CategoryResponse MapToResponse(Category c) =>
         new(c.Id, c.Name, c.Slug, c.Description, c.IconUrl);
 
-    private async Task<string> GenerateUniqueSlug(string name)
+    private async Task<string> GenerateUniqueSlug(string name, CancellationToken ct = default)
     {
         var baseSlug = name.ToLowerInvariant()
             .Replace(" ", "-")
@@ -100,14 +101,14 @@ public class CategoryService : ICategoryService
 
         var candidate = baseSlug;
         var suffix = 1;
-        while (await _db.Categories.AnyAsync(c => c.Slug == candidate))
+        while (await _db.Categories.AnyAsync(c => c.Slug == candidate, ct))
         {
             candidate = $"{baseSlug}-{suffix++}";
         }
         return candidate;
     }
 
-    private async Task<string> EnsureUniqueSlug(string name, Guid entityId)
+    private async Task<string> EnsureUniqueSlug(string name, Guid entityId, CancellationToken ct = default)
     {
         var baseSlug = name.ToLowerInvariant()
             .Replace(" ", "-")
@@ -122,7 +123,7 @@ public class CategoryService : ICategoryService
 
         var candidate = baseSlug;
         var suffix = 1;
-        while (await _db.Categories.AnyAsync(c => c.Slug == candidate && c.Id != entityId))
+        while (await _db.Categories.AnyAsync(c => c.Slug == candidate && c.Id != entityId, ct))
         {
             candidate = $"{baseSlug}-{suffix++}";
         }

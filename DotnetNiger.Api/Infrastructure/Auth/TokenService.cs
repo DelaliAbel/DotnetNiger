@@ -39,12 +39,12 @@ public class TokenService
     /// Les rôles et permissions sont injectés dans les claims du JWT.
     /// </summary>
     public async Task<(string accessToken, string refreshToken, int expiresIn)> GenerateTokenPairAsync(
-        ApplicationUser user, bool rememberMe = false)
+        ApplicationUser user, bool rememberMe = false, CancellationToken ct = default)
     {
         var roles = await _userManager.GetRolesAsync(user);
-        var permissions = await _permissionService.GetUserPermissionsAsync(user.Id);
+        var permissions = await _permissionService.GetUserPermissionsAsync(user.Id, ct);
         var accessToken = GenerateAccessToken(user, roles, permissions);
-        var refreshToken = await CreateRefreshTokenAsync(user, rememberMe);
+        var refreshToken = await CreateRefreshTokenAsync(user, rememberMe, ct);
         var expiresIn = rememberMe
             ? (int)TimeSpan.FromDays(7).TotalSeconds
             : _jwt.AccessTokenExpirationMinutes * 60;
@@ -95,7 +95,7 @@ public class TokenService
     /// Crée un refresh token, le stocke en base et retourne la valeur brute.
     /// Le token est stocké sous forme hashée (SHA256) pour la sécurité.
     /// </summary>
-    private async Task<string> CreateRefreshTokenAsync(ApplicationUser user, bool longLived)
+    private async Task<string> CreateRefreshTokenAsync(ApplicationUser user, bool longLived, CancellationToken ct = default)
     {
         var rawToken = GenerateRandomToken();
         var hash = HashToken(rawToken);
@@ -113,7 +113,7 @@ public class TokenService
         };
 
         _db.RefreshTokens.Add(entity);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
 
         return rawToken;
     }
@@ -122,11 +122,11 @@ public class TokenService
     /// Valide un refresh token et retourne l'utilisateur associé.
     /// Vérifie : existence, expiration, révocation.
     /// </summary>
-    public async Task<ApplicationUser?> ValidateRefreshTokenAsync(string refreshToken)
+    public async Task<ApplicationUser?> ValidateRefreshTokenAsync(string refreshToken, CancellationToken ct = default)
     {
         var hash = HashToken(refreshToken);
         var entity = await _db.RefreshTokens
-            .FirstOrDefaultAsync(r => r.TokenHash == hash);
+            .FirstOrDefaultAsync(r => r.TokenHash == hash, ct);
 
         if (entity is null)
             return null;
@@ -149,11 +149,11 @@ public class TokenService
     /// Retourne le nouveau couple (accessToken, refreshToken, expiresIn).
     /// </summary>
     public async Task<(string accessToken, string refreshToken, int expiresIn)?>
-        RotateRefreshTokenAsync(string oldRefreshToken, bool rememberMe = false)
+        RotateRefreshTokenAsync(string oldRefreshToken, bool rememberMe = false, CancellationToken ct = default)
     {
         var hash = HashToken(oldRefreshToken);
         var entity = await _db.RefreshTokens
-            .FirstOrDefaultAsync(r => r.TokenHash == hash);
+            .FirstOrDefaultAsync(r => r.TokenHash == hash, ct);
 
         if (entity is null || entity.RevokedAt.HasValue || entity.IsReplaced)
             return null;
@@ -168,25 +168,25 @@ public class TokenService
         // Révoque l'ancien token
         entity.IsReplaced = true;
         entity.RevokedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
 
         // Génère un nouveau couple de tokens
-        return await GenerateTokenPairAsync(user, rememberMe);
+        return await GenerateTokenPairAsync(user, rememberMe, ct);
     }
 
     /// <summary>
     /// Révoque un refresh token spécifique (déconnexion de cet appareil).
     /// </summary>
-    public async Task RevokeTokenAsync(string refreshToken)
+    public async Task RevokeTokenAsync(string refreshToken, CancellationToken ct = default)
     {
         var hash = HashToken(refreshToken);
         var entity = await _db.RefreshTokens
-            .FirstOrDefaultAsync(r => r.TokenHash == hash);
+            .FirstOrDefaultAsync(r => r.TokenHash == hash, ct);
 
         if (entity is not null)
         {
             entity.RevokedAt = DateTime.UtcNow;
-            await _db.SaveChangesAsync();
+            await _db.SaveChangesAsync(ct);
         }
     }
 

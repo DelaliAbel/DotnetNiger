@@ -45,7 +45,7 @@ public class AccountService
 
     /// <summary>Inscrit un nouvel utilisateur et envoie la confirmation par email.</summary>
     public async Task<ApplicationUser> RegisterAsync(string email, string password,
-        string firstName, string lastName, string? phoneNumber = null)
+        string firstName, string lastName, string? phoneNumber = null, CancellationToken ct = default)
     {
         if (await _userManager.FindByEmailAsync(email) != null)
             throw new InvalidOperationException("Un compte avec cet email existe déjà");
@@ -66,7 +66,7 @@ public class AccountService
         user.EmailConfirmationCode = HashCode(code);
         user.EmailConfirmationCodeExpiry = DateTime.UtcNow.AddMinutes(15);
         await _userManager.UpdateAsync(user);
-        await SendConfirmationEmailAsync(user, code);
+        await SendConfirmationEmailAsync(user, code, ct);
         return user;
     }
 
@@ -75,7 +75,7 @@ public class AccountService
     // ============================================================
 
     /// <summary>Confirme l'adresse email avec le code de confirmation.</summary>
-    public async Task ConfirmEmailAsync(string email, string code)
+    public async Task ConfirmEmailAsync(string email, string code, CancellationToken ct = default)
     {
         var user = await _userManager.FindByEmailAsync(email);
         if (user == null) throw new InvalidOperationException("Utilisateur non trouvé");
@@ -96,7 +96,7 @@ public class AccountService
     }
 
     /// <summary>Renvoie le code de confirmation email.</summary>
-    public async Task ResendConfirmationCodeAsync(string email)
+    public async Task ResendConfirmationCodeAsync(string email, CancellationToken ct = default)
     {
         var user = await _userManager.FindByEmailAsync(email);
         if (user == null) throw new InvalidOperationException("Utilisateur non trouvé");
@@ -106,7 +106,7 @@ public class AccountService
         user.EmailConfirmationCode = HashCode(code);
         user.EmailConfirmationCodeExpiry = DateTime.UtcNow.AddMinutes(15);
         await _userManager.UpdateAsync(user);
-        await SendConfirmationEmailAsync(user, code);
+        await SendConfirmationEmailAsync(user, code, ct);
     }
 
     // ============================================================
@@ -114,9 +114,9 @@ public class AccountService
     // ============================================================
 
     /// <summary>Initie le changement d'email avec envoi d'un code de confirmation.</summary>
-    public async Task ChangeEmailAsync(Guid userId, string newEmail)
+    public async Task ChangeEmailAsync(Guid userId, string newEmail, CancellationToken ct = default)
     {
-        var user = await FindUserOrThrowAsync(userId);
+        var user = await FindUserOrThrowAsync(userId, ct);
         if (string.Equals(user.Email, newEmail, StringComparison.OrdinalIgnoreCase))
             throw new InvalidOperationException("Le nouvel email est identique à l'email actuel");
 
@@ -139,9 +139,9 @@ public class AccountService
     }
 
     /// <summary>Confirme le changement d'email avec le code de validation.</summary>
-    public async Task ConfirmChangeEmailAsync(Guid userId, string code)
+    public async Task ConfirmChangeEmailAsync(Guid userId, string code, CancellationToken ct = default)
     {
-        var user = await FindUserOrThrowAsync(userId);
+        var user = await FindUserOrThrowAsync(userId, ct);
         if (user.PendingEmail == null)
             throw new InvalidOperationException("Aucun changement d'email en attente");
         if (user.EmailConfirmationCode == null || user.EmailConfirmationCodeExpiry == null)
@@ -170,7 +170,7 @@ public class AccountService
     // ============================================================
 
     /// <summary>Envoie un lien de réinitialisation de mot de passe.</summary>
-    public async Task ForgotPasswordAsync(string email)
+    public async Task ForgotPasswordAsync(string email, CancellationToken ct = default)
     {
         var user = await _userManager.FindByEmailAsync(email);
         if (user == null) return;
@@ -181,7 +181,7 @@ public class AccountService
     }
 
     /// <summary>Réinitialise le mot de passe avec un token.</summary>
-    public async Task<string?> ResetPasswordAsync(string email, string token, string newPassword)
+    public async Task<string?> ResetPasswordAsync(string email, string token, string newPassword, CancellationToken ct = default)
     {
         var user = await _userManager.FindByEmailAsync(email);
         if (user == null) return "INVALID_EMAIL";
@@ -193,9 +193,9 @@ public class AccountService
     }
 
     /// <summary>Change le mot de passe de l'utilisateur.</summary>
-    public async Task ChangePasswordAsync(Guid userId, string currentPassword, string newPassword)
+    public async Task ChangePasswordAsync(Guid userId, string currentPassword, string newPassword, CancellationToken ct = default)
     {
-        var user = await FindUserOrThrowAsync(userId);
+        var user = await FindUserOrThrowAsync(userId, ct);
         var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
         if (!result.Succeeded)
             throw new InvalidOperationException(string.Join("; ", result.Errors.Select(e => e.Description)));
@@ -206,13 +206,13 @@ public class AccountService
     // ============================================================
 
     /// <summary>Récupère le profil utilisateur avec mise en cache.</summary>
-    public async Task<UserProfileResponse> GetProfileAsync(Guid userId)
+    public async Task<UserProfileResponse> GetProfileAsync(Guid userId, CancellationToken ct = default)
     {
         var cacheKey = $"profile_{userId}";
         if (_cache.TryGetValue(cacheKey, out UserProfileResponse? cached))
             return cached!;
 
-        var user = await FindUserOrThrowAsync(userId);
+        var user = await FindUserOrThrowAsync(userId, ct);
         var roles = await _userManager.GetRolesAsync(user);
         var profile = new UserProfileResponse(
             user.Id, user.Email!, user.FirstName, user.LastName, user.AvatarUrl,
@@ -223,9 +223,9 @@ public class AccountService
     }
 
     /// <summary>Met à jour le profil utilisateur et invalide le cache.</summary>
-    public async Task<UserProfileResponse> UpdateProfileAsync(Guid userId, UpdateUserRequest request)
+    public async Task<UserProfileResponse> UpdateProfileAsync(Guid userId, UpdateUserRequest request, CancellationToken ct = default)
     {
-        var user = await FindUserOrThrowAsync(userId);
+        var user = await FindUserOrThrowAsync(userId, ct);
         if (request.FirstName != null) user.FirstName = request.FirstName;
         if (request.LastName != null) user.LastName = request.LastName;
         if (request.AvatarUrl != null) user.AvatarUrl = request.AvatarUrl;
@@ -240,10 +240,10 @@ public class AccountService
     }
 
     /// <summary>Supprime le profil utilisateur après purge complète de ses données.</summary>
-    public async Task DeleteProfileAsync(Guid userId)
+    public async Task DeleteProfileAsync(Guid userId, CancellationToken ct = default)
     {
-        var user = await FindUserOrThrowAsync(userId);
-        await UserDataPurger.PurgeAsync(_db, userId);
+        var user = await FindUserOrThrowAsync(userId, ct);
+        await UserDataPurger.PurgeAsync(_db, userId, ct);
         var result = await _userManager.DeleteAsync(user);
         if (!result.Succeeded)
             throw new InvalidOperationException(
@@ -251,16 +251,16 @@ public class AccountService
     }
 
     /// <summary>Vérifie le mot de passe de l'utilisateur (ré-authentification avant suppression définitive).</summary>
-    public async Task<bool> VerifyPasswordAsync(Guid userId, string password)
+    public async Task<bool> VerifyPasswordAsync(Guid userId, string password, CancellationToken ct = default)
     {
-        var user = await FindUserOrThrowAsync(userId);
+        var user = await FindUserOrThrowAsync(userId, ct);
         return await _userManager.CheckPasswordAsync(user, password);
     }
 
     /// <summary>Indique si l'utilisateur possède un mot de passe local (compte local, pas uniquement externe).</summary>
-    public async Task<bool> HasPasswordAsync(Guid userId)
+    public async Task<bool> HasPasswordAsync(Guid userId, CancellationToken ct = default)
     {
-        var user = await FindUserOrThrowAsync(userId);
+        var user = await FindUserOrThrowAsync(userId, ct);
         return await _userManager.HasPasswordAsync(user);
     }
 
@@ -269,10 +269,10 @@ public class AccountService
     // ============================================================
 
     /// <summary>Crée une demande de suppression de compte planifiée à 7 jours.</summary>
-    public async Task<AccountDeletionRequest> RequestDeletionAsync(Guid userId)
+    public async Task<AccountDeletionRequest> RequestDeletionAsync(Guid userId, CancellationToken ct = default)
     {
         var existing = await _db.AccountDeletionRequests
-            .FirstOrDefaultAsync(d => d.UserId == userId && !d.IsProcessed && d.CancelledAt == null);
+            .FirstOrDefaultAsync(d => d.UserId == userId && !d.IsProcessed && d.CancelledAt == null, ct);
         if (existing != null)
             throw new InvalidOperationException("Une demande de suppression est déjà en cours.");
 
@@ -284,30 +284,30 @@ public class AccountService
             ScheduledFor = DateTime.UtcNow.AddDays(7)
         };
         _db.AccountDeletionRequests.Add(request);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return request;
     }
 
     /// <summary>Annule une demande de suppression en cours.</summary>
-    public async Task<bool> CancelDeletionAsync(Guid userId)
+    public async Task<bool> CancelDeletionAsync(Guid userId, CancellationToken ct = default)
     {
         var request = await _db.AccountDeletionRequests
-            .FirstOrDefaultAsync(d => d.UserId == userId && !d.IsProcessed && d.CancelledAt == null);
+            .FirstOrDefaultAsync(d => d.UserId == userId && !d.IsProcessed && d.CancelledAt == null, ct);
         if (request == null) return false;
 
         request.CancelledAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return true;
     }
 
     /// <summary>Traite les demandes de suppression dont la date est dépassée.</summary>
-    public async Task ProcessPendingDeletionsAsync()
+    public async Task ProcessPendingDeletionsAsync(CancellationToken ct = default)
     {
         var now = DateTime.UtcNow;
         var pending = await _db.AccountDeletionRequests
             .Include(d => d.User)
             .Where(d => !d.IsProcessed && d.CancelledAt == null && d.ScheduledFor <= now)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         foreach (var request in pending)
         {
@@ -315,11 +315,11 @@ public class AccountService
             {
                 if (request.User != null)
                 {
-                    await UserDataPurger.PurgeAsync(_db, request.User.Id);
+                    await UserDataPurger.PurgeAsync(_db, request.User.Id, ct);
                     await _userManager.DeleteAsync(request.User);
                 }
                 request.IsProcessed = true;
-                await _db.SaveChangesAsync();
+                await _db.SaveChangesAsync(ct);
             }
             catch (Exception ex)
             {
@@ -335,13 +335,13 @@ public class AccountService
     private static string HashCode(string code) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(code)));
 
-    private async Task<ApplicationUser> FindUserOrThrowAsync(Guid userId)
+    private async Task<ApplicationUser> FindUserOrThrowAsync(Guid userId, CancellationToken ct = default)
     {
         var user = await _userManager.FindByIdAsync(userId.ToString());
         return user ?? throw new InvalidOperationException("Utilisateur non trouvé");
     }
 
-    private async Task SendConfirmationEmailAsync(ApplicationUser user, string code)
+    private async Task SendConfirmationEmailAsync(ApplicationUser user, string code, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(_smtp.Host))
         {

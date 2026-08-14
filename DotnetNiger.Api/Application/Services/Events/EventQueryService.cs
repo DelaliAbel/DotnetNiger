@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Api.Application.DTOs.Responses;
 using DotnetNiger.Api.Domain.Entities;
@@ -16,7 +17,7 @@ public class EventQueryService : IEventQueryService
     public async Task<PaginatedResponse<EventResponse>> GetAllAsync(
         string? status, string? query, string? location,
         string? category, string? tag, DateTime? from, DateTime? to,
-        Guid? organizerId, int page, int pageSize, Guid? createdBy = null)
+        Guid? organizerId, int page, int pageSize, Guid? createdBy = null, CancellationToken ct = default)
     {
         var q = _db.Events
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
@@ -38,47 +39,47 @@ public class EventQueryService : IEventQueryService
         if (organizerId.HasValue) q = q.Where(e => e.OrganizerId == organizerId.Value);
         if (createdBy.HasValue) q = q.Where(e => e.CreatedBy == createdBy.Value);
 
-        var total = await q.CountAsync();
+        var total = await q.CountAsync(ct);
         var items = await q
             .OrderBy(e => e.StartDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return new PaginatedResponse<EventResponse>(
             items.Select(MapToResponse).ToList(), total, page, pageSize);
     }
 
     /// <summary>Récupère un événement par identifiant.</summary>
-    public async Task<EventResponse?> GetByIdAsync(Guid id)
+    public async Task<EventResponse?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         var ev = await _db.Events.AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
             .Include(e => e.Speakers)
             .Include(e => e.Medias)
-            .FirstOrDefaultAsync(e => e.Id == id);
+            .FirstOrDefaultAsync(e => e.Id == id, ct);
         return ev == null ? null : MapToResponse(ev);
     }
 
     /// <summary>Récupère un événement par son slug.</summary>
-    public async Task<EventResponse?> GetBySlugAsync(string slug)
+    public async Task<EventResponse?> GetBySlugAsync(string slug, CancellationToken ct = default)
     {
         var ev = await _db.Events.AsNoTracking()
             .Include(e => e.EventTags).ThenInclude(et => et.Tag)
             .Include(e => e.Speakers)
             .Include(e => e.Medias)
-            .FirstOrDefaultAsync(e => e.Slug == slug);
+            .FirstOrDefaultAsync(e => e.Slug == slug, ct);
         return ev == null ? null : MapToResponse(ev);
     }
 
     /// <summary>Récupère les événements en attente de modération.</summary>
-    public async Task<PaginatedResponse<EventResponse>> GetPendingEventsAsync(int page, int pageSize)
+    public async Task<PaginatedResponse<EventResponse>> GetPendingEventsAsync(int page, int pageSize, CancellationToken ct = default)
     {
-        return await GetAllAsync("PendingReview", null, null, null, null, null, null, null, page, pageSize);
+        return await GetAllAsync("PendingReview", null, null, null, null, null, null, null, page, pageSize, ct: ct);
     }
 
     /// <summary>Récupère les inscriptions d'un événement.</summary>
-    public async Task<List<EventRegistrationResponse>> GetRegistrationsAsync(Guid eventId)
+    public async Task<List<EventRegistrationResponse>> GetRegistrationsAsync(Guid eventId, CancellationToken ct = default)
     {
         return await _db.EventRegistrations.AsNoTracking()
             .Include(r => r.Event)
@@ -95,7 +96,7 @@ public class EventQueryService : IEventQueryService
                 IsAttended = r.IsAttended,
                 RegistrationStatus = r.RegistrationStatus
             })
-            .ToListAsync();
+            .ToListAsync(ct);
     }
 
     private static EventResponse MapToResponse(Event e)

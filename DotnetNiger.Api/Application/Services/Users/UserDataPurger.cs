@@ -1,3 +1,4 @@
+using System.Threading;
 using DotnetNiger.Api.Domain.Entities;
 using DotnetNiger.Api.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -11,17 +12,17 @@ namespace DotnetNiger.Api.Application.Services.Users;
 public static class UserDataPurger
 {
     /// <summary>Supprime toutes les données utilisateur (contenus, commentaires, inscriptions, certificats, membre, tokens...).</summary>
-    public static async Task PurgeAsync(DotnetNigerDbContext db, Guid userId)
+    public static async Task PurgeAsync(DotnetNigerDbContext db, Guid userId, CancellationToken ct = default)
     {
-        var userPostIds = await db.Posts.Where(p => p.AuthorId == userId).Select(p => p.Id).ToListAsync();
-        var userEventIds = await db.Events.Where(e => e.OrganizerId == userId).Select(e => e.Id).ToListAsync();
+        var userPostIds = await db.Posts.Where(p => p.AuthorId == userId).Select(p => p.Id).ToListAsync(ct);
+        var userEventIds = await db.Events.Where(e => e.OrganizerId == userId).Select(e => e.Id).ToListAsync(ct);
 
         // ---- Commentaires (auteur + commentaires sur les contenus de l'utilisateur + toutes les réponses) ----
         var inScope = await db.Comments
             .Where(c => c.UserId == userId
                 || (userPostIds.Count > 0 && c.PostId.HasValue && userPostIds.Contains(c.PostId.Value))
                 || (userEventIds.Count > 0 && c.EventId.HasValue && userEventIds.Contains(c.EventId.Value)))
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var scopeIds = inScope.Select(c => c.Id).ToHashSet();
         var frontier = new HashSet<Guid>(scopeIds);
@@ -31,7 +32,7 @@ public static class UserDataPurger
         {
             var children = await db.Comments
                 .Where(c => c.ParentCommentId.HasValue && frontier.Contains(c.ParentCommentId.Value) && !scopeIds.Contains(c.Id))
-                .ToListAsync();
+                .ToListAsync(ct);
             if (children.Count == 0) break;
 
             foreach (var child in children)
@@ -47,66 +48,66 @@ public static class UserDataPurger
         // ---- Événements de l'utilisateur (commentaires + inscriptions déjà traités) ----
         if (userEventIds.Count > 0)
         {
-            var eventRegistrations = await db.EventRegistrations.Where(r => userEventIds.Contains(r.EventId)).ToListAsync();
+            var eventRegistrations = await db.EventRegistrations.Where(r => userEventIds.Contains(r.EventId)).ToListAsync(ct);
             db.EventRegistrations.RemoveRange(eventRegistrations);
-            var events = await db.Events.Where(e => userEventIds.Contains(e.Id)).ToListAsync();
+            var events = await db.Events.Where(e => userEventIds.Contains(e.Id)).ToListAsync(ct);
             db.Events.RemoveRange(events);
         }
 
         // ---- Publications de l'utilisateur ----
         if (userPostIds.Count > 0)
         {
-            var posts = await db.Posts.Where(p => userPostIds.Contains(p.Id)).ToListAsync();
+            var posts = await db.Posts.Where(p => userPostIds.Contains(p.Id)).ToListAsync(ct);
             db.Posts.RemoveRange(posts);
         }
 
         // ---- Ressources de l'utilisateur ----
-        var userResourceIds = await db.Resources.Where(r => r.AuthorId == userId).Select(r => r.Id).ToListAsync();
+        var userResourceIds = await db.Resources.Where(r => r.AuthorId == userId).Select(r => r.Id).ToListAsync(ct);
         if (userResourceIds.Count > 0)
         {
-            var resources = await db.Resources.Where(r => userResourceIds.Contains(r.Id)).ToListAsync();
+            var resources = await db.Resources.Where(r => userResourceIds.Contains(r.Id)).ToListAsync(ct);
             db.Resources.RemoveRange(resources);
         }
 
         // ---- Inscriptions aux événements (comme participant) ----
-        var registrations = await db.EventRegistrations.Where(r => r.UserId == userId).ToListAsync();
+        var registrations = await db.EventRegistrations.Where(r => r.UserId == userId).ToListAsync(ct);
         db.EventRegistrations.RemoveRange(registrations);
 
         // ---- Certificats (avant les membres, FK NoAction sur MemberId) ----
-        var certificates = await db.Certificates.Where(c => c.UserId == userId).ToListAsync();
+        var certificates = await db.Certificates.Where(c => c.UserId == userId).ToListAsync(ct);
         db.Certificates.RemoveRange(certificates);
 
         // ---- Profil membre + compétences + liens sociaux ----
-        var members = await db.Members.Where(m => m.UserId == userId).ToListAsync();
+        var members = await db.Members.Where(m => m.UserId == userId).ToListAsync(ct);
         foreach (var member in members)
         {
-            var skills = await db.MemberSkills.Where(s => s.MemberId == member.Id).ToListAsync();
+            var skills = await db.MemberSkills.Where(s => s.MemberId == member.Id).ToListAsync(ct);
             db.MemberSkills.RemoveRange(skills);
-            var links = await db.SocialLinks.Where(l => l.MemberId == member.Id).ToListAsync();
+            var links = await db.SocialLinks.Where(l => l.MemberId == member.Id).ToListAsync(ct);
             db.SocialLinks.RemoveRange(links);
         }
         db.Members.RemoveRange(members);
 
         // ---- Interventions (speakers) ----
-        var speakers = await db.Speakers.Where(s => s.UserId == userId).ToListAsync();
+        var speakers = await db.Speakers.Where(s => s.UserId == userId).ToListAsync(ct);
         db.Speakers.RemoveRange(speakers);
 
         // ---- Notifications / refresh tokens / historique / consentements / demandes ----
-        var notifications = await db.Notifications.Where(n => n.UserId == userId).ToListAsync();
+        var notifications = await db.Notifications.Where(n => n.UserId == userId).ToListAsync(ct);
         db.Notifications.RemoveRange(notifications);
 
-        var refreshTokens = await db.RefreshTokens.Where(r => r.UserId == userId).ToListAsync();
+        var refreshTokens = await db.RefreshTokens.Where(r => r.UserId == userId).ToListAsync(ct);
         db.RefreshTokens.RemoveRange(refreshTokens);
 
-        var loginHistory = await db.LoginHistories.Where(l => l.UserId == userId).ToListAsync();
+        var loginHistory = await db.LoginHistories.Where(l => l.UserId == userId).ToListAsync(ct);
         db.LoginHistories.RemoveRange(loginHistory);
 
-        var consents = await db.UserConsents.Where(c => c.UserId == userId).ToListAsync();
+        var consents = await db.UserConsents.Where(c => c.UserId == userId).ToListAsync(ct);
         db.UserConsents.RemoveRange(consents);
 
-        var deletionRequests = await db.AccountDeletionRequests.Where(d => d.UserId == userId).ToListAsync();
+        var deletionRequests = await db.AccountDeletionRequests.Where(d => d.UserId == userId).ToListAsync(ct);
         db.AccountDeletionRequests.RemoveRange(deletionRequests);
 
-        await db.SaveChangesAsync();
+        await db.SaveChangesAsync(ct);
     }
 }

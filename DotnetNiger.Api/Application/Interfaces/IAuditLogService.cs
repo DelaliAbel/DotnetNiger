@@ -1,3 +1,4 @@
+using System.Threading;
 using DotnetNiger.Api.Domain.Entities;
 
 namespace DotnetNiger.Api.Application.Interfaces;
@@ -10,10 +11,10 @@ public interface IAuditLogService
     /// <summary>
     /// Enregistre une entrée d'audit pour une entité donnée.
     /// </summary>
-    Task LogAsync(string entityType, Guid entityId, string action, string? description = null);
+    Task LogAsync(string entityType, Guid entityId, string action, string? description = null, CancellationToken ct = default);
 
     /// <summary>
     /// Enregistre une entrée d'audit pré-construite.
     /// </summary>
-    Task LogAsync(AuditLog entry);
+    Task LogAsync(AuditLog entry, CancellationToken ct = default);
 }

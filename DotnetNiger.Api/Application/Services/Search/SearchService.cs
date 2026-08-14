@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Api.Application.DTOs.Requests;
 using DotnetNiger.Api.Application.DTOs.Responses;
@@ -14,7 +15,7 @@ public class SearchService : ISearchService
     public SearchService(DotnetNigerDbContext db) => _db = db;
 
     /// <summary>Recherche parmi les contenus publiés selon la requête et le type.</summary>
-    public async Task<PaginatedResponse<SearchResultResponse>> SearchAsync(SearchQueryRequest request)
+    public async Task<PaginatedResponse<SearchResultResponse>> SearchAsync(SearchQueryRequest request, CancellationToken ct = default)
     {
         var query = (request.Query ?? "").ToLower().Trim();
         if (string.IsNullOrWhiteSpace(query))
@@ -28,7 +29,7 @@ public class SearchService : ISearchService
                 .Where(p => p.Status == PostStatus.Published
                     && (p.Title.ToLower().Contains(query) || (p.Content != null && p.Content.ToLower().Contains(query))))
                 .Take(5)
-                .ToListAsync();
+                .ToListAsync(ct);
             foreach (var p in posts)
                 results.Add(new SearchResultResponse
                 {
@@ -44,7 +45,7 @@ public class SearchService : ISearchService
                 .Where(e => e.Status == EventStatus.Published
                     && (e.Title.ToLower().Contains(query) || (e.Description != null && e.Description.ToLower().Contains(query))))
                 .Take(5)
-                .ToListAsync();
+                .ToListAsync(ct);
             foreach (var e in events)
                 results.Add(new SearchResultResponse
                 {
@@ -60,7 +61,7 @@ public class SearchService : ISearchService
                 .Where(r => r.Status == ResourceStatus.Published
                     && (r.Title.ToLower().Contains(query) || (r.Description != null && r.Description.ToLower().Contains(query))))
                 .Take(5)
-                .ToListAsync();
+                .ToListAsync(ct);
             foreach (var r in resources)
                 results.Add(new SearchResultResponse
                 {

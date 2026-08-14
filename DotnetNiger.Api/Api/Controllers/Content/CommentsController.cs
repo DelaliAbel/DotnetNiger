@@ -1,3 +1,4 @@
+using System.Threading;
 using DotnetNiger.Api.Constants;
 using DotnetNiger.Api.Application.DTOs.Requests;
 using DotnetNiger.Api.Application.Interfaces;
@@ -13,33 +14,33 @@ public class CommentsController(ICommentService commentService) : BaseController
 {
     /// <summary>Récupère tous les commentaires.</summary>
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken ct = default)
     {
-        var comments = await commentService.GetAllAsync();
+        var comments = await commentService.GetAllAsync(ct);
         return Success(comments);
     }
 
     /// <summary>Récupère les commentaires d'un article par son identifiant.</summary>
     [HttpGet("post/{postId:guid}")]
-    public async Task<IActionResult> GetByPostId(Guid postId)
+    public async Task<IActionResult> GetByPostId(Guid postId, CancellationToken ct = default)
     {
-        var comments = await commentService.GetByPostIdAsync(postId);
+        var comments = await commentService.GetByPostIdAsync(postId, ct);
         return Success(comments);
     }
 
     /// <summary>Récupère les commentaires d'un événement par son identifiant.</summary>
     [HttpGet("event/{eventId:guid}")]
-    public async Task<IActionResult> GetByEventId(Guid eventId)
+    public async Task<IActionResult> GetByEventId(Guid eventId, CancellationToken ct = default)
     {
-        var comments = await commentService.GetByEventIdAsync(eventId);
+        var comments = await commentService.GetByEventIdAsync(eventId, ct);
         return Success(comments);
     }
 
     /// <summary>Récupère un commentaire par son identifiant.</summary>
     [HttpGet("{id:guid}")]
-    public async Task<IActionResult> GetById(Guid id)
+    public async Task<IActionResult> GetById(Guid id, CancellationToken ct = default)
     {
-        var comment = await commentService.GetByIdAsync(id);
+        var comment = await commentService.GetByIdAsync(id, ct);
         if (comment is null) return NotFound(Messages.Comment.NotFound);
         return Success(comment);
     }
@@ -47,14 +48,14 @@ public class CommentsController(ICommentService commentService) : BaseController
     /// <summary>Crée un nouveau commentaire.</summary>
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> Create([FromBody] CreateCommentRequest request)
+    public async Task<IActionResult> Create([FromBody] CreateCommentRequest request, CancellationToken ct = default)
     {
         var userId = GetUserId();
         var userName = GetUserName();
         var avatar = GetUserAvatar();
         try
         {
-            var comment = await commentService.CreateAsync(request, userId, userName, avatar);
+            var comment = await commentService.CreateAsync(request, userId, userName, avatar, ct);
             return Success(comment);
         }
         catch (InvalidOperationException ex)
@@ -66,12 +67,12 @@ public class CommentsController(ICommentService commentService) : BaseController
     /// <summary>Met à jour un commentaire existant.</summary>
     [HttpPut("{id:guid}")]
     [Authorize]
-    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCommentRequest request)
+    public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCommentRequest request, CancellationToken ct = default)
     {
         var userId = GetUserId();
         try
         {
-            var comment = await commentService.UpdateAsync(id, request, userId);
+            var comment = await commentService.UpdateAsync(id, request, userId, ct);
             if (comment is null) return NotFound(Messages.Comment.NotFound);
             return Success(comment);
         }
@@ -84,12 +85,12 @@ public class CommentsController(ICommentService commentService) : BaseController
     /// <summary>Supprime un commentaire, optionnellement avec toutes ses réponses.</summary>
     [HttpDelete("{id:guid}")]
     [Authorize]
-    public async Task<IActionResult> Delete(Guid id, [FromQuery] bool deleteAllReplies = false)
+    public async Task<IActionResult> Delete(Guid id, [FromQuery] bool deleteAllReplies = false, CancellationToken ct = default)
     {
         var userId = GetUserId();
         try
         {
-            var deleted = await commentService.DeleteAsync(id, userId, IsAdmin(), deleteAllReplies);
+            var deleted = await commentService.DeleteAsync(id, userId, IsAdmin(), deleteAllReplies, ct);
             if (!deleted) return NotFound(Messages.Comment.NotFound);
             return Success<object?>(null, Messages.Comment.Deleted);
         }

@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Api.Application.DTOs.Responses;
 using DotnetNiger.Api.Domain.Entities;
@@ -13,14 +14,14 @@ public class EventRegistrationService : IEventRegistrationService
     public EventRegistrationService(DotnetNigerDbContext db) => _db = db;
 
     /// <summary>Inscrit un utilisateur à un événement publié.</summary>
-    public async Task<EventRegistrationResponse?> RegisterAsync(Guid eventId, Guid userId, string userName, string? avatarUrl)
+    public async Task<EventRegistrationResponse?> RegisterAsync(Guid eventId, Guid userId, string userName, string? avatarUrl, CancellationToken ct = default)
     {
         var ev = await _db.Events
-            .FirstOrDefaultAsync(e => e.Id == eventId && e.Status == EventStatus.Published);
+            .FirstOrDefaultAsync(e => e.Id == eventId && e.Status == EventStatus.Published, ct);
         if (ev == null) return null;
 
         var existing = await _db.EventRegistrations
-            .AnyAsync(r => r.EventId == eventId && r.UserId == userId);
+            .AnyAsync(r => r.EventId == eventId && r.UserId == userId, ct);
         if (existing) return null;
 
         var affected = await _db.Events
@@ -29,7 +30,7 @@ public class EventRegistrationService : IEventRegistrationService
                 && (e.Capacity == 0 || e.RegisteredCount < e.Capacity))
             .ExecuteUpdateAsync(s => s
                 .SetProperty(e => e.RegisteredCount, e => e.RegisteredCount + 1)
-                .SetProperty(e => e.UpdatedAt, DateTime.UtcNow));
+                .SetProperty(e => e.UpdatedAt, DateTime.UtcNow), ct);
 
         if (affected == 0) return null;
 
@@ -42,7 +43,7 @@ public class EventRegistrationService : IEventRegistrationService
             RegisteredAt = DateTime.UtcNow
         };
         _db.EventRegistrations.Add(registration);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
 
         return new EventRegistrationResponse
         {
@@ -58,20 +59,20 @@ public class EventRegistrationService : IEventRegistrationService
     }
 
     /// <summary>Annule l'inscription d'un utilisateur à un événement.</summary>
-    public async Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId)
+    public async Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId, CancellationToken ct = default)
     {
         var registration = await _db.EventRegistrations
-            .FirstOrDefaultAsync(r => r.EventId == eventId && r.UserId == userId);
+            .FirstOrDefaultAsync(r => r.EventId == eventId && r.UserId == userId, ct);
         if (registration == null) return false;
 
         _db.EventRegistrations.Remove(registration);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
 
         await _db.Events
             .Where(e => e.Id == eventId && e.RegisteredCount > 0)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(e => e.RegisteredCount, e => e.RegisteredCount - 1)
-                .SetProperty(e => e.UpdatedAt, DateTime.UtcNow));
+                .SetProperty(e => e.UpdatedAt, DateTime.UtcNow), ct);
 
         return true;
     }

@@ -1,3 +1,4 @@
+using System.Threading;
 using DotnetNiger.Api.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,17 +13,17 @@ public class ContactMessagesController(IContactService contactService) : BaseCon
 {
     /// <summary>Récupère tous les messages de contact.</summary>
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll(CancellationToken ct = default)
     {
-        var messages = await contactService.GetAllAsync();
+        var messages = await contactService.GetAllAsync(ct);
         return Success(messages);
     }
 
     /// <summary>Marque un message comme lu.</summary>
     [HttpPatch("{id:guid}/read")]
-    public async Task<IActionResult> MarkAsRead(Guid id)
+    public async Task<IActionResult> MarkAsRead(Guid id, CancellationToken ct = default)
     {
-        var result = await contactService.MarkAsReadAsync(id);
+        var result = await contactService.MarkAsReadAsync(id, ct);
         if (!result)
             return NotFound("Message non trouvé");
         return Success<object?>(null, "Message marqué comme lu");

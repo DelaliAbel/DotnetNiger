@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Api.Application.DTOs.Requests;
@@ -23,7 +24,7 @@ public class RoleService : IRoleService
     }
 
     /// <summary>Crée un nouveau rôle.</summary>
-    public async Task<RoleResponse> CreateAsync(CreateRoleRequest request)
+    public async Task<RoleResponse> CreateAsync(CreateRoleRequest request, CancellationToken ct = default)
     {
         var role = new ApplicationRole
         {
@@ -37,24 +38,24 @@ public class RoleService : IRoleService
     }
 
     /// <summary>Récupère la liste paginée des rôles avec le nombre d'utilisateurs.</summary>
-    public async Task<PaginatedResponse<RoleResponse>> GetAllAsync(PaginationQuery pagination)
+    public async Task<PaginatedResponse<RoleResponse>> GetAllAsync(PaginationQuery pagination, CancellationToken ct = default)
     {
         var query = _db.Roles.AsNoTracking();
 
-        var totalCount = await query.CountAsync();
+        var totalCount = await query.CountAsync(ct);
 
         var roles = await query
             .OrderBy(r => r.Id)
             .Skip((pagination.EnsurePage - 1) * pagination.EnsurePageSize)
             .Take(pagination.EnsurePageSize)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var roleIds = roles.Select(r => r.Id).ToList();
         var userCounts = await _db.UserRoles
             .Where(ur => roleIds.Contains(ur.RoleId))
             .GroupBy(ur => ur.RoleId)
             .Select(g => new { RoleId = g.Key, Count = g.Count() })
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var countsMap = userCounts.ToDictionary(x => x.RoleId, x => x.Count);
 
@@ -66,7 +67,7 @@ public class RoleService : IRoleService
     }
 
     /// <summary>Met à jour la description d'un rôle.</summary>
-    public async Task<RoleResponse> UpdateAsync(Guid id, UpdateRoleRequest request)
+    public async Task<RoleResponse> UpdateAsync(Guid id, UpdateRoleRequest request, CancellationToken ct = default)
     {
         var role = await _roleManager.FindByIdAsync(id.ToString());
         if (role == null) throw new KeyNotFoundException("Rôle non trouvé");
@@ -76,28 +77,28 @@ public class RoleService : IRoleService
         if (!result.Succeeded)
             throw new InvalidOperationException(string.Join(", ", result.Errors.Select(e => e.Description)));
 
-        var count = await _db.UserRoles.CountAsync(ur => ur.RoleId == role.Id);
+        var count = await _db.UserRoles.CountAsync(ur => ur.RoleId == role.Id, ct);
         return new RoleResponse(role.Id, role.Name!, role.Description, count);
     }
 
     /// <summary>Supprime un rôle par son identifiant.</summary>
-    public async Task DeleteAsync(Guid id)
+    public async Task DeleteAsync(Guid id, CancellationToken ct = default)
     {
         var role = await _roleManager.FindByIdAsync(id.ToString());
         if (role != null) await _roleManager.DeleteAsync(role);
     }
 
     /// <summary>Récupère un rôle par son identifiant avec le nombre d'utilisateurs.</summary>
-    public async Task<RoleResponse?> GetByIdAsync(Guid id)
+    public async Task<RoleResponse?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         var role = await _roleManager.FindByIdAsync(id.ToString());
         if (role == null) return null;
-        var count = await _db.UserRoles.CountAsync(ur => ur.RoleId == role.Id);
+        var count = await _db.UserRoles.CountAsync(ur => ur.RoleId == role.Id, ct);
         return new RoleResponse(role.Id, role.Name!, role.Description, count);
     }
 
     /// <summary>Assigne un rôle à un utilisateur en remplaçant les rôles existants.</summary>
-    public async Task AssignToUserAsync(Guid userId, Guid roleId)
+    public async Task AssignToUserAsync(Guid userId, Guid roleId, CancellationToken ct = default)
     {
         var user = await _userManager.FindByIdAsync(userId.ToString());
         var role = await _roleManager.FindByIdAsync(roleId.ToString());
@@ -110,7 +111,7 @@ public class RoleService : IRoleService
     }
 
     /// <summary>Retire un rôle à un utilisateur.</summary>
-    public async Task RemoveFromUserAsync(Guid userId, Guid roleId)
+    public async Task RemoveFromUserAsync(Guid userId, Guid roleId, CancellationToken ct = default)
     {
         var user = await _userManager.FindByIdAsync(userId.ToString());
         var role = await _roleManager.FindByIdAsync(roleId.ToString());
@@ -120,7 +121,7 @@ public class RoleService : IRoleService
     }
 
     /// <summary>Récupère les rôles assignés à un utilisateur.</summary>
-    public async Task<List<RoleResponse>> GetUserRolesAsync(Guid userId)
+    public async Task<List<RoleResponse>> GetUserRolesAsync(Guid userId, CancellationToken ct = default)
     {
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user == null) throw new KeyNotFoundException();
@@ -128,7 +129,7 @@ public class RoleService : IRoleService
         var roleNames = await _userManager.GetRolesAsync(user);
         var roles = await _db.Roles.AsNoTracking()
             .Where(r => roleNames.Contains(r.Name!))
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return roles.Select(r => new RoleResponse(
             r.Id, r.Name!, r.Description, 0)).ToList();

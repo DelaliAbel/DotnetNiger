@@ -1,3 +1,4 @@
+using System.Threading;
 using DotnetNiger.Api.Application.DTOs.Responses;
 
 namespace DotnetNiger.Api.Application.Interfaces;
@@ -9,13 +10,13 @@ public interface IEventQueryService
     Task<PaginatedResponse<EventResponse>> GetAllAsync(
         string? status, string? query, string? location,
         string? category, string? tag, DateTime? from, DateTime? to,
-        Guid? organizerId, int page, int pageSize, Guid? createdBy = null);
+        Guid? organizerId, int page, int pageSize, Guid? createdBy = null, CancellationToken ct = default);
     /// <summary>Récupère un événement par identifiant.</summary>
-    Task<EventResponse?> GetByIdAsync(Guid id);
+    Task<EventResponse?> GetByIdAsync(Guid id, CancellationToken ct = default);
     /// <summary>Récupère un événement par son slug.</summary>
-    Task<EventResponse?> GetBySlugAsync(string slug);
+    Task<EventResponse?> GetBySlugAsync(string slug, CancellationToken ct = default);
     /// <summary>Récupère les événements en attente de modération.</summary>
-    Task<PaginatedResponse<EventResponse>> GetPendingEventsAsync(int page, int pageSize);
+    Task<PaginatedResponse<EventResponse>> GetPendingEventsAsync(int page, int pageSize, CancellationToken ct = default);
     /// <summary>Récupère les inscriptions d'un événement.</summary>
-    Task<List<EventRegistrationResponse>> GetRegistrationsAsync(Guid eventId);
+    Task<List<EventRegistrationResponse>> GetRegistrationsAsync(Guid eventId, CancellationToken ct = default);
 }

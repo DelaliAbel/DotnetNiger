@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Api.Application.DTOs.Responses;
 using DotnetNiger.Api.Domain.Entities;
@@ -15,7 +16,7 @@ public class PostQueryService : IPostQueryService
     /// <summary>Récupère la liste paginée des articles avec filtres optionnels.</summary>
     public async Task<PaginatedResponse<PostResponse>> GetAllAsync(
         string? published, string? category, string? tag,
-        string? query, int page, int pageSize, Guid? after = null, Guid? authorId = null)
+        string? query, int page, int pageSize, Guid? after = null, Guid? authorId = null, CancellationToken ct = default)
     {
         var q = _db.Posts
             .Include(p => p.PostCategories).ThenInclude(pc => pc.Category)
@@ -34,34 +35,34 @@ public class PostQueryService : IPostQueryService
         if (!string.IsNullOrWhiteSpace(tag))
             q = q.Where(p => p.PostTags.Any(pt => pt.Tag.Slug == tag || pt.Tag.Name == tag));
 
-        var total = await q.CountAsync();
+        var total = await q.CountAsync(ct);
         var items = await q
             .OrderByDescending(p => p.PublishedAt ?? p.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return new PaginatedResponse<PostResponse>(
             items.Select(MapToResponse).ToList(), total, page, pageSize);
     }
 
     /// <summary>Récupère un article par son identifiant.</summary>
-    public async Task<PostResponse?> GetByIdAsync(Guid id)
+    public async Task<PostResponse?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         var post = await _db.Posts.AsNoTracking()
             .Include(p => p.PostCategories).ThenInclude(pc => pc.Category)
             .Include(p => p.PostTags).ThenInclude(pt => pt.Tag)
-            .FirstOrDefaultAsync(p => p.Id == id);
+            .FirstOrDefaultAsync(p => p.Id == id, ct);
         return post == null ? null : MapToResponse(post);
     }
 
     /// <summary>Récupère un article par son slug.</summary>
-    public async Task<PostResponse?> GetBySlugAsync(string slug)
+    public async Task<PostResponse?> GetBySlugAsync(string slug, CancellationToken ct = default)
     {
         var post = await _db.Posts.AsNoTracking()
             .Include(p => p.PostCategories).ThenInclude(pc => pc.Category)
             .Include(p => p.PostTags).ThenInclude(pt => pt.Tag)
-            .FirstOrDefaultAsync(p => p.Slug == slug);
+            .FirstOrDefaultAsync(p => p.Slug == slug, ct);
         return post == null ? null : MapToResponse(post);
     }
 

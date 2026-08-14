@@ -26,7 +26,7 @@ public class DeletionProcessorService : BackgroundService
                 await Task.Delay(TimeSpan.FromHours(1), stoppingToken);
                 using var scope = _scopeFactory.CreateScope();
                 var accountService = scope.ServiceProvider.GetRequiredService<AccountService>();
-                await accountService.ProcessPendingDeletionsAsync();
+                await accountService.ProcessPendingDeletionsAsync(stoppingToken);
             }
             catch (OperationCanceledException)
             {

@@ -1,3 +1,4 @@
+using System.Threading;
 using DotnetNiger.Api.Application.DTOs.Requests;
 using DotnetNiger.Api.Application.DTOs.Responses;
 
@@ -7,17 +8,17 @@ namespace DotnetNiger.Api.Application.Interfaces;
 public interface ICommentService
 {
     /// <summary>Récupère les commentaires d'un article.</summary>
-    Task<List<CommentResponse>> GetByPostIdAsync(Guid postId);
+    Task<List<CommentResponse>> GetByPostIdAsync(Guid postId, CancellationToken ct = default);
     /// <summary>Récupère les commentaires d'un événement.</summary>
-    Task<List<CommentResponse>> GetByEventIdAsync(Guid eventId);
+    Task<List<CommentResponse>> GetByEventIdAsync(Guid eventId, CancellationToken ct = default);
     /// <summary>Récupère un commentaire par identifiant.</summary>
-    Task<CommentResponse?> GetByIdAsync(Guid id);
+    Task<CommentResponse?> GetByIdAsync(Guid id, CancellationToken ct = default);
     /// <summary>Crée un commentaire.</summary>
-    Task<CommentResponse> CreateAsync(CreateCommentRequest request, Guid userId, string userName, string? avatar);
+    Task<CommentResponse> CreateAsync(CreateCommentRequest request, Guid userId, string userName, string? avatar, CancellationToken ct = default);
     /// <summary>Met à jour un commentaire.</summary>
-    Task<CommentResponse?> UpdateAsync(Guid id, UpdateCommentRequest request, Guid userId);
+    Task<CommentResponse?> UpdateAsync(Guid id, UpdateCommentRequest request, Guid userId, CancellationToken ct = default);
     /// <summary>Supprime un commentaire.</summary>
-    Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin, bool deleteAllReplies);
+    Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin, bool deleteAllReplies, CancellationToken ct = default);
     /// <summary>Récupère tous les commentaires.</summary>
-    Task<List<CommentResponse>> GetAllAsync();
+    Task<List<CommentResponse>> GetAllAsync(CancellationToken ct = default);
 }

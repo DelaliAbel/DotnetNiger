@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Threading;
 using DotnetNiger.Api.Constants;
 using DotnetNiger.Api.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -18,7 +19,7 @@ public class StatsController(
 {
     /// <summary>Récupère les statistiques du tableau de bord selon le rôle de l'utilisateur.</summary>
     [HttpGet]
-    public async Task<IActionResult> GetStats()
+    public async Task<IActionResult> GetStats(CancellationToken ct = default)
     {
         var userId = GetUserId();
         if (userId is null) return Unauthorized();
@@ -30,13 +31,13 @@ public class StatsController(
 
         if (roles.Any(r => r == RoleConstants.SuperAdmin || r == RoleConstants.Admin))
         {
-            var dashboard = await adminService.GetDashboardAsync();
+            var dashboard = await adminService.GetDashboardAsync(ct);
             return Success(dashboard);
         }
 
         if (roles.Contains(RoleConstants.Collaborator))
         {
-            var dashboard = await adminService.GetCollaboratorDashboardAsync(userId.Value);
+            var dashboard = await adminService.GetCollaboratorDashboardAsync(userId.Value, ct);
             return Success(dashboard);
         }
 

@@ -1,3 +1,4 @@
+using System.Threading;
 using DotnetNiger.Api.Constants;
 using DotnetNiger.Api.Application.DTOs.Requests;
 using DotnetNiger.Api.Application.Interfaces;
@@ -16,11 +17,11 @@ public class NewsletterController(INewsletterService newsletterService) : BaseCo
     /// <summary>Inscrit un abonné à la newsletter.</summary>
     [HttpPost("subscribe")]
     [AllowAnonymous]
-    public async Task<IActionResult> Subscribe([FromBody] SubscribeRequest request)
+    public async Task<IActionResult> Subscribe([FromBody] SubscribeRequest request, CancellationToken ct = default)
     {
         try
         {
-            var result = await newsletterService.SubscribeAsync(request);
+            var result = await newsletterService.SubscribeAsync(request, ct);
             return Success(result);
         }
         catch (InvalidOperationException ex)
@@ -32,9 +33,9 @@ public class NewsletterController(INewsletterService newsletterService) : BaseCo
     /// <summary>Désabonne un abonné de la newsletter.</summary>
     [HttpPost("unsubscribe")]
     [AllowAnonymous]
-    public async Task<IActionResult> Unsubscribe([FromBody] UnsubscribeRequest request)
+    public async Task<IActionResult> Unsubscribe([FromBody] UnsubscribeRequest request, CancellationToken ct = default)
     {
-        var result = await newsletterService.UnsubscribeAsync(request);
+        var result = await newsletterService.UnsubscribeAsync(request, ct);
         if (!result)
             return NotFound(Messages.Newsletter.NotFoundOrUnsubscribed);
         return Success<object?>(null, Messages.Newsletter.Unsubscribed);
@@ -43,9 +44,9 @@ public class NewsletterController(INewsletterService newsletterService) : BaseCo
     /// <summary>Supprime un abonné par son adresse email (admin).</summary>
     [HttpDelete("{email}")]
     [Authorize(Policy = "newsletter.manage")]
-    public async Task<IActionResult> DeleteByEmail(string email)
+    public async Task<IActionResult> DeleteByEmail(string email, CancellationToken ct = default)
     {
-        var result = await newsletterService.DeleteByEmailAsync(email);
+        var result = await newsletterService.DeleteByEmailAsync(email, ct);
         if (!result)
             return NotFound(Messages.Newsletter.NotFoundOrUnsubscribed);
         return Success<object?>(null, Messages.Newsletter.Unsubscribed);
@@ -54,19 +55,19 @@ public class NewsletterController(INewsletterService newsletterService) : BaseCo
     /// <summary>Récupère la liste paginée des abonnés (admin).</summary>
     [HttpGet]
     [Authorize(Policy = "newsletter.manage")]
-    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
-        var result = await newsletterService.GetAllAsync(page, pageSize);
+        var result = await newsletterService.GetAllAsync(page, pageSize, ct);
         return Success(result);
     }
 
     /// <summary>Récupère le nombre d'abonnés actifs.</summary>
     [HttpGet("count")]
-    public async Task<IActionResult> GetActiveCount()
+    public async Task<IActionResult> GetActiveCount(CancellationToken ct = default)
     {
-        var count = await newsletterService.GetActiveCountAsync();
+        var count = await newsletterService.GetActiveCountAsync(ct);
         return Success(new { ActiveCount = count });
     }
 }

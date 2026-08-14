@@ -1,3 +1,4 @@
+using System.Threading;
 using DotnetNiger.Api.Application.DTOs.Responses;
 
 namespace DotnetNiger.Api.Application.Interfaces;
@@ -6,15 +7,15 @@ namespace DotnetNiger.Api.Application.Interfaces;
 public interface ISettingsService
 {
     /// <summary>Récupère tous les paramètres.</summary>
-    Task<List<SiteSettingResponse>> GetAllAsync();
+    Task<List<SiteSettingResponse>> GetAllAsync(CancellationToken ct = default);
     /// <summary>Récupère un paramètre par clé.</summary>
-    Task<SiteSettingResponse?> GetByKeyAsync(string key);
+    Task<SiteSettingResponse?> GetByKeyAsync(string key, CancellationToken ct = default);
     /// <summary>Définit un paramètre par clé/valeur.</summary>
-    Task<SiteSettingResponse> SetAsync(string key, string value);
+    Task<SiteSettingResponse> SetAsync(string key, string value, CancellationToken ct = default);
     /// <summary>Définit plusieurs paramètres.</summary>
-    Task SetBatchAsync(Dictionary<string, string> settings);
+    Task SetBatchAsync(Dictionary<string, string> settings, CancellationToken ct = default);
     /// <summary>Supprime un paramètre.</summary>
-    Task<bool> DeleteAsync(string key);
+    Task<bool> DeleteAsync(string key, CancellationToken ct = default);
     /// <summary>Récupère les paramètres publics du site.</summary>
-    Task<PublicSettingsResponse> GetPublicSettingsAsync();
+    Task<PublicSettingsResponse> GetPublicSettingsAsync(CancellationToken ct = default);
 }

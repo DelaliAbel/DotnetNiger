@@ -122,11 +122,17 @@ public static class AuthExtensions
     public static IServiceCollection AddAuthorizationPolicies(this IServiceCollection services)
     {
         services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+        services.AddScoped<IAuthorizationHandler, EventOwnershipAuthorizationHandler>();
         services.AddAuthorization(options =>
         {
             foreach (var permission in Permissions.All)
                 options.AddPolicy(permission, policy =>
                     policy.Requirements.Add(new PermissionRequirement(permission)));
+
+            // Policy basée sur la ressource : nécessite le propriétaire de l'événement
+            // ou un membre de l'équipe. Utilisée via IAuthorizationService.AuthorizeAsync.
+            options.AddPolicy("EventOwnership", policy =>
+                policy.Requirements.Add(new EventOwnershipRequirement()));
         });
         return services;
     }

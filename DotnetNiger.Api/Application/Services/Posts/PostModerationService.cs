@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Api.Application.DTOs.Responses;
 using DotnetNiger.Api.Domain.Entities;
@@ -13,36 +14,36 @@ public class PostModerationService : IPostModerationService
     public PostModerationService(DotnetNigerDbContext db) => _db = db;
 
     /// <summary>Publie un article (passe le statut à Published).</summary>
-    public async Task<PostResponse?> PublishAsync(Guid id, Guid userId, bool isAdmin)
+    public async Task<PostResponse?> PublishAsync(Guid id, Guid userId, bool isAdmin, CancellationToken ct = default)
     {
         var post = await _db.Posts
             .Include(p => p.PostCategories).ThenInclude(pc => pc.Category)
             .Include(p => p.PostTags).ThenInclude(pt => pt.Tag)
-            .FirstOrDefaultAsync(p => p.Id == id);
+            .FirstOrDefaultAsync(p => p.Id == id, ct);
         if (post == null) return null;
         if (!isAdmin && post.AuthorId != userId)
             throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à publier cet article.");
         post.Status = PostStatus.Published;
         post.PublishedAt = DateTime.UtcNow;
         post.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return MapToResponse(post);
     }
 
     /// <summary>Retire un article de publication (passe le statut à Draft).</summary>
-    public async Task<PostResponse?> UnpublishAsync(Guid id, Guid userId, bool isAdmin)
+    public async Task<PostResponse?> UnpublishAsync(Guid id, Guid userId, bool isAdmin, CancellationToken ct = default)
     {
         var post = await _db.Posts
             .Include(p => p.PostCategories).ThenInclude(pc => pc.Category)
             .Include(p => p.PostTags).ThenInclude(pt => pt.Tag)
-            .FirstOrDefaultAsync(p => p.Id == id);
+            .FirstOrDefaultAsync(p => p.Id == id, ct);
         if (post == null) return null;
         if (!isAdmin && post.AuthorId != userId)
             throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à dépublier cet article.");
         post.Status = PostStatus.Draft;
         post.PublishedAt = null;
         post.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return MapToResponse(post);
     }
 

@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Api.Application.DTOs.Requests;
 using DotnetNiger.Api.Application.DTOs.Responses;
@@ -14,36 +15,36 @@ public class ProfileService : IProfileService
     public ProfileService(DotnetNigerDbContext db) => _db = db;
 
     /// <summary>Récupère le profil complet d'un utilisateur.</summary>
-    public async Task<ProfileResponse?> GetAsync(Guid userId)
+    public async Task<ProfileResponse?> GetAsync(Guid userId, CancellationToken ct = default)
     {
         var user = await _db.Users.AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Id == userId);
+            .FirstOrDefaultAsync(u => u.Id == userId, ct);
         if (user == null) return null;
 
         var member = await _db.Members.AsNoTracking()
-            .FirstOrDefaultAsync(m => m.UserId == userId);
+            .FirstOrDefaultAsync(m => m.UserId == userId, ct);
 
         var roles = await _db.UserRoles.AsNoTracking()
             .Where(ur => ur.UserId == userId)
             .Join(_db.Roles, ur => ur.RoleId, r => r.Id, (ur, r) => r.Name!)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         var skills = member != null
             ? await _db.MemberSkills.AsNoTracking()
                 .Where(s => s.MemberId == member.Id)
                 .Select(s => s.SkillName)
-                .ToListAsync()
+                .ToListAsync(ct)
             : [];
 
         var socialLinks = member != null
             ? await _db.SocialLinks.AsNoTracking()
                 .Where(l => l.MemberId == member.Id)
                 .Select(l => new SocialLinkResponse { Id = l.Id, Platform = l.Platform, Url = l.Url })
-                .ToListAsync()
+                .ToListAsync(ct)
             : [];
 
         var certificate = await _db.Certificates.AsNoTracking()
-            .FirstOrDefaultAsync(c => c.UserId == userId);
+            .FirstOrDefaultAsync(c => c.UserId == userId, ct);
 
         return new ProfileResponse
         {
@@ -77,9 +78,9 @@ public class ProfileService : IProfileService
     }
 
     /// <summary>Met à jour le profil (nom complet, téléphone, avatar, bio, localisation).</summary>
-    public async Task<ProfileResponse?> UpdateAsync(Guid userId, UpdateProfileRequest request)
+    public async Task<ProfileResponse?> UpdateAsync(Guid userId, UpdateProfileRequest request, CancellationToken ct = default)
     {
-        var user = await _db.Users.FindAsync(userId);
+        var user = await _db.Users.FindAsync(userId, ct);
         if (user == null) return null;
 
         if (request.FullName != null)
@@ -91,7 +92,7 @@ public class ProfileService : IProfileService
         if (request.PhoneNumber != null) user.PhoneNumber = request.PhoneNumber;
         if (request.AvatarUrl != null) user.AvatarUrl = request.AvatarUrl;
 
-        var member = await _db.Members.FirstOrDefaultAsync(m => m.UserId == userId);
+        var member = await _db.Members.FirstOrDefaultAsync(m => m.UserId == userId, ct);
         if (member == null)
         {
             member = new Member
@@ -119,7 +120,7 @@ public class ProfileService : IProfileService
         {
             var existingSkills = await _db.MemberSkills
                 .Where(s => s.MemberId == member.Id)
-                .ToListAsync();
+                .ToListAsync(ct);
             _db.MemberSkills.RemoveRange(existingSkills);
 
             foreach (var skill in request.Skills.Where(s => !string.IsNullOrWhiteSpace(s)))
@@ -133,25 +134,25 @@ public class ProfileService : IProfileService
             }
         }
 
-        await _db.SaveChangesAsync();
-        return await GetAsync(userId);
+        await _db.SaveChangesAsync(ct);
+        return await GetAsync(userId, ct);
     }
 
     /// <summary>Récupère les liens sociaux du profil du membre.</summary>
-    public async Task<List<SocialLinkResponse>> GetSocialLinksAsync(Guid userId)
+    public async Task<List<SocialLinkResponse>> GetSocialLinksAsync(Guid userId, CancellationToken ct = default)
     {
-        var member = await _db.Members.FirstOrDefaultAsync(m => m.UserId == userId);
+        var member = await _db.Members.FirstOrDefaultAsync(m => m.UserId == userId, ct);
         if (member == null) return [];
         return await _db.SocialLinks.AsNoTracking()
             .Where(l => l.MemberId == member.Id)
             .Select(l => new SocialLinkResponse { Id = l.Id, Platform = l.Platform, Url = l.Url })
-            .ToListAsync();
+            .ToListAsync(ct);
     }
 
     /// <summary>Ajoute un lien social au profil du membre.</summary>
-    public async Task<SocialLinkResponse> AddSocialLinkAsync(Guid userId, AddSocialLinkRequest request)
+    public async Task<SocialLinkResponse> AddSocialLinkAsync(Guid userId, AddSocialLinkRequest request, CancellationToken ct = default)
     {
-        var member = await _db.Members.FirstOrDefaultAsync(m => m.UserId == userId)
+        var member = await _db.Members.FirstOrDefaultAsync(m => m.UserId == userId, ct)
             ?? throw new KeyNotFoundException("Membre non trouvé");
 
         var link = new SocialLink
@@ -162,19 +163,19 @@ public class ProfileService : IProfileService
             Url = request.Url
         };
         _db.SocialLinks.Add(link);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return new SocialLinkResponse { Id = link.Id, Platform = link.Platform, Url = link.Url };
     }
 
     /// <summary>Supprime un lien social du profil du membre.</summary>
-    public async Task<bool> DeleteSocialLinkAsync(Guid userId, Guid linkId)
+    public async Task<bool> DeleteSocialLinkAsync(Guid userId, Guid linkId, CancellationToken ct = default)
     {
-        var member = await _db.Members.FirstOrDefaultAsync(m => m.UserId == userId);
+        var member = await _db.Members.FirstOrDefaultAsync(m => m.UserId == userId, ct);
         if (member == null) return false;
-        var link = await _db.SocialLinks.FirstOrDefaultAsync(l => l.Id == linkId && l.MemberId == member.Id);
+        var link = await _db.SocialLinks.FirstOrDefaultAsync(l => l.Id == linkId && l.MemberId == member.Id, ct);
         if (link == null) return false;
         _db.SocialLinks.Remove(link);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return true;
     }
 }

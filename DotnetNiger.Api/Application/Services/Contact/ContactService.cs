@@ -1,3 +1,4 @@
+using System.Threading;
 using DotnetNiger.Api.Application.DTOs.Requests;
 using DotnetNiger.Api.Application.DTOs.Responses;
 using DotnetNiger.Api.Domain.Entities;
@@ -24,7 +25,7 @@ public class ContactService : IContactService
     }
 
     /// <summary>Enregistre un message de contact en base de données.</summary>
-    public async Task<bool> SendAsync(ContactRequest request)
+    public async Task<bool> SendAsync(ContactRequest request, CancellationToken ct = default)
     {
         var message = new ContactMessage
         {
@@ -37,7 +38,7 @@ public class ContactService : IContactService
             IsRead = false
         };
         _db.ContactMessages.Add(message);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
 
         if (!string.IsNullOrEmpty(_smtp.SupportEmail))
         {
@@ -50,7 +51,7 @@ public class ContactService : IContactService
     }
 
     /// <summary>Récupère tous les messages de contact (admin).</summary>
-    public async Task<List<ContactMessageResponse>> GetAllAsync()
+    public async Task<List<ContactMessageResponse>> GetAllAsync(CancellationToken ct = default)
     {
         return await _db.ContactMessages.AsNoTracking()
             .OrderByDescending(m => m.CreatedAt)
@@ -64,16 +65,16 @@ public class ContactService : IContactService
                 CreatedAt = m.CreatedAt,
                 IsRead = m.IsRead
             })
-            .ToListAsync();
+            .ToListAsync(ct);
     }
 
     /// <summary>Marque un message de contact comme lu.</summary>
-    public async Task<bool> MarkAsReadAsync(Guid id)
+    public async Task<bool> MarkAsReadAsync(Guid id, CancellationToken ct = default)
     {
-        var message = await _db.ContactMessages.FindAsync(id);
+        var message = await _db.ContactMessages.FindAsync(id, ct);
         if (message == null) return false;
         message.IsRead = true;
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return true;
     }
 }

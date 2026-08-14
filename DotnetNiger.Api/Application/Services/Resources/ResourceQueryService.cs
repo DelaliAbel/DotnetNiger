@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Api.Application.DTOs.Responses;
 using DotnetNiger.Api.Domain.Entities;
@@ -15,7 +16,7 @@ public class ResourceQueryService : IResourceQueryService
     /// <summary>Récupère la liste paginée des ressources avec filtres.</summary>
     public async Task<PaginatedResponse<ResourceResponse>> GetAllAsync(
         string? resourceType, string? level, string? query,
-        string? tag, Guid? categoryId, int page, int pageSize, Guid? after = null, Guid? authorId = null)
+        string? tag, Guid? categoryId, int page, int pageSize, Guid? after = null, Guid? authorId = null, CancellationToken ct = default)
     {
         var q = _db.Resources
             .Include(r => r.ResourceTags).ThenInclude(rt => rt.Tag)
@@ -34,55 +35,55 @@ public class ResourceQueryService : IResourceQueryService
         if (categoryId.HasValue)
             q = q.Where(r => r.ResourceCategories.Any(rc => rc.CategoryId == categoryId.Value));
 
-        var total = await q.CountAsync();
+        var total = await q.CountAsync(ct);
         var items = await q
             .OrderByDescending(r => r.CreatedAt)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToListAsync();
+            .ToListAsync(ct);
 
         return new PaginatedResponse<ResourceResponse>(
             items.Select(MapToResponse).ToList(), total, page, pageSize);
     }
 
     /// <summary>Récupère une ressource par identifiant.</summary>
-    public async Task<ResourceResponse?> GetByIdAsync(Guid id)
+    public async Task<ResourceResponse?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         var r = await _db.Resources
             .Include(x => x.ResourceTags).ThenInclude(rt => rt.Tag)
-            .FirstOrDefaultAsync(x => x.Id == id);
+            .FirstOrDefaultAsync(x => x.Id == id, ct);
         return r == null ? null : MapToResponse(r);
     }
 
     /// <summary>Récupère une ressource par slug.</summary>
-    public async Task<ResourceResponse?> GetBySlugAsync(string slug)
+    public async Task<ResourceResponse?> GetBySlugAsync(string slug, CancellationToken ct = default)
     {
         var r = await _db.Resources
             .Include(x => x.ResourceTags).ThenInclude(rt => rt.Tag)
-            .FirstOrDefaultAsync(res => res.Slug == slug);
+            .FirstOrDefaultAsync(res => res.Slug == slug, ct);
         return r == null ? null : MapToResponse(r);
     }
 
     /// <summary>Récupère la liste des types de ressources disponibles.</summary>
-    public async Task<List<string>> GetResourceTypesAsync()
+    public async Task<List<string>> GetResourceTypesAsync(CancellationToken ct = default)
     {
         return await _db.Resources.AsNoTracking()
             .Where(r => r.ResourceType != null)
             .Select(r => r.ResourceType!)
             .Distinct()
             .OrderBy(t => t)
-            .ToListAsync();
+            .ToListAsync(ct);
     }
 
     /// <summary>Récupère la liste des niveaux de difficulté disponibles.</summary>
-    public async Task<List<string>> GetLevelsAsync()
+    public async Task<List<string>> GetLevelsAsync(CancellationToken ct = default)
     {
         return await _db.Resources.AsNoTracking()
             .Where(r => r.Level != null)
             .Select(r => r.Level!)
             .Distinct()
             .OrderBy(l => l)
-            .ToListAsync();
+            .ToListAsync(ct);
     }
 
     private static ResourceResponse MapToResponse(Resource r) =>

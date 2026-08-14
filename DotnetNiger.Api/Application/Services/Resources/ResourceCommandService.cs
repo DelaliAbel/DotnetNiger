@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Api.Application.DTOs.Requests;
 using DotnetNiger.Api.Application.DTOs.Responses;
@@ -14,9 +15,9 @@ public class ResourceCommandService : IResourceCommandService
     public ResourceCommandService(DotnetNigerDbContext db) => _db = db;
 
     /// <summary>Crée une nouvelle ressource avec ses tags et catégories.</summary>
-    public async Task<ResourceResponse> CreateAsync(CreateResourceRequest request, Guid authorId, bool isAdmin, bool isCollaborator)
+    public async Task<ResourceResponse> CreateAsync(CreateResourceRequest request, Guid authorId, bool isAdmin, bool isCollaborator, CancellationToken ct = default)
     {
-        var slug = await GenerateUniqueSlug(request.Slug, request.Title);
+        var slug = await GenerateUniqueSlug(request.Slug, request.Title, ct);
 
         var resource = new Resource
         {
@@ -34,28 +35,28 @@ public class ResourceCommandService : IResourceCommandService
             Status = isAdmin || isCollaborator ? ResourceStatus.Published : ResourceStatus.Draft
         };
 
-        await SyncResourceTagsAsync(resource, request.TagNames, request.TagIds);
-        await SyncResourceCategoriesAsync(resource, request.CategoryIds);
+        await SyncResourceTagsAsync(resource, request.TagNames, request.TagIds, ct);
+        await SyncResourceCategoriesAsync(resource, request.CategoryIds, ct);
 
         _db.Resources.Add(resource);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return MapToResponse(resource);
     }
 
     /// <summary>Met à jour une ressource existante.</summary>
-    public async Task<ResourceResponse?> UpdateAsync(Guid id, UpdateResourceRequest request, Guid userId, bool isAdmin)
+    public async Task<ResourceResponse?> UpdateAsync(Guid id, UpdateResourceRequest request, Guid userId, bool isAdmin, CancellationToken ct = default)
     {
         var resource = await _db.Resources
             .Include(r => r.ResourceTags)
             .Include(r => r.ResourceCategories)
-            .FirstOrDefaultAsync(r => r.Id == id);
+            .FirstOrDefaultAsync(r => r.Id == id, ct);
         if (resource == null) return null;
 
         if (!isAdmin && resource.AuthorId != userId)
             throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à modifier cette ressource.");
 
         if (request.Title != null) resource.Title = request.Title;
-        if (request.Slug != null) resource.Slug = await EnsureUniqueSlug(request.Slug, resource.Id);
+        if (request.Slug != null) resource.Slug = await EnsureUniqueSlug(request.Slug, resource.Id, ct);
         if (request.Description != null) resource.Description = request.Description;
         if (request.Url != null) resource.Url = request.Url;
         if (request.DownloadUrl != null) resource.DownloadUrl = request.DownloadUrl;
@@ -64,70 +65,70 @@ public class ResourceCommandService : IResourceCommandService
         if (request.Level != null) resource.Level = request.Level;
 
         if (request.TagNames != null)
-            await SyncResourceTagsAsync(resource, request.TagNames, request.TagIds);
+            await SyncResourceTagsAsync(resource, request.TagNames, request.TagIds, ct);
         if (request.CategoryIds != null)
-            await SyncResourceCategoriesAsync(resource, request.CategoryIds);
+            await SyncResourceCategoriesAsync(resource, request.CategoryIds, ct);
 
         resource.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return MapToResponse(resource);
     }
 
     /// <summary>Supprime une ressource de façon permanente.</summary>
-    public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin)
+    public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin, CancellationToken ct = default)
     {
-        var resource = await _db.Resources.FirstOrDefaultAsync(r => r.Id == id);
+        var resource = await _db.Resources.FirstOrDefaultAsync(r => r.Id == id, ct);
         if (resource == null) return false;
         if (!isAdmin && resource.AuthorId != userId)
             throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à supprimer cette ressource.");
 
         var resourceId = resource.Id;
-        var tags = await _db.ResourceTags.Where(t => t.ResourceId == resourceId).ToListAsync();
+        var tags = await _db.ResourceTags.Where(t => t.ResourceId == resourceId).ToListAsync(ct);
         _db.ResourceTags.RemoveRange(tags);
-        var categories = await _db.ResourceCategories.Where(c => c.ResourceId == resourceId).ToListAsync();
+        var categories = await _db.ResourceCategories.Where(c => c.ResourceId == resourceId).ToListAsync(ct);
         _db.ResourceCategories.RemoveRange(categories);
 
         _db.Resources.Remove(resource);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return true;
     }
 
     /// <summary>Incrémente le compteur de vues d'une ressource.</summary>
-    public async Task<ResourceResponse?> IncrementViewCountAsync(Guid id)
+    public async Task<ResourceResponse?> IncrementViewCountAsync(Guid id, CancellationToken ct = default)
     {
         var affected = await _db.Resources
             .Where(r => r.Id == id)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(r => r.ViewCount, r => r.ViewCount + 1)
-                .SetProperty(r => r.UpdatedAt, DateTime.UtcNow));
+                .SetProperty(r => r.UpdatedAt, DateTime.UtcNow), ct);
 
         if (affected == 0) return null;
 
-        var resource = await _db.Resources.FindAsync(id);
+        var resource = await _db.Resources.FindAsync(id, ct);
         return resource == null ? null : MapToResponse(resource);
     }
 
     /// <summary>Soumet une ressource pour modération.</summary>
-    public async Task SubmitForReviewAsync(Guid id)
+    public async Task SubmitForReviewAsync(Guid id, CancellationToken ct = default)
     {
-        var resource = await _db.Resources.FirstOrDefaultAsync(r => r.Id == id)
+        var resource = await _db.Resources.FirstOrDefaultAsync(r => r.Id == id, ct)
             ?? throw new KeyNotFoundException("Ressource non trouvée");
         resource.Status = ResourceStatus.PendingReview;
         resource.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
     }
 
     /// <summary>Publie une ressource.</summary>
-    public async Task PublishAsync(Guid id)
+    public async Task PublishAsync(Guid id, CancellationToken ct = default)
     {
-        var resource = await _db.Resources.FirstOrDefaultAsync(r => r.Id == id)
+        var resource = await _db.Resources.FirstOrDefaultAsync(r => r.Id == id, ct)
             ?? throw new KeyNotFoundException("Ressource non trouvée");
         resource.Status = ResourceStatus.Published;
         resource.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
     }
 
-    private async Task SyncResourceTagsAsync(Resource resource, List<string>? tagNames, List<Guid>? tagIds)
+    private async Task SyncResourceTagsAsync(Resource resource, List<string>? tagNames, List<Guid>? tagIds, CancellationToken ct = default)
     {
         if (resource.ResourceTags.Count != 0)
         {
@@ -139,13 +140,13 @@ public class ResourceCommandService : IResourceCommandService
 
         if (tagIds?.Count > 0)
         {
-            var existing = await _db.Tags.Where(t => tagIds.Contains(t.Id)).ToListAsync();
+            var existing = await _db.Tags.Where(t => tagIds.Contains(t.Id)).ToListAsync(ct);
             tagsToLink.AddRange(existing);
         }
 
         if (tagNames?.Count > 0)
         {
-            var existingNames = await _db.Tags.Where(t => tagNames.Contains(t.Name)).ToListAsync();
+            var existingNames = await _db.Tags.Where(t => tagNames.Contains(t.Name)).ToListAsync(ct);
             var missingNames = tagNames.Except(existingNames.Select(t => t.Name)).ToList();
 
             foreach (var name in missingNames)
@@ -168,7 +169,7 @@ public class ResourceCommandService : IResourceCommandService
         }
     }
 
-    private async Task SyncResourceCategoriesAsync(Resource resource, List<Guid>? categoryIds)
+    private async Task SyncResourceCategoriesAsync(Resource resource, List<Guid>? categoryIds, CancellationToken ct = default)
     {
         if (categoryIds == null) return;
 
@@ -180,7 +181,7 @@ public class ResourceCommandService : IResourceCommandService
 
         if (categoryIds.Count == 0) return;
 
-        var categories = await _db.Categories.Where(c => categoryIds.Contains(c.Id)).ToListAsync();
+        var categories = await _db.Categories.Where(c => categoryIds.Contains(c.Id)).ToListAsync(ct);
         foreach (var category in categories)
         {
             resource.ResourceCategories.Add(new ResourceCategory { ResourceId = resource.Id, CategoryId = category.Id });
@@ -193,7 +194,7 @@ public class ResourceCommandService : IResourceCommandService
             r.ResourceTags?.Select(rt => new TagResponse { Id = rt.Tag.Id, Name = rt.Tag.Name, Slug = rt.Tag.Slug }).ToList() ?? [],
             r.CreatedAt, r.UpdatedAt);
 
-    private async Task<string> GenerateUniqueSlug(string? providedSlug, string title)
+    private async Task<string> GenerateUniqueSlug(string? providedSlug, string title, CancellationToken ct = default)
     {
         var baseSlug = !string.IsNullOrWhiteSpace(providedSlug)
             ? providedSlug
@@ -210,18 +211,18 @@ public class ResourceCommandService : IResourceCommandService
 
         var candidate = baseSlug;
         var suffix = 1;
-        while (await _db.Resources.AnyAsync(r => r.Slug == candidate))
+        while (await _db.Resources.AnyAsync(r => r.Slug == candidate, ct))
         {
             candidate = $"{baseSlug}-{suffix++}";
         }
         return candidate;
     }
 
-    private async Task<string> EnsureUniqueSlug(string slug, Guid entityId)
+    private async Task<string> EnsureUniqueSlug(string slug, Guid entityId, CancellationToken ct = default)
     {
         var candidate = slug;
         var suffix = 1;
-        while (await _db.Resources.AnyAsync(r => r.Slug == candidate && r.Id != entityId))
+        while (await _db.Resources.AnyAsync(r => r.Slug == candidate && r.Id != entityId, ct))
         {
             candidate = $"{slug}-{suffix++}";
         }

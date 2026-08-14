@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Api.Application.DTOs.Requests;
 using DotnetNiger.Api.Application.DTOs.Responses;
@@ -14,9 +15,9 @@ public class PostCommandService : IPostCommandService
     public PostCommandService(DotnetNigerDbContext db) => _db = db;
 
     /// <summary>Crée un nouvel article avec ses tags et catégories.</summary>
-    public async Task<PostResponse> CreateAsync(CreatePostRequest request, Guid authorId, string authorName, bool isAdmin, bool isCollaborator)
+    public async Task<PostResponse> CreateAsync(CreatePostRequest request, Guid authorId, string authorName, bool isAdmin, bool isCollaborator, CancellationToken ct = default)
     {
-        var slug = await GenerateUniqueSlug(request.Slug, request.Title);
+        var slug = await GenerateUniqueSlug(request.Slug, request.Title, ct);
 
         var post = new Post
         {
@@ -33,28 +34,28 @@ public class PostCommandService : IPostCommandService
             Status = request.IsPublished || isAdmin || isCollaborator ? PostStatus.Published : PostStatus.Draft
         };
 
-        await SyncPostTagsAsync(post, request.TagNames, request.TagIds);
-        await SyncPostCategoriesAsync(post, request.CategoryIds);
+        await SyncPostTagsAsync(post, request.TagNames, request.TagIds, ct);
+        await SyncPostCategoriesAsync(post, request.CategoryIds, ct);
 
         _db.Posts.Add(post);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return MapToResponse(post);
     }
 
     /// <summary>Met à jour un article existant.</summary>
-    public async Task<PostResponse?> UpdateAsync(Guid id, UpdatePostRequest request, Guid userId, bool isAdmin)
+    public async Task<PostResponse?> UpdateAsync(Guid id, UpdatePostRequest request, Guid userId, bool isAdmin, CancellationToken ct = default)
     {
         var post = await _db.Posts
             .Include(p => p.PostTags)
             .Include(p => p.PostCategories)
-            .FirstOrDefaultAsync(p => p.Id == id);
+            .FirstOrDefaultAsync(p => p.Id == id, ct);
         if (post == null) return null;
 
         if (!isAdmin && post.AuthorId != userId)
             throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à modifier cet article.");
 
         if (request.Title != null) post.Title = request.Title;
-        if (request.Slug != null) post.Slug = await EnsureUniqueSlug(request.Slug, post.Id);
+        if (request.Slug != null) post.Slug = await EnsureUniqueSlug(request.Slug, post.Id, ct);
         if (request.Content != null) post.Content = request.Content;
         if (request.Excerpt != null) post.Excerpt = request.Excerpt;
         if (request.CoverImageUrl != null) post.CoverImageUrl = request.CoverImageUrl;
@@ -62,83 +63,83 @@ public class PostCommandService : IPostCommandService
         if (request.IsPublished.HasValue) post.Status = request.IsPublished.Value ? PostStatus.Published : PostStatus.Draft;
 
         if (request.TagNames != null)
-            await SyncPostTagsAsync(post, request.TagNames, null);
+            await SyncPostTagsAsync(post, request.TagNames, null, ct);
         if (request.CategoryIds != null)
-            await SyncPostCategoriesAsync(post, request.CategoryIds);
+            await SyncPostCategoriesAsync(post, request.CategoryIds, ct);
 
         post.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return MapToResponse(post);
     }
 
     /// <summary>Supprime un article de façon permanente.</summary>
-    public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin)
+    public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin, CancellationToken ct = default)
     {
-        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id);
+        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id, ct);
         if (post == null) return false;
         if (!isAdmin && post.AuthorId != userId)
             throw new UnauthorizedAccessException("Vous n'êtes pas autorisé à supprimer cet article.");
 
         var postId = post.Id;
-        var tags = await _db.PostTags.Where(t => t.PostId == postId).ToListAsync();
+        var tags = await _db.PostTags.Where(t => t.PostId == postId).ToListAsync(ct);
         _db.PostTags.RemoveRange(tags);
-        var categories = await _db.PostCategories.Where(c => c.PostId == postId).ToListAsync();
+        var categories = await _db.PostCategories.Where(c => c.PostId == postId).ToListAsync(ct);
         _db.PostCategories.RemoveRange(categories);
-        var comments = await _db.Comments.Where(c => c.PostId == postId).ToListAsync();
+        var comments = await _db.Comments.Where(c => c.PostId == postId).ToListAsync(ct);
         _db.Comments.RemoveRange(comments);
 
         _db.Posts.Remove(post);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return true;
     }
 
     /// <summary>Incrémente le compteur de vues d'un article.</summary>
-    public async Task<PostResponse?> IncrementViewCountAsync(Guid id)
+    public async Task<PostResponse?> IncrementViewCountAsync(Guid id, CancellationToken ct = default)
     {
         var affected = await _db.Posts
             .Where(p => p.Id == id)
             .ExecuteUpdateAsync(s => s
                 .SetProperty(p => p.ViewCount, p => p.ViewCount + 1)
-                .SetProperty(p => p.UpdatedAt, DateTime.UtcNow));
+                .SetProperty(p => p.UpdatedAt, DateTime.UtcNow), ct);
 
         if (affected == 0) return null;
 
-        var post = await _db.Posts.FindAsync(id);
+        var post = await _db.Posts.FindAsync(id, ct);
         return post == null ? null : MapToResponse(post);
     }
 
     /// <summary>Soumet un article pour modération.</summary>
-    public async Task SubmitForReviewAsync(Guid id)
+    public async Task SubmitForReviewAsync(Guid id, CancellationToken ct = default)
     {
-        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id)
+        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id, ct)
             ?? throw new KeyNotFoundException("Article non trouvé");
         post.Status = PostStatus.PendingReview;
         post.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
     }
 
     /// <summary>Publie un article.</summary>
-    public async Task PublishAsync(Guid id)
+    public async Task PublishAsync(Guid id, CancellationToken ct = default)
     {
-        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id)
+        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id, ct)
             ?? throw new KeyNotFoundException("Article non trouvé");
         post.Status = PostStatus.Published;
         post.PublishedAt = DateTime.UtcNow;
         post.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
     }
 
     /// <summary>Archive un article.</summary>
-    public async Task ArchiveAsync(Guid id)
+    public async Task ArchiveAsync(Guid id, CancellationToken ct = default)
     {
-        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id)
+        var post = await _db.Posts.FirstOrDefaultAsync(p => p.Id == id, ct)
             ?? throw new KeyNotFoundException("Article non trouvé");
         post.Status = PostStatus.Archived;
         post.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
     }
 
-    private async Task SyncPostTagsAsync(Post post, List<string>? tagNames, List<Guid>? tagIds)
+    private async Task SyncPostTagsAsync(Post post, List<string>? tagNames, List<Guid>? tagIds, CancellationToken ct = default)
     {
         if (post.PostTags.Count != 0)
         {
@@ -150,13 +151,13 @@ public class PostCommandService : IPostCommandService
 
         if (tagIds?.Count > 0)
         {
-            var existing = await _db.Tags.Where(t => tagIds.Contains(t.Id)).ToListAsync();
+            var existing = await _db.Tags.Where(t => tagIds.Contains(t.Id)).ToListAsync(ct);
             tagsToLink.AddRange(existing);
         }
 
         if (tagNames?.Count > 0)
         {
-            var existingNames = await _db.Tags.Where(t => tagNames.Contains(t.Name)).ToListAsync();
+            var existingNames = await _db.Tags.Where(t => tagNames.Contains(t.Name)).ToListAsync(ct);
             var missingNames = tagNames.Except(existingNames.Select(t => t.Name)).ToList();
 
             foreach (var name in missingNames)
@@ -179,7 +180,7 @@ public class PostCommandService : IPostCommandService
         }
     }
 
-    private async Task SyncPostCategoriesAsync(Post post, List<Guid>? categoryIds)
+    private async Task SyncPostCategoriesAsync(Post post, List<Guid>? categoryIds, CancellationToken ct = default)
     {
         if (categoryIds == null) return;
 
@@ -191,14 +192,14 @@ public class PostCommandService : IPostCommandService
 
         if (categoryIds.Count == 0) return;
 
-        var categories = await _db.Categories.Where(c => categoryIds.Contains(c.Id)).ToListAsync();
+        var categories = await _db.Categories.Where(c => categoryIds.Contains(c.Id)).ToListAsync(ct);
         foreach (var category in categories)
         {
             post.PostCategories.Add(new PostCategory { PostId = post.Id, CategoryId = category.Id });
         }
     }
 
-    private async Task<string> GenerateUniqueSlug(string? providedSlug, string title)
+    private async Task<string> GenerateUniqueSlug(string? providedSlug, string title, CancellationToken ct = default)
     {
         var baseSlug = !string.IsNullOrWhiteSpace(providedSlug)
             ? providedSlug
@@ -215,18 +216,18 @@ public class PostCommandService : IPostCommandService
 
         var candidate = baseSlug;
         var suffix = 1;
-        while (await _db.Posts.AnyAsync(p => p.Slug == candidate))
+        while (await _db.Posts.AnyAsync(p => p.Slug == candidate, ct))
         {
             candidate = $"{baseSlug}-{suffix++}";
         }
         return candidate;
     }
 
-    private async Task<string> EnsureUniqueSlug(string slug, Guid entityId)
+    private async Task<string> EnsureUniqueSlug(string slug, Guid entityId, CancellationToken ct = default)
     {
         var candidate = slug;
         var suffix = 1;
-        while (await _db.Posts.AnyAsync(p => p.Slug == candidate && p.Id != entityId))
+        while (await _db.Posts.AnyAsync(p => p.Slug == candidate && p.Id != entityId, ct))
         {
             candidate = $"{slug}-{suffix++}";
         }

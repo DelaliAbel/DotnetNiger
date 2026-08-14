@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Threading;
 using DotnetNiger.Api.Constants;
 using DotnetNiger.Api.Application.DTOs.Requests;
 using DotnetNiger.Api.Application.DTOs.Responses;
@@ -50,7 +51,7 @@ public class AccountController : BaseController
 
     /// <summary>Crée un compte et envoie un email de confirmation.</summary>
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken ct = default)
     {
         if (!ModelState.IsValid)
             return BadRequest("Données invalides");
@@ -59,7 +60,7 @@ public class AccountController : BaseController
         {
             var user = await _accountService.RegisterAsync(
                 request.Email, request.Password,
-                request.FirstName, request.LastName, request.PhoneNumber);
+                request.FirstName, request.LastName, request.PhoneNumber, ct);
 
             return Success(new { userId = user.Id, email = user.Email },
                 "Compte créé. Un code de confirmation vous a été envoyé par email.");
@@ -79,7 +80,7 @@ public class AccountController : BaseController
     /// Le JWT contient les rôles natifs Microsoft + les permissions custom.
     /// </summary>
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken ct = default)
     {
         try
         {
@@ -97,7 +98,7 @@ public class AccountController : BaseController
                 return Failure("Email ou mot de passe incorrect", 401);
 
             var (accessToken, refreshToken, expiresIn) =
-                await _tokenService.GenerateTokenPairAsync(user, request.RememberMe);
+                await _tokenService.GenerateTokenPairAsync(user, request.RememberMe, ct);
 
             return Success(new
             {
@@ -129,12 +130,12 @@ public class AccountController : BaseController
     /// La rotation est obligatoire : l'ancien token est révoqué.
     /// </summary>
     [HttpPost("refresh")]
-    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(request.RefreshToken))
             return BadRequest("Refresh token requis");
 
-        var result = await _tokenService.RotateRefreshTokenAsync(request.RefreshToken);
+        var result = await _tokenService.RotateRefreshTokenAsync(request.RefreshToken, ct: ct);
         if (result is null)
             return Failure("Refresh token invalide ou expiré", 401);
 
@@ -148,10 +149,10 @@ public class AccountController : BaseController
 
     /// <summary>Révoque le refresh token de cet appareil.</summary>
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout([FromBody] LogoutRequest? request = null)
+    public async Task<IActionResult> Logout([FromBody] LogoutRequest? request = null, CancellationToken ct = default)
     {
         if (request?.RefreshToken is not null)
-            await _tokenService.RevokeTokenAsync(request.RefreshToken);
+            await _tokenService.RevokeTokenAsync(request.RefreshToken, ct);
 
         await _signInManager.SignOutAsync();
         return Success<object?>(null, "Déconnecté avec succès");
@@ -188,7 +189,7 @@ public class AccountController : BaseController
     /// à la fenêtre parent puis se ferme automatiquement.
     /// </summary>
     [HttpGet("external-callback")]
-    public async Task ExternalCallback()
+    public async Task ExternalCallback(CancellationToken ct = default)
     {
         Response.ContentType = "text/html";
         Response.Headers.CacheControl = "no-store, no-cache, max-age=0";
@@ -209,7 +210,7 @@ public class AccountController : BaseController
         }
 
         var (accessToken, refreshToken, expiresIn) =
-            await _tokenService.GenerateTokenPairAsync(user);
+            await _tokenService.GenerateTokenPairAsync(user, ct: ct);
 
         var frontendOrigin = _smtp.FrontendBaseUrl.TrimEnd('/');
         var html = "<!DOCTYPE html><html><head><title>Connexion en cours...</title></head><body>"
@@ -249,11 +250,11 @@ public class AccountController : BaseController
 
     /// <summary>Confirme l'email avec le code envoyé par email.</summary>
     [HttpPost("confirm-email")]
-    public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request)
+    public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request, CancellationToken ct = default)
     {
         try
         {
-            await _accountService.ConfirmEmailAsync(request.Email, request.Code);
+            await _accountService.ConfirmEmailAsync(request.Email, request.Code, ct);
             return Success<object?>(null, "Email confirmé avec succès. Vous pouvez maintenant vous connecter.");
         }
         catch (InvalidOperationException)
@@ -265,12 +266,12 @@ public class AccountController : BaseController
     /// <summary>Confirmation email via lien cliqué dans le mail (GET).</summary>
     [HttpGet("confirm-email")]
     public async Task<IActionResult> ConfirmEmailGet(
-        [FromQuery] string email, [FromQuery] string code)
+        [FromQuery] string email, [FromQuery] string code, CancellationToken ct = default)
     {
         var redirectUrl = $"{_smtp.FrontendBaseUrl.TrimEnd('/')}/login?emailConfirmed=true";
         try
         {
-            await _accountService.ConfirmEmailAsync(email, code);
+            await _accountService.ConfirmEmailAsync(email, code, ct);
         }
         catch (InvalidOperationException)
         {
@@ -285,11 +286,11 @@ public class AccountController : BaseController
 
     /// <summary>Regénère et renvoie le code de confirmation email.</summary>
     [HttpPost("resend-code")]
-    public async Task<IActionResult> ResendCode([FromBody] ForgotPasswordRequest request)
+    public async Task<IActionResult> ResendCode([FromBody] ForgotPasswordRequest request, CancellationToken ct = default)
     {
         try
         {
-            await _accountService.ResendConfirmationCodeAsync(request.Email);
+            await _accountService.ResendConfirmationCodeAsync(request.Email, ct);
         }
         catch (InvalidOperationException)
         {
@@ -304,11 +305,11 @@ public class AccountController : BaseController
 
     /// <summary>Vérifie l'email avec le code (alias de confirm-email).</summary>
     [HttpPost("verify-email")]
-    public async Task<IActionResult> VerifyEmail([FromBody] ConfirmEmailRequest request)
+    public async Task<IActionResult> VerifyEmail([FromBody] ConfirmEmailRequest request, CancellationToken ct = default)
     {
         try
         {
-            await _accountService.ConfirmEmailAsync(request.Email, request.Code);
+            await _accountService.ConfirmEmailAsync(request.Email, request.Code, ct);
             return Success<object?>(null, "Email confirmé avec succès.");
         }
         catch (InvalidOperationException)
@@ -319,11 +320,11 @@ public class AccountController : BaseController
 
     /// <summary>Demande un nouveau code de vérification email (alias de resend-code).</summary>
     [HttpPost("request-email-verification")]
-    public async Task<IActionResult> RequestEmailVerification([FromBody] ForgotPasswordRequest request)
+    public async Task<IActionResult> RequestEmailVerification([FromBody] ForgotPasswordRequest request, CancellationToken ct = default)
     {
         try
         {
-            await _accountService.ResendConfirmationCodeAsync(request.Email);
+            await _accountService.ResendConfirmationCodeAsync(request.Email, ct);
         }
         catch (InvalidOperationException)
         {
@@ -386,18 +387,18 @@ public class AccountController : BaseController
 
     /// <summary>Envoie un email de réinitialisation de mot de passe.</summary>
     [HttpPost("forgot-password")]
-    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request, CancellationToken ct = default)
     {
-        await _accountService.ForgotPasswordAsync(request.Email);
+        await _accountService.ForgotPasswordAsync(request.Email, ct);
         return Success<object?>(null, "Si le compte existe, un email de réinitialisation a été envoyé.");
     }
 
     /// <summary>Réinitialise le mot de passe avec le token reçu par email.</summary>
     [HttpPost("reset-password")]
-    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+    public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request, CancellationToken ct = default)
     {
         var error = await _accountService.ResetPasswordAsync(
-            request.Email, request.Token, request.NewPassword);
+            request.Email, request.Token, request.NewPassword, ct);
 
         if (error is not null)
             return BadRequest(error);

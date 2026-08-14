@@ -1,3 +1,4 @@
+using System.Threading;
 using DotnetNiger.Api.Application.DTOs.Responses;
 
 namespace DotnetNiger.Api.Application.Interfaces;
@@ -6,7 +7,7 @@ namespace DotnetNiger.Api.Application.Interfaces;
 public interface IEventRegistrationService
 {
     /// <summary>Inscrit un utilisateur à un événement.</summary>
-    Task<EventRegistrationResponse?> RegisterAsync(Guid eventId, Guid userId, string userName, string? avatarUrl);
+    Task<EventRegistrationResponse?> RegisterAsync(Guid eventId, Guid userId, string userName, string? avatarUrl, CancellationToken ct = default);
     /// <summary>Annule l'inscription à un événement.</summary>
-    Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId);
+    Task<bool> CancelRegistrationAsync(Guid eventId, Guid userId, CancellationToken ct = default);
 }

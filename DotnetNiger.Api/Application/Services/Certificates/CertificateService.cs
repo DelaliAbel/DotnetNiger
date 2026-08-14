@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Api.Constants;
 using DotnetNiger.Api.Application.DTOs.Requests;
@@ -21,18 +22,18 @@ public class CertificateService : ICertificateService
     }
 
     /// <summary>Approuve un certificat et upgrade le rôle de l'utilisateur.</summary>
-    public async Task<CertificateResponse?> ApproveCertificateAsync(Guid id)
+    public async Task<CertificateResponse?> ApproveCertificateAsync(Guid id, CancellationToken ct = default)
     {
-        await using var transaction = await _db.Database.BeginTransactionAsync();
+        await using var transaction = await _db.Database.BeginTransactionAsync(ct);
         try
         {
             var cert = await _db.Set<Certificate>()
                 .Include(c => c.Member)
                 .Include(c => c.User)
-                .FirstOrDefaultAsync(c => c.Id == id);
+                .FirstOrDefaultAsync(c => c.Id == id, ct);
             if (cert == null)
             {
-                await transaction.RollbackAsync();
+                await transaction.RollbackAsync(ct);
                 return null;
             }
 
@@ -49,34 +50,34 @@ public class CertificateService : ICertificateService
                     await _userManager.AddToRoleAsync(user, RoleConstants.Collaborator);
             }
 
-            await _db.SaveChangesAsync();
-            await transaction.CommitAsync();
+            await _db.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
             return MapToResponse(cert);
         }
         catch
         {
-            await transaction.RollbackAsync();
+            await transaction.RollbackAsync(ct);
             throw;
         }
     }
 
     /// <summary>Rejette un certificat avec une raison.</summary>
-    public async Task<CertificateResponse?> RejectCertificateAsync(Guid id, string reason)
+    public async Task<CertificateResponse?> RejectCertificateAsync(Guid id, string reason, CancellationToken ct = default)
     {
         var cert = await _db.Set<Certificate>()
             .Include(c => c.Member)
             .Include(c => c.User)
-            .FirstOrDefaultAsync(c => c.Id == id);
+            .FirstOrDefaultAsync(c => c.Id == id, ct);
         if (cert == null) return null;
         cert.Status = "Rejected";
         cert.ReviewedNotes = reason;
         cert.ReviewedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return MapToResponse(cert);
     }
 
     /// <summary>Récupère les certificats filtrés par statut.</summary>
-    public async Task<List<CertificateResponse>> GetCertificatesAsync(string? status)
+    public async Task<List<CertificateResponse>> GetCertificatesAsync(string? status, CancellationToken ct = default)
     {
         var q = _db.Set<Certificate>()
             .Include(c => c.Member)
@@ -84,23 +85,23 @@ public class CertificateService : ICertificateService
             .AsNoTracking();
         if (!string.IsNullOrWhiteSpace(status))
             q = q.Where(c => c.Status == status);
-        var certs = await q.OrderByDescending(c => c.SubmissionDate).ToListAsync();
+        var certs = await q.OrderByDescending(c => c.SubmissionDate).ToListAsync(ct);
         return certs.Select(MapToResponse).ToList();
     }
 
     /// <summary>Récupère un certificat par identifiant.</summary>
-    public async Task<CertificateResponse?> GetCertificateAsync(Guid id)
+    public async Task<CertificateResponse?> GetCertificateAsync(Guid id, CancellationToken ct = default)
     {
         var cert = await _db.Set<Certificate>()
             .Include(c => c.Member)
             .Include(c => c.User)
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == id);
+            .FirstOrDefaultAsync(c => c.Id == id, ct);
         return cert == null ? null : MapToResponse(cert);
     }
 
     /// <summary>Récupère le dernier certificat d'un utilisateur.</summary>
-    public async Task<CertificateResponse?> GetUserCertificateAsync(Guid userId)
+    public async Task<CertificateResponse?> GetUserCertificateAsync(Guid userId, CancellationToken ct = default)
     {
         var cert = await _db.Set<Certificate>()
             .Include(c => c.Member)
@@ -108,17 +109,17 @@ public class CertificateService : ICertificateService
             .AsNoTracking()
             .Where(c => c.UserId == userId)
             .OrderByDescending(c => c.SubmissionDate)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(ct);
         return cert == null ? null : MapToResponse(cert);
     }
 
     /// <summary>Soumet un nouveau certificat pour validation.</summary>
-    public async Task<CertificateResponse> SubmitCertificateAsync(Guid userId, CertificateSubmissionRequest request)
+    public async Task<CertificateResponse> SubmitCertificateAsync(Guid userId, CertificateSubmissionRequest request, CancellationToken ct = default)
     {
         var user = await _userManager.FindByIdAsync(userId.ToString());
         if (user == null) throw new InvalidOperationException("User not found");
 
-        var member = await _db.Set<Member>().FirstOrDefaultAsync(m => m.UserId == userId);
+        var member = await _db.Set<Member>().FirstOrDefaultAsync(m => m.UserId == userId, ct);
         if (member == null)
         {
             member = new Member
@@ -144,7 +145,7 @@ public class CertificateService : ICertificateService
             SubmissionDate = DateTime.UtcNow
         };
         _db.Set<Certificate>().Add(cert);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return MapToResponse(cert);
     }
 

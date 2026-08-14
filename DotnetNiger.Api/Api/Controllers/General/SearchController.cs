@@ -1,3 +1,4 @@
+using System.Threading;
 using DotnetNiger.Api.Application.DTOs.Requests;
 using DotnetNiger.Api.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -11,9 +12,9 @@ public class SearchController(ISearchService searchService) : BaseController
 {
     /// <summary>Recherche du contenu selon une requête.</summary>
     [HttpGet]
-    public async Task<IActionResult> Search([FromQuery] SearchQueryRequest request)
+    public async Task<IActionResult> Search([FromQuery] SearchQueryRequest request, CancellationToken ct = default)
     {
-        var result = await searchService.SearchAsync(request);
+        var result = await searchService.SearchAsync(request, ct);
         return Success(result);
     }
 }

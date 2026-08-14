@@ -8,13 +8,14 @@ using DotnetNiger.Api.Seed;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// --- Configuration JWT ---
-builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
+// --- Configuration JWT (validation au démarrage : config invalide = crash immédiat) ---
+builder.Services.AddOptions<JwtSettings>()
+    .Bind(builder.Configuration.GetSection(JwtSettings.SectionName))
+    .ValidateDataAnnotations()
+    .ValidateOnStart();
+
 var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
     ?? new JwtSettings();
-
-if (string.IsNullOrWhiteSpace(jwtSettings.SecretKey) || jwtSettings.SecretKey.Length < 32)
-    throw new InvalidOperationException("JWT SecretKey must be configured and at least 32 characters long. Use user-secrets or environment variables.");
 
 // --- Controllers ---
 builder.Services.AddControllers()
@@ -25,6 +26,11 @@ builder.Services.AddControllers()
         o.JsonSerializerOptions.DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull;
     });
 
+// Requis pour construire le middleware d'exceptions ; les IExceptionHandler
+// écrivent eux-mêmes le corps JSON ({error, statusCode, detail}), ce service
+// ne sert que de fallback quand aucun handler ne prend en charge l'exception.
+builder.Services.AddProblemDetails();
+
 builder.Services.AddMemoryCache();
 
 // --- Infrastructure ---
@@ -34,6 +40,7 @@ builder.Services.AddJwtAuthentication(jwtSettings);
 builder.Services.AddOAuthProviders(builder.Configuration);
 builder.Services.ConfigureCookieAuthentication();
 builder.Services.AddAuthorizationPolicies();
+builder.Services.AddExceptionHandlers();
 builder.Services.AddCorsFromConfig(builder.Configuration, builder.Environment.IsDevelopment());
 builder.Services.AddRateLimiting(builder.Configuration);
 

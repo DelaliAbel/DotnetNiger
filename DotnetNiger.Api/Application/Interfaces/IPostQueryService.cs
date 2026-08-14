@@ -1,3 +1,4 @@
+using System.Threading;
 using DotnetNiger.Api.Application.DTOs.Responses;
 
 namespace DotnetNiger.Api.Application.Interfaces;
@@ -8,9 +9,9 @@ public interface IPostQueryService
     /// <summary>Récupère les articles paginés avec filtres.</summary>
     Task<PaginatedResponse<PostResponse>> GetAllAsync(
         string? published, string? category, string? tag,
-        string? query, int page, int pageSize, Guid? after = null, Guid? authorId = null);
+        string? query, int page, int pageSize, Guid? after = null, Guid? authorId = null, CancellationToken ct = default);
     /// <summary>Récupère un article par identifiant.</summary>
-    Task<PostResponse?> GetByIdAsync(Guid id);
+    Task<PostResponse?> GetByIdAsync(Guid id, CancellationToken ct = default);
     /// <summary>Récupère un article par slug.</summary>
-    Task<PostResponse?> GetBySlugAsync(string slug);
+    Task<PostResponse?> GetBySlugAsync(string slug, CancellationToken ct = default);
 }

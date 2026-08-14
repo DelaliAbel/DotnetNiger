@@ -1,3 +1,4 @@
+using System.Threading;
 using Microsoft.EntityFrameworkCore;
 using DotnetNiger.Api.Application.DTOs.Requests;
 using DotnetNiger.Api.Application.DTOs.Responses;
@@ -14,52 +15,52 @@ public class CommentService : ICommentService
     public CommentService(DotnetNigerDbContext db) => _db = db;
 
     /// <summary>Récupère les commentaires racines d'un article publié.</summary>
-    public async Task<List<CommentResponse>> GetByPostIdAsync(Guid postId)
+    public async Task<List<CommentResponse>> GetByPostIdAsync(Guid postId, CancellationToken ct = default)
     {
         var postPublished = await _db.Posts.AsNoTracking()
-            .AnyAsync(p => p.Id == postId && p.Status == PostStatus.Published);
+            .AnyAsync(p => p.Id == postId && p.Status == PostStatus.Published, ct);
         if (!postPublished) return [];
 
         var comments = await _db.Comments.AsNoTracking()
             .Include(c => c.Replies)
             .Where(c => c.PostId == postId && c.ParentCommentId == null)
             .OrderByDescending(c => c.CreatedAt)
-            .ToListAsync();
+            .ToListAsync(ct);
         return comments.Select(MapToResponse).ToList();
     }
 
     /// <summary>Récupère les commentaires racines d'un événement publié.</summary>
-    public async Task<List<CommentResponse>> GetByEventIdAsync(Guid eventId)
+    public async Task<List<CommentResponse>> GetByEventIdAsync(Guid eventId, CancellationToken ct = default)
     {
         var eventPublished = await _db.Events.AsNoTracking()
-            .AnyAsync(e => e.Id == eventId && e.Status == EventStatus.Published);
+            .AnyAsync(e => e.Id == eventId && e.Status == EventStatus.Published, ct);
         if (!eventPublished) return [];
 
         var comments = await _db.Comments.AsNoTracking()
             .Include(c => c.Replies)
             .Where(c => c.EventId == eventId && c.ParentCommentId == null)
             .OrderByDescending(c => c.CreatedAt)
-            .ToListAsync();
+            .ToListAsync(ct);
         return comments.Select(MapToResponse).ToList();
     }
 
     /// <summary>Récupère un commentaire par identifiant.</summary>
-    public async Task<CommentResponse?> GetByIdAsync(Guid id)
+    public async Task<CommentResponse?> GetByIdAsync(Guid id, CancellationToken ct = default)
     {
         var comment = await _db.Comments
             .Include(c => c.Replies)
-            .FirstOrDefaultAsync(c => c.Id == id);
+            .FirstOrDefaultAsync(c => c.Id == id, ct);
         if (comment == null) return null;
 
         var published = (comment.PostId.HasValue
-                && await _db.Posts.AsNoTracking().AnyAsync(p => p.Id == comment.PostId && p.Status == PostStatus.Published))
+                && await _db.Posts.AsNoTracking().AnyAsync(p => p.Id == comment.PostId && p.Status == PostStatus.Published, ct))
             || (comment.EventId.HasValue
-                && await _db.Events.AsNoTracking().AnyAsync(e => e.Id == comment.EventId && e.Status == EventStatus.Published));
+                && await _db.Events.AsNoTracking().AnyAsync(e => e.Id == comment.EventId && e.Status == EventStatus.Published, ct));
         return published ? MapToResponse(comment) : null;
     }
 
     /// <summary>Crée un commentaire sur un article ou un événement publié.</summary>
-    public async Task<CommentResponse> CreateAsync(CreateCommentRequest request, Guid userId, string userName, string? avatar)
+    public async Task<CommentResponse> CreateAsync(CreateCommentRequest request, Guid userId, string userName, string? avatar, CancellationToken ct = default)
     {
         if (request.PostId.HasValue == request.EventId.HasValue)
             throw new InvalidOperationException("Le commentaire doit être lié à un article OU à un événement.");
@@ -67,14 +68,14 @@ public class CommentService : ICommentService
         if (request.PostId.HasValue)
         {
             var postPublished = await _db.Posts.AsNoTracking()
-                .AnyAsync(p => p.Id == request.PostId && p.Status == PostStatus.Published);
+                .AnyAsync(p => p.Id == request.PostId && p.Status == PostStatus.Published, ct);
             if (!postPublished)
                 throw new InvalidOperationException("Impossible de commenter un article non publié.");
         }
         else
         {
             var eventPublished = await _db.Events.AsNoTracking()
-                .AnyAsync(e => e.Id == request.EventId && e.Status == EventStatus.Published);
+                .AnyAsync(e => e.Id == request.EventId && e.Status == EventStatus.Published, ct);
             if (!eventPublished)
                 throw new InvalidOperationException("Impossible de commenter un événement non publié.");
         }
@@ -92,27 +93,27 @@ public class CommentService : ICommentService
             CreatedAt = DateTime.UtcNow
         };
         _db.Comments.Add(comment);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return MapToResponse(comment);
     }
 
     /// <summary>Met à jour le contenu d'un commentaire (auteur uniquement).</summary>
-    public async Task<CommentResponse?> UpdateAsync(Guid id, UpdateCommentRequest request, Guid userId)
+    public async Task<CommentResponse?> UpdateAsync(Guid id, UpdateCommentRequest request, Guid userId, CancellationToken ct = default)
     {
-        var comment = await _db.Comments.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
+        var comment = await _db.Comments.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId, ct);
         if (comment == null) return null;
         comment.Content = request.Content;
         comment.UpdatedAt = DateTime.UtcNow;
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return MapToResponse(comment);
     }
 
     /// <summary>Supprime un commentaire et sa filiale de réponses (suppression définitive).</summary>
-    public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin, bool deleteAllReplies)
+    public async Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin, bool deleteAllReplies, CancellationToken ct = default)
     {
         var comment = await _db.Comments
             .Include(c => c.Replies)
-            .FirstOrDefaultAsync(c => c.Id == id);
+            .FirstOrDefaultAsync(c => c.Id == id, ct);
         if (comment == null) return false;
         if (!isAdmin && comment.UserId != userId)
             throw new UnauthorizedAccessException("Vous ne pouvez supprimer que vos propres commentaires.");
@@ -125,17 +126,17 @@ public class CommentService : ICommentService
         }
 
         _db.Comments.Remove(comment);
-        await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(ct);
         return true;
     }
 
     /// <summary>Récupère tous les commentaires de la plateforme.</summary>
-    public async Task<List<CommentResponse>> GetAllAsync()
+    public async Task<List<CommentResponse>> GetAllAsync(CancellationToken ct = default)
     {
         var comments = await _db.Comments.AsNoTracking()
             .Include(c => c.Replies)
             .OrderByDescending(c => c.CreatedAt)
-            .ToListAsync();
+            .ToListAsync(ct);
         return comments.Select(MapToResponse).ToList();
     }
 
