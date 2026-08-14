@@ -1,7 +1,6 @@
 using DotnetNiger.Api.Domain.Entities;
 using DotnetNiger.Api.Infrastructure.Email;
 using DotnetNiger.Api.Application.Services.Admin;
-using DotnetNiger.Api.Application.Services.Auth;
 using DotnetNiger.Api.Application.Services.Settings;
 using DotnetNiger.Api.Application.Services.Users;
 using DotnetNiger.Api.Application.Services.Support;
@@ -31,7 +30,6 @@ public static class ServiceRegistration
         this IServiceCollection services)
     {
         services.AddScoped<TokenService>();
-        services.AddScoped<AuthService>();
         services.AddScoped<AccountService>();
         services.AddScoped<IPermissionService, PermissionService>();
         services.AddScoped<IAdminService, AdminService>();

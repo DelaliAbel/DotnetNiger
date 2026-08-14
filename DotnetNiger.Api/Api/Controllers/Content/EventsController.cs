@@ -22,9 +22,6 @@ public class EventsController(
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
-        status = string.Equals(status, nameof(EventStatus.Published), StringComparison.OrdinalIgnoreCase)
-            ? nameof(EventStatus.Published)
-            : nameof(EventStatus.Published);
         var result = await eventQuery.GetAllAsync(status, query, null, null, null, null, null, null, page, pageSize);
         return Success(result);
     }
@@ -159,11 +156,18 @@ public class EventsController(
         return Success<object?>(null, Messages.Event.RegistrationCancelled);
     }
 
-    /// <summary>Récupère les inscriptions d'un événement.</summary>
+    /// <summary>Récupère les inscriptions d'un événement (organisateur ou modérateur/admin uniquement).</summary>
     [HttpGet("{eventId:guid}/registrations")]
     [Authorize]
     public async Task<IActionResult> GetRegistrations(Guid eventId)
     {
+        var ev = await eventQuery.GetByIdAsync(eventId);
+        if (ev is null) return NotFound(Messages.Event.NotFound);
+
+        var userId = GetUserId();
+        if (ev.CreatedBy != userId && !IsAdmin() && !IsCollaborator())
+            return Failure(Messages.Event.RegistrationsForbidden, 403);
+
         var registrations = await eventQuery.GetRegistrationsAsync(eventId);
         return Success(registrations);
     }

@@ -19,4 +19,7 @@ public class RateLimitingOptions
 
     /// <summary>Durée de la fenêtre en secondes pour l'authentification.</summary>
     public int AuthWindowSeconds { get; set; } = 60;
+
+    /// <summary>Nombre max de requêtes autorisées par fenêtre pour l'ensemble de l'API (fallback global).</summary>
+    public int GlobalPermitLimit { get; set; } = 100;
 }

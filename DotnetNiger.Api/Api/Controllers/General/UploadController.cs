@@ -67,8 +67,9 @@ public class UploadController(IImageProcessingService imageService) : BaseContro
         }
     }
 
-    /// <summary>Supprime une image par son chemin.</summary>
+    /// <summary>Supprime une image par son chemin (Admin, SuperAdmin, Collaborator uniquement).</summary>
     [HttpDelete]
+    [Authorize(Roles = "Admin,SuperAdmin,Collaborator")]
     public IActionResult Delete([FromQuery] string path)
     {
         if (string.IsNullOrWhiteSpace(path))

@@ -40,6 +40,8 @@ builder.Services.AddRateLimiting(builder.Configuration);
 // --- Services métier ---
 builder.Services.AddIdentityServices();
 
+var seedEnabled = builder.Configuration.GetValue<bool>("Seed:Enabled", true);
+
 // ============================================================
 // PIPELINE
 // ============================================================
@@ -48,11 +50,12 @@ var app = builder.Build();
 
 app.UsePipeline(builder.Environment.IsDevelopment());
 
-if (app.Environment.IsDevelopment())
+if (seedEnabled)
 {
-    var adminPassword = builder.Configuration.GetValue<string>("AdminPassword")
-        ?? throw new InvalidOperationException("AdminPassword must be configured in appsettings.json or environment variables.");
-    // await SeedData.InitializeAsync(app.Services, adminPassword);
+    var adminPassword = builder.Configuration.GetValue<string>("AdminPassword");
+    if (string.IsNullOrWhiteSpace(adminPassword))
+        throw new InvalidOperationException("AdminPassword must be configured in appsettings.Development.json, appsettings.Production.json or environment variables.");
+    await SeedData.InitializeAsync(app.Services, adminPassword);
 }
 
 app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTime.UtcNow }));

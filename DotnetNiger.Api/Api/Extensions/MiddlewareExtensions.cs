@@ -73,8 +73,9 @@ public static class MiddlewareExtensions
             options.AddPolicy("Auth", httpContext =>
             {
                 var clientId = httpContext.Request.Headers["ClientId"].FirstOrDefault() ?? "unknown";
+                var ip = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
                 return RateLimitPartition.GetTokenBucketLimiter(
-                    $"auth:{clientId}",
+                    $"auth:{ip}:{clientId}",
                     _ => new TokenBucketRateLimiterOptions
                     {
                         TokenLimit = rateLimitOptions.AuthPermitLimit,
@@ -85,6 +86,21 @@ public static class MiddlewareExtensions
                         QueueLimit = 0
                     });
             });
+
+            // Limiteur global (fallback pour tous les endpoints sans [EnableRateLimiting]) :
+            // protège l'ensemble de l'API contre l'abus sans casser la navigation.
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+                RateLimitPartition.GetTokenBucketLimiter(
+                    $"global:{httpContext.Connection.RemoteIpAddress}",
+                    _ => new TokenBucketRateLimiterOptions
+                    {
+                        TokenLimit = rateLimitOptions.GlobalPermitLimit,
+                        ReplenishmentPeriod = TimeSpan.FromSeconds(rateLimitOptions.WindowSeconds),
+                        TokensPerPeriod = rateLimitOptions.GlobalPermitLimit,
+                        AutoReplenishment = true,
+                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                        QueueLimit = 0
+                    }));
         });
         return services;
     }

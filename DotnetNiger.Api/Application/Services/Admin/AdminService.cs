@@ -119,39 +119,6 @@ public class AdminService : IAdminService
             teamMemberSet.Contains(u.Id))).ToList();
     }
 
-    /// <summary>Récupère la liste des utilisateurs (alias de GetAllUsers).</summary>
-    public Task<List<UserResponse>> GetUsersAsync() => GetAllUsersAsync();
-
-    /// <summary>Récupère un utilisateur par son identifiant.</summary>
-    public Task<UserResponse?> GetUserAsync(Guid id) => GetUserByIdAsync(id);
-
-    /// <summary>Crée un utilisateur avec le rôle admin par défaut.</summary>
-    public async Task<UserResponse?> CreateUserAsync(CreateAdminUserRequest request)
-    {
-        var nameParts = request.FullName?.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries) ?? [];
-        var user = new ApplicationUser
-        {
-            UserName = request.Email,
-            Email = request.Email,
-            FirstName = nameParts.Length > 0 ? nameParts[0] : request.Email,
-            LastName = nameParts.Length > 1 ? nameParts[1] : ".",
-            IsActive = true,
-            EmailConfirmed = true
-        };
-
-        var result = await _userManager.CreateAsync(user, "Admin@12345");
-        if (!result.Succeeded)
-            throw new InvalidOperationException(
-                string.Join(", ", result.Errors.Select(e => e.Description)));
-
-        await _userManager.AddToRoleAsync(user, RoleConstants.Admin);
-
-        var roles = await _userManager.GetRolesAsync(user);
-        return new UserResponse(user.Id, user.Email!, user.FirstName, user.LastName,
-            user.AvatarUrl, user.IsActive, user.EmailConfirmed,
-            user.CreatedAt, roles.ToList());
-    }
-
     /// <summary>Supprime un utilisateur. Un admin ne peut pas supprimer un autre admin.
     /// Un utilisateur ne peut pas se supprimer lui-même.</summary>
     public async Task<bool> DeleteUserAsync(Guid id, Guid? callerId = null)
@@ -301,18 +268,6 @@ public class AdminService : IAdminService
 
         await _db.SaveChangesAsync();
         return true;
-    }
-
-    /// <summary>Remplace tous les rôles d'un utilisateur par un nouveau rôle.</summary>
-    public async Task<bool> ReplaceUserRolesAsync(Guid userId, string roleName)
-    {
-        var user = await _userManager.FindByIdAsync(userId.ToString());
-        if (user is null) return false;
-
-        var currentRoles = await _userManager.GetRolesAsync(user);
-        await _userManager.RemoveFromRolesAsync(user, currentRoles);
-        var result = await _userManager.AddToRoleAsync(user, roleName);
-        return result.Succeeded;
     }
 
     /// <summary>Assigne un rôle à un utilisateur (ajoute sans remplacer les rôles existants).</summary>

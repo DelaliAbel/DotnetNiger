@@ -42,7 +42,6 @@ public class AdminController : BaseController
 
     /// <summary>Récupère les statistiques personnelles de l'utilisateur connecté.</summary>
     [HttpGet("stats/mine")]
-    [Authorize]
     public async Task<IActionResult> GetMyStats()
     {
         var userId = GetUserId();

@@ -21,7 +21,7 @@ public class PostsController(
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
-        published = published == "true" ? published : "true";
+        published = "true";
         return Success(await postQuery.GetAllAsync(published, category, tag, query, page, pageSize, after));
     }
 

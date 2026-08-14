@@ -67,7 +67,7 @@ public class ResourcesController(IResourceQueryService resourceQuery, IResourceC
         {
             Title = resource.Title,
             Description = resource.Description,
-            ImageUrl = string.Empty,
+            ImageUrl = resource.ThumbnailUrl ?? string.Empty,
             UpdatedAt = resource.UpdatedAt
         });
     }

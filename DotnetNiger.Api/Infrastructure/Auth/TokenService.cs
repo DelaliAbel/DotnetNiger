@@ -175,23 +175,6 @@ public class TokenService
     }
 
     /// <summary>
-    /// Révoque tous les refresh tokens d'un utilisateur (déconnexion totale).
-    /// </summary>
-    public async Task RevokeAllTokensAsync(Guid userId)
-    {
-        var tokens = await _db.RefreshTokens
-            .Where(r => r.UserId == userId && !r.RevokedAt.HasValue)
-            .ToListAsync();
-
-        foreach (var token in tokens)
-        {
-            token.RevokedAt = DateTime.UtcNow;
-        }
-
-        await _db.SaveChangesAsync();
-    }
-
-    /// <summary>
     /// Révoque un refresh token spécifique (déconnexion de cet appareil).
     /// </summary>
     public async Task RevokeTokenAsync(string refreshToken)
@@ -203,23 +186,6 @@ public class TokenService
         if (entity is not null)
         {
             entity.RevokedAt = DateTime.UtcNow;
-            await _db.SaveChangesAsync();
-        }
-    }
-
-    /// <summary>
-    /// Supprime les refresh tokens expirés d'un utilisateur pour nettoyer la base.
-    /// Exécuté en arrière-plan, ne bloque pas la requête.
-    /// </summary>
-    private async Task CleanExpiredTokensAsync(Guid userId)
-    {
-        var expired = await _db.RefreshTokens
-            .Where(r => r.UserId == userId && r.ExpiresAt < DateTime.UtcNow)
-            .ToListAsync();
-
-        if (expired.Count > 0)
-        {
-            _db.RefreshTokens.RemoveRange(expired);
             await _db.SaveChangesAsync();
         }
     }

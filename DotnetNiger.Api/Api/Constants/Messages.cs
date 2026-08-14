@@ -68,6 +68,7 @@ public static class Messages
         public const string FullOrRegistered = "Événement complet ou déjà inscrit";
         public const string RegistrationNotFound = "Inscription non trouvée";
         public const string RegistrationCancelled = "Inscription annulée";
+        public const string RegistrationsForbidden = "Vous n'avez pas accès aux inscriptions de cet événement";
     }
 
     /// <summary>Messages liés aux articles.</summary>
