@@ -17,5 +17,7 @@ public class NewsletterSubscriptionConfiguration : IEntityTypeConfiguration<News
         builder.HasKey(n => n.Id);
         builder.Property(n => n.Email).IsRequired().HasMaxLength(200);
         builder.HasIndex(n => n.Email).IsUnique();
+        builder.Property(n => n.ConfirmationToken).HasMaxLength(64);
+        builder.HasIndex(n => n.ConfirmationToken).IsUnique();
     }
 }
