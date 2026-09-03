@@ -131,6 +131,11 @@ public static class Messages
     {
         public const string NotFoundOrUnsubscribed = "Email non trouvé ou déjà désabonné";
         public const string Unsubscribed = "Désabonnement effectué avec succès";
+        public const string Deleted = "Abonnement supprimé avec succès";
+        public const string Confirmed = "Inscription confirmée avec succès";
+        public const string InvalidOrExpiredToken = "Token de confirmation invalide ou expiré";
+        public const string Sent = "Newsletter envoyée avec succès";
+        public const string NoRecipients = "Aucun abonné actif et confirmé à notifier";
     }
 
     /// <summary>Messages liés aux notifications.</summary>

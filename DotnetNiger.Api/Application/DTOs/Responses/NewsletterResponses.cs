@@ -7,8 +7,15 @@ public record NewsletterSubscriptionResponse(
     // <summary>Adresse e-mail abonnée.</summary>
     string Email,
     // <summary>Nom de l'abonné.</summary>
-    string Name,
-    // <summary>Indique si l'abonnement est confirmé.</summary>
+    string? Name,
+    // <summary>Indique si l'abonnement est confirmé (double opt-in).</summary>
     bool IsConfirmed,
+    // <summary>Indique si l'abonnement est actif.</summary>
+    bool IsActive,
     // <summary>Date d'abonnement.</summary>
     DateTime SubscribedAt);
+
+/// <summary>Réponse d'envoi de newsletter (blast).</summary>
+public record NewsletterSendResponse(
+    // <summary>Nombre d'abonnés ciblés.</summary>
+    int RecipientCount);
