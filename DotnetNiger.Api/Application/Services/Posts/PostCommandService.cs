@@ -19,6 +19,8 @@ public class PostCommandService : IPostCommandService
     {
         var slug = await GenerateUniqueSlug(request.Slug, request.Title, ct);
 
+        var now = DateTime.UtcNow;
+
         var post = new Post
         {
             Id = Guid.NewGuid(),
@@ -31,7 +33,8 @@ public class PostCommandService : IPostCommandService
             AuthorName = authorName,
             AuthorAvatar = "",
             PostType = request.PostType,
-            Status = request.IsPublished || isAdmin || isCollaborator ? PostStatus.Published : PostStatus.Draft
+            Status = PostStatus.Published,
+            PublishedAt = now
         };
 
         await SyncPostTagsAsync(post, request.TagNames, request.TagIds, ct);

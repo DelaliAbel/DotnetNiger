@@ -32,7 +32,7 @@ public class ResourceCommandService : IResourceCommandService
             Level = request.Level ?? string.Empty,
             AuthorId = authorId,
             CreatedBy = authorId,
-            Status = isAdmin || isCollaborator ? ResourceStatus.Published : ResourceStatus.Draft
+            Status = ResourceStatus.Published
         };
 
         await SyncResourceTagsAsync(resource, request.TagNames, request.TagIds, ct);
