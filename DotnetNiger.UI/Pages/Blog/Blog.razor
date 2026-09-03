@@ -3,6 +3,7 @@
 @using DotnetNiger.UI.Components.Cards;
 @using DotnetNiger.UI.Components.Admin.Cards
 @inject IPostService PostService
+@inject ICategoryService CategoryService
 
 
 <PageTitle>Blog - .NET Niger</PageTitle>
@@ -30,12 +31,18 @@
 						</button>
 					}
 				</div>
-				<select @bind="selectedCategory"
+				<select @bind="selectedCategory" @bind:after="() => currentPage = 1"
 						class="bg-surface text-body shadow-md px-4 py-3 rounded-lg focus:outline-none text-sm min-w-[150px]">
 					<option value="">Catégorie</option>
-					<option value="Tutorial">Tutorial</option>
-					<option value="Article">Article</option>
-					<option value="Interview">Interview</option>
+					@foreach (var category in categories)
+					{
+						<option value="@category.Slug">@category.Name</option>
+					}
+				</select>
+				<select @bind="selectedSort" @bind:after="() => currentPage = 1"
+						class="bg-surface text-body shadow-md px-4 py-3 rounded-lg focus:outline-none text-sm min-w-[150px]">
+					<option value="recent">Plus récents</option>
+					<option value="oldest">Plus anciens</option>
 				</select>
 			</div>
 
@@ -97,11 +104,13 @@
 
 @code {
 	private List<PostDto>? allPosts;
+	private List<CategoryDto> categories = [];
 	private int currentPage = 1;
 	private bool IsLoading { get; set; } = true;
 	private string? LoadError { get; set; }
 	private string searchQuery = string.Empty;
 	private string selectedCategory = string.Empty;
+	private string selectedSort = "recent";
 
 	[SupplyParameterFromQuery]
 	public string? tag { get; set; }
@@ -125,9 +134,14 @@
 			if (!string.IsNullOrWhiteSpace(selectedCategory))
 			{
 				posts = posts.Where(p =>
-					string.Equals(p.PostType, selectedCategory, StringComparison.OrdinalIgnoreCase))
+					p.Categories.Any(c => string.Equals(c.Slug, selectedCategory, StringComparison.OrdinalIgnoreCase)))
 					.ToList();
 			}
+
+			posts = selectedSort == "oldest"
+				? posts.OrderBy(p => p.PublishedAt ?? p.CreatedAt).ToList()
+				: posts.OrderByDescending(p => p.PublishedAt ?? p.CreatedAt).ToList();
+
 			return posts;
 		}
 	}
@@ -137,6 +151,8 @@
 		IsLoading = true;
 		try
 		{
+			categories = await CategoryService.GetAllAsync();
+
 			if (!string.IsNullOrWhiteSpace(tag))
 			{
 				allPosts = await PostService.GetPostsByTagAsync(tag);

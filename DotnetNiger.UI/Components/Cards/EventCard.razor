@@ -6,8 +6,14 @@
     </div>
     <div class="p-3 sm:p-4 md:p-6">
         <div class="flex items-start justify-between gap-2">
-            <span
-            class="inline-block bg-pink-100 text-pink-600 text-[10px] sm:text-xs px-2 sm:px-3 py-1 rounded flex-shrink-0">@GetEventTypeLabel(Event?.EventType)</span>
+            <div class="flex items-center gap-2 flex-shrink-0">
+                <span
+                class="inline-block bg-pink-100 text-pink-600 text-[10px] sm:text-xs px-2 sm:px-3 py-1 rounded flex-shrink-0">@GetEventTypeLabel(Event?.EventType)</span>
+                @if (IsPastEvent)
+                {
+                    <span class="inline-block bg-gray-200 text-gray-600 text-[10px] sm:text-xs px-2 sm:px-3 py-1 rounded flex-shrink-0">Passé</span>
+                }
+            </div>
             <span class="text-[10px] sm:text-xs md:text-sm text-body flex-shrink-0">@Event?.StartDate.ToString("dd MMM yyyy")</span>
         </div>
 
@@ -64,6 +70,8 @@
 
     [Parameter]
     public EventCallback OnRegisterClick { get; set; }
+
+    private bool IsPastEvent => Event is not null && Event.EndDate < DateTime.Now;
 
     private void NavigateToEventDetails()
     {

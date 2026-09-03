@@ -17,14 +17,14 @@ public class EventsController(
     IEventModerationService eventModeration,
     IAuthorizationService authorizationService) : BaseController
 {
-    /// <summary>Récupère la liste paginée des événements avec filtres optionnels.</summary>
+    /// <summary>Récupère la liste paginée des événements publiés uniquement (accès public).</summary>
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> GetAll([FromQuery] string? status, [FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
+    public async Task<IActionResult> GetAll([FromQuery] string? query, [FromQuery] int page = 1, [FromQuery] int pageSize = 10, CancellationToken ct = default)
     {
         page = Math.Max(1, page);
         pageSize = Math.Clamp(pageSize, 1, ValidationConstants.MaxPageSize);
-        var result = await eventQuery.GetAllAsync(status, query, null, null, null, null, null, null, page, pageSize, ct: ct);
+        var result = await eventQuery.GetAllAsync(nameof(EventStatus.Published), query, null, null, null, null, null, null, page, pageSize, ct: ct);
         return Success(result);
     }
 

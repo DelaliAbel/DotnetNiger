@@ -37,7 +37,8 @@ public class EventCommandService : IEventCommandService
             MeetupLink = request.MeetupLink,
             CreatedBy = organizerId,
             Status = request.IsArchived ? EventStatus.Archived :
-                     request.IsPublished ? EventStatus.Published : EventStatus.Draft
+                     request.IsPublished ? EventStatus.Published : EventStatus.Draft,
+            PublishedAt = request.IsPublished ? DateTime.UtcNow : null
         };
 
         await SyncEventTagsAsync(eventEntity, request.TagNames, request.TagIds, ct);
@@ -74,7 +75,11 @@ public class EventCommandService : IEventCommandService
         if (request.IsArchived.HasValue)
             eventEntity.Status = request.IsArchived.Value ? EventStatus.Archived : EventStatus.Draft;
         else if (request.IsPublished.HasValue)
-            eventEntity.Status = request.IsPublished.Value ? EventStatus.Published : EventStatus.Draft;
+        {
+            eventEntity.Status = request.IsPublished.Value ? EventStatus.Published : EventStatus.Unpublished;
+            if (request.IsPublished.Value)
+                eventEntity.PublishedAt = DateTime.UtcNow;
+        }
 
         if (request.TagNames != null)
             await SyncEventTagsAsync(eventEntity, request.TagNames, null, ct);
@@ -113,6 +118,7 @@ public class EventCommandService : IEventCommandService
         var eventEntity = await _db.Events.FirstOrDefaultAsync(e => e.Id == id, ct)
             ?? throw new KeyNotFoundException("Événement non trouvé");
         eventEntity.Status = EventStatus.PendingReview;
+        eventEntity.SubmittedAt = DateTime.UtcNow;
         eventEntity.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
     }
@@ -123,6 +129,7 @@ public class EventCommandService : IEventCommandService
         var eventEntity = await _db.Events.FirstOrDefaultAsync(e => e.Id == id, ct)
             ?? throw new KeyNotFoundException("Événement non trouvé");
         eventEntity.Status = EventStatus.Published;
+        eventEntity.PublishedAt = DateTime.UtcNow;
         eventEntity.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
     }

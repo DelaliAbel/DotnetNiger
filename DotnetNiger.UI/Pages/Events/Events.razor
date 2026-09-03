@@ -37,6 +37,14 @@
 						<option value="Niamey">Niamey</option>
 						<option value="other">Autres villes</option>
 					</select>
+				<select @bind="selectedCategory" @bind:after="() => currentPage = 1"
+						class="bg-surface text-body shadow-md px-4 py-3 rounded-lg focus:outline-none text-sm min-w-[150px]">
+					<option value="">Catégorie</option>
+					@foreach (var cat in eventCategories)
+					{
+						<option value="@cat">@cat</option>
+					}
+				</select>
 				<select @bind="selectedDateFilter" @bind:after="() => currentPage = 1"
 						class="bg-surface text-body shadow-md px-4 py-3 rounded-lg focus:outline-none text-sm min-w-[150px]">
 					<option value="all">Tous</option>
@@ -96,9 +104,17 @@
 	private string? LoadError { get; set; }
 	private string searchQuery = string.Empty;
 	private string selectedLocation = string.Empty;
+	private string selectedCategory = string.Empty;
 	private string selectedDateFilter = "all";
 	private int currentPage = 1;
 	private const int ItemsPerPage = 12;
+
+	private List<string> eventCategories => AllEvents
+		.Where(e => !string.IsNullOrWhiteSpace(e.Category))
+		.Select(e => e.Category!)
+		.Distinct(StringComparer.OrdinalIgnoreCase)
+		.OrderBy(c => c)
+		.ToList();
 
 	private int TotalPages => (int)Math.Ceiling(FilteredEvents.Count / (double)ItemsPerPage);
 
@@ -137,7 +153,13 @@
 						return !e.EventType?.Equals("Online", StringComparison.OrdinalIgnoreCase) == true
 							&& e.Location?.Equals("Niamey", StringComparison.OrdinalIgnoreCase) != true;
 					return e.Location?.Equals(selectedLocation, StringComparison.OrdinalIgnoreCase) == true;
-				}).ToList();
+					}).ToList();
+			}
+			if (!string.IsNullOrWhiteSpace(selectedCategory))
+			{
+				events = events.Where(e =>
+					string.Equals(e.Category, selectedCategory, StringComparison.OrdinalIgnoreCase))
+					.ToList();
 			}
 			var now = DateTime.Now;
 			if (string.IsNullOrWhiteSpace(selectedDateFilter) || selectedDateFilter == "upcoming")
@@ -156,7 +178,19 @@
 			{
 				events = events.Where(e => e.StartDate >= now && e.StartDate <= now.AddMonths(3)).ToList();
 			}
-			return events.OrderBy(e => e.StartDate).ToList();
+
+			var list = events.ToList();
+			if (selectedDateFilter == "all")
+			{
+				return list
+					.Where(e => e.EndDate >= now)
+					.OrderBy(e => e.StartDate)
+					.Concat(list
+						.Where(e => e.EndDate < now)
+						.OrderByDescending(e => e.StartDate))
+					.ToList();
+			}
+			return list.OrderBy(e => e.StartDate).ToList();
 		}
 	}
 

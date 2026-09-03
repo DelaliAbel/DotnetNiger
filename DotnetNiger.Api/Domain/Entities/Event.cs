@@ -69,6 +69,7 @@ public enum EventStatus
     Draft,
     PendingReview,
     Published,
+    Unpublished,
     Rejected,
     Cancelled,
     Archived

@@ -17,10 +17,11 @@ public class ApiEventService : ApiServiceBase, IEventService
 
     public async Task<List<EventDto>> GetAllEventsAsync()
     {
-        return await GetCollectionAsync<EventDto>(ApiEndpoints.Events, new Dictionary<string, string?>
+        var events = await GetCollectionAsync<EventDto>(ApiEndpoints.Events, new Dictionary<string, string?>
         {
             ["pageSize"] = MaxPageSize
         });
+        return events.Where(e => e.IsPublished).ToList();
     }
 
     public async Task<List<EventDto>> GetAdminEventsAsync(string? status = null)
@@ -33,10 +34,11 @@ public class ApiEventService : ApiServiceBase, IEventService
 
     public async Task<List<EventDto>> GetPublishedEventsAsync()
     {
-        return await GetCollectionAsync<EventDto>(ApiEndpoints.Events, new Dictionary<string, string?>
+        var events = await GetCollectionAsync<EventDto>(ApiEndpoints.Events, new Dictionary<string, string?>
         {
             ["pageSize"] = MaxPageSize
         });
+        return events.Where(e => e.IsPublished).ToList();
     }
 
     public async Task<List<EventDto>> GetUpcomingEventsAsync()
@@ -101,11 +103,12 @@ public class ApiEventService : ApiServiceBase, IEventService
 
     public async Task<List<EventDto>> SearchEventsAsync(string query)
     {
-        return await GetCollectionAsync<EventDto>(ApiEndpoints.Events, new Dictionary<string, string?>
+        var events = await GetCollectionAsync<EventDto>(ApiEndpoints.Events, new Dictionary<string, string?>
         {
             ["query"] = query,
             ["pageSize"] = MaxPageSize
         });
+        return events.Where(e => e.IsPublished).ToList();
     }
 
     public async Task<List<EventDto>> GetEventsByTypeAsync(string eventType)
@@ -116,7 +119,7 @@ public class ApiEventService : ApiServiceBase, IEventService
             ["pageSize"] = MaxPageSize
         });
 
-        return events.Where(e => e.EventType.Equals(eventType, StringComparison.OrdinalIgnoreCase)).ToList();
+        return events.Where(e => e.IsPublished && e.EventType.Equals(eventType, StringComparison.OrdinalIgnoreCase)).ToList();
     }
 
     public async Task<EventDto?> CreateEventAsync(CreateEventRequest request, Guid currentUserId, bool isAdmin, CancellationToken cancellationToken = default)

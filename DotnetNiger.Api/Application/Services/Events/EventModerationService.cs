@@ -19,17 +19,18 @@ public class EventModerationService : IEventModerationService
         var ev = await _db.Events.FindAsync(id, ct);
         if (ev == null) return null;
         ev.Status = EventStatus.Published;
+        ev.PublishedAt = DateTime.UtcNow;
         ev.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
         return MapToResponse(ev);
     }
 
-    /// <summary>Retire un événement de publication (passe le statut à Draft).</summary>
+    /// <summary>Retire un événement de publication (passe le statut à Unpublished).</summary>
     public async Task<EventResponse?> UnpublishAsync(Guid id, CancellationToken ct = default)
     {
         var ev = await _db.Events.FindAsync(id, ct);
         if (ev == null) return null;
-        ev.Status = EventStatus.Draft;
+        ev.Status = EventStatus.Unpublished;
         ev.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
         return MapToResponse(ev);
@@ -41,6 +42,7 @@ public class EventModerationService : IEventModerationService
         var ev = await _db.Events.FindAsync(id, ct);
         if (ev == null) return null;
         ev.Status = EventStatus.Published;
+        ev.PublishedAt = DateTime.UtcNow;
         ev.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
         return MapToResponse(ev);
