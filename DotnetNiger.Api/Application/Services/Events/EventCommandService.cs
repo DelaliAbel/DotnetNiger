@@ -43,6 +43,7 @@ public class EventCommandService : IEventCommandService
 
         await SyncEventTagsAsync(eventEntity, request.TagNames, request.TagIds, ct);
         SyncEventSpeakers(eventEntity.Id, request.Speakers);
+        SyncEventMedias(eventEntity.Id, request.GalleryImageUrls);
 
         _db.Events.Add(eventEntity);
         await _db.SaveChangesAsync(ct);
@@ -85,6 +86,7 @@ public class EventCommandService : IEventCommandService
             await SyncEventTagsAsync(eventEntity, request.TagNames, null, ct);
 
         SyncEventSpeakers(eventEntity.Id, request.Speakers);
+        SyncEventMedias(eventEntity.Id, request.GalleryImageUrls);
 
         eventEntity.UpdatedAt = DateTime.UtcNow;
         await _db.SaveChangesAsync(ct);
@@ -207,6 +209,30 @@ public class EventCommandService : IEventCommandService
         }
     }
 
+    private void SyncEventMedias(Guid eventId, List<string>? galleryImageUrls)
+    {
+        var existing = _db.EventMedias.Where(m => m.EventId == eventId).ToList();
+        if (existing.Count != 0)
+            _db.EventMedias.RemoveRange(existing);
+
+        if (galleryImageUrls is null) return;
+
+        foreach (var url in galleryImageUrls)
+        {
+            if (string.IsNullOrWhiteSpace(url)) continue;
+            _db.EventMedias.Add(new EventMedia
+            {
+                Id = Guid.NewGuid(),
+                EventId = eventId,
+                Type = "image",
+                FileUrl = url,
+                FileType = "image",
+                Url = url,
+                Title = string.Empty
+            });
+        }
+    }
+
     private async Task<string> GenerateUniqueSlug(string? providedSlug, string title, CancellationToken ct = default)
     {
         var baseSlug = !string.IsNullOrWhiteSpace(providedSlug)
@@ -248,5 +274,9 @@ public class EventCommandService : IEventCommandService
             e.Status == EventStatus.Published,
             e.CreatedAt, e.UpdatedAt,
             e.EventType, e.Category, e.OrganizerName, e.Capacity, e.RegisteredCount,
-            e.MeetupLink, e.RejectionReason, e.SubmittedAt, e.PublishedAt, [], [], [], []);
+            e.MeetupLink, e.RejectionReason, e.SubmittedAt, e.PublishedAt,
+            e.Medias?.Select(m => new EventMediaResponse(m.Id, m.Type, m.FileUrl, m.Url, m.Title)).ToList() ?? [],
+            e.Medias?.Where(m => m.Type == "image" && !string.IsNullOrEmpty(m.Url)).Select(m => m.Url).ToList() ?? [],
+            [],
+            e.Speakers?.Select(s => new SpeakerResponse(s.UserId, s.Name, s.Role, s.AvatarUrl)).ToList() ?? []);
 }
