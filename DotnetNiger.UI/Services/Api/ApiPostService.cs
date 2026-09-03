@@ -10,18 +10,24 @@ namespace DotnetNiger.UI.Services.Api;
 
 public class ApiPostService : ApiServiceBase, IPostService
 {
+    private const string MaxPageSize = "100";
+
     public ApiPostService(HttpClient http, ILogger<ApiPostService> logger) : base(http, logger) { }
 
     public async Task<List<PostDto>> GetAllPostsAsync()
     {
-        return await GetCollectionAsync<PostDto>(ApiEndpoints.Posts);
+        return await GetCollectionAsync<PostDto>(ApiEndpoints.Posts, new Dictionary<string, string?>
+        {
+            ["pageSize"] = MaxPageSize
+        });
     }
 
     public async Task<List<PostDto>> GetPublishedPostsAsync()
     {
         return await GetCollectionAsync<PostDto>(ApiEndpoints.Posts, new Dictionary<string, string?>
         {
-            ["published"] = "true"
+            ["published"] = "true",
+            ["pageSize"] = MaxPageSize
         });
     }
 
@@ -29,7 +35,9 @@ public class ApiPostService : ApiServiceBase, IPostService
     {
         var posts = await GetCollectionAsync<PostDto>(ApiEndpoints.Posts, new Dictionary<string, string?>
         {
-            ["category"] = categorySlug
+            ["category"] = categorySlug,
+            ["published"] = "true",
+            ["pageSize"] = MaxPageSize
         });
 
         return posts
@@ -41,7 +49,9 @@ public class ApiPostService : ApiServiceBase, IPostService
     {
         var posts = await GetCollectionAsync<PostDto>(ApiEndpoints.Posts, new Dictionary<string, string?>
         {
-            ["tag"] = tagSlug
+            ["tag"] = tagSlug,
+            ["published"] = "true",
+            ["pageSize"] = MaxPageSize
         });
 
         return posts
@@ -145,7 +155,9 @@ public class ApiPostService : ApiServiceBase, IPostService
     {
         return await GetCollectionAsync<PostDto>(ApiEndpoints.Posts, new Dictionary<string, string?>
         {
-            ["query"] = query
+            ["query"] = query,
+            ["published"] = "true",
+            ["pageSize"] = MaxPageSize
         });
     }
 

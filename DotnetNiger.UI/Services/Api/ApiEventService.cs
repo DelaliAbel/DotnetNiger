@@ -11,11 +11,16 @@ namespace DotnetNiger.UI.Services.Api;
 
 public class ApiEventService : ApiServiceBase, IEventService
 {
+    private const string MaxPageSize = "100";
+
     public ApiEventService(HttpClient http, ILogger<ApiEventService> logger) : base(http, logger) { }
 
     public async Task<List<EventDto>> GetAllEventsAsync()
     {
-        return await GetCollectionAsync<EventDto>(ApiEndpoints.Events);
+        return await GetCollectionAsync<EventDto>(ApiEndpoints.Events, new Dictionary<string, string?>
+        {
+            ["pageSize"] = MaxPageSize
+        });
     }
 
     public async Task<List<EventDto>> GetAdminEventsAsync(string? status = null)
@@ -28,19 +33,28 @@ public class ApiEventService : ApiServiceBase, IEventService
 
     public async Task<List<EventDto>> GetPublishedEventsAsync()
     {
-        return await GetCollectionAsync<EventDto>(ApiEndpoints.Events);
+        return await GetCollectionAsync<EventDto>(ApiEndpoints.Events, new Dictionary<string, string?>
+        {
+            ["pageSize"] = MaxPageSize
+        });
     }
 
     public async Task<List<EventDto>> GetUpcomingEventsAsync()
     {
-        var events = await GetCollectionAsync<EventDto>(ApiEndpoints.Events);
+        var events = await GetCollectionAsync<EventDto>(ApiEndpoints.Events, new Dictionary<string, string?>
+        {
+            ["pageSize"] = MaxPageSize
+        });
         return events.Where(e => e.StartDate >= DateTime.Now && e.IsPublished)
             .OrderBy(e => e.StartDate).ToList();
     }
 
     public async Task<List<EventDto>> GetPastEventsAsync()
     {
-        var events = await GetCollectionAsync<EventDto>(ApiEndpoints.Events);
+        var events = await GetCollectionAsync<EventDto>(ApiEndpoints.Events, new Dictionary<string, string?>
+        {
+            ["pageSize"] = MaxPageSize
+        });
         return events.Where(e => e.EndDate < DateTime.Now && e.IsPublished)
             .OrderByDescending(e => e.StartDate).ToList();
     }
@@ -89,7 +103,8 @@ public class ApiEventService : ApiServiceBase, IEventService
     {
         return await GetCollectionAsync<EventDto>(ApiEndpoints.Events, new Dictionary<string, string?>
         {
-            ["query"] = query
+            ["query"] = query,
+            ["pageSize"] = MaxPageSize
         });
     }
 
@@ -97,7 +112,8 @@ public class ApiEventService : ApiServiceBase, IEventService
     {
         var events = await GetCollectionAsync<EventDto>(ApiEndpoints.Events, new Dictionary<string, string?>
         {
-            ["eventType"] = eventType
+            ["eventType"] = eventType,
+            ["pageSize"] = MaxPageSize
         });
 
         return events.Where(e => e.EventType.Equals(eventType, StringComparison.OrdinalIgnoreCase)).ToList();

@@ -10,11 +10,16 @@ namespace DotnetNiger.UI.Services.Api;
 
 public class ApiResourceService : ApiServiceBase, IResourceService
 {
+    private const string MaxPageSize = "100";
+
     public ApiResourceService(HttpClient http, ILogger<ApiResourceService> logger) : base(http, logger) { }
 
     public async Task<List<ResourceDto>> GetAllResourcesAsync()
     {
-        return await GetCollectionAsync<ResourceDto>(ApiEndpoints.Resources);
+        return await GetCollectionAsync<ResourceDto>(ApiEndpoints.Resources, new Dictionary<string, string?>
+        {
+            ["pageSize"] = MaxPageSize
+        });
     }
 
     public async Task<ResourceDto?> GetResourceByIdAsync(Guid id, CancellationToken cancellationToken = default)
@@ -61,7 +66,8 @@ public class ApiResourceService : ApiServiceBase, IResourceService
     {
         var resources = await GetCollectionAsync<ResourceDto>(ApiEndpoints.Resources, new Dictionary<string, string?>
         {
-            ["resourceType"] = resourceType
+            ["resourceType"] = resourceType,
+            ["pageSize"] = MaxPageSize
         });
 
         return resources.Where(r => r.ResourceType.Equals(resourceType, StringComparison.OrdinalIgnoreCase)).ToList();
@@ -71,7 +77,8 @@ public class ApiResourceService : ApiServiceBase, IResourceService
     {
         var resources = await GetCollectionAsync<ResourceDto>(ApiEndpoints.Resources, new Dictionary<string, string?>
         {
-            ["level"] = level
+            ["level"] = level,
+            ["pageSize"] = MaxPageSize
         });
 
         return resources.Where(r => r.Level.Equals(level, StringComparison.OrdinalIgnoreCase)).ToList();
@@ -81,7 +88,8 @@ public class ApiResourceService : ApiServiceBase, IResourceService
     {
         return await GetCollectionAsync<ResourceDto>(ApiEndpoints.Resources, new Dictionary<string, string?>
         {
-            ["query"] = query
+            ["query"] = query,
+            ["pageSize"] = MaxPageSize
         });
     }
 
