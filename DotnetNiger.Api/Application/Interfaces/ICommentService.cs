@@ -21,4 +21,9 @@ public interface ICommentService
     Task<bool> DeleteAsync(Guid id, Guid userId, bool isAdmin, bool deleteAllReplies, CancellationToken ct = default);
     /// <summary>Récupère tous les commentaires.</summary>
     Task<List<CommentResponse>> GetAllAsync(CancellationToken ct = default);
+    /// <summary>
+    /// Signale un commentaire. Retourne true si le signalement a été créé,
+    /// false si le commentaire n'existe pas, et lève une exception si l'utilisateur a déjà signalé.
+    /// </summary>
+    Task<bool> ReportAsync(Guid id, Guid userId, CancellationToken ct = default);
 }

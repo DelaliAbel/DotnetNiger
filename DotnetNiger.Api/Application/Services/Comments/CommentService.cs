@@ -140,6 +140,31 @@ public class CommentService : ICommentService
         return comments.Select(MapToResponse).ToList();
     }
 
+    /// <summary>Signale un commentaire.</summary>
+    public async Task<bool> ReportAsync(Guid id, Guid userId, CancellationToken ct = default)
+    {
+        var comment = await _db.Comments.FirstOrDefaultAsync(c => c.Id == id, ct);
+        if (comment == null) return false;
+
+        var alreadyReported = await _db.CommentReports.AnyAsync(r => r.CommentId == id && r.UserId == userId, ct);
+        if (alreadyReported)
+            throw new InvalidOperationException("Vous avez déjà signalé ce commentaire.");
+
+        _db.CommentReports.Add(new CommentReport
+        {
+            Id = Guid.NewGuid(),
+            CommentId = id,
+            UserId = userId,
+            CreatedAt = DateTime.UtcNow
+        });
+
+        if (comment.ReportedAt == null)
+            comment.ReportedAt = DateTime.UtcNow;
+
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
+
     private CommentResponse MapToResponse(Comment c)
     {
         var response = new CommentResponse
@@ -154,6 +179,7 @@ public class CommentService : ICommentService
             ParentCommentId = c.ParentCommentId,
             CreatedAt = c.CreatedAt,
             UpdatedAt = c.UpdatedAt,
+            ReportedAt = c.ReportedAt,
             Replies = []
         };
 

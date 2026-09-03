@@ -65,10 +65,19 @@
             <!-- Report button (visible for everyone except the author) -->
             @if (Comment.UserId != CurrentUserId)
             {
-                <button type="button" class="text-xs text-gray-400 hover:text-yellow-600 px-2 py-1" title="Signaler"
-                        @onclick="HandleReport">
-                    <i class="fa-solid fa-flag text-sm"></i>
-                </button>
+                @if (Comment.ReportedAt != null)
+                {
+                    <span class="text-xs text-yellow-600 px-2 py-1" title="Signalé">
+                        <i class="fa-solid fa-flag text-sm"></i>
+                    </span>
+                }
+                else
+                {
+                    <button type="button" class="text-xs text-gray-400 hover:text-yellow-600 px-2 py-1" title="Signaler"
+                            @onclick="HandleReport">
+                        <i class="fa-solid fa-flag text-sm"></i>
+                    </button>
+                }
             }
         </div>
 
@@ -367,9 +376,30 @@
         }
     }
 
-    private void HandleReport()
+    private async Task HandleReport()
     {
-        ToastService.ShowToast("Commentaire signalé à l'équipe de modération.", ToastLevel.Info);
+        try
+        {
+            var reported = await CommentService.ReportCommentAsync(Comment.Id);
+            if (reported)
+            {
+                Comment.ReportedAt = DateTime.Now;
+                ToastService.ShowToast("Commentaire signalé à l'équipe de modération.", ToastLevel.Success);
+                StateHasChanged();
+            }
+            else
+            {
+                ToastService.ShowToast("Impossible de signaler ce commentaire.", ToastLevel.Error);
+            }
+        }
+        catch (InvalidOperationException ex)
+        {
+            ToastService.ShowToast(ex.Message, ToastLevel.Info);
+        }
+        catch
+        {
+            ToastService.ShowToast("Erreur lors du signalement.", ToastLevel.Error);
+        }
     }
 
     private MarkupString RenderContent(string content)

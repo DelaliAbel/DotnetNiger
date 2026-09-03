@@ -309,26 +309,17 @@ public class MockCommentService : ICommentService
         };
     }
 
-    public Task<CommentResponse?> ApproveCommentAsync(Guid id, CancellationToken cancellationToken = default)
+    public Task<bool> ReportCommentAsync(Guid id, CancellationToken cancellationToken = default)
     {
         var comment = FindComment(_comments, id);
         if (comment == null)
-            return Task.FromResult<CommentResponse?>(null);
+            return Task.FromResult(false);
 
-        comment.Status = "approved";
-        comment.UpdatedAt = DateTime.Now;
-        return Task.FromResult<CommentResponse?>(comment);
-    }
+        if (comment.ReportedAt != null)
+            throw new InvalidOperationException("Vous avez déjà signalé ce commentaire.");
 
-    public Task<CommentResponse?> RejectCommentAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        var comment = FindComment(_comments, id);
-        if (comment == null)
-            return Task.FromResult<CommentResponse?>(null);
-
-        comment.Status = "rejected";
-        comment.UpdatedAt = DateTime.Now;
-        return Task.FromResult<CommentResponse?>(comment);
+        comment.ReportedAt = DateTime.Now;
+        return Task.FromResult(true);
     }
 
     private static CommentResponse? FindComment(List<CommentResponse> comments, Guid id)

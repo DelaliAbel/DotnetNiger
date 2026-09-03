@@ -11,6 +11,7 @@ public class CommentResponse
     public string Content { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
+    public DateTime? ReportedAt { get; set; }
     public Guid? ParentCommentId { get; set; }
     public string Status { get; set; } = "pending";
     public string? PostTitle { get; set; }

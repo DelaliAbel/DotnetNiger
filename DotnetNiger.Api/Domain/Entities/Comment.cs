@@ -25,6 +25,8 @@ public class Comment
     public DateTime CreatedAt { get; set; }
     /// <summary>Date de dernière mise à jour.</summary>
     public DateTime? UpdatedAt { get; set; }
+    /// <summary>Date du premier signalement (null si jamais signalé).</summary>
+    public DateTime? ReportedAt { get; set; }
 
     /// <summary>Navigation vers l'auteur.</summary>
     public ApplicationUser? Author { get; set; }
@@ -36,4 +38,6 @@ public class Comment
     public Comment? ParentComment { get; set; }
     /// <summary>Réponses au commentaire.</summary>
     public ICollection<Comment> Replies { get; set; } = [];
+    /// <summary>Signalements du commentaire.</summary>
+    public ICollection<CommentReport> Reports { get; set; } = [];
 }

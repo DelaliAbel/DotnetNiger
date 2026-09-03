@@ -61,6 +61,8 @@ public class DotnetNigerDbContext : IdentityDbContext<
     public DbSet<Tag> Tags => Set<Tag>();
     /// <summary>Table des commentaires.</summary>
     public DbSet<Comment> Comments => Set<Comment>();
+    /// <summary>Table des signalements de commentaires.</summary>
+    public DbSet<CommentReport> CommentReports => Set<CommentReport>();
     /// <summary>Table des intervenants.</summary>
     public DbSet<Speaker> Speakers => Set<Speaker>();
     /// <summary>Table des notifications.</summary>

@@ -82,17 +82,9 @@ else
                                 class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "all" ? "bg-black text-white" : "bg-surface text-title ring-1 ring-gray-200 hover:bg-gray-50")">
                             Tous (@allComments.Count)
                         </button>
-                        <button @onclick='() => SetFilter("pending")'
-                                class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "pending" ? "bg-amber-500 text-white" : "bg-surface text-title ring-1 ring-gray-200 hover:bg-gray-50")">
-                            En attente (@pendingCount)
-                        </button>
-                        <button @onclick='() => SetFilter("approved")'
-                                class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "approved" ? "bg-green-600 text-white" : "bg-surface text-title ring-1 ring-gray-200 hover:bg-gray-50")">
-                            Approuvés (@approvedCount)
-                        </button>
-                        <button @onclick='() => SetFilter("rejected")'
-                                class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "rejected" ? "bg-red-600 text-white" : "bg-surface text-title ring-1 ring-gray-200 hover:bg-gray-50")">
-                            Rejetés (@rejectedCount)
+                        <button @onclick='() => SetFilter("reported")'
+                                class="rounded-lg px-4 py-2 text-sm font-medium transition @(statusFilter == "reported" ? "bg-red-600 text-white" : "bg-surface text-title ring-1 ring-gray-200 hover:bg-gray-50")">
+                            Signalés (@reportedCount)
                         </button>
                     </div>
 
@@ -149,9 +141,7 @@ else
     private int currentPage = 1;
     private int pageSize = 10;
 
-    private int pendingCount => allComments.Count(c => c.Status == "pending");
-    private int approvedCount => allComments.Count(c => c.Status == "approved");
-    private int rejectedCount => allComments.Count(c => c.Status == "rejected");
+    private int reportedCount => allComments.Count(c => c.ReportedAt != null);
 
     private string searchQuery
     {
@@ -165,7 +155,7 @@ else
     }
 
     private List<CommentResponse> filteredComments => allComments
-        .Where(c => statusFilter == "all" || c.Status == statusFilter)
+        .Where(c => statusFilter == "all" || (statusFilter == "reported" && c.ReportedAt != null))
         .Where(c => string.IsNullOrEmpty(typeFilter) ||
                     (typeFilter == "post" && c.PostId != Guid.Empty) ||
                     (typeFilter == "event" && c.EventId != Guid.Empty))

@@ -33,7 +33,16 @@
         </span>
     </div>
 
-    <p class="mb-3 text-sm leading-6 text-body line-clamp-3">@Comment?.Content</p>
+    <p class="mb-3 text-sm leading-6 text-body line-clamp-3">
+        @Comment?.Content
+        @if (Comment?.ReportedAt != null)
+        {
+            <span class="ml-2 inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700"
+                  title="Signalé le @Comment.ReportedAt.Value.ToString("dd/MM/yyyy")">
+                <i class="fa-solid fa-flag"></i> Signalé
+            </span>
+        }
+    </p>
 
     <div class="mb-2 text-xs text-muted truncate">
         <span class="font-medium">Cible:</span> @GetTargetTitle(Comment)

@@ -23,6 +23,8 @@ public class CommentResponse
     public DateTime CreatedAt { get; set; }
     /// <summary>Date de dernière mise à jour.</summary>
     public DateTime? UpdatedAt { get; set; }
+    /// <summary>Date du premier signalement (null si jamais signalé). Réservé à l'admin.</summary>
+    public DateTime? ReportedAt { get; set; }
     /// <summary>Réponses enfants au commentaire.</summary>
     public List<CommentResponse> Replies { get; set; } = [];
 }

@@ -97,6 +97,7 @@ public static class Messages
     {
         public const string NotFound = "Commentaire non trouvé";
         public const string Deleted = "Commentaire supprimé avec succès";
+        public const string Reported = "Commentaire signalé.";
     }
 
     /// <summary>Messages liés aux tags.</summary>

@@ -99,4 +99,22 @@ public class CommentsController(ICommentService commentService) : BaseController
             return Failure(ex.Message, 403);
         }
     }
+
+    /// <summary>Signale un commentaire.</summary>
+    [HttpPost("{id:guid}/report")]
+    [Authorize]
+    public async Task<IActionResult> Report(Guid id, CancellationToken ct = default)
+    {
+        var userId = GetUserId();
+        try
+        {
+            var reported = await commentService.ReportAsync(id, userId, ct);
+            if (!reported) return NotFound(Messages.Comment.NotFound);
+            return Success<object?>(null, Messages.Comment.Reported);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 }

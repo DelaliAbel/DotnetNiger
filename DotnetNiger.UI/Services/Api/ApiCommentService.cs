@@ -148,43 +148,26 @@ public class ApiCommentService : ApiServiceBase, ICommentService
         }
     }
 
-    public async Task<CommentResponse?> ApproveCommentAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<bool> ReportCommentAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        var url = $"{ApiEndpoints.Comments}/{id}/approve";
+        var url = $"{ApiEndpoints.Comments}/{id}/report";
         try
         {
-            var response = await Http.PatchAsync(url, null);
+            var response = await Http.PostAsync(url, null);
             if (!response.IsSuccessStatusCode)
             {
-                Logger.LogWarning("Failed {StatusCode} on PATCH {Url}", (int)response.StatusCode, url);
-                return null;
+                var error = await ApiResponseReader.ReadErrorAsync(response);
+                Logger.LogWarning("Failed {StatusCode} on POST {Url}: {Error}", (int)response.StatusCode, url, error);
+                if (!string.IsNullOrWhiteSpace(error))
+                    throw new InvalidOperationException(error ?? "Signalement impossible.");
+                return false;
             }
-            return await ApiResponseReader.ReadAsync<CommentResponse>(response);
+            return true;
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not InvalidOperationException)
         {
-            Logger.LogError(ex, "Error on PATCH {Url}", url);
-            return null;
-        }
-    }
-
-    public async Task<CommentResponse?> RejectCommentAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        var url = $"{ApiEndpoints.Comments}/{id}/reject";
-        try
-        {
-            var response = await Http.PatchAsync(url, null);
-            if (!response.IsSuccessStatusCode)
-            {
-                Logger.LogWarning("Failed {StatusCode} on PATCH {Url}", (int)response.StatusCode, url);
-                return null;
-            }
-            return await ApiResponseReader.ReadAsync<CommentResponse>(response);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error on PATCH {Url}", url);
-            return null;
+            Logger.LogError(ex, "Error on POST {Url}", url);
+            return false;
         }
     }
 
