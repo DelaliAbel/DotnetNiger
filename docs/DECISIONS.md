@@ -13,7 +13,7 @@ Ce document fait foi. Toute décision listée ici a été explicitement validée
 |---|---|---|
 | Framework | .NET 10 (`net10.0`) | SDK 10.0.110 présent sur la machine |
 | Front | Blazor Web App, rendu serveur statique + îlots interactifs | SEO, previews réseaux sociaux, rendu HTML complet |
-| Backend | API REST sous `/api/v1` | Style d'écriture **à trancher** : minimal API ou contrôleurs. Voir section 16 |
+| Backend | API REST sous `/api/…`, en **contrôleurs MVC** (`[ApiController]`) | Style d'écriture tranché : contrôleurs plutôt que minimal API. Voir section 16 |
 | Modèle de déploiement | Un seul projet déployé | Voir section 2 pour la justification |
 | CSS | **Tailwind CSS 4**, thème déclaré dans `wwwroot/css/design/theme.css` | Compilé par la CLI Tailwind via npm, appelé par une cible MSBuild. Voir section 10 |
 | Base de données | **SQLite en développement local**, **SQL Server en production** | Sélection par configuration, voir section 5 |
@@ -287,6 +287,58 @@ suffisent.
 
 ---
 
+## 9 bis. API HTTP
+
+**Style d'écriture : contrôleurs MVC**, et non minimal API. Les contrôles, les filtres
+d'autorisation, la validation automatique des modèles et la génération du document
+OpenAPI s'écrivent de la même façon avec `[ApiController]`, ce qui évite de tenir deux
+styles d'écriture dans un même projet. `AddControllers()` et `MapControllers()` sont
+utilisés, et les contrôleurs vivent dans le projet Web.
+
+### Arborescence
+
+Les fichiers sont rangés par rôle, comme le reste de la solution :
+
+```
+src/DotnetNiger.Web/Controller/
+├── ArticlesController.cs      contrôleur des articles du blog
+├── CommentsController.cs      commentaires
+├── EventsController.cs        événements, inscriptions et annulations
+├── MembersController.cs       profils publics et profil du membre connecté
+├── PartnersController.cs      partenaires et sponsors
+├── ProjectsController.cs      projets open source
+├── ReportsController.cs       signalements et modération
+├── ResourcesController.cs     ressources et formations
+├── Common/
+│   ├── ApiControllerBase.cs      socle : pagination, auteurs, autorisation, débit
+│   ├── ApiLog.cs                 journalisation source-générée de l'API
+│   └── DomainExceptionHandler.cs règles métier traduites en ProblemDetails
+└── Contracts/
+    └── ApiContracts.cs       requêtes, réponses, projections et ApiRoutes
+```
+
+Le nommage des segments d'URL est en anglais, cohérent avec les noms de tables et de
+contrôleurs. Aucun préfixe de version, voir section 15.
+
+### Images de couverture
+
+Quatre entités portent une image, utilisée par les vignettes des listes et des pages de
+détail : `Article.CoverImageUrl`, `Project.ImageUrl`, `Resource.CoverImageUrl` et
+`CommunityEvent.CoverImageUrl`. Les deux dernières colonnes ont été ajoutées par la
+migration `AddCoverImages`. Les commentaires n'ont pas d'image, et les partenaires
+conservent leur `LogoUrl` propre, qui ne fait pas partie des vignettes de contenu.
+
+### Authentification des appels
+
+L'API réutilise le cookie Identity du site. Une requête anonyme vers une route protégée
+reçoit `401`, jamais une redirection vers une page de connexion, la redirection étant
+réservée aux pages. Les règles de sécurité appliquées au site s'appliquent aussi aux
+appels : mot de passe obligatoire pour tout compte créé depuis un fournisseur externe,
+jeton externe à usage unique expirant en 15 minutes, et annulation de la liaison si le
+rattachement échoue.
+
+---
+
 ## 10. Design system
 
 Palette confirmée, **trois couleurs chromatiques maximum** sur base blanche :
@@ -427,9 +479,21 @@ rédigé directement en français.
 - Validation des entrées sur toutes les requêtes.
 - Validation des inscriptions par email.
 
-Si une API mobile ou un client tiers consommait un jour `/api/v1`, le jeton signé serait
+Si une API mobile ou un client tiers consommait un jour l'API, le jeton signé serait
 asymétrique, jamais symétrique, et les clés seraient des certificats stockés hors du
 dépôt. Ce n'est pas le cas aujourd'hui : l'API n'est consommée que par le site.
+
+L'API n'est **pas versionnée dans l'URL** : les routes sont `/api/articles`,
+`/api/resources`, `/api/events`, etc. Le nommage anglais des segments a été choisi
+volontairement : `/api/v1` était envisagé au départ, puis écarté au profit de routes plus
+courtes, l'API n'ayant qu'un seul consommateur, le site lui-même. Le document OpenAPI reste
+servi à l'URL `/openapi/v1.json` : le « v1 » y désigne le format du document, pas la
+version des endpoints.
+
+L'API s'authentifie par le cookie Identity, comme le site : un appel protégé répond `401`
+et non `403` lorsqu'il est anonyme, au lieu d'être redirigé vers une page de connexion.
+Les appels JSON ne portent pas de jeton antifalsification ; la protection repose sur le
+cookie `SameSite=Lax` et sur l'absence de cookie sur les requêtes inter-sites.
 
 ---
 
@@ -437,8 +501,6 @@ dépôt. Ce n'est pas le cas aujourd'hui : l'API n'est consommée que par le sit
 
 | Sujet | Manque |
 |---|---|
-| Style de l'API | Trancher entre minimal API et contrôleurs ASP.NET Core |
-| Authentification | Règles de sécurité à valider : liaison des comptes OAuth, email obligatoire, attribution du rôle `Admin` |
 | Identifiants OAuth | Secrets Google / Microsoft / GitHub non fournis |
 | SMTP | Hôte, port, utilisateur, mot de passe et expéditeur non fournis |
 | Nom de domaine | Aucun domaine fourni |
