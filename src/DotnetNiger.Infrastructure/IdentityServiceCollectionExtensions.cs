@@ -81,6 +81,38 @@ public static class IdentityServiceCollectionExtensions
             options.LoginPath = "/compte/connexion";
             options.LogoutPath = "/compte/deconnexion";
             options.AccessDeniedPath = "/acces-refuse";
+
+            // Un client d'API n'affichera jamais une page de connexion : il attend un code
+            // d'état, pas une redirection. Rediriger produirait un 302 suivi d'un document
+            // HTML, que l'appelant devrait interpréter à la main. Les requêtes "/api"
+            // reçoivent donc 401 et 403, comme le veut une API.
+            options.Events.OnRedirectToLogin = contexte =>
+            {
+                if (EstAppelApi(contexte.Request))
+                {
+                    contexte.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                }
+                else
+                {
+                    contexte.Response.Redirect(contexte.RedirectUri);
+                }
+
+                return Task.CompletedTask;
+            };
+
+            options.Events.OnRedirectToAccessDenied = contexte =>
+            {
+                if (EstAppelApi(contexte.Request))
+                {
+                    contexte.Response.StatusCode = StatusCodes.Status403Forbidden;
+                }
+                else
+                {
+                    contexte.Response.Redirect(contexte.RedirectUri);
+                }
+
+                return Task.CompletedTask;
+            };
         });
 
         services.Configure<SecurityStampValidatorOptions>(options =>
@@ -92,10 +124,22 @@ public static class IdentityServiceCollectionExtensions
 
         // Rôles et premier administrateur créés au démarrage, de façon idempotente.
         services.AddSingleton<IdentityBootstrapper>();
-
         // AddIdentity enregistre déjà UserManager, RoleManager et SignInManager. Rien
         // n'est redéclaré ici : une seconde inscription de RoleManager créerait deux
         // résolutions possibles pour le même service, ce que l'injection ne départage pas.
         return services;
     }
+
+    /// <summary>
+    /// Indique si la requête vise l'API plutôt que le site.
+    /// </summary>
+    /// <param name="requete">Requête entrante.</param>
+    /// <returns><see langword="true"/> pour un chemin d'API.</returns>
+    /// <remarks>
+    /// Le préfixe est le même que celui porté par les contrôleurs, en
+    /// <c>DotnetNiger.Web.Controller.Contracts.ApiRoutes</c>. Il est recopié ici car Infrastructure ne
+    /// référence pas le projet Web, et la couche ne doit pas créer cette dépendance.
+    /// </remarks>
+    private static bool EstAppelApi(HttpRequest requete) =>
+        requete.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase);
 }

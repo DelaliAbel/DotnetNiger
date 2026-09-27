@@ -12,7 +12,7 @@ namespace DotnetNiger.Infrastructure.Identity;
 /// d'Identity, ce qui contrevient à la pureté du domaine. Les entités du domaine la
 /// référencent par son identifiant, jamais par navigation.
 /// </remarks>
-public sealed class ApplicationUser : IdentityUser<Guid>, ITimestamped
+public sealed class ApplicationUser : IdentityUser<Guid>, IEntity, ITimestamped
 {
     /// <summary>
     /// Initialise un utilisateur sans nom, réservé à Entity Framework Core.

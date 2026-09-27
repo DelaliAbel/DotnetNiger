@@ -1,13 +1,15 @@
-using System.Threading.RateLimiting;
 using DotnetNiger.Application.Abstractions;
-using DotnetNiger.Infrastructure;
 using DotnetNiger.Infrastructure.Identity;
 using DotnetNiger.Infrastructure.Persistence;
+using DotnetNiger.Infrastructure;
 using DotnetNiger.Web.Authentication;
 using DotnetNiger.Web.Components;
+using DotnetNiger.Web.Controller.Common;
+using DotnetNiger.Web.Controller;
 using DotnetNiger.Web.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,9 +46,16 @@ builder.Services.AddRazorComponents()
 // ---------- API : documentation native .NET ----------
 builder.Services.AddOpenApi();
 
+// Les contrôleurs de l'API sont découverts par le conteneur : les routes sont portées par
+// les attributs [Route]/[HttpGet] de chaque contrôleur, sans préfixe de versionnement.
+builder.Services.AddControllers();
+
 // ---------- API : réponses d'erreur normalisées ----------
 // RFC 9457 : le format d'erreur natif d'ASP.NET Core, plutôt qu'une enveloppe maison.
+// Le gestionnaire traduit une règle métier refusée en 4xx au lieu de la laisser remonter
+// en 500, qui ferait croire à une panne et exposerait une pile d'appels.
 builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 
 // ---------- Limitation de débit ----------
 // Deux niveaux, comme dans le template de référence : global sur tout le site,
@@ -93,13 +102,25 @@ await app.Services.InitializeDatabaseAsync(app.Configuration);
 await app.Services.GetRequiredService<IdentityBootstrapper>().InitializeAsync();
 
 // ---------- Pipeline ----------
+// Doit précéder la redirection HTTPS et l'authentification pour qu'une règle métier
+// refusée par l'API soit traduite, quel que soit le mode d'exécution.
+app.UseExceptionHandler();
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
 }
 
-app.UseStatusCodePagesWithReExecute("/not-found", createScopeForStatusCodePages: true);
+// La page « introuvable » est un composant Razor : la ré-exécution ne convient qu'aux
+// pages du site. Sur l'API, un 404 doit rester un 404 en JSON, et surtout la ré-exécution
+// transformerait une réponse d'API en document HTML.
+app.UseWhen(
+    contexte => !EstAppelApi(contexte.Request),
+    branche => branche.UseStatusCodePagesWithReExecute(
+        "/not-found",
+        createScopeForStatusCodePages: true));
+
 app.UseHttpsRedirection();
 
 // ---------- Authentification ----------
@@ -107,7 +128,14 @@ app.UseHttpsRedirection();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseAntiforgery();
+// Le middleware est posé pour les pages et composants du site, qui naviguent réellement
+// et portent un jeton. Il est écarté de l'API : une requête JSON n'a pas de jeton de
+// formulaire à présenter, et l'exiger rejetterait tout appel par fetch avec un 400. La
+// contre-mesure contre la forge de requête intersite reste le cookie SameSite=Lax, ajouté
+// par la configuration Identity, qui ne joint pas le cookie à un appel d'un site tiers.
+app.UseWhen(
+    contexte => !EstAppelApi(contexte.Request),
+    branche => branche.UseAntiforgery());
 
 app.MapStaticAssets();
 
@@ -115,6 +143,11 @@ app.MapStaticAssets();
 app.MapExternalAccountEndpoints();
 app.MapAccountEndpoints();
 app.MapAccountVerificationEndpoints();
+
+// ---------- API ----------
+// Préfixe unique, sans versionnement : le contrat n'a pas encore été publié à des clients
+// qu'il serait coûteux de rompre.
+app.MapControllers();
 
 // ---------- Santé ----------
 app.MapHealthChecks("/health").AllowAnonymous();
@@ -132,6 +165,14 @@ app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
 app.Run();
+
+// Indique si la requête vise l'API plutôt qu'une page du site.
+//
+// Le préfixe reprend celui porté par ApiRoutes.Base, que l'API est la seule à utiliser.
+// L'API renvoie du JSON et des codes d'état : lui substituer une page HTML masquerait
+// l'erreur auprès de l'appelant.
+static bool EstAppelApi(HttpRequest requete) =>
+    requete.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase);
 
 /// <summary>
 /// Point d'entrée exposé pour les tests d'intégration, qui utilisent
