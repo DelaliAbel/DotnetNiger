@@ -57,6 +57,11 @@ public sealed class Resource : SoftDeletableEntity
     public string? Content { get; private set; }
 
     /// <summary>
+    /// Obtient l'image de couverture, utilisée pour la vignette de la ressource.
+    /// </summary>
+    public string? CoverImageUrl { get; private set; }
+
+    /// <summary>
     /// Obtient l'URL de la ressource externe, si elle existe.
     /// </summary>
     public string? ExternalUrl { get; private set; }
@@ -116,6 +121,17 @@ public sealed class Resource : SoftDeletableEntity
         ExternalUrl = DomainGuard.AgainstHttpUrl(externalUrl, nameof(externalUrl));
         Provider = DomainGuard.OptionalAgainstTooLong(provider, FieldLimits.Name, nameof(provider));
     }
+
+    /// <summary>
+    /// Remplace l'image de couverture de la ressource.
+    /// </summary>
+    /// <param name="coverImageUrl">URL absolue, ou <see langword="null"/> pour retirer l'image.</param>
+    /// <remarks>
+    /// L'image sert à la vignette de la ressource dans les listes. Elle est facultative :
+    /// une ressource partagée sous forme de lien externe n'a pas toujours d'image associée.
+    /// </remarks>
+    public void SetCoverImage(string? coverImageUrl)
+        => CoverImageUrl = DomainGuard.OptionalAgainstHttpUrl(coverImageUrl, nameof(coverImageUrl));
 
     /// <summary>
     /// Définit le contenu rédigé localement.

@@ -116,6 +116,11 @@ public sealed class CommunityEvent : SoftDeletableEntity
     public DateTime? PublishedAtUtc { get; private set; }
 
     /// <summary>
+    /// Obtient l'image de couverture, utilisée pour la vignette de l'événement.
+    /// </summary>
+    public string? CoverImageUrl { get; private set; }
+
+    /// <summary>
     /// Obtient l'identifiant de l'administrateur créateur.
     /// </summary>
     public Guid CreatedById { get; private set; }
@@ -139,6 +144,17 @@ public sealed class CommunityEvent : SoftDeletableEntity
         OnlineUrl = DomainGuard.OptionalAgainstHttpUrl(onlineUrl, nameof(onlineUrl));
         EnsureFormatConsistency();
     }
+
+    /// <summary>
+    /// Remplace l'image de couverture de l'événement.
+    /// </summary>
+    /// <param name="coverImageUrl">URL absolue, ou <see langword="null"/> pour retirer l'image.</param>
+    /// <remarks>
+    /// L'image sert à la vignette de l'événement dans les listes et sur la page d'accueil.
+    /// Elle est facultative : un événement sans image reste valide.
+    /// </remarks>
+    public void SetCoverImage(string? coverImageUrl)
+        => CoverImageUrl = DomainGuard.OptionalAgainstHttpUrl(coverImageUrl, nameof(coverImageUrl));
 
     /// <summary>
     /// Fixe le nombre de places.
