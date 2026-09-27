@@ -1,0 +1,61 @@
+## Build
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+artifacts/
+
+## Secrets — ne doivent jamais être versionnés
+appsettings.*.local.json
+*.env
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.key
+*.pem
+secrets.json
+
+## Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userprefs
+*.DotSettings.user
+
+## Système
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## Dépôts temporaires
+publish/
+*.publishsettings
+TestResults/
+coverage*.xml
+*.coverage
+*.trx
+
+## Node / Tailwind
+node_modules/
+# CSS généré : se régénère avec `npm run css:minify`
+src/DotnetNiger.Web/wwwroot/css/app.css
+
+## Bases de données locales
+App_Data/
+*.db
+*.db-shm
+*.db-wal
+
+## Dépendances front
+node_modules/
+
+## Base de données de développement (jetable, régénérée au démarrage)
+src/DotnetNiger.Web/App_Data/
+
+## Documentation et ouvrages de référence téléchargés, hors dépôt
+## (1,1 Go et 243 Mo : ces fichiers ne sont pas des sources du projet)
+docs/documentation officiel de dotnet/
+design modern/

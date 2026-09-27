@@ -1,0 +1,16 @@
+{
+  "name": "dotnetniger",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Portail de la communaute dotNetNiger. Theme Tailwind compile en integration continue.",
+  "license": "MIT",
+  "scripts": {
+    "css": "tailwindcss -i src/DotnetNiger.Web/wwwroot/css/design/theme.css -o src/DotnetNiger.Web/wwwroot/css/app.css",
+    "css:watch": "tailwindcss -i src/DotnetNiger.Web/wwwroot/css/design/theme.css -o src/DotnetNiger.Web/wwwroot/css/app.css --watch",
+    "css:minify": "tailwindcss -i src/DotnetNiger.Web/wwwroot/css/design/theme.css -o src/DotnetNiger.Web/wwwroot/css/app.css --minify"
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.0",
+    "tailwindcss": "^4.1.0"
+  }
+}
