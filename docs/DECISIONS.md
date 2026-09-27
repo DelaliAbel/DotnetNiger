@@ -301,8 +301,9 @@ Les fichiers sont rangés par rôle, comme le reste de la solution :
 
 ```
 src/DotnetNiger.Web/Controller/
+├── AdminAccountsController.cs  gestion des comptes et des rôles, réservée à l'admin
 ├── ArticlesController.cs      contrôleur des articles du blog
-├── CommentsController.cs      commentaires
+├── CommentsController.cs      commentaires et modération
 ├── EventsController.cs        événements, inscriptions et annulations
 ├── MembersController.cs       profils publics et profil du membre connecté
 ├── PartnersController.cs      partenaires et sponsors
@@ -319,6 +320,38 @@ src/DotnetNiger.Web/Controller/
 
 Le nommage des segments d'URL est en anglais, cohérent avec les noms de tables et de
 contrôleurs. Aucun préfixe de version, voir section 15.
+
+### Écriture : qui peut faire quoi
+
+L'écriture suit la propriété du contenu plutôt qu'un rôle unique. Tout membre peut
+proposer un article ou une ressource ; seul l'auteur ou un administrateur peut ensuite le
+modifier, l'archiver ou le retirer. Les événements et les partenaires engagent
+l'association : leur création et leur modification sont réservées à l'administration. Un
+commentaire peut être retiré par son auteur, et masqué, republié ou retiré par
+l'administration. Le profil se modifie par son porteur, sur `/api/members/me`.
+
+Les retraits sont **logiques** partout où c'est possible : un article archivé, un
+commentaire masqué ou un partenaire désactivé disparaissent de l'affichage mais restent en
+base, parce que d'autres lignes les référencent. Un compte n'est jamais effacé pour la même
+raison — ses articles et ses commentaires portent son identité ; sa suppression le désactive
+et lui retire ses rôles.
+
+### Comptes et rôles
+
+`/api/admin/accounts` est la seule surface d'administration des comptes. Elle expose la
+liste et le détail, l'activation et l'appartenance à l'équipe, le remplacement ou l'ajout et
+le retrait de rôles, le déverrouillage d'un compte bloqué, la validation d'une adresse, et la
+désactivation. Les règles ajoutées ne sont pas décoratives :
+
+- un administrateur ne peut ni se désactiver, ni retirer son propre rôle d'administrateur,
+  ni se supprimer : cela le verrouillerait hors de l'application ;
+- le dernier rôle d'administrateur **actif** ne peut pas être retiré, sous peine de laisser
+  le site sans personne pour l'administrer ;
+- la désactivation retire les rôles *après* l'enregistrement de l'état, pour qu'un jeton
+  encore valide ne reste pas administrateur.
+
+Les rôles sont résolus par rôle et non par compte : l'application en compte quelques
+dizaines, alors qu'une page d'administration peut en lister davantage.
 
 ### Images de couverture
 
@@ -510,3 +543,4 @@ cookie `SameSite=Lax` et sur l'absence de cookie sur les requêtes inter-sites.
 | Textes légaux | Textes génériques à faire relire par le porteur du projet |
 | Mot de passe administrateur | Procédure de création à définir |
 | Adresse d'expéditeur | À définir pour le SMTP |
+| Vignettes d'images dans les pages | Les colonnes et l'API portent les images, l'affichage Blazor reste à faire |
