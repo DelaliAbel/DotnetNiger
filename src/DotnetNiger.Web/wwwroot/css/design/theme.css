@@ -1,0 +1,208 @@
+/* ==========================================================================
+   dotNetNiger — Thème Tailwind
+   --------------------------------------------------------------------------
+   Ce fichier est la SOURCE UNIQUE de vérité du design system.
+   Il ne complète pas Tailwind : il REMPLACE ses valeurs par défaut.
+
+   Conséquence directe : une classe qui n'est pas déclarée ici n'existe pas.
+   `bg-red-500`, `text-blue-600` ou `p-[7px]` ne génèrent aucune règle CSS et
+   ne fonctionnent pas. La discipline de design est appliquée par le framework,
+   pas par une discipline humaine.
+
+   PALETTE — 3 couleurs chromatiques maximum, sur base blanche.
+     violet .NET   #512BD4   primaire, dominante
+     vert Niger    #008751   accent, petites doses
+     orange Niger  #E3660B   accent, petites doses
+     blanc         #FFFFFF   fond dominant
+     rouge         #D63F3F   EXCEPTION fonctionnelle : erreur et annulation
+   ========================================================================== */
+
+@import "tailwindcss";
+
+/* Le CSS est compilé depuis la racine du dépôt, on pointe explicitement
+   vers les fichiers .razor et .cs à explorer. */
+@source "../../../";
+
+@theme {
+  /* ======================================================================
+     Couleurs
+     On efface la palette par défaut de Tailwind, puis on déclare la nôtre.
+     ====================================================================== */
+
+  --color-*: initial;
+
+  /* --- Violet .NET : primaire, dominant --- */
+  --color-violet-50: #f6f5fa;
+  --color-violet-100: #eae7f4;
+  --color-violet-200: #d0c7ef;
+  --color-violet-300: #ad9be8;
+  --color-violet-400: #6e4fd9;
+  --color-violet-500: #512bd4;
+  --color-violet-600: #4727b4;
+  --color-violet-700: #3d229b;
+  --color-violet-800: #311f70;
+  --color-violet-900: #231650;
+
+  /* --- Vert Niger : accent, petites doses --- */
+  --color-vert-50: #f3fcf8;
+  --color-vert-100: #e3f7ef;
+  --color-vert-200: #bdfae1;
+  --color-vert-300: #88fccd;
+  --color-vert-400: #03ad69;
+  --color-vert-500: #008751;
+  --color-vert-600: #01623b;
+  --color-vert-700: #014429;
+  --color-vert-800: #0b8454;
+  --color-vert-900: #085e3c;
+
+  /* --- Orange Niger : accent, petites doses --- */
+  --color-orange-50: #fbf7f4;
+  --color-orange-100: #f6ece4;
+  --color-orange-200: #f7d7c0;
+  --color-orange-300: #f7b98d;
+  --color-orange-400: #f17b26;
+  --color-orange-500: #e3660b;
+  --color-orange-600: #be570c;
+  --color-orange-700: #a14a0a;
+  --color-orange-800: #7e3f10;
+  --color-orange-900: #5a2d0c;
+
+  /* --- Neutres : du blanc au noir. Le blanc domine. --- */
+  --color-white: #ffffff;
+  --color-ink-25: #fcfcfd;
+  --color-ink-50: #f8f8fa;
+  --color-ink-100: #f1f1f4;
+  --color-ink-200: #e4e4e9;
+  --color-ink-300: #d1d1d8;
+  --color-ink-400: #a8a8b2;
+  --color-ink-500: #7c7c87;
+  --color-ink-600: #5a5a64;
+  --color-ink-700: #40404a;
+  --color-ink-800: #2a2a31;
+  --color-ink-900: #1a1a1f;
+
+  /* --- Exception fonctionnelle : erreur et annulation uniquement --- */
+  --color-danger: #d63f3f;
+
+  /* ======================================================================
+     Espacement — baseline 8 px verrouillée
+     Tailwind calcule chaque pas avec `calc(var(--spacing) * n)`.
+     En fixant --spacing à 8px, p-1 vaut 8px, p-2 vaut 16px, p-4 vaut 32px.
+     Aucun espacement qui ne soit pas un multiple de 8 n'est constructible.
+     ====================================================================== */
+
+  --spacing: 8px;
+
+  /* ======================================================================
+     Typographie — 7 tailles au lieu des 11 par défaut
+     ====================================================================== */
+
+  --text-*: initial;
+
+  --text-micro: 0.625rem;      /* 10 px — micro-libellé */
+  --text-micro--line-height: 1.5;
+  --text-caption: 0.75rem;     /* 12 px — légende, méta, badge */
+  --text-caption--line-height: 1.3;
+  --text-sm: 0.875rem;         /* 14 px — texte de contrôle, navigation */
+  --text-sm--line-height: 1.55;
+  --text-base: 1rem;           /* 16 px — CORPS, taille de base */
+  --text-base--line-height: 1.55;
+  --text-lead: 1.25rem;        /* 20 px — phrase d'introduction */
+  --text-lead--line-height: 1.65;
+  --text-section: 2rem;        /* 32 px — titre de section */
+  --text-section--line-height: 1.3;
+  --text-display: 3rem;        /* 48 px — titre principal */
+  --text-display--line-height: 1.15;
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Mono", Consolas, monospace;
+
+  /* ======================================================================
+     Rayons
+     ====================================================================== */
+
+  --radius-*: initial;
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+
+  /* ======================================================================
+     Ombres — X / Y / Flou / Opacité, toutes en noir à 20 %
+     ====================================================================== */
+
+  --shadow-*: initial;
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 0.2);
+  --shadow-sm: 0 2px 4px rgb(0 0 0 / 0.2);
+  --shadow-md: 0 4px 16px rgb(0 0 0 / 0.2);
+  --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.2);
+  --shadow-xl: 0 24px 56px rgb(0 0 0 / 0.2);
+
+  /* ======================================================================
+     Points de rupture — une seule grille, 12 colonnes
+     ====================================================================== */
+
+  --breakpoint-sm: 40rem;   /*  640 px */
+  --breakpoint-md: 48rem;   /*  768 px */
+  --breakpoint-lg: 64rem;   /* 1024 px */
+  --breakpoint-xl: 80rem;   /* 1280 px */
+}
+
+/* ==========================================================================
+   Réinitialisation et bases
+   ========================================================================== */
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-ink-50);
+    color: var(--color-ink-900);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Règle de la maquette A : le texte n'est jamais justifié. */
+  p {
+    text-align: left;
+  }
+
+  /* Anneau de focus unique, visible au clavier */
+  :focus-visible {
+    outline: 2px solid var(--color-violet-500);
+    outline-offset: 2px;
+  }
+}
+
+/* ==========================================================================
+   Utilitaires de structure
+   ========================================================================== */
+
+@layer components {
+  .wrap {
+    max-width: 1440px;
+    margin-inline: auto;
+    padding-inline: clamp(16px, 5vw, 160px);
+  }
+
+  .skip-link {
+    position: absolute;
+    left: -9999px;
+  }
+
+  .skip-link:focus {
+    left: var(--spacing);
+    top: var(--spacing);
+    z-index: 100;
+    background: var(--color-white);
+    padding: calc(var(--spacing) * 2) calc(var(--spacing) * 3);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-md);
+  }
+}

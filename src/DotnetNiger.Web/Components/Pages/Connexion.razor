@@ -1,0 +1,122 @@
+@page "/compte/connexion"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IConfiguration Configuration
+
+<PageTitle>Connexion - dotnetNiger</PageTitle>
+
+<section class="mx-auto w-full max-w-md">
+    <h1 class="mb-1 text-2xl font-semibold">Connexion</h1>
+    <p class="mb-6 text-sm text-neutral-600">
+        Connectez-vous pour publier une ressource, commenter ou vous inscrire à un événement.
+    </p>
+
+    @if (!string.IsNullOrWhiteSpace(Confirmation))
+    {
+        <p class="mb-4 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900">
+            @Confirmation
+        </p>
+    }
+    else if (!string.IsNullOrWhiteSpace(Error))
+    {
+        <p class="mb-4 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900">
+            @Error
+        </p>
+    }
+
+    <form method="post" action="/compte/connexion/se-connecter" class="space-y-4">
+        <AntiforgeryToken />
+        <input type="hidden" name="Retour" value="@ReturnUrl" />
+
+        <label class="block">
+            <span class="mb-1 block text-sm font-medium">Adresse e-mail</span>
+            <input type="email" name="Email" required autocomplete="username" maxlength="256"
+                   class="w-full rounded-lg border border-neutral-300 px-3 py-2" />
+        </label>
+
+        <label class="block">
+            <span class="mb-1 block text-sm font-medium">Mot de passe</span>
+            <input type="password" name="Password" required autocomplete="current-password" maxlength="256"
+                   class="w-full rounded-lg border border-neutral-300 px-3 py-2" />
+        </label>
+
+        <label class="flex items-center gap-2 text-sm">
+            <input type="checkbox" name="RememberMe" value="true" class="size-4" />
+            Rester connecté
+        </label>
+
+        <button type="submit"
+                class="w-full rounded-lg bg-violet-700 px-4 py-2 font-medium text-white hover:bg-violet-800">
+            Se connecter
+        </button>
+    </form>
+
+    @if (EnabledProviders.Count > 0)
+    {
+        <div class="my-6 flex items-center gap-3 text-sm text-neutral-500">
+            <span class="h-px flex-1 bg-neutral-300"></span>
+            ou
+            <span class="h-px flex-1 bg-neutral-300"></span>
+        </div>
+
+        <div class="space-y-2">
+            @foreach (var provider in EnabledProviders)
+            {
+                <a href="@ExternalLink(provider)"
+                   class="block rounded-lg border border-neutral-300 px-4 py-2 text-center font-medium hover:bg-neutral-50">
+                    Continuer avec @provider
+                </a>
+            }
+        </div>
+    }
+
+    <p class="mt-6 text-sm text-neutral-600">
+        Pas encore de compte ?
+        <a href="/compte/inscription" class="font-medium text-violet-700 underline">Créer un compte</a>
+    </p>
+</section>
+
+@code {
+    [SupplyParameterFromQuery(Name = "erreur")]
+    public string? Error { get; set; }
+
+    [SupplyParameterFromQuery(Name = "confirme")]
+    public string? Confirmed { get; set; }
+
+    [SupplyParameterFromQuery(Name = "envoye")]
+    public string? Sent { get; set; }
+
+    [SupplyParameterFromQuery(Name = "courriel")]
+    public string? Email { get; set; }
+
+    [SupplyParameterFromQuery(Name = "retour")]
+    public string? ReturnUrl { get; set; }
+
+    private List<string> EnabledProviders { get; set; } = new();
+
+    private string? Confirmation =>
+        !string.IsNullOrWhiteSpace(Confirmed)
+            ? "Votre adresse est confirmée. Vous pouvez vous connecter."
+            : !string.IsNullOrWhiteSpace(Sent) && !string.IsNullOrWhiteSpace(Email)
+                ? $"Un message de confirmation a été envoyé à {Email}."
+                : null;
+
+    protected override void OnInitialized()
+    {
+        EnabledProviders = ExternalProviderCatalog
+            .EnabledProviders(Configuration)
+            .Select(fournisseur => fournisseur.Label)
+            .ToList();
+    }
+
+    private string ExternalLink(string label)
+    {
+        var provider = ExternalProviderCatalog
+            .EnabledProviders(Configuration)
+            .First(fournisseur => fournisseur.Label == label);
+
+        var destination = ExternalSignInNavigation.IsLocal(ReturnUrl) ? ReturnUrl! : "/";
+
+        return $"/connexion/{provider.Key}?returnUrl={Uri.EscapeDataString(destination)}";
+    }
+}

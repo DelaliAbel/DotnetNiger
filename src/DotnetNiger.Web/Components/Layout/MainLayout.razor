@@ -1,0 +1,34 @@
+﻿@inherits LayoutComponentBase
+
+<div class="app-shell">
+    <a class="skip-link" href="#contenu">Aller au contenu</a>
+
+    <header class="site-header">
+        <a class="site-brand" href="/">
+            <span class="site-brand__name">dot<span class="site-brand__accent">Net</span>Niger</span>
+        </a>
+
+        <nav class="site-nav" aria-label="Navigation principale">
+            <NavLink class="site-nav__link" href="/">Accueil</NavLink>
+            <NavLink class="site-nav__link" href="/a-propos">À propos</NavLink>
+            <NavLink class="site-nav__link" href="/ressources">Ressources</NavLink>
+            <NavLink class="site-nav__link" href="/communaute">Communauté</NavLink>
+            <NavLink class="site-nav__link" href="/blog">Blog</NavLink>
+            <NavLink class="site-nav__link" href="/evenements">Événements</NavLink>
+            <NavLink class="site-nav__link" href="/partenaires">Partenaires</NavLink>
+            <NavLink class="site-nav__link" href="/contact">Contact</NavLink>
+        </nav>
+    </header>
+
+    <main id="contenu" class="site-main">
+        @Body
+    </main>
+
+    <SiteFooter />
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    Une erreur inattendue s'est produite.
+    <a href="." class="reload">Recharger la page</a>
+    <span class="dismiss">&times;</span>
+</div>
