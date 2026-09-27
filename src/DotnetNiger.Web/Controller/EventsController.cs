@@ -207,6 +207,260 @@ public sealed class EventsController(
         return NoContent();
     }
 
+    /// <summary>Liste les inscriptions à un événement, pour l'administration.</summary>
+    /// <param name="id">Identifiant de l'événement.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Les inscriptions, de la plus récente à la plus ancienne.</returns>
+    /// <response code="200">Inscriptions listées.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est pas administrateur.</response>
+    /// <response code="404">Événement introuvable.</response>
+    [HttpGet("{id:guid}/registrations")]
+    [Authorize(Roles = RoleNames.Admin)]
+    [ProducesResponseType<IReadOnlyList<EventRegistrationResponse>>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<IReadOnlyList<EventRegistrationResponse>>> ListerLesInscriptions(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        RequireAdministrateur(currentUser);
+
+        var evenementExiste = await unitOfWork.ReadRepository<CommunityEvent>().Query
+            .AnyAsync(candidat => candidat.Id == id, cancellationToken);
+
+        if (!evenementExiste)
+        {
+            return NotFound();
+        }
+
+        var inscriptions = await unitOfWork.ReadRepository<EventRegistration>().Query
+            .Where(inscription => inscription.CommunityEventId == id)
+            .OrderByDescending(inscription => inscription.RegisteredAtUtc)
+            .ToListAsync(cancellationToken);
+
+        // Les noms des membres sont résolus en une requête : la liste peut compter plusieurs
+        // dizaines d'inscriptions, et une requête par ligne serait un aller-retour chacune.
+        var noms = await NomsAsync(
+            unitOfWork,
+            [.. inscriptions.Select(inscription => inscription.MemberId).Distinct()],
+            cancellationToken);
+
+        return Ok(inscriptions
+            .Select(inscription => ApiProjections.ToResponse(
+                inscription,
+                noms.GetValueOrDefault(inscription.MemberId, string.Empty)))
+            .ToList());
+    }
+
+    /// <summary>Crée un événement, en brouillon ou publié.</summary>
+    /// <param name="request">Contenu de l'événement.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>L'événement créé.</returns>
+    /// <remarks>
+    /// Un événement est une initiative de l'association : sa création est réservée à
+    /// l'administration, contrairement aux ressources et aux articles, que tout membre
+    /// peut proposer.
+    /// </remarks>
+    /// <response code="201">Événement créé.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est pas administrateur.</response>
+    [HttpPost]
+    [Authorize(Roles = RoleNames.Admin)]
+    [ProducesResponseType<EventResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<EventResponse>> Creer(
+        [FromBody] CreateEventRequest request,
+        CancellationToken cancellationToken)
+    {
+        var auteur = RequireAdministrateur(currentUser);
+
+        var communityEvent = new CommunityEvent(
+            auteur,
+            request.Title,
+            request.Summary,
+            request.Description,
+            request.Format,
+            request.StartsAtUtc,
+            request.EndsAtUtc);
+
+        communityEvent.SetLocation(request.Location);
+        communityEvent.SetOnlineUrl(request.OnlineUrl);
+        communityEvent.SetCapacity(request.Capacity);
+        communityEvent.SetRegistrationClosesAt(request.RegistrationClosesAtUtc);
+        communityEvent.SetCoverImage(request.CoverImageUrl);
+
+        if (request.Publish)
+        {
+            communityEvent.Publish(clock.GetUtcNow().UtcDateTime);
+        }
+
+        unitOfWork.Repository<CommunityEvent>().Add(communityEvent);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return CreatedAtAction(nameof(Lire), new { id = communityEvent.Id }, ApiProjections.ToDetail(communityEvent, 0));
+    }
+
+    /// <summary>Met à jour un événement, y compris son image de couverture.</summary>
+    /// <param name="id">Identifiant de l'événement.</param>
+    /// <param name="request">Nouveau contenu.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>L'événement mis à jour.</returns>
+    /// <response code="200">Événement mis à jour.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est pas administrateur.</response>
+    /// <response code="404">Événement introuvable.</response>
+    [HttpPut("{id:guid}")]
+    [Authorize(Roles = RoleNames.Admin)]
+    [ProducesResponseType<EventResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EventResponse>> MettreAJour(
+        Guid id,
+        [FromBody] UpdateEventRequest request,
+        CancellationToken cancellationToken)
+    {
+        var communityEvent = await ChargerEvenement(id, cancellationToken);
+
+        if (communityEvent is null)
+        {
+            return NotFound();
+        }
+
+        RequireAdministrateur(currentUser);
+
+        communityEvent.UpdateDetails(
+            request.Title,
+            request.Summary,
+            request.Description,
+            request.StartsAtUtc,
+            request.EndsAtUtc);
+
+        communityEvent.SetLocation(request.Location);
+        communityEvent.SetOnlineUrl(request.OnlineUrl);
+        communityEvent.SetCapacity(request.Capacity);
+        communityEvent.SetRegistrationClosesAt(request.RegistrationClosesAtUtc);
+        communityEvent.SetCoverImage(request.CoverImageUrl);
+
+        unitOfWork.Repository<CommunityEvent>().Update(communityEvent);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Ok(ApiProjections.ToDetail(communityEvent, await ConfirmedCountAsync(id, cancellationToken)));
+    }
+
+    /// <summary>Publie un événement en brouillon.</summary>
+    /// <param name="id">Identifiant de l'événement.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>L'événement publié.</returns>
+    /// <response code="200">Événement publié.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est pas administrateur.</response>
+    /// <response code="404">Événement introuvable.</response>
+    [HttpPost("{id:guid}/publish")]
+    [Authorize(Roles = RoleNames.Admin)]
+    [ProducesResponseType<EventResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EventResponse>> Publier(Guid id, CancellationToken cancellationToken)
+    {
+        var communityEvent = await ChargerEvenement(id, cancellationToken);
+
+        if (communityEvent is null)
+        {
+            return NotFound();
+        }
+
+        RequireAdministrateur(currentUser);
+
+        communityEvent.Publish(clock.GetUtcNow().UtcDateTime);
+
+        unitOfWork.Repository<CommunityEvent>().Update(communityEvent);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Ok(ApiProjections.ToDetail(communityEvent, await ConfirmedCountAsync(id, cancellationToken)));
+    }
+
+    /// <summary>Archive un événement, le retirant du calendrier sans le supprimer.</summary>
+    /// <param name="id">Identifiant de l'événement.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>L'événement archivé.</returns>
+    /// <response code="200">Événement archivé.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est pas administrateur.</response>
+    /// <response code="404">Événement introuvable.</response>
+    [HttpPost("{id:guid}/archive")]
+    [Authorize(Roles = RoleNames.Admin)]
+    [ProducesResponseType<EventResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EventResponse>> Archiver(Guid id, CancellationToken cancellationToken)
+    {
+        var communityEvent = await ChargerEvenement(id, cancellationToken);
+
+        if (communityEvent is null)
+        {
+            return NotFound();
+        }
+
+        RequireAdministrateur(currentUser);
+
+        communityEvent.Archive();
+
+        unitOfWork.Repository<CommunityEvent>().Update(communityEvent);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Ok(ApiProjections.ToDetail(communityEvent, await ConfirmedCountAsync(id, cancellationToken)));
+    }
+
+    /// <summary>Retire un événement du site sans en perdre l'historique.</summary>
+    /// <param name="id">Identifiant de l'événement.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Réponse vide.</returns>
+    /// <remarks>
+    /// Les inscriptions déjà prises sont conservées : elles font partie de l'historique de
+    /// l'événement, et les participants doivent pouvoir retrouver l'événement sur lequel
+    /// ils ont commenté.
+    /// </remarks>
+    /// <response code="204">Événement retiré.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est pas administrateur.</response>
+    /// <response code="404">Événement introuvable.</response>
+    [HttpDelete("{id:guid}")]
+    [Authorize(Roles = RoleNames.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Supprimer(Guid id, CancellationToken cancellationToken)
+    {
+        var communityEvent = await ChargerEvenement(id, cancellationToken);
+
+        if (communityEvent is null)
+        {
+            return NotFound();
+        }
+
+        var auteur = RequireAdministrateur(currentUser);
+
+        unitOfWork.SoftDeletableRepository<CommunityEvent>().Retire(
+            communityEvent,
+            clock.GetUtcNow().UtcDateTime,
+            auteur);
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return NoContent();
+    }
+
+    private Task<CommunityEvent?> ChargerEvenement(Guid id, CancellationToken cancellationToken) =>
+        unitOfWork.ReadRepository<CommunityEvent>().Query
+            .FirstOrDefaultAsync(candidat => candidat.Id == id, cancellationToken);
+
     private Task<int> ConfirmedCountAsync(Guid eventId, CancellationToken cancellationToken) =>
         unitOfWork.ReadRepository<EventRegistration>().Query
             .CountAsync(

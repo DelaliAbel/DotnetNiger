@@ -156,6 +156,142 @@ public sealed class CommentsController(
             new { commentaire.Id, commentaire.Status, CreatedAtUtc = commentaire.CreatedAtUtc });
     }
 
+    /// <summary>Retire un commentaire, par son auteur ou par l'administration.</summary>
+    /// <param name="id">Identifiant du commentaire.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Réponse vide.</returns>
+    /// <remarks>
+    /// Le commentaire est marqué comme supprimé, et non retiré : une réponse à un
+    /// commentaire disparaissant laisserait un fil tronqué sans explication.
+    /// </remarks>
+    /// <response code="204">Commentaire supprimé.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est ni l'auteur ni un administrateur.</response>
+    /// <response code="404">Commentaire introuvable.</response>
+    [HttpDelete("{id:guid}")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Supprimer(Guid id, CancellationToken cancellationToken)
+    {
+        var commentaire = await ChargerCommentaire(id, cancellationToken);
+
+        if (commentaire is null)
+        {
+            return NotFound();
+        }
+
+        RequireAuteurOuAdministrateur(currentUser, commentaire.AuthorId);
+
+        commentaire.MarkDeleted();
+        unitOfWork.Repository<Comment>().Update(commentaire);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return NoContent();
+    }
+
+    /// <summary>Masque un commentaire sans le supprimer, pour l'administration.</summary>
+    /// <param name="id">Identifiant du commentaire.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Réponse vide.</returns>
+    /// <response code="204">Commentaire masqué.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est pas administrateur.</response>
+    /// <response code="404">Commentaire introuvable.</response>
+    [HttpPost("{id:guid}/hide")]
+    [Authorize(Roles = RoleNames.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Masquer(Guid id, CancellationToken cancellationToken)
+    {
+        RequireAdministrateur(currentUser);
+
+        var commentaire = await ChargerCommentaire(id, cancellationToken);
+
+        if (commentaire is null)
+        {
+            return NotFound();
+        }
+
+        commentaire.Hide();
+        unitOfWork.Repository<Comment>().Update(commentaire);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return NoContent();
+    }
+
+    /// <summary>Republie un commentaire masqué ou en attente de relecture.</summary>
+    /// <param name="id">Identifiant du commentaire.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Réponse vide.</returns>
+    /// <response code="204">Commentaire republié.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est pas administrateur.</response>
+    /// <response code="404">Commentaire introuvable.</response>
+    [HttpPost("{id:guid}/republish")]
+    [Authorize(Roles = RoleNames.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Republier(Guid id, CancellationToken cancellationToken)
+    {
+        RequireAdministrateur(currentUser);
+
+        var commentaire = await ChargerCommentaire(id, cancellationToken);
+
+        if (commentaire is null)
+        {
+            return NotFound();
+        }
+
+        commentaire.Republish();
+        unitOfWork.Repository<Comment>().Update(commentaire);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return NoContent();
+    }
+
+    /// <summary>Valide un commentaire en attente de relecture.</summary>
+    /// <param name="id">Identifiant du commentaire.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Réponse vide.</returns>
+    /// <response code="204">Commentaire validé.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est pas administrateur.</response>
+    /// <response code="404">Commentaire introuvable.</response>
+    [HttpPost("{id:guid}/approve")]
+    [Authorize(Roles = RoleNames.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Valider(Guid id, CancellationToken cancellationToken)
+    {
+        RequireAdministrateur(currentUser);
+
+        var commentaire = await ChargerCommentaire(id, cancellationToken);
+
+        if (commentaire is null)
+        {
+            return NotFound();
+        }
+
+        commentaire.Republish();
+        unitOfWork.Repository<Comment>().Update(commentaire);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return NoContent();
+    }
+
+    private Task<Comment?> ChargerCommentaire(Guid id, CancellationToken cancellationToken) =>
+        unitOfWork.ReadRepository<Comment>().Query
+            .FirstOrDefaultAsync(comment => comment.Id == id, cancellationToken);
+
     /// <summary>
     /// Indique si la cible du commentaire ne porte encore aucun commentaire.
     /// </summary>

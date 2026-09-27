@@ -99,4 +99,52 @@ public sealed class MembersController(
 
         return membre is null ? NotFound() : Ok(ApiProjections.ToResponse(membre));
     }
+
+    /// <summary>Met à jour le profil du membre connecté.</summary>
+    /// <param name="request">Nouveau profil.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Le profil mis à jour.</returns>
+    /// <remarks>
+    /// Le membre ne modifie que les champs qu'il possède. Son adresse électronique, son mot
+    /// de passe, son rôle et son appartenance à l'équipe relèvent du parcours de compte ou
+    /// de l'administration, et passent donc par d'autres points de terminaison.
+    /// </remarks>
+    /// <response code="200">Profil mis à jour.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="404">Compte introuvable ou désactivé.</response>
+    [HttpPut("me")]
+    [Authorize]
+    [ProducesResponseType<MemberResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<MemberResponse>> MettreAJourSonProfil(
+        [FromBody] UpdateProfileRequest request,
+        CancellationToken cancellationToken)
+    {
+        var id = RequireUser(currentUser);
+
+        var membre = await unitOfWork.ReadRepository<ApplicationUser>().Query
+            .FirstOrDefaultAsync(user => user.Id == id, cancellationToken);
+
+        if (membre is null)
+        {
+            return NotFound();
+        }
+
+        membre.UpdateProfile(
+            request.FirstName,
+            request.LastName,
+            request.Bio,
+            request.City,
+            request.PhotoUrl,
+            request.GitHubUsername,
+            request.LinkedInUrl,
+            request.XUrl,
+            request.Technologies);
+
+        unitOfWork.Repository<ApplicationUser>().Update(membre);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Ok(ApiProjections.ToResponse(membre));
+    }
 }
