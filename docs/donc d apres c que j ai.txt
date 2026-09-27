@@ -1,0 +1,25 @@
+donc d'apres c que j'ai lu du domcument, on va construit un site pour la communaute .net niger
+
+ce site aura 8 pages et 1 footer reutiliser partout
+
+
+la page 1 sera la page d'acceuil principal
+2 a propose comme tu as vu 
+3 ressource 
+5 blog
+6 evenemenets et meetups
+7 partenaire et sponsors
+8 contact
+
+
+et le footer 
+
+et coter front on doit vraiment assurer 
+
+coter backend api , tu peux prendre exemple sur : /home/akaletekoffilevis/Desktop/Barthez/backend-init  , c'est notre template phare pour un backend securiser et respecter bien fonctionelle et maintenenable meme si c'est dans un autre language
+
+nous pour le site on sera full .net ok bien on va discuter emsemble dessus
+
+et pour le systemen design on va respecter ou choisir certain de ses regles a respecter pour notre design et full responsive , l'inpiration doit venir d'ici : /home/akaletekoffilevis/Desktop/Projects/design-pattern/hyperagent-public-skills
+
+et pour les couleur on va penser un peu niger + dotnet ou + .net mais en repectant les regles de design professionnele et pour le design tu dois agire comme un senior en design ok donc tu dois generer apres une maquete imprimer dans une presentation word ou power point ou html css peut ou meme pdf afin que je puisse valider le design , on definira ou tu proposera les token de couleur emsemble ok
