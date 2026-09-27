@@ -125,4 +125,193 @@ public sealed class ArticlesController(
 
         return CreatedAtAction(nameof(Lire), new { slug = article.Slug }, ApiProjections.ToDetail(article, string.Empty));
     }
+
+    /// <summary>Met à jour un article, y compris son image de couverture.</summary>
+    /// <param name="id">Identifiant de l'article.</param>
+    /// <param name="request">Nouveau contenu.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>L'article mis à jour.</returns>
+    /// <response code="200">Article mis à jour.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est ni l'auteur ni un administrateur.</response>
+    /// <response code="404">Article introuvable.</response>
+    [HttpPut("{id:guid}")]
+    [Authorize]
+    [ProducesResponseType<ArticleResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ArticleResponse>> MettreAJour(
+        Guid id,
+        [FromBody] UpdateArticleRequest request,
+        CancellationToken cancellationToken)
+    {
+        var article = await unitOfWork.ReadRepository<Article>().Query
+            .FirstOrDefaultAsync(candidat => candidat.Id == id, cancellationToken);
+
+        if (article is null)
+        {
+            return NotFound();
+        }
+
+        RequireAuteurOuAdministrateur(currentUser, article.AuthorId);
+
+        article.UpdateDetails(request.Title, request.Excerpt, request.Content, request.Category);
+        article.SetCoverImage(request.CoverImageUrl);
+
+        unitOfWork.Repository<Article>().Update(article);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        var auteurs = await NomsAsync(unitOfWork, [article.AuthorId], cancellationToken);
+
+        return Ok(ApiProjections.ToDetail(
+            article,
+            auteurs.GetValueOrDefault(article.AuthorId, string.Empty)));
+    }
+
+    /// <summary>Publie un article en brouillon.</summary>
+    /// <param name="id">Identifiant de l'article.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>L'article publié.</returns>
+    /// <response code="200">Article publié.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est ni l'auteur ni un administrateur.</response>
+    /// <response code="404">Article introuvable.</response>
+    [HttpPost("{id:guid}/publish")]
+    [Authorize]
+    [ProducesResponseType<ArticleResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ArticleResponse>> Publier(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var article = await unitOfWork.ReadRepository<Article>().Query
+            .FirstOrDefaultAsync(candidat => candidat.Id == id, cancellationToken);
+
+        if (article is null)
+        {
+            return NotFound();
+        }
+
+        RequireAuteurOuAdministrateur(currentUser, article.AuthorId);
+
+        article.Publish(clock.GetUtcNow().UtcDateTime);
+
+        unitOfWork.Repository<Article>().Update(article);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Ok(ApiProjections.ToDetail(article, string.Empty));
+    }
+
+    /// <summary>Archive un article publié, le retirant du site sans le supprimer.</summary>
+    /// <param name="id">Identifiant de l'article.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>L'article archivé.</returns>
+    /// <response code="200">Article archivé.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est ni l'auteur ni un administrateur.</response>
+    /// <response code="404">Article introuvable.</response>
+    [HttpPost("{id:guid}/archive")]
+    [Authorize]
+    [ProducesResponseType<ArticleResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ArticleResponse>> Archiver(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var article = await unitOfWork.ReadRepository<Article>().Query
+            .FirstOrDefaultAsync(candidat => candidat.Id == id, cancellationToken);
+
+        if (article is null)
+        {
+            return NotFound();
+        }
+
+        RequireAuteurOuAdministrateur(currentUser, article.AuthorId);
+
+        article.Archive();
+
+        unitOfWork.Repository<Article>().Update(article);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Ok(ApiProjections.ToDetail(article, string.Empty));
+    }
+
+    /// <summary>Remet un article archivé ou publié en brouillon.</summary>
+    /// <param name="id">Identifiant de l'article.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>L'article repassé en brouillon.</returns>
+    /// <response code="200">Article repassé en brouillon.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est ni l'auteur ni un administrateur.</response>
+    /// <response code="404">Article introuvable.</response>
+    [HttpPost("{id:guid}/draft")]
+    [Authorize]
+    [ProducesResponseType<ArticleResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ArticleResponse>> RepasserEnBrouillon(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var article = await unitOfWork.ReadRepository<Article>().Query
+            .FirstOrDefaultAsync(candidat => candidat.Id == id, cancellationToken);
+
+        if (article is null)
+        {
+            return NotFound();
+        }
+
+        RequireAuteurOuAdministrateur(currentUser, article.AuthorId);
+
+        article.ReturnToDraft();
+
+        unitOfWork.Repository<Article>().Update(article);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Ok(ApiProjections.ToDetail(article, string.Empty));
+    }
+
+    /// <summary>Retire un article du site sans en perdre l'historique.</summary>
+    /// <param name="id">Identifiant de l'article.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Réponse vide.</returns>
+    /// <response code="204">Article retiré.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est ni l'auteur ni un administrateur.</response>
+    /// <response code="404">Article introuvable.</response>
+    [HttpDelete("{id:guid}")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> Supprimer(Guid id, CancellationToken cancellationToken)
+    {
+        var article = await unitOfWork.ReadRepository<Article>().Query
+            .FirstOrDefaultAsync(candidat => candidat.Id == id, cancellationToken);
+
+        if (article is null)
+        {
+            return NotFound();
+        }
+
+        var auteur = RequireAuteurOuAdministrateur(currentUser, article.AuthorId);
+
+        // Retrait logique : les commentaires et les signalements liés restent rattachés à
+        // l'article, et l'historique de publication est conservé.
+        unitOfWork.SoftDeletableRepository<Article>().Retire(
+            article,
+            clock.GetUtcNow().UtcDateTime,
+            auteur);
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return NoContent();
+    }
 }

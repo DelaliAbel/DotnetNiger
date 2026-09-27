@@ -283,6 +283,241 @@ public sealed record ReportResponse(
     ReportStatus Status,
     DateTime CreatedAtUtc);
 
+/// <summary>Demande de mise à jour d'un article.</summary>
+/// <param name="Title">Titre.</param>
+/// <param name="Excerpt">Chapô.</param>
+/// <param name="Content">Contenu rédigé.</param>
+/// <param name="Category">Catégorie.</param>
+/// <param name="CoverImageUrl">Image de couverture, ou <see langword="null"/> pour la retirer.</param>
+public sealed record UpdateArticleRequest(
+    [property: Required, StringLength(200)] string Title,
+    [property: Required, StringLength(500)] string Excerpt,
+    [property: Required] string Content,
+    ArticleCategory Category,
+    [property: StringLength(2048)] string? CoverImageUrl = null);
+
+/// <summary>Demande de mise à jour d'une ressource.</summary>
+/// <param name="Title">Titre.</param>
+/// <param name="Description">Description courte.</param>
+/// <param name="Category">Catégorie.</param>
+/// <param name="Content">Contenu rédigé, si la ressource est hébergée sur le site.</param>
+/// <param name="ExternalUrl">URL de la ressource externe.</param>
+/// <param name="Provider">Éditeur ou source.</param>
+/// <param name="CoverImageUrl">Image de couverture, ou <see langword="null"/> pour la retirer.</param>
+public sealed record UpdateResourceRequest(
+    [property: Required, StringLength(200)] string Title,
+    [property: Required, StringLength(500)] string Description,
+    ResourceCategory Category,
+    [property: StringLength(32000)] string? Content = null,
+    [property: StringLength(2048)] string? ExternalUrl = null,
+    [property: StringLength(120)] string? Provider = null,
+    [property: StringLength(2048)] string? CoverImageUrl = null);
+
+/// <summary>Demande de mise à jour d'un projet.</summary>
+/// <param name="Name">Nom du projet.</param>
+/// <param name="Summary">Résumé.</param>
+/// <param name="Description">Description détaillée.</param>
+/// <param name="RepositoryUrl">Dépôt.</param>
+/// <param name="DemoUrl">Démonstration en ligne.</param>
+/// <param name="Technologies">Technologies utilisées.</param>
+/// <param name="ImageUrl">Image de présentation, ou <see langword="null"/> pour la retirer.</param>
+public sealed record UpdateProjectRequest(
+    [property: Required, StringLength(160)] string Name,
+    [property: Required, StringLength(500)] string Summary,
+    [property: Required] string Description,
+    [property: Required, StringLength(2048)] string RepositoryUrl,
+    [property: StringLength(2048)] string? DemoUrl = null,
+    [property: StringLength(500)] string? Technologies = null,
+    [property: StringLength(2048)] string? ImageUrl = null);
+
+/// <summary>Demande de création d'un événement.</summary>
+/// <param name="Title">Titre.</param>
+/// <param name="Summary">Résumé.</param>
+/// <param name="Description">Description détaillée.</param>
+/// <param name="Format">Présentiel, en ligne ou hybride.</param>
+/// <param name="StartsAtUtc">Début.</param>
+/// <param name="EndsAtUtc">Fin.</param>
+/// <param name="Location">Lieu, pour un événement en présentiel.</param>
+/// <param name="OnlineUrl">Lien de participation, en ligne.</param>
+/// <param name="Capacity">Nombre de places, si l'événement est limité.</param>
+/// <param name="RegistrationClosesAtUtc">Fin des inscriptions.</param>
+/// <param name="CoverImageUrl">Image de couverture, pour la vignette.</param>
+/// <param name="Publish">Publier immédiatement plutôt que garder en brouillon.</param>
+public sealed record CreateEventRequest(
+    [property: Required, StringLength(200)] string Title,
+    [property: Required, StringLength(500)] string Summary,
+    [property: Required, StringLength(32000)] string Description,
+    CommunityEventFormat Format,
+    DateTime StartsAtUtc,
+    DateTime EndsAtUtc,
+    [property: StringLength(150)] string? Location = null,
+    [property: StringLength(2048)] string? OnlineUrl = null,
+    int? Capacity = null,
+    DateTime? RegistrationClosesAtUtc = null,
+    [property: StringLength(2048)] string? CoverImageUrl = null,
+    bool Publish = false);
+
+/// <summary>Demande de mise à jour d'un événement.</summary>
+/// <param name="Title">Titre.</param>
+/// <param name="Summary">Résumé.</param>
+/// <param name="Description">Description détaillée.</param>
+/// <param name="Format">Présentiel, en ligne ou hybride.</param>
+/// <param name="StartsAtUtc">Début.</param>
+/// <param name="EndsAtUtc">Fin.</param>
+/// <param name="Location">Lieu, pour un événement en présentiel.</param>
+/// <param name="OnlineUrl">Lien de participation, en ligne.</param>
+/// <param name="Capacity">Nombre de places, si l'événement est limité.</param>
+/// <param name="RegistrationClosesAtUtc">Fin des inscriptions.</param>
+/// <param name="CoverImageUrl">Image de couverture, ou <see langword="null"/> pour la retirer.</param>
+public sealed record UpdateEventRequest(
+    [property: Required, StringLength(200)] string Title,
+    [property: Required, StringLength(500)] string Summary,
+    [property: Required, StringLength(32000)] string Description,
+    CommunityEventFormat Format,
+    DateTime StartsAtUtc,
+    DateTime EndsAtUtc,
+    [property: StringLength(150)] string? Location = null,
+    [property: StringLength(2048)] string? OnlineUrl = null,
+    int? Capacity = null,
+    DateTime? RegistrationClosesAtUtc = null,
+    [property: StringLength(2048)] string? CoverImageUrl = null);
+
+/// <summary>Événement complet.</summary>
+/// <param name="Id">Identifiant.</param>
+/// <param name="Slug">Slug d'URL.</param>
+/// <param name="Title">Titre.</param>
+/// <param name="Summary">Résumé.</param>
+/// <param name="Description">Description détaillée.</param>
+/// <param name="Format">Présentiel, en ligne ou hybride.</param>
+/// <param name="StartsAtUtc">Début.</param>
+/// <param name="EndsAtUtc">Fin.</param>
+/// <param name="Location">Lieu, pour un événement en présentiel.</param>
+/// <param name="OnlineUrl">Lien de participation, en ligne.</param>
+/// <param name="Capacity">Nombre de places, si l'événement est limité.</param>
+/// <param name="RegistrationClosesAtUtc">Fin des inscriptions.</param>
+/// <param name="Status">État de publication.</param>
+/// <param name="ConfirmedCount">Inscriptions confirmées.</param>
+/// <param name="CoverImageUrl">Image de couverture, pour la vignette.</param>
+public sealed record EventResponse(
+    Guid Id,
+    string Slug,
+    string Title,
+    string Summary,
+    string Description,
+    CommunityEventFormat Format,
+    DateTime StartsAtUtc,
+    DateTime EndsAtUtc,
+    string? Location,
+    string? OnlineUrl,
+    int? Capacity,
+    DateTime? RegistrationClosesAtUtc,
+    PublicationStatus Status,
+    int ConfirmedCount,
+    string? CoverImageUrl);
+
+/// <summary>Inscription à un événement.</summary>
+/// <param name="Id">Identifiant de l'inscription.</param>
+/// <param name="MemberId">Membre inscrit.</param>
+/// <param name="MemberName">Nom du membre inscrit.</param>
+/// <param name="Status">État de l'inscription.</param>
+/// <param name="RegisteredAtUtc">Date d'inscription.</param>
+/// <param name="CancelledAtUtc">Date d'annulation, si annulée.</param>
+/// <param name="CheckedInAtUtc">Date de présence, si l'inscription a été honorée.</param>
+public sealed record EventRegistrationResponse(
+    Guid Id,
+    Guid MemberId,
+    string MemberName,
+    EventRegistrationStatus Status,
+    DateTime RegisteredAtUtc,
+    DateTime? CancelledAtUtc,
+    DateTime? CheckedInAtUtc);
+
+/// <summary>Demande de création d'un partenaire.</summary>
+/// <param name="Name">Nom.</param>
+/// <param name="Description">Description.</param>
+/// <param name="WebsiteUrl">Site web.</param>
+/// <param name="LogoUrl">Logo.</param>
+/// <param name="Tier">Niveau de partenariat.</param>
+/// <param name="SortOrder">Ordre d'affichage.</param>
+public sealed record CreatePartnerRequest(
+    [property: Required, StringLength(150)] string Name,
+    [property: Required, StringLength(500)] string Description,
+    [property: Required, StringLength(2048)] string WebsiteUrl,
+    PartnerTier Tier,
+    [property: StringLength(2048)] string? LogoUrl = null,
+    int SortOrder = 0);
+
+/// <summary>Demande de mise à jour d'un partenaire.</summary>
+/// <param name="Name">Nom.</param>
+/// <param name="Description">Description.</param>
+/// <param name="WebsiteUrl">Site web.</param>
+/// <param name="LogoUrl">Logo, ou <see langword="null"/> pour le retirer.</param>
+/// <param name="Tier">Niveau de partenariat.</param>
+/// <param name="SortOrder">Ordre d'affichage.</param>
+public sealed record UpdatePartnerRequest(
+    [property: Required, StringLength(150)] string Name,
+    [property: Required, StringLength(500)] string Description,
+    [property: Required, StringLength(2048)] string WebsiteUrl,
+    PartnerTier Tier,
+    [property: StringLength(2048)] string? LogoUrl = null,
+    int SortOrder = 0);
+
+/// <summary>Demande de mise à jour du profil du membre connecté.</summary>
+/// <param name="FirstName">Prénom.</param>
+/// <param name="LastName">Nom.</param>
+/// <param name="Bio">Biographie.</param>
+/// <param name="City">Ville.</param>
+/// <param name="PhotoUrl">Photo de profil.</param>
+/// <param name="GitHubUsername">Compte GitHub.</param>
+/// <param name="LinkedInUrl">Profil LinkedIn.</param>
+/// <param name="XUrl">Profil X.</param>
+/// <param name="Technologies">Compétences déclarées.</param>
+public sealed record UpdateProfileRequest(
+    [property: Required, StringLength(150)] string FirstName,
+    [property: Required, StringLength(150)] string LastName,
+    [property: StringLength(2000)] string? Bio = null,
+    [property: StringLength(150)] string? City = null,
+    [property: StringLength(2048)] string? PhotoUrl = null,
+    [property: StringLength(100)] string? GitHubUsername = null,
+    [property: StringLength(2048)] string? LinkedInUrl = null,
+    [property: StringLength(2048)] string? XUrl = null,
+    [property: StringLength(300)] string? Technologies = null);
+
+/// <summary>Compte tel que l'administration le consulte.</summary>
+/// <param name="Id">Identifiant.</param>
+/// <param name="Email">Adresse électronique.</param>
+/// <param name="Slug">Slug du profil.</param>
+/// <param name="FullName">Nom complet.</param>
+/// <param name="IsActive">Compte actif, ou désactivé par l'administration.</param>
+/// <param name="IsTeam">Membre de l'équipe organisatrice.</param>
+/// <param name="EmailConfirmed">Adresse électronique confirmée.</param>
+/// <param name="Roles">Rôles attribués.</param>
+/// <param name="LockoutEnd">Fin de verrouillage, après trop de tentatives.</param>
+/// <param name="CreatedAtUtc">Date d'inscription.</param>
+public sealed record AdminAccountResponse(
+    Guid Id,
+    string? Email,
+    string? Slug,
+    string FullName,
+    bool IsActive,
+    bool IsTeam,
+    bool EmailConfirmed,
+    IReadOnlyList<string> Roles,
+    DateTimeOffset? LockoutEnd,
+    DateTime CreatedAtUtc);
+
+/// <summary>Demande de modération d'un compte.</summary>
+/// <param name="IsActive">Vrai pour réactiver, faux pour désactiver.</param>
+/// <param name="IsTeam">Membre de l'équipe organisatrice.</param>
+public sealed record UpdateAccountRequest(
+    bool IsActive,
+    bool IsTeam);
+
+/// <summary>Rôles à attribuer à un compte.</summary>
+/// <param name="Roles">Rôles complets attendus après l'opération.</param>
+public sealed record ChangeRolesRequest(
+    [property: Required, MinLength(1)] IReadOnlyList<string> Roles);
+
 /// <summary>Projets internes, pour la construction des réponses.</summary>
 internal static class ApiProjections
 {
@@ -349,6 +584,65 @@ internal static class ApiProjections
             communityEvent.Capacity,
             confirmes,
             communityEvent.CoverImageUrl);
+
+    /// <summary>
+    /// Projette un événement en réponse complète.
+    /// </summary>
+    /// <param name="communityEvent">Événement à projeter.</param>
+    /// <param name="confirmes">Nombre d'inscriptions confirmées.</param>
+    /// <returns>Réponse sérialisable.</returns>
+    public static EventResponse ToDetail(CommunityEvent communityEvent, int confirmes) =>
+        new(
+            communityEvent.Id,
+            communityEvent.Slug,
+            communityEvent.Title,
+            communityEvent.Summary,
+            communityEvent.Description,
+            communityEvent.Format,
+            communityEvent.StartsAtUtc,
+            communityEvent.EndsAtUtc,
+            communityEvent.Location,
+            communityEvent.OnlineUrl,
+            communityEvent.Capacity,
+            communityEvent.RegistrationClosesAtUtc,
+            communityEvent.Status,
+            confirmes,
+            communityEvent.CoverImageUrl);
+
+    /// <summary>
+    /// Projette une inscription à un événement.
+    /// </summary>
+    /// <param name="registration">Inscription à projeter.</param>
+    /// <param name="membreNom">Nom du membre inscrit, résolu hors requête.</param>
+    /// <returns>Réponse sérialisable.</returns>
+    public static EventRegistrationResponse ToResponse(EventRegistration registration, string membreNom) =>
+        new(
+            registration.Id,
+            registration.MemberId,
+            membreNom,
+            registration.Status,
+            registration.RegisteredAtUtc,
+            registration.CancelledAtUtc,
+            registration.CheckedInAtUtc);
+
+    /// <summary>
+    /// Projette un compte pour l'administration.
+    /// </summary>
+    /// <param name="user">Compte à projeter.</param>
+    /// <param name="roles">Rôles attribués, résolus hors requête.</param>
+    /// <returns>Réponse sérialisable.</returns>
+    public static AdminAccountResponse ToAccount(ApplicationUser user, IReadOnlyList<string> roles) =>
+        new(
+            user.Id,
+            user.Email,
+            user.Slug,
+            user.FullName,
+            user.IsActive,
+            user.IsTeam,
+            user.EmailConfirmed,
+            roles,
+            user.LockoutEnd,
+            user.CreatedAtUtc);
 
     /// <summary>
     /// Projette un projet en résumé.
