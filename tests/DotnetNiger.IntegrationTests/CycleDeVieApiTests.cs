@@ -211,6 +211,56 @@ public sealed class CycleDeVieApiTests : IDisposable
         Assert.Equal("forbidden", erreur.Code);
     }
 
+    [Fact]
+    public async Task ListerLesActualites_ResoutLesBrouillons()
+    {
+        var brouillon = CreerArticle("Un article encore en brouillon");
+
+        var controleur = new AdminArticlesController(
+            UnitOfWork(),
+            UtilisateurFictif.Administrateur(Guid.NewGuid()));
+
+        var resultat = await controleur.Lister(cancellationToken: CancellationToken.None);
+
+        var page = resultat.Value!;
+        var article = Assert.Single(page.Items);
+
+        Assert.Equal(brouillon.Id, article.Id);
+        Assert.Equal(PublicationStatus.Draft, article.Status);
+    }
+
+    [Fact]
+    public async Task ListerLesActualites_FiltreSurUnEtat()
+    {
+        var brouillon = CreerArticle("Un article en brouillon");
+        var publie = CreerArticle("Un article publié");
+
+        var controleur = new ArticlesController(UnitOfWork(), UtilisateurFictif.Administrateur(Guid.NewGuid()), Lettre(), TimeProvider.System);
+        await controleur.Publier(publie.Id, CancellationToken.None);
+
+        var administration = new AdminArticlesController(
+            UnitOfWork(),
+            UtilisateurFictif.Administrateur(Guid.NewGuid()));
+
+        var resultat = await administration.Lister(statut: PublicationStatus.Published, cancellationToken: CancellationToken.None);
+
+        var article = Assert.Single(resultat.Value!.Items);
+
+        Assert.Equal(publie.Id, article.Id);
+        Assert.NotEqual(brouillon.Id, article.Id);
+    }
+
+    [Fact]
+    public async Task ListerLesActualites_ParUnMembre_EstRefuse()
+    {
+        var controleur = new AdminArticlesController(UnitOfWork(), UtilisateurFictif.Membre(_membreId));
+
+        var erreur = await Assert.ThrowsAsync<DomainException>(
+            () => controleur.Lister(cancellationToken: CancellationToken.None));
+
+        Assert.Equal("forbidden", erreur.Code);
+    }
+
     private Article CreerArticle(string titre)
     {
         var article = new Article(_membreId, titre, "Un chapô", "Un contenu", ArticleCategory.DotNetNews);

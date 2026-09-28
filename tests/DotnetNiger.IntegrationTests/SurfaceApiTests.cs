@@ -94,6 +94,14 @@ public sealed class SurfaceApiTests
     }
 
     [Fact]
+    public void LAdministrationVoitLesActualitesEnTousEtats()
+    {
+        // La liste publique ne montre que le publié : sans cet écran, un brouillon
+        // resterait invisible de l'administration elle-même.
+        Assert.Contains("api/admin/articles", Routes, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void UnMembrePeutSupprimerSonPropreCompte()
     {
         Assert.Contains("api/members/me", Routes, StringComparer.OrdinalIgnoreCase);

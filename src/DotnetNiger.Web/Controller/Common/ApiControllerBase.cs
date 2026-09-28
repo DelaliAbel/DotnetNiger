@@ -83,6 +83,24 @@ public abstract class ApiControllerBase : ControllerBase
         IQueryable<Article> requete,
         PageRequest page,
         IUnitOfWork unitOfWork,
+        CancellationToken cancellationToken) =>
+        await ArticlePageOfAsync(requete, page, unitOfWork, ApiProjections.ToSummary, cancellationToken);
+
+    /// <summary>
+    /// Exécute une requête paginée d'articles en résolvant les noms d'auteur en une requête.
+    /// </summary>
+    /// <typeparam name="TResult">Type de la réponse.</typeparam>
+    /// <param name="requete">Requête filtrée et triée.</param>
+    /// <param name="page">Demande de pagination.</param>
+    /// <param name="unitOfWork">Unité de travail.</param>
+    /// <param name="projection">Projection recevant l'article et le nom de son auteur.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Page de réponses.</returns>
+    protected static async Task<ActionResult<PageResponse<TResult>>> ArticlePageOfAsync<TResult>(
+        IQueryable<Article> requete,
+        PageRequest page,
+        IUnitOfWork unitOfWork,
+        Func<Article, string, TResult> projection,
         CancellationToken cancellationToken)
     {
         var total = await requete.CountAsync(cancellationToken);
@@ -91,7 +109,7 @@ public abstract class ApiControllerBase : ControllerBase
         {
             return ApiProjections.ToPage(
                 PagedResultFactory.Empty<Article>(page),
-                article => ApiProjections.ToSummary(article, string.Empty));
+                article => projection(article, string.Empty));
         }
 
         var items = await requete
@@ -106,7 +124,7 @@ public abstract class ApiControllerBase : ControllerBase
 
         return ApiProjections.ToPage(
             new PagedResult<Article>(items, page.PageNumber, page.PageSize, total),
-            article => ApiProjections.ToSummary(article, noms.GetValueOrDefault(article.AuthorId, string.Empty)));
+            article => projection(article, noms.GetValueOrDefault(article.AuthorId, string.Empty)));
     }
 
     /// <summary>
