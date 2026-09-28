@@ -1,7 +1,9 @@
 using DotnetNiger.Application.Abstractions;
+using DotnetNiger.Infrastructure.Email;
 using DotnetNiger.Infrastructure.Identity;
 using DotnetNiger.Infrastructure.Persistence;
 using DotnetNiger.Infrastructure;
+using DotnetNiger.Web;
 using DotnetNiger.Web.Authentication;
 using DotnetNiger.Web.Components;
 using DotnetNiger.Web.Controller.Common;
@@ -9,6 +11,7 @@ using DotnetNiger.Web.Controller;
 using DotnetNiger.Web.Services;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -74,6 +77,18 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
             }));
 
+    // Un essai de modèle met un vrai courriel en file. La cadence de l'API, faite pour des
+    // lectures, laisserait un appel en boucle remplir la file de messages identiques.
+    options.AddPolicy("courriel", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "inconnu",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }));
+
     options.AddPolicy("api", httpContext =>
         RateLimitPartition.GetFixedWindowLimiter(
             httpContext.Connection.RemoteIpAddress?.ToString() ?? "inconnu",
@@ -90,6 +105,23 @@ builder.Services.AddHealthChecks()
     .AddDbContextCheck<DotnetNigerDbContext>("database");
 
 var app = builder.Build();
+
+// ---------- Courriels : signaler une configuration incomplète ----------
+// Un serveur SMTP renseigné sans expéditeur ni adresse du site laisse l'application
+// démarrer en silence alors que plus aucun courriel ne part. Le membre ne le verrait qu'au
+// moment de confirmer son inscription, et l'équipe ne le découvrirait qu'en production.
+// Mieux vaut un avertissement au démarrage.
+var optionsCourriel = app.Services.GetRequiredService<IOptions<EmailOptions>>().Value;
+if (optionsCourriel.IsMisconfigured)
+{
+    StartupLog.CourrielsDesactives(
+        app.Logger,
+        string.Join(", ", optionsCourriel.DescribeMissingSettings()));
+}
+else if (optionsCourriel.IsConfigured)
+{
+    StartupLog.CourrielsActifs(app.Logger);
+}
 
 // ---------- Schéma de base de données ----------
 // En production la stratégie est « None » : la migration a été appliquée pendant le

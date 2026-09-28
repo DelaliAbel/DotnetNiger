@@ -78,6 +78,47 @@ public sealed class EmailOptions
         && !string.IsNullOrWhiteSpace(SiteUrl);
 
     /// <summary>
+    /// Vrai si un serveur de courriel est renseigné alors que l'envoi reste impossible.
+    /// </summary>
+    /// <remarks>
+    /// Ce cas est celui d'un déploiement où l'on a renseigné le serveur SMTP et oublié
+    /// l'adresse du site ou l'expéditeur. Sans signal, l'application démarre normalement et
+    /// se contente de consigner les messages au journal : les membres ne recevraient rien,
+    /// et personne ne le remarquerait avant le premier signalement d'un membre. Le
+    /// démarrage doit
+    /// donc le signaler bruyamment.
+    /// </remarks>
+    public bool IsMisconfigured =>
+        (!string.IsNullOrWhiteSpace(Host) || !string.IsNullOrWhiteSpace(FromAddress))
+        && !IsConfigured;
+
+    /// <summary>
+    /// Liste les réglages manquants qui empêchent l'envoi.
+    /// </summary>
+    /// <returns>Noms des réglages absents, dans l'ordre où ils sont vérifiés.</returns>
+    public IReadOnlyList<string> DescribeMissingSettings()
+    {
+        var manquants = new List<string>(3);
+
+        if (string.IsNullOrWhiteSpace(Host))
+        {
+            manquants.Add($"{SectionName}:Host");
+        }
+
+        if (string.IsNullOrWhiteSpace(FromAddress))
+        {
+            manquants.Add($"{SectionName}:FromAddress");
+        }
+
+        if (string.IsNullOrWhiteSpace(SiteUrl))
+        {
+            manquants.Add($"{SectionName}:SiteUrl");
+        }
+
+        return manquants;
+    }
+
+    /// <summary>
     /// Construit une URL absolue à partir d'un chemin relatif de l'application.
     /// </summary>
     /// <param name="relativePath">Chemin relatif, commençant par <c>/</c>.</param>

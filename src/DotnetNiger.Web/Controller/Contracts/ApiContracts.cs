@@ -765,3 +765,16 @@ internal static class ApiProjections
             result.TotalPages,
             result.HasNext);
 }
+
+/// <summary>Accusé de mise en file d'un essai de modèle de courriel.</summary>
+/// <param name="Cle">Clé du modèle essayé.</param>
+/// <param name="Titre">Intitulé lisible du modèle.</param>
+/// <param name="Destinataire">Adresse qui recevra le message, toujours celle du compte connecté.</param>
+/// <param name="Objet">Objet du message mis en file.</param>
+/// <param name="Texte">Version texte brut, pour relire l'envoi sans ouvrir une boîte mail.</param>
+public sealed record EmailTestQueuedResponse(
+    string Cle,
+    string Titre,
+    string Destinataire,
+    string Objet,
+    string Texte);

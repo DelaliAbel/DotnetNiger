@@ -1,5 +1,6 @@
 using DotnetNiger.Application.Abstractions.Persistence;
 using DotnetNiger.Infrastructure.Persistence;
+using DotnetNiger.Infrastructure.Notifications;
 using DotnetNiger.Infrastructure.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -46,6 +47,11 @@ public static class InfrastructureServiceCollectionExtensions
         services.TryAddSingletonProvider();
         services.AddScoped<AuditSaveChangesInterceptor>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
+        services.AddScoped<IOutbox, Outbox>();
+        services.AddScoped<OutboxProcessor>();
+
+        services.Configure<OutboxOptions>(configuration.GetSection(OutboxOptions.SectionName));
+        services.AddHostedService<OutboxDispatcher>();
 
         services.AddDbContext<DotnetNigerDbContext>((serviceProvider, builder) =>
         {

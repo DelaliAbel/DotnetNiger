@@ -41,4 +41,13 @@ public static class FieldLimits
 
     /// <summary>Longueur maximale d'un numéro de téléphone.</summary>
     public const int Phone = 30;
+
+    /// <summary>Longueur maximale d'une adresse de courrier électronique.</summary>
+    public const int EmailAddress = 320;
+
+    /// <summary>Longueur maximale de l'objet d'un courriel.</summary>
+    public const int Subject = 200;
+
+    /// <summary>Longueur maximale d'une clé technique (modèle de courriel, type de notification).</summary>
+    public const int Key = 80;
 }

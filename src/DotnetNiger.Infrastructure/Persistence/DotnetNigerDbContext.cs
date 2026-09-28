@@ -2,6 +2,7 @@ using DotnetNiger.Domain.Entities.Community;
 using DotnetNiger.Domain.Entities.Comments;
 using DotnetNiger.Domain.Entities.Content;
 using DotnetNiger.Domain.Entities.Moderation;
+using DotnetNiger.Domain.Entities.Notifications;
 using DotnetNiger.Domain.Entities.Partners;
 using DotnetNiger.Domain.Entities.Projects;
 using DotnetNiger.Infrastructure.Identity;
@@ -65,6 +66,11 @@ public sealed class DotnetNigerDbContext
     /// Obtient les partenaires et sponsors.
     /// </summary>
     public DbSet<Partner> Partners => Set<Partner>();
+
+    /// <summary>
+    /// Obtient les courriels en attente d'expédition.
+    /// </summary>
+    public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder builder)

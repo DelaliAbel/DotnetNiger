@@ -25,6 +25,9 @@ internal class EfRepository<T> : IRepository<T>
     }
 
     /// <inheritdoc />
+    public IQueryable<T> TrackedQuery => _set;
+
+    /// <inheritdoc />
     public async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         // FirstOrDefaultAsync et non FindAsync : Find court-circuite le suivi d'entité

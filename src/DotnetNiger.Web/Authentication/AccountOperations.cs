@@ -40,13 +40,29 @@ public sealed partial class AccountOperations(
     {
         ArgumentNullException.ThrowIfNull(user);
 
+        // Le lien exige une adresse de site. En développement local, aucun serveur SMTP
+        // n'est configuré : composer l'URL ici ferait échouer l'inscription avec une erreur
+        // technique alors que le compte vient d'être créé. On journalise et on laisse le
+        // membre confirmer son adresse depuis un nouvel envoi.
+        if (!_email.IsConfigured)
+        {
+            LogCourrielNonConfigure(logger, user.Email!);
+            return;
+        }
+
         var jeton = await userManager.GenerateEmailConfirmationTokenAsync(user);
         var url = _email.BuildUrl(
             $"/compte/confirmer-email?jeton={Uri.EscapeDataString(jeton)}&courriel={Uri.EscapeDataString(user.Email!)}");
 
         await emails.SendAsync(
             user.Email!,
-            AccountEmailTemplates.BuildConfirmation(user.FullName, url),
+            EmailTemplateCatalog
+                .Obtenir(EmailTemplateKeys.AccountConfirmation)
+                .Rendre(
+                    EmailValues.De(
+                        (EmailVariables.NomMembre, user.FullName ?? string.Empty),
+                        (EmailVariables.UrlConfirmation, url)),
+                    EmailBranding.DepuisOptions(_email)),
             cancellationToken);
     }
 
@@ -62,7 +78,13 @@ public sealed partial class AccountOperations(
 
         await emails.SendAsync(
             user.Email!,
-            AccountEmailTemplates.BuildWelcome(user.FullName, CommunityUrl),
+            EmailTemplateCatalog
+                .Obtenir(EmailTemplateKeys.AccountWelcome)
+                .Rendre(
+                    EmailValues.De(
+                        (EmailVariables.NomMembre, user.FullName ?? string.Empty),
+                        (EmailVariables.UrlCompte, _email.BuildUrl(CommunityUrl))),
+                    EmailBranding.DepuisOptions(_email)),
             cancellationToken);
     }
 
@@ -86,7 +108,13 @@ public sealed partial class AccountOperations(
 
         await emails.SendAsync(
             user.Email!,
-            AccountEmailTemplates.BuildWelcome(user.FullName, CommunityUrl),
+            EmailTemplateCatalog
+                .Obtenir(EmailTemplateKeys.AccountWelcome)
+                .Rendre(
+                    EmailValues.De(
+                        (EmailVariables.NomMembre, user.FullName ?? string.Empty),
+                        (EmailVariables.UrlCompte, _email.BuildUrl(CommunityUrl))),
+                    EmailBranding.DepuisOptions(_email)),
             cancellationToken);
     }
 
@@ -264,6 +292,12 @@ public sealed partial class AccountOperations(
         Level = LogLevel.Warning,
         Message = "Courriel de compte non remis à {Email} : le compte reste utilisable")]
     private static partial void LogCourrielCompteEchoue(ILogger logger, string email);
+
+    [LoggerMessage(
+        EventId = 2,
+        Level = LogLevel.Information,
+        Message = "Courriel de confirmation non composé pour {Email} : aucun serveur de courriel n'est configuré")]
+    private static partial void LogCourrielNonConfigure(ILogger logger, string email);
 }
 
 /// <summary>

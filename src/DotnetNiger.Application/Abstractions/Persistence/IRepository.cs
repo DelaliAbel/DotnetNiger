@@ -20,6 +20,17 @@ public interface IRepository<T>
     where T : class, IEntity
 {
     /// <summary>
+    /// Obtient une requête d'écriture, suivie par le contexte.
+    /// </summary>
+    /// <remarks>
+    /// Contrairement à <see cref="IReadRepository{T}.Query"/>, les entités renvoyées sont
+    /// suivies : modifier une propriété puis valider l'unité de travail écrit la ligne. Ce
+    /// n'est nécessaire que là où l'on charge une entité pour la modifier, par exemple le
+    /// relais de courriels qui marque ses messages comme expédiés.
+    /// </remarks>
+    IQueryable<T> TrackedQuery { get; }
+
+    /// <summary>
     /// Récupère une entité par son identifiant.
     /// </summary>
     /// <param name="id">Identifiant de l'entité.</param>
