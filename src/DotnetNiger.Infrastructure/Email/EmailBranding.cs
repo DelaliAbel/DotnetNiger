@@ -10,7 +10,7 @@ namespace DotnetNiger.Infrastructure.Email;
 public sealed record EmailBranding(string SiteUrl, string? ContactAddress)
 {
     /// <summary>Nom du site, tel qu'il apparaît en bandeau des messages.</summary>
-    public const string SiteName = "dotnetNiger";
+    public const string SiteName = "DotnetNiger";
 
     /// <summary>Accroche affichée sous le nom du site.</summary>
     public const string Tagline = "La communauté .NET du Niger";

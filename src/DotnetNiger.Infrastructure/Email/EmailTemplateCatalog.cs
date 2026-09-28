@@ -23,9 +23,9 @@ public static class EmailTemplateCatalog
         EmailTemplateKeys.AccountConfirmation,
         "Confirmation d'inscription",
         "Envoyé juste après l'inscription, pour prouver que l'adresse est bien à vous.",
-        "Vous avez créé un compte sur dotnetNiger.",
+        "Vous avez créé un compte sur DotnetNiger.",
         [EmailVariables.NomMembre, EmailVariables.UrlConfirmation],
-        _ => "Confirmez votre adresse sur dotnetNiger",
+        _ => "Confirmez votre adresse sur DotnetNiger",
         valeurs => new EmailContent(
             "Confirmez votre adresse",
             [
@@ -44,9 +44,9 @@ public static class EmailTemplateCatalog
         EmailTemplateKeys.AccountWelcome,
         "Bienvenue dans la communauté",
         "Envoyé une fois l'adresse confirmée.",
-        "Vous avez confirmé l'adresse de votre compte dotnetNiger.",
+        "Vous avez confirmé l'adresse de votre compte DotnetNiger.",
         [EmailVariables.NomMembre, EmailVariables.UrlCompte],
-        _ => "Bienvenue sur dotnetNiger",
+        _ => "Bienvenue sur DotnetNiger",
         valeurs => new EmailContent(
             "Votre compte est actif",
             [
@@ -63,9 +63,9 @@ public static class EmailTemplateCatalog
         EmailTemplateKeys.AccountPasswordReset,
         "Réinitialisation du mot de passe",
         "Envoyé à la demande, quand un mot de passe a été oublié.",
-        "Vous avez demandé à réinitialiser le mot de passe de votre compte dotnetNiger.",
+        "Vous avez demandé à réinitialiser le mot de passe de votre compte DotnetNiger.",
         [EmailVariables.NomMembre, EmailVariables.UrlReinitialisation],
-        _ => "Réinitialisez votre mot de passe dotnetNiger",
+        _ => "Réinitialisez votre mot de passe DotnetNiger",
         valeurs => new EmailContent(
             "Réinitialisation de votre mot de passe",
             [
@@ -84,13 +84,13 @@ public static class EmailTemplateCatalog
         EmailTemplateKeys.AccountDeletionConfirmation,
         "Suppression du compte",
         "Envoyé pour confirmer une suppression, qui n'a lieu qu'après deux confirmations.",
-        "Vous avez demandé la suppression de votre compte dotnetNiger.",
+        "Vous avez demandé la suppression de votre compte DotnetNiger.",
         [
             EmailVariables.NomMembre,
             EmailVariables.UrlConfirmationSuppression,
             EmailVariables.DelaiSuppression,
         ],
-        _ => "Confirmez la suppression de votre compte dotnetNiger",
+        _ => "Confirmez la suppression de votre compte DotnetNiger",
         valeurs => new EmailContent(
             "Votre compte va être supprimé",
             [
@@ -111,13 +111,13 @@ public static class EmailTemplateCatalog
         EmailTemplateKeys.NewsletterConfirmation,
         "Confirmation d'abonnement à la lettre",
         "Envoyé à l'inscription, avec la confirmation exigée par la loi sur le courriel.",
-        "Vous avez demandé à recevoir la lettre d'information de dotnetNiger.",
+        "Vous avez demandé à recevoir la lettre d'information de DotnetNiger.",
         [EmailVariables.UrlDesabonnement],
         _ => "Confirmez votre abonnement à la lettre d'information",
         valeurs => new EmailContent(
             "Confirmez votre abonnement",
             [
-                "Vous avez demandé à recevoir la lettre d'information de dotnetNiger : un résumé des événements, ressources, articles et projets de la communauté.",
+                "Vous avez demandé à recevoir la lettre d'information de DotnetNiger : un résumé des événements, ressources, articles et projets de la communauté.",
                 "Confirmez votre demande pour commencer à recevoir ces messages.",
             ],
             new EmailAction(
@@ -131,7 +131,7 @@ public static class EmailTemplateCatalog
         EmailTemplateKeys.NewsletterUnsubscribed,
         "Désinscription confirmée",
         "Envoyé pour confirmer qu'une désinscription a bien été prise en compte.",
-        "Vous avez demandé à ne plus recevoir la lettre d'information de dotnetNiger.",
+        "Vous avez demandé à ne plus recevoir la lettre d'information de DotnetNiger.",
         [EmailVariables.UrlCompte],
         _ => "Vous n'êtes plus inscrit à la lettre d'information",
         valeurs => new EmailContent(
@@ -148,7 +148,7 @@ public static class EmailTemplateCatalog
         EmailTemplateKeys.NewsletterNewContent,
         "Nouveau contenu publié",
         "Envoyé à chaque abonné lorsqu'un événement, un article, une ressource ou un projet est publié.",
-        "Vous êtes abonné à la lettre d'information de dotnetNiger.",
+        "Vous êtes abonné à la lettre d'information de DotnetNiger.",
         [
             EmailVariables.TypeContenu,
             EmailVariables.TitreContenu,
@@ -157,7 +157,7 @@ public static class EmailTemplateCatalog
             EmailVariables.UrlDesabonnement,
         ],
         valeurs =>
-            $"{valeurs.Texte(EmailVariables.TypeContenu)} sur dotnetNiger : {valeurs.Texte(EmailVariables.TitreContenu)}",
+            $"{valeurs.Texte(EmailVariables.TypeContenu)} sur DotnetNiger : {valeurs.Texte(EmailVariables.TitreContenu)}",
         valeurs => new EmailContent(
             $"Un nouveau {valeurs.Texte(EmailVariables.TypeContenu).ToLowerInvariant()} est en ligne",
             [
@@ -176,7 +176,7 @@ public static class EmailTemplateCatalog
         EmailTemplateKeys.EventRegistrationConfirmed,
         "Inscription à un événement",
         "Envoyé lorsqu'une place est réservée.",
-        "Vous vous êtes inscrit à un événement sur dotnetNiger.",
+        "Vous vous êtes inscrit à un événement sur DotnetNiger.",
         [
             EmailVariables.NomMembre,
             EmailVariables.TitreEvenement,
@@ -205,7 +205,7 @@ public static class EmailTemplateCatalog
         EmailTemplateKeys.EventRegistrationWaitlisted,
         "Inscription en liste d'attente",
         "Envoyé lorsque l'événement est complet, pour signaler que la demande est retenue.",
-        "Vous avez demandé une place pour un événement complet sur dotnetNiger.",
+        "Vous avez demandé une place pour un événement complet sur DotnetNiger.",
         [
             EmailVariables.TitreEvenement,
             EmailVariables.UrlEvenement,
@@ -230,7 +230,7 @@ public static class EmailTemplateCatalog
         EmailTemplateKeys.EventWaitlistPromoted,
         "Une place s'est libérée",
         "Envoyé à la personne suivante de la liste d'attente, pour lui laisser confirmer sa place.",
-        "Vous êtes sur la liste d'attente d'un événement dotnetNiger.",
+        "Vous êtes sur la liste d'attente d'un événement DotnetNiger.",
         [EmailVariables.TitreEvenement, EmailVariables.UrlEvenement],
         valeurs => $"Une place se libère pour {valeurs.Texte(EmailVariables.TitreEvenement)}",
         valeurs => new EmailContent(
@@ -249,7 +249,7 @@ public static class EmailTemplateCatalog
         EmailTemplateKeys.EventCancelled,
         "Événement annulé",
         "Envoyé à tous les inscrits lorsqu'un événement est annulé.",
-        "Vous êtes inscrit à un événement sur dotnetNiger.",
+        "Vous êtes inscrit à un événement sur DotnetNiger.",
         [EmailVariables.TitreEvenement, EmailVariables.DateEvenement],
         valeurs => $"Annulé : {valeurs.Texte(EmailVariables.TitreEvenement)}",
         valeurs => new EmailContent(
@@ -267,7 +267,7 @@ public static class EmailTemplateCatalog
         EmailTemplateKeys.EventUpdated,
         "Événement modifié",
         "Envoyé aux inscrits lorsque la date, le lieu ou le programme change.",
-        "Vous êtes inscrit à un événement sur dotnetNiger.",
+        "Vous êtes inscrit à un événement sur DotnetNiger.",
         [
             EmailVariables.TitreEvenement,
             EmailVariables.DateEvenement,
@@ -293,7 +293,7 @@ public static class EmailTemplateCatalog
         EmailTemplateKeys.CommentPosted,
         "Nouveau commentaire",
         "Envoyé à l'auteur d'un contenu dès qu'un membre le commente.",
-        "Vous publiez sur dotnetNiger.",
+        "Vous publiez sur DotnetNiger.",
         [
             EmailVariables.TitreContenu,
             EmailVariables.UrlContenu,
@@ -318,7 +318,7 @@ public static class EmailTemplateCatalog
         EmailTemplateKeys.ContentRepublished,
         "Contenu remis en ligne",
         "Envoyé à l'auteur lorsqu'une de ses publications archivée redevient visible.",
-        "Vous êtes l'auteur d'une publication sur dotnetNiger.",
+        "Vous êtes l'auteur d'une publication sur DotnetNiger.",
         [
             EmailVariables.TypeContenu,
             EmailVariables.TitreContenu,
@@ -341,7 +341,7 @@ public static class EmailTemplateCatalog
         EmailTemplateKeys.ContactAcknowledged,
         "Accusé de réception d'un message",
         "Envoyé à la personne qui a écrit via le formulaire de contact.",
-        "Vous avez écrit à l'administration de dotnetNiger.",
+        "Vous avez écrit à l'administration de DotnetNiger.",
         [EmailVariables.NomContact, EmailVariables.SujetContact, EmailVariables.MessageContact],
         valeurs => $"Message reçu : {valeurs.Texte(EmailVariables.SujetContact)}",
         valeurs => new EmailContent(
@@ -364,7 +364,7 @@ public static class EmailTemplateCatalog
         EmailTemplateKeys.ContactForwarded,
         "Nouveau message de contact",
         "Envoyé à l'administration, avec le message reçu et les coordonnées de son auteur.",
-        "Un membre a utilisé le formulaire de contact de dotnetNiger.",
+        "Un membre a utilisé le formulaire de contact de DotnetNiger.",
         [
             EmailVariables.NomContact,
             EmailVariables.EmailContact,

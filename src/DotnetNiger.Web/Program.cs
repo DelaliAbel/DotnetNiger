@@ -200,8 +200,8 @@ app.MapHealthChecks("/health").AllowAnonymous();
 app.MapOpenApi();
 app.UseSwaggerUI(options =>
 {
-    options.SwaggerEndpoint("/openapi/v1.json", "dotnetNiger API");
-    options.DocumentTitle = "dotnetNiger API";
+    options.SwaggerEndpoint("/openapi/v1.json", "DotnetNiger API");
+    options.DocumentTitle = "DotnetNiger API";
 });
 
 // ---------- Front ----------

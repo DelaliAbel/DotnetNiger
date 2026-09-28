@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace DotnetNiger.Infrastructure.Persistence;
 
 /// <summary>
-/// Contexte de persistance unique de dotnetNiger : contenu éditorial, comptes ASP.NET
+/// Contexte de persistance unique de DotnetNiger : contenu éditorial, comptes ASP.NET
 /// Identity, inscriptions et modération.
 /// </summary>
 public sealed class DotnetNigerDbContext

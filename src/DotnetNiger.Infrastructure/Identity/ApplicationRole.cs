@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Identity;
 namespace DotnetNiger.Infrastructure.Identity;
 
 /// <summary>
-/// Rôle ASP.NET Identity de dotnetNiger.
+/// Rôle ASP.NET Identity de DotnetNiger.
 /// </summary>
 /// <remarks>
 /// Deux rôles seulement existent : <c>Admin</c> et <c>Member</c>. Il n'y a pas de rôle de

@@ -47,7 +47,7 @@ public sealed class EmailOptions
     /// <summary>
     /// Nom affiché à l'expédition.
     /// </summary>
-    public string FromDisplayName { get; set; } = "dotnetNiger";
+    public string FromDisplayName { get; set; } = "DotnetNiger";
 
     /// <summary>
     /// Adresse de réponse, si différente de l'expédition.

@@ -1,7 +1,7 @@
 namespace DotnetNiger.Domain.Common;
 
 /// <summary>
-/// Base de toutes les entités du domaine dotnetNiger.
+/// Base de toutes les entités du domaine DotnetNiger.
 /// </summary>
 /// <remarks>
 /// Les identifiants sont des GUID version 7 : triables par ordre chronologique, ce qui

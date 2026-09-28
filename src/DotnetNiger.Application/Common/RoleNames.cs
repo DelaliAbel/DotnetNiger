@@ -1,7 +1,7 @@
 namespace DotnetNiger.Application.Common;
 
 /// <summary>
-/// Noms des rôles ASP.NET Identity utilisés par dotnetNiger.
+/// Noms des rôles ASP.NET Identity utilisés par DotnetNiger.
 /// </summary>
 /// <remarks>
 /// Il n'existe que deux rôles. L'appartenance à l'équipe est un booléen porté par le
