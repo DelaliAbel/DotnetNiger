@@ -1,4 +1,4 @@
-# dotNetNiger — Récapitulatif des décisions techniques
+# DotnetNiger — Récapitulatif des décisions techniques
 
 Statut : validé en discussion avec le porteur du projet.
 Dernière mise à jour : 2026-09-27.
@@ -578,6 +578,16 @@ volontairement : `/api/v1` était envisagé au départ, puis écarté au profit 
 courtes, l'API n'ayant qu'un seul consommateur, le site lui-même. Le document OpenAPI reste
 servi à l'URL `/openapi/v1.json` : le « v1 » y désigne le format du document, pas la
 version des endpoints.
+
+Chaque liste (événements, actualités, ressources, projets) accepte les mêmes paramètres,
+publics comme administratifs : `recherche` pour filtrer sur le titre et le résumé,
+`trier` pour l'ordre (`recent`, `ancien`, `titre`, `titre-desc`, et `date`/`date-desc`
+pour les événements), sans valeur par défaut partagée — un tri inconnu ou absent retombe
+sur l'ordre naturel de la liste. Les filtres propres à chaque domaine s'ajoutent à côté :
+`categorie` et `format` là où ils ont un sens. L'administration a sa propre liste pour
+chaque famille — `/api/admin/events`, `/api/admin/resources`, `/api/admin/projects` — qui
+montre tous les états de publication, ajoute le filtre `statut` et le nom du créateur, là
+où la liste publique ne montre que le publié.
 
 L'API s'authentifie par le cookie Identity, comme le site : un appel protégé répond `401`
 et non `403` lorsqu'il est anonyme, au lieu d'être redirigé vers une page de connexion.

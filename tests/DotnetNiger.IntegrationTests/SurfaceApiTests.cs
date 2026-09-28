@@ -102,6 +102,24 @@ public sealed class SurfaceApiTests
     }
 
     [Fact]
+    public void LAdministrationVoitLesEvenementsEnTousEtats()
+    {
+        Assert.Contains("api/admin/events", Routes, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void LAdministrationVoitLesRessourcesEnTousEtats()
+    {
+        Assert.Contains("api/admin/resources", Routes, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void LAdministrationVoitLesProjetsEnTousEtats()
+    {
+        Assert.Contains("api/admin/projects", Routes, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void UnMembrePeutSupprimerSonPropreCompte()
     {
         Assert.Contains("api/members/me", Routes, StringComparer.OrdinalIgnoreCase);

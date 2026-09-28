@@ -136,7 +136,7 @@ public sealed class EcritureApiTests : IDisposable
     {
         var controleur = ConstruireControleur(UtilisateurFictif.Anonyme);
 
-        var resultat = await controleur.Lister(1, 20, null, CancellationToken.None);
+        var resultat = await controleur.Lister(1, 20, null, null, null, CancellationToken.None);
 
         var page = Assert.IsType<PageResponse<ArticleSummaryResponse>>(resultat.Value);
         Assert.Empty(page.Items);

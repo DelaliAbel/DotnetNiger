@@ -28,6 +28,8 @@ public sealed class ArticlesController(
     /// <param name="page">Numéro de page, à partir de 1.</param>
     /// <param name="pageSize">Taille de page.</param>
     /// <param name="categorie">Filtre facultatif par catégorie.</param>
+    /// <param name="recherche">Filtre facultatif sur le titre ou le chapô.</param>
+    /// <param name="trier">Ordre facultatif : <c>recent</c>, <c>ancien</c>, <c>titre</c> ou <c>titre-desc</c>.</param>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
     /// <returns>Page de résumés d'articles.</returns>
     /// <response code="200">Page d'articles.</response>
@@ -38,6 +40,8 @@ public sealed class ArticlesController(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] ArticleCategory? categorie = null,
+        [FromQuery] string? recherche = null,
+        [FromQuery] string? trier = null,
         CancellationToken cancellationToken = default)
     {
         var requete = unitOfWork.ReadRepository<Article>().Query
@@ -48,9 +52,24 @@ public sealed class ArticlesController(
             requete = requete.Where(article => article.Category == valeur);
         }
 
-        requete = requete
-            .OrderByDescending(article => article.PublishedAtUtc)
-            .ThenBy(article => article.Title);
+        if (!string.IsNullOrWhiteSpace(recherche))
+        {
+            var terme = recherche.Trim();
+            requete = requete.Where(article =>
+                article.Title.Contains(terme) || article.Excerpt.Contains(terme));
+        }
+
+        requete = trier switch
+        {
+            "ancien" => requete
+                .OrderBy(article => article.PublishedAtUtc)
+                .ThenBy(article => article.Title),
+            "titre" => requete.OrderBy(article => article.Title),
+            "titre-desc" => requete.OrderByDescending(article => article.Title),
+            _ => requete
+                .OrderByDescending(article => article.PublishedAtUtc)
+                .ThenBy(article => article.Title),
+        };
 
         return await ArticlePageOfAsync(
             requete,

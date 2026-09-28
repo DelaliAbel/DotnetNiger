@@ -33,6 +33,9 @@ public sealed partial class EventsController(
     /// <param name="page">Numéro de page, à partir de 1.</param>
     /// <param name="pageSize">Taille de page.</param>
     /// <param name="aVenir">Ne garder que les événements non terminés.</param>
+    /// <param name="format">Filtre facultatif par format.</param>
+    /// <param name="recherche">Filtre facultatif sur le titre ou le résumé.</param>
+    /// <param name="trier">Ordre facultatif : <c>date</c>, <c>date-desc</c>, <c>recent</c>, <c>ancien</c>, <c>titre</c> ou <c>titre-desc</c>.</param>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
     /// <returns>Page de résumés d'événements.</returns>
     /// <response code="200">Page d'événements.</response>
@@ -43,6 +46,9 @@ public sealed partial class EventsController(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] bool aVenir = true,
+        [FromQuery] CommunityEventFormat? format = null,
+        [FromQuery] string? recherche = null,
+        [FromQuery] string? trier = null,
         CancellationToken cancellationToken = default)
     {
         var requete = unitOfWork.ReadRepository<CommunityEvent>().Query
@@ -53,7 +59,31 @@ public sealed partial class EventsController(
             requete = requete.Where(communityEvent => communityEvent.EndsAtUtc >= DateTime.UtcNow);
         }
 
-        requete = requete.OrderBy(communityEvent => communityEvent.StartsAtUtc);
+        if (format is { } valeur)
+        {
+            requete = requete.Where(communityEvent => communityEvent.Format == valeur);
+        }
+
+        if (!string.IsNullOrWhiteSpace(recherche))
+        {
+            var terme = recherche.Trim();
+            requete = requete.Where(communityEvent =>
+                communityEvent.Title.Contains(terme) || communityEvent.Summary.Contains(terme));
+        }
+
+        requete = trier switch
+        {
+            "date-desc" => requete.OrderByDescending(communityEvent => communityEvent.StartsAtUtc),
+            "recent" => requete
+                .OrderByDescending(communityEvent => communityEvent.PublishedAtUtc)
+                .ThenBy(communityEvent => communityEvent.Title),
+            "ancien" => requete
+                .OrderBy(communityEvent => communityEvent.PublishedAtUtc)
+                .ThenBy(communityEvent => communityEvent.Title),
+            "titre" => requete.OrderBy(communityEvent => communityEvent.Title),
+            "titre-desc" => requete.OrderByDescending(communityEvent => communityEvent.Title),
+            _ => requete.OrderBy(communityEvent => communityEvent.StartsAtUtc),
+        };
 
         var demande = new PageRequest(page, pageSize);
         var total = await requete.CountAsync(cancellationToken);

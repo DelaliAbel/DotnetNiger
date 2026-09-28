@@ -27,6 +27,8 @@ public sealed class ResourcesController(
     /// <param name="page">Numéro de page, à partir de 1.</param>
     /// <param name="pageSize">Taille de page.</param>
     /// <param name="categorie">Filtre facultatif par catégorie.</param>
+    /// <param name="recherche">Filtre facultatif sur le titre, la description ou le fournisseur.</param>
+    /// <param name="trier">Ordre facultatif : <c>recent</c>, <c>ancien</c>, <c>titre</c> ou <c>titre-desc</c>.</param>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
     /// <returns>Page de résumés de ressources.</returns>
     /// <response code="200">Page de ressources.</response>
@@ -37,6 +39,8 @@ public sealed class ResourcesController(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         [FromQuery] ResourceCategory? categorie = null,
+        [FromQuery] string? recherche = null,
+        [FromQuery] string? trier = null,
         CancellationToken cancellationToken = default)
     {
         var requete = unitOfWork.ReadRepository<Resource>().Query
@@ -47,9 +51,26 @@ public sealed class ResourcesController(
             requete = requete.Where(resource => resource.Category == valeur);
         }
 
-        requete = requete
-            .OrderByDescending(resource => resource.PublishedAtUtc)
-            .ThenBy(resource => resource.Title);
+        if (!string.IsNullOrWhiteSpace(recherche))
+        {
+            var terme = recherche.Trim();
+            requete = requete.Where(resource =>
+                resource.Title.Contains(terme)
+                || resource.Description.Contains(terme)
+                || (resource.Provider != null && resource.Provider.Contains(terme)));
+        }
+
+        requete = trier switch
+        {
+            "ancien" => requete
+                .OrderBy(resource => resource.PublishedAtUtc)
+                .ThenBy(resource => resource.Title),
+            "titre" => requete.OrderBy(resource => resource.Title),
+            "titre-desc" => requete.OrderByDescending(resource => resource.Title),
+            _ => requete
+                .OrderByDescending(resource => resource.PublishedAtUtc)
+                .ThenBy(resource => resource.Title),
+        };
 
         return await PageOfAsync(
             requete,

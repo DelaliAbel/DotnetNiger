@@ -26,6 +26,9 @@ public sealed class ProjectsController(
     /// <summary>Liste les projets publiés.</summary>
     /// <param name="page">Numéro de page, à partir de 1.</param>
     /// <param name="pageSize">Taille de page.</param>
+    /// <param name="recherche">Filtre facultatif sur le nom, le résumé ou les technologies.</param>
+    /// <param name="technologies">Filtre facultatif sur les technologies (sous-chaîne).</param>
+    /// <param name="trier">Ordre facultatif : <c>recent</c>, <c>ancien</c>, <c>titre</c> ou <c>titre-desc</c>.</param>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
     /// <returns>Page de résumés de projets.</returns>
     /// <response code="200">Page de projets.</response>
@@ -35,12 +38,41 @@ public sealed class ProjectsController(
     public async Task<ActionResult<PageResponse<ProjectSummaryResponse>>> Lister(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
+        [FromQuery] string? recherche = null,
+        [FromQuery] string? technologies = null,
+        [FromQuery] string? trier = null,
         CancellationToken cancellationToken = default)
     {
         var requete = unitOfWork.ReadRepository<Project>().Query
-            .Where(project => project.Status == PublicationStatus.Published)
-            .OrderByDescending(project => project.PublishedAtUtc)
-            .ThenBy(project => project.Name);
+            .Where(project => project.Status == PublicationStatus.Published);
+
+        if (!string.IsNullOrWhiteSpace(recherche))
+        {
+            var terme = recherche.Trim();
+            requete = requete.Where(project =>
+                project.Name.Contains(terme)
+                || project.Summary.Contains(terme)
+                || (project.Technologies != null && project.Technologies.Contains(terme)));
+        }
+
+        if (!string.IsNullOrWhiteSpace(technologies))
+        {
+            var terme = technologies.Trim();
+            requete = requete.Where(project =>
+                project.Technologies != null && project.Technologies.Contains(terme));
+        }
+
+        requete = trier switch
+        {
+            "ancien" => requete
+                .OrderBy(project => project.PublishedAtUtc)
+                .ThenBy(project => project.Name),
+            "titre" => requete.OrderBy(project => project.Name),
+            "titre-desc" => requete.OrderByDescending(project => project.Name),
+            _ => requete
+                .OrderByDescending(project => project.PublishedAtUtc)
+                .ThenBy(project => project.Name),
+        };
 
         return await PageOfAsync(
             requete,

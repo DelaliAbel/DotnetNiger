@@ -29,6 +29,8 @@ public sealed class AdminArticlesController(
     /// </summary>
     /// <param name="statut">État à filtrer, ou <see langword="null"/> pour tous.</param>
     /// <param name="categorie">Filtre facultatif par catégorie.</param>
+    /// <param name="recherche">Filtre facultatif sur le titre ou le chapô.</param>
+    /// <param name="trier">Ordre facultatif : <c>recent</c>, <c>ancien</c>, <c>titre</c> ou <c>titre-desc</c>.</param>
     /// <param name="page">Numéro de page, à partir de 1.</param>
     /// <param name="pageSize">Taille de page.</param>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
@@ -45,6 +47,8 @@ public sealed class AdminArticlesController(
     public async Task<ActionResult<PageResponse<AdminArticleSummaryResponse>>> Lister(
         [FromQuery] PublicationStatus? statut = null,
         [FromQuery] ArticleCategory? categorie = null,
+        [FromQuery] string? recherche = null,
+        [FromQuery] string? trier = null,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
@@ -63,12 +67,27 @@ public sealed class AdminArticlesController(
             requete = requete.Where(article => article.Category == valeur);
         }
 
+        if (!string.IsNullOrWhiteSpace(recherche))
+        {
+            var terme = recherche.Trim();
+            requete = requete.Where(article =>
+                article.Title.Contains(terme) || article.Excerpt.Contains(terme));
+        }
+
         // Ce que l'administration veut voir en premier, ce n'est pas l'ordre de publication :
         // c'est ce qu'elle vient de toucher. Un article modifié il y a dix minutes compte plus
         // qu'un autre publié le mois dernier.
-        requete = requete
-            .OrderByDescending(article => article.UpdatedAtUtc ?? article.CreatedAtUtc)
-            .ThenBy(article => article.Title);
+        requete = trier switch
+        {
+            "ancien" => requete
+                .OrderBy(article => article.UpdatedAtUtc ?? article.CreatedAtUtc)
+                .ThenBy(article => article.Title),
+            "titre" => requete.OrderBy(article => article.Title),
+            "titre-desc" => requete.OrderByDescending(article => article.Title),
+            _ => requete
+                .OrderByDescending(article => article.UpdatedAtUtc ?? article.CreatedAtUtc)
+                .ThenBy(article => article.Title),
+        };
 
         return await ArticlePageOfAsync(
             requete,

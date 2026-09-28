@@ -141,6 +141,31 @@ public sealed record ResourceSummaryResponse(
     string? ExternalUrl,
     string? CoverImageUrl);
 
+/// <summary>Ressource telle que l'administration la voit.</summary>
+/// <param name="Id">Identifiant.</param>
+/// <param name="Slug">Slug d'URL.</param>
+/// <param name="Title">Titre.</param>
+/// <param name="Description">Description courte.</param>
+/// <param name="Category">Catégorie.</param>
+/// <param name="Provider">Éditeur ou source.</param>
+/// <param name="ExternalUrl">URL externe, si la ressource est un lien.</param>
+/// <param name="Status">État de publication.</param>
+/// <param name="Creator">Nom du membre qui a créé la ressource.</param>
+/// <param name="PublishedAtUtc">Date de publication, si publiée.</param>
+/// <param name="CoverImageUrl">Image de couverture, pour la vignette.</param>
+public sealed record AdminResourceSummaryResponse(
+    Guid Id,
+    string Slug,
+    string Title,
+    string Description,
+    ResourceCategory Category,
+    string? Provider,
+    string? ExternalUrl,
+    PublicationStatus Status,
+    string Creator,
+    DateTime? PublishedAtUtc,
+    string? CoverImageUrl);
+
 /// <summary>Demande de création d'une ressource.</summary>
 /// <param name="Title">Titre.</param>
 /// <param name="Description">Description courte.</param>
@@ -183,6 +208,39 @@ public sealed record EventSummaryResponse(
     int ConfirmedCount,
     string? CoverImageUrl);
 
+/// <summary>Événement tel que l'administration le voit.</summary>
+/// <param name="Id">Identifiant.</param>
+/// <param name="Slug">Slug d'URL.</param>
+/// <param name="Title">Titre.</param>
+/// <param name="Summary">Résumé.</param>
+/// <param name="Format">Présentiel, en ligne ou hybride.</param>
+/// <param name="StartsAtUtc">Début.</param>
+/// <param name="EndsAtUtc">Fin.</param>
+/// <param name="Location">Lieu, pour un événement en présentiel.</param>
+/// <param name="OnlineUrl">Lien de participation, en ligne.</param>
+/// <param name="Capacity">Nombre de places, si limité.</param>
+/// <param name="ConfirmedCount">Inscriptions confirmées.</param>
+/// <param name="RegistrationClosesAtUtc">Fin des inscriptions, si planifiée.</param>
+/// <param name="Status">État de publication.</param>
+/// <param name="Creator">Nom du membre qui a créé l'événement.</param>
+/// <param name="CoverImageUrl">Image de couverture, pour la vignette.</param>
+public sealed record AdminEventSummaryResponse(
+    Guid Id,
+    string Slug,
+    string Title,
+    string Summary,
+    CommunityEventFormat Format,
+    DateTime StartsAtUtc,
+    DateTime EndsAtUtc,
+    string? Location,
+    string? OnlineUrl,
+    int? Capacity,
+    int ConfirmedCount,
+    DateTime? RegistrationClosesAtUtc,
+    PublicationStatus Status,
+    string Creator,
+    string? CoverImageUrl);
+
 /// <summary>Demande d'inscription à un événement.</summary>
 /// <param name="EventId">Identifiant de l'événement.</param>
 public sealed record RegisterForEventRequest(
@@ -203,6 +261,29 @@ public sealed record ProjectSummaryResponse(
     string Summary,
     string? Technologies,
     string RepositoryUrl,
+    string? ImageUrl);
+
+/// <summary>Projet tel que l'administration le voit.</summary>
+/// <param name="Id">Identifiant.</param>
+/// <param name="Slug">Slug d'URL.</param>
+/// <param name="Name">Nom du projet.</param>
+/// <param name="Summary">Résumé.</param>
+/// <param name="Technologies">Technologies utilisées.</param>
+/// <param name="RepositoryUrl">Dépôt.</param>
+/// <param name="Status">État de publication.</param>
+/// <param name="Creator">Nom du membre qui a créé le projet.</param>
+/// <param name="PublishedAtUtc">Date de publication, si publié.</param>
+/// <param name="ImageUrl">Image de présentation, pour la vignette.</param>
+public sealed record AdminProjectSummaryResponse(
+    Guid Id,
+    string Slug,
+    string Name,
+    string Summary,
+    string? Technologies,
+    string RepositoryUrl,
+    PublicationStatus Status,
+    string Creator,
+    DateTime? PublishedAtUtc,
     string? ImageUrl);
 
 /// <summary>Demande de création d'un projet.</summary>
@@ -637,6 +718,26 @@ internal static class ApiProjections
             resource.CoverImageUrl);
 
     /// <summary>
+    /// Projette une ressource en résumé d'administration, état de publication compris.
+    /// </summary>
+    /// <param name="resource">Ressource à projeter.</param>
+    /// <param name="createur">Nom du créateur, résolu hors requête.</param>
+    /// <returns>Résumé sérialisable.</returns>
+    public static AdminResourceSummaryResponse ToAdminSummary(Resource resource, string createur) =>
+        new(
+            resource.Id,
+            resource.Slug,
+            resource.Title,
+            resource.Description,
+            resource.Category,
+            resource.Provider,
+            resource.ExternalUrl,
+            resource.Status,
+            createur,
+            resource.PublishedAtUtc,
+            resource.CoverImageUrl);
+
+    /// <summary>
     /// Projette un événement en résumé.
     /// </summary>
     /// <param name="communityEvent">Événement à projeter.</param>
@@ -655,6 +756,34 @@ internal static class ApiProjections
             communityEvent.OnlineUrl,
             communityEvent.Capacity,
             confirmes,
+            communityEvent.CoverImageUrl);
+
+    /// <summary>
+    /// Projette un événement en résumé d'administration, état de publication compris.
+    /// </summary>
+    /// <param name="communityEvent">Événement à projeter.</param>
+    /// <param name="confirmes">Nombre d'inscriptions confirmées.</param>
+    /// <param name="createur">Nom du créateur, résolu hors requête.</param>
+    /// <returns>Résumé sérialisable.</returns>
+    public static AdminEventSummaryResponse ToAdminSummary(
+        CommunityEvent communityEvent,
+        int confirmes,
+        string createur) =>
+        new(
+            communityEvent.Id,
+            communityEvent.Slug,
+            communityEvent.Title,
+            communityEvent.Summary,
+            communityEvent.Format,
+            communityEvent.StartsAtUtc,
+            communityEvent.EndsAtUtc,
+            communityEvent.Location,
+            communityEvent.OnlineUrl,
+            communityEvent.Capacity,
+            confirmes,
+            communityEvent.RegistrationClosesAtUtc,
+            communityEvent.Status,
+            createur,
             communityEvent.CoverImageUrl);
 
     /// <summary>
@@ -729,6 +858,25 @@ internal static class ApiProjections
             project.Summary,
             project.Technologies,
             project.RepositoryUrl,
+            project.ImageUrl);
+
+    /// <summary>
+    /// Projette un projet en résumé d'administration, état de publication compris.
+    /// </summary>
+    /// <param name="project">Projet à projeter.</param>
+    /// <param name="createur">Nom du créateur, résolu hors requête.</param>
+    /// <returns>Résumé sérialisable.</returns>
+    public static AdminProjectSummaryResponse ToAdminSummary(Project project, string createur) =>
+        new(
+            project.Id,
+            project.Slug,
+            project.Name,
+            project.Summary,
+            project.Technologies,
+            project.RepositoryUrl,
+            project.Status,
+            createur,
+            project.PublishedAtUtc,
             project.ImageUrl);
 
     /// <summary>
