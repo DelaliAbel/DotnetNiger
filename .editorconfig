@@ -48,7 +48,7 @@ dotnet_diagnostic.CA1707.severity = none
 # Les migrations sont écrites par l'outil `dotnet ef` : les corriger à la main serait
 # écrasé à la prochaine génération. On les déclare comme code généré pour que les
 # analyseurs et les règles de style ne s'y appliquent pas.
-[src/DotnetNiger.Infrastructure/Persistence/Migrations/*.cs]
+[src/DotnetNiger.Infrastructure/Migrations/*.cs]
 generated_code = true
 dotnet_analyzer_diagnostic.severity = none
 dotnet_diagnostic.severity = none

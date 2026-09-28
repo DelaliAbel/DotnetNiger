@@ -169,7 +169,7 @@ pour rien, d'autant que la base locale est jetable. La règle retenue est donc :
 
 | Environnement | Provider | Initialisation |
 |---|---|---|
-| Développement local | SQLite | `EnsureCreated` — le schéma est déduit du modèle |
+| Développement local | SQL Server (instance locale) | `Migrate` — le schéma vient des migrations |
 | Tests | SQLite | `EnsureCreated` — une base neuve par exécution |
 | Production | SQL Server | `None` au démarrage, `Migrate` pendant le déploiement |
 | Intégration continue | SQL Server | `Migrate`, sur une base dédiée |
@@ -178,10 +178,25 @@ Un **unique jeu de migrations**, généré pour SQL Server, qui est la seule cib
 données survivent. Une base SQLite créée par `EnsureCreated` n'a pas d'historique de
 migration, et n'en a pas besoin.
 
-Conséquence pratique : pour redéployer le site en local après un modèle modifié, il faut
-supprimer le fichier `.db`. `EnsureCreated` ne le fait pas tout seul.
+Le développement vise donc lui aussi SQL Server : c'est la seule façon de savoir qu'une
+migration s'applique réellement. Les tests restent sur SQLite, où une base neuve par
+exécution coûte quelques millisecondes.
 
-Vérifié : le schéma s'applique sans erreur sur les deux fournisseurs, et la contrainte
+Conséquence pratique : la chaîne de connexion de développement vit dans les secrets
+locaux (`dotnet user-secrets`), jamais dans un fichier versionné. Un poste neuf commence
+par `dotnet ef database update`, qui crée la base et applique les migrations.
+
+Les migrations sont générées avec la variable d'environnement du fournisseur, sans quoi
+l'outil lirait la configuration `Development` et produirait une migration SQLite — le
+modèle et l'historique s'accorderaient, mais le déploiement échouerait :
+
+```bash
+Database__Provider=SqlServer dotnet ef migrations add <Nom> \
+  --project src/DotnetNiger.Infrastructure \
+  --startup-project src/DotnetNiger.Web
+```
+
+Vérifié : le schéma s'applique sans erreur sur SQL Server, et la contrainte
 `CK_Comments_ExactlyOneTarget` interdit bien à un commentaire de viser deux cibles à la
 fois, ou aucune.
 
