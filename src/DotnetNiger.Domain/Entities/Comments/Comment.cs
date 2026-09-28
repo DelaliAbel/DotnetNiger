@@ -160,11 +160,6 @@ public sealed class Comment : SoftDeletableEntity
     /// </summary>
     public void MarkDeleted() => Status = CommentStatus.Deleted;
 
-    /// <summary>
-    /// Rétablit un commentaire masqué.
-    /// </summary>
-    public void Republish() => Status = CommentStatus.Published;
-
     private static Comment Create(string body, Guid authorId, Guid? parentCommentId)
     {
         DomainGuard.AgainstEmpty(authorId, nameof(authorId));

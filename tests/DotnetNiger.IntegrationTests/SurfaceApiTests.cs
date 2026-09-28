@@ -28,6 +28,20 @@ public sealed class SurfaceApiTests
     }
 
     [Fact]
+    public void LaModerationSeLimiteADepuiserMasquerEtSupprimer()
+    {
+        // La modération d'un commentaire tient en trois gestes : l'auteur ou l'admin
+        // supprime, l'admin masque. Ni approbation, ni republication.
+        var moderation = Routes
+            .Where(route => route.StartsWith("api/comments", StringComparison.OrdinalIgnoreCase))
+            .Where(route => route.Contains("approve", StringComparison.OrdinalIgnoreCase)
+                || route.Contains("republish", StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+
+        Assert.Empty(moderation);
+    }
+
+    [Fact]
     public void LesContratsPortentLeurValidationSurLeConstructeur()
     {
         // ASP.NET refuse de valider un record dont les attributs de validation sont posés
