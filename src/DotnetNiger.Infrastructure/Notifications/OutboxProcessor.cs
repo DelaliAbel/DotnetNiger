@@ -4,6 +4,7 @@ using DotnetNiger.Domain.Enums;
 using DotnetNiger.Infrastructure.Email;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DotnetNiger.Infrastructure.Notifications;
 
@@ -35,13 +36,17 @@ public sealed partial class OutboxProcessor
         IUnitOfWork unitOfWork,
         IEmailSender sender,
         TimeProvider clock,
-        OutboxOptions options,
+        IOptions<OutboxOptions> options,
         ILogger<OutboxProcessor> logger)
     {
         _unitOfWork = unitOfWork;
         _sender = sender;
         _clock = clock;
-        _options = options;
+
+        // IOptions, et non le type nu : « Configure » n'enregistre que IOptions<T>. Demander
+        // OutboxOptions directement empêche tout le conteneur de démarrer, et aucun test
+        // d'intégration ne le voyait, faute de monter le même graphe que l'application.
+        _options = options.Value;
         _logger = logger;
     }
 

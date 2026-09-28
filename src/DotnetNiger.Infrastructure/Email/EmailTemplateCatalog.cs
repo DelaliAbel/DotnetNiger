@@ -237,10 +237,10 @@ public static class EmailTemplateCatalog
             "Une place vous est réservée",
             [
                 $"Une place s'est libérée pour {valeurs.Texte(EmailVariables.TitreEvenement)}.",
-                "Elle vous est attribuée, mais vous devez la confirmer pour qu'elle ne soit pas proposée à la personne suivante.",
+                "Elle vous revient automatiquement, au titre de première personne sur la liste d'attente.",
             ],
-            new EmailAction("Confirmer ma place", valeurs.Lien(EmailVariables.UrlEvenement)),
-            "Sans confirmation de votre part, la place repartira au profit du membre suivant."),
+            new EmailAction("Voir l'événement", valeurs.Lien(EmailVariables.UrlEvenement)),
+            "Si vous ne pouvez plus venir, désinscrivez-vous : la place ira directement au membre suivant."),
         EmailValues.De(
             (EmailVariables.TitreEvenement, "Rencontre .NET de Niamey"),
             (EmailVariables.UrlEvenement, "https://dotnetniger.test/evenements/rencontre-dotnet")));
@@ -350,6 +350,9 @@ public static class EmailTemplateCatalog
                 $"Bonjour {valeurs.Texte(EmailVariables.NomContact)},",
                 "Merci de nous avoir écrit. Un membre de l'équipe vous répondra dans les meilleurs délais.",
                 $"Votre message : « {valeurs.Texte(EmailVariables.SujetContact)} »",
+                // Le corps est recopié tel quel : c'est la seule preuve, sans ouvrir la boîte
+                // de réception, que rien n'a été tronqué en route.
+                valeurs.Texte(EmailVariables.MessageContact),
             ],
             Note: "Cet accusé est envoyé automatiquement, n'y répondez pas."),
         EmailValues.De(

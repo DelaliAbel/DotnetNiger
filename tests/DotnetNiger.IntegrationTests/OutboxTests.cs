@@ -232,7 +232,7 @@ public sealed class OutboxTests : IDisposable
         UnitOfWork(),
         _expediteur,
         _horloge,
-        _options,
+        Microsoft.Extensions.Options.Options.Create(_options),
         Microsoft.Extensions.Logging.Abstractions.NullLogger<OutboxProcessor>.Instance);
 
     private async Task MettreEnFileAsync(string kind, string destinataire, string objet)

@@ -483,9 +483,50 @@ est créé.
 Fonctionnement :
 
 - Table d'abonnés, avec double validation à l'inscription puis désinscription en un clic.
-- Table d'envoi qui enregistre les messages à diffuser.
-- Envoi par lots, déclenché par une tâche planifiée du panneau de contrôle de l'hébergeur
-  et pilotable à la main depuis le tableau de bord.
+- La file d'attente (outbox) tient lieu de table d'envoi : un envoi raté y reste, avec sa
+  reprise, au lieu d'être perdu. Le traitement est un service de fond de l'application, ce
+  qui évite de dépendre d'une tâche planifiée de l'hébergeur.
+- Un message par destinataire, jamais une liste en copie cachée : c'est la condition pour
+  que le désabonnement un par un reste possible.
+- `POST /api/newsletter/subscriptions` (public) répond toujours `202`, sans dire si l'adresse
+  était déjà abonnée : ce rythme est exactement celui d'un formulaire qui se pilote pour
+  savoir qui lit le site.
+- `GET /api/newsletter/subscriptions/confirm` et `GET /api/newsletter/unsubscribe` (public)
+  répondent `202` quelle que soit la validité du lien, pour ne pas permettre de vérifier un
+  jeton au hasard.
+- `POST /api/admin/newsletter/send` met en file une lettre vers les seuls abonnements
+  confirmés.
+
+**Deux identités, pas un.** Le jeton de confirmation n'est stocké que sous forme d'empreinte :
+une fuite de la base ne doit pas permettre de confirmer l'inscription d'une adresse qui n'a
+rien demandé, donc de la soumettre ensuite à des messages non désirés. La clé de
+désabonnement, au contraire, est conservée en clair parce que chaque lettre doit porter le
+lien de son propre destinataire, qu'une empreinte ne pourrait pas fournir. Le compromis est
+assumé : une fuite permettrait de désabonner, pas de lire quoi que ce soit.
+
+**Déclenchement à la publication** : la diffusion est aujourd'hui déclenchée manuellement
+par l'administration. Le raccordement automatique à la publication des événements, articles,
+ressources et projets reste à faire.
+
+### Formulaire de contact
+
+Le message est conservé en base et non seulement envoyé par courriel : une adresse peut être
+fausse ou un filtre avaler le message, et sans trace un visiteur qui attend une réponse n'a
+aucun moyen de le signaler. Deux courriels partent par la file d'attente : un accusé au
+demandeur, qui lui confirme la bonne réception de son texte, et une copie à
+`Email:ContactAddress` — laquelle peut être absente sans que le visiteur en pâtisse. La
+boîte de réception est paginée, triée du plus récent au plus ancien, et le retrait d'un
+message est logique, comme partout ailleurs sur le site.
+
+### Courriels d'événements
+
+Confirmation d'inscription, mise en liste d'attente, promotion automatique du plus ancien
+inscrit en attente lors d'un désistement, modification d'un événement publié, annulation
+d'un événement retiré. Le désistement demandé par le membre n'envoie rien : il vient de
+partir lui-même, et un courriel de confirmation lui serait inutile.
+
+Les archives sont silencieuses : un événement retiré puis archivé n'avertit personne, la
+seule alerte utile étant celle de l'annulation.
 
 ---
 
@@ -547,5 +588,6 @@ cookie `SameSite=Lax` et sur l'absence de cookie sur les requêtes inter-sites.
 | Partage d'URL | Boutons pour copier le lien ou partager sur WhatsApp, LinkedIn, Facebook depuis les pages d'événement, de ressource et d'article |
 | Confirmations de suppression | Popups demandant confirmation avant toute suppression d'événement, de blog, de ressource, de projet ou de compte ; tout delete côté admin requiert un dialogue de confirmation |
 | Modération des commentaires | L'auteur ou l'administrateur supprime, l'administrateur masque ; un commentaire masqué le reste, il n'existe ni approbation ni republication, la publication est automatique ; tout delete nécessite une confirmation explicite |
+| Diffusion automatique de la lettre | Le déclencheur manuel `POST /api/admin/newsletter/send` existe ; le raccordement à la publication des événements, articles, ressources et projets reste à faire |
 | Suppression de compte membre | Double confirmation de la part du membre, puis suppression définitive du compte et de la totalité de ses contenus ; les dépendances (réponses aux commentaires, inscriptions aux événements) disparaissent aussi, et les signalements que le membre traitait reviennent à la modération sans gestionnaire |
 | Création de compte | Réservée à l'administration : `POST /api/admin/accounts` ; le rôle `Member` est attribué par défaut, la confirmation d'adresse et les rôles supplémentaires sont au choix de l'administrateur |

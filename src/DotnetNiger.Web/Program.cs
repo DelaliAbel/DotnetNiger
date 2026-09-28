@@ -77,6 +77,18 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
             }));
 
+    // Un formulaire public déclenche deux courriels par appel. La cadence de l'API, pensée
+    // pour des lectures, laisserait un script remplir la file et la boîte de l'administration.
+    options.AddPolicy("formulaire", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            httpContext.Connection.RemoteIpAddress?.ToString() ?? "inconnu",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 5,
+                Window = TimeSpan.FromMinutes(1),
+                QueueLimit = 0,
+            }));
+
     // Un essai de modèle met un vrai courriel en file. La cadence de l'API, faite pour des
     // lectures, laisserait un appel en boucle remplir la file de messages identiques.
     options.AddPolicy("courriel", httpContext =>

@@ -6,6 +6,7 @@ using DotnetNiger.Domain.Enums;
 using DotnetNiger.Domain.Exceptions;
 using DotnetNiger.Infrastructure.Identity;
 using DotnetNiger.Infrastructure;
+using DotnetNiger.Infrastructure.Email;
 using DotnetNiger.Infrastructure.Persistence;
 using DotnetNiger.Web.Controller;
 using DotnetNiger.Web.Controller.Contracts;
@@ -16,6 +17,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 
 namespace DotnetNiger.IntegrationTests;
 
@@ -183,7 +186,14 @@ public sealed class CycleDeVieApiTests : IDisposable
     [Fact]
     public async Task CreerUnEvenement_ParUnMembre_EstRefuse()
     {
-        var controleur = new EventsController(UnitOfWork(), UtilisateurFictif.Membre(_membreId), TimeProvider.System);
+        var controleur = new EventsController(
+            UnitOfWork(),
+            UtilisateurFictif.Membre(_membreId),
+            _portee.ServiceProvider.GetRequiredService<IEmailDispatcher>(),
+            _portee.ServiceProvider.GetRequiredService<IMemberDirectory>(),
+            _portee.ServiceProvider.GetRequiredService<IOptions<EmailOptions>>(),
+            TimeProvider.System,
+            NullLogger<EventsController>.Instance);
 
         var request = new CreateEventRequest(
             "Un événement de démonstration",

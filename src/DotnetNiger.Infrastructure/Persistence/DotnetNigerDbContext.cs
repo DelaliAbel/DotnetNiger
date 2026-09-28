@@ -70,6 +70,8 @@ public sealed class DotnetNigerDbContext
     /// <summary>
     /// Obtient les courriels en attente d'expédition.
     /// </summary>
+    public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
+    public DbSet<NewsletterSubscription> NewsletterSubscriptions => Set<NewsletterSubscription>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     /// <inheritdoc />

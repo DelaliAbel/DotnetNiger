@@ -4,11 +4,13 @@ using DotnetNiger.Application.Common;
 using DotnetNiger.Domain.Entities.Community;
 using DotnetNiger.Domain.Enums;
 using DotnetNiger.Domain.Exceptions;
+using DotnetNiger.Infrastructure.Email;
 using DotnetNiger.Web.Controller.Common;
 using DotnetNiger.Web.Controller.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace DotnetNiger.Web.Controller;
 
@@ -17,10 +19,14 @@ namespace DotnetNiger.Web.Controller;
 /// </summary>
 [Route("api/events")]
 [Tags("Événements")]
-public sealed class EventsController(
+public sealed partial class EventsController(
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
-    TimeProvider clock) : ApiControllerBase
+    IEmailDispatcher emails,
+    IMemberDirectory members,
+    IOptions<EmailOptions> emailOptions,
+    TimeProvider clock,
+    ILogger<EventsController> logger) : ApiControllerBase
 {
     /// <summary>Liste les événements publiés, à venir par défaut.</summary>
     /// <param name="page">Numéro de page, à partir de 1.</param>
@@ -164,6 +170,12 @@ public sealed class EventsController(
                 EventRegistration.Create(id, membre, maintenant, statut));
 
             await unitOfWork.SaveChangesAsync(cancellationToken);
+
+            // Le message part dans la transaction : si elle est annulée, le membre ne reçoit
+            // pas la confirmation d'une inscription qui n'existe pas.
+            await PrevenirInscriptionAsync(communityEvent, membre, statut, cancellationToken);
+
+            await unitOfWork.SaveChangesAsync(cancellationToken);
             await unitOfWork.CommitTransactionAsync(cancellationToken);
 
             return Created($"/api/events/{id}/registrations", new { eventId = id, status = statut });
@@ -200,8 +212,18 @@ public sealed class EventsController(
             return NotFound();
         }
 
+        // Aucun message n'est envoyé ici, et c'est délibéré : le membre vient de demander
+        // quelque chose, il n'a pas besoin d'un courriel pour apprendre qu'il l'a fait. Le
+        // modèle « événement annulé » parle d'un événement qui n'aura pas lieu, ce n'est pas
+        // la même chose qu'une personne qui se désiste.
         inscription.Cancel(clock.GetUtcNow().UtcDateTime);
         unitOfWork.Repository<EventRegistration>().Update(inscription);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        // Une place vient de se libérer : la personne la plus ancienne sur la liste
+        // d'attente la prend. Sans cela, une place resterait perdue alors que quelqu'un
+        // attend depuis plus longtemps.
+        await PromouvoirLeSuivantAsync(id, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return NoContent();
@@ -345,7 +367,18 @@ public sealed class EventsController(
         communityEvent.SetRegistrationClosesAt(request.RegistrationClosesAtUtc);
         communityEvent.SetCoverImage(request.CoverImageUrl);
 
+        // Seule la modification d'un événement déjà annoncé concerne des personnes : un
+        // brouillon n'a personne à prévenir, et l'information sur sa nouvelle date n'est
+        // encore connue de personne.
+        var dejaPublie = communityEvent.Status == PublicationStatus.Published;
+
         unitOfWork.Repository<CommunityEvent>().Update(communityEvent);
+
+        if (dejaPublie)
+        {
+            await PrevenirModificationAsync(communityEvent, cancellationToken);
+        }
+
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Ok(ApiProjections.ToDetail(communityEvent, await ConfirmedCountAsync(id, cancellationToken)));
@@ -446,11 +479,13 @@ public sealed class EventsController(
         }
 
         var auteur = RequireAdministrateur(currentUser);
+        var maintenant = clock.GetUtcNow().UtcDateTime;
 
-        unitOfWork.SoftDeletableRepository<CommunityEvent>().Retire(
-            communityEvent,
-            clock.GetUtcNow().UtcDateTime,
-            auteur);
+        // Un événement retiré n'aura pas lieu : les personnes inscrites doivent l'apprendre
+        // de l'administration et non enconstater le jour venu.
+        await PrevenirAnnulationAsync(communityEvent, cancellationToken);
+
+        unitOfWork.SoftDeletableRepository<CommunityEvent>().Retire(communityEvent, maintenant, auteur);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
@@ -467,4 +502,215 @@ public sealed class EventsController(
                 inscription => inscription.CommunityEventId == eventId
                     && inscription.Status == EventRegistrationStatus.Confirmed,
                 cancellationToken);
+
+    /// <summary>
+    /// Prévient le membre du résultat de son inscription.
+    /// </summary>
+    /// <param name="communityEvent">Événement visé.</param>
+    /// <param name="membreId">Identifiant du membre inscrit.</param>
+    /// <param name="statut">Statut obtenu.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Tâche d'achèvement.</returns>
+    /// <remarks>
+    /// Une place et une liste d'attente ne se vivent pas de la même façon : on ne peut pas
+    /// dire à quelqu'un qu'il a une place, puis lui écrire qu'il n'y en a plus. Le message
+    /// dépend donc du statut réellement obtenu.
+    /// </remarks>
+    private async Task PrevenirInscriptionAsync(
+        CommunityEvent communityEvent,
+        Guid membreId,
+        EventRegistrationStatus statut,
+        CancellationToken cancellationToken)
+    {
+        var url = emailOptions.Value.BuildUrl($"/evenements/{communityEvent.Slug}");
+
+        if (statut == EventRegistrationStatus.Waitlisted)
+        {
+            await emails.DispatchAsync(
+                EmailTemplateKeys.EventRegistrationWaitlisted,
+                membreId,
+                EmailValues.De(
+                    (EmailVariables.TitreEvenement, communityEvent.Title),
+                    (EmailVariables.UrlEvenement, url),
+                    (EmailVariables.UrlDesinscriptionEvenement, $"{url}/inscriptions")),
+                cancellationToken);
+
+            return;
+        }
+
+        // Seul le message de confirmation s'adresse le membre par son nom : il s'agit de
+        // lui dire bienvenue, là où les autres ne sont que des avis de gestion.
+        var contact = await members.ObtenirAsync(membreId, cancellationToken);
+
+        await emails.DispatchAsync(
+            EmailTemplateKeys.EventRegistrationConfirmed,
+            membreId,
+            EmailValues.De(
+                (EmailVariables.NomMembre, contact?.FullName ?? string.Empty),
+                (EmailVariables.TitreEvenement, communityEvent.Title),
+                (EmailVariables.DateEvenement, EmailFormat.Date(communityEvent.StartsAtUtc)),
+                (EmailVariables.LieuEvenement, LieuLisible(communityEvent)),
+                (EmailVariables.UrlEvenement, url)),
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Attend la place que vient de libérer un désistement.
+    /// </summary>
+    /// <param name="eventId">Identifiant de l'événement.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns><see langword="true"/> si quelqu'un a été promu.</returns>
+    /// <remarks>
+    /// L'ordre est celui de l'inscription : c'est la personne qui attend depuis le plus
+    /// longtemps qui reçoit la place. La promotion n'a lieu que si l'événement a encore de
+    /// la place, et sa demande est retirée de la liste d'attente.
+    /// </remarks>
+    private async Task<bool> PromouvoirLeSuivantAsync(
+        Guid eventId,
+        CancellationToken cancellationToken)
+    {
+        var communityEvent = await ChargerEvenement(eventId, cancellationToken);
+
+        if (communityEvent is null)
+        {
+            return false;
+        }
+
+        var confirmes = await ConfirmedCountAsync(eventId, cancellationToken);
+
+        if (communityEvent.IsFull(confirmes))
+        {
+            return false;
+        }
+
+        var suivant = await unitOfWork.ReadRepository<EventRegistration>().Query
+            .Where(inscription => inscription.CommunityEventId == eventId
+                && inscription.Status == EventRegistrationStatus.Waitlisted)
+            .OrderBy(inscription => inscription.RegisteredAtUtc)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (suivant is null)
+        {
+            return false;
+        }
+
+        suivant.ConfirmFromWaitlist();
+        unitOfWork.Repository<EventRegistration>().Update(suivant);
+
+        await emails.DispatchAsync(
+            EmailTemplateKeys.EventWaitlistPromoted,
+            suivant.MemberId,
+            EmailValues.De(
+                (EmailVariables.TitreEvenement, communityEvent.Title),
+                (EmailVariables.UrlEvenement, emailOptions.Value.BuildUrl($"/evenements/{communityEvent.Slug}"))),
+            cancellationToken);
+
+        PrevenirPromotion(logger, communityEvent.Title, suivant.MemberId);
+
+        return true;
+    }
+
+    /// <summary>
+    /// Décrit le lieu d'un événement de façon lisible.
+    /// </summary>
+    /// <param name="communityEvent">Événement visé.</param>
+    /// <returns>Le lieu saisi, ou une mention de l'événement en ligne.</returns>
+    private static string LieuLisible(CommunityEvent communityEvent) =>
+        string.IsNullOrWhiteSpace(communityEvent.Location)
+            ? "En ligne"
+            : communityEvent.Location;
+
+    [LoggerMessage(
+        EventId = 100,
+        Level = LogLevel.Information,
+        Message = "Une place de {Evenement} a été attribuée au membre {Membre} depuis la liste d'attente")]
+    private static partial void PrevenirPromotion(ILogger logger, string evenement, Guid membre);
+
+    /// <summary>
+    /// Prévient les inscrits qu'un événement qu'ils suivent a changé.
+    /// </summary>
+    /// <param name="communityEvent">Événement modifié.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Tâche d'achèvement.</returns>
+    private async Task PrevenirModificationAsync(
+        CommunityEvent communityEvent,
+        CancellationToken cancellationToken)
+    {
+        var destinataires = await InscritsAsync(communityEvent.Id, cancellationToken);
+        var valeurs = EmailValues.De(
+            (EmailVariables.TitreEvenement, communityEvent.Title),
+            (EmailVariables.DateEvenement, EmailFormat.Date(communityEvent.StartsAtUtc)),
+            (EmailVariables.LieuEvenement, LieuLisible(communityEvent)),
+            (EmailVariables.UrlEvenement, emailOptions.Value.BuildUrl($"/evenements/{communityEvent.Slug}")));
+
+        foreach (var membreId in destinataires)
+        {
+            await emails.DispatchAsync(
+                EmailTemplateKeys.EventUpdated,
+                membreId,
+                valeurs,
+                cancellationToken);
+        }
+
+        PrevenirModification(logger, communityEvent.Title, destinataires.Count);
+    }
+
+    /// <summary>
+    /// Prévient les inscrits qu'un événement n'aura pas lieu.
+    /// </summary>
+    /// <param name="communityEvent">Événement retiré.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Tâche d'achèvement.</returns>
+    private async Task PrevenirAnnulationAsync(
+        CommunityEvent communityEvent,
+        CancellationToken cancellationToken)
+    {
+        var destinataires = await InscritsAsync(communityEvent.Id, cancellationToken);
+
+        // Le modèle annonce la date à laquelle l'événement était prévu, pas celle de son
+        // retrait : la seconde ne lui dirait rien et serait même fausse.
+        var valeurs = EmailValues.De(
+            (EmailVariables.TitreEvenement, communityEvent.Title),
+            (EmailVariables.DateEvenement, EmailFormat.Date(communityEvent.StartsAtUtc)));
+
+        foreach (var membreId in destinataires)
+        {
+            await emails.DispatchAsync(
+                EmailTemplateKeys.EventCancelled,
+                membreId,
+                valeurs,
+                cancellationToken);
+        }
+
+        PrevenirAnnulation(logger, communityEvent.Title, destinataires.Count);
+    }
+
+    /// <summary>
+    /// Rend les membres inscrits à un événement, places confirmées comme liste d'attente.
+    /// </summary>
+    /// <param name="eventId">Identifiant de l'événement.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Les identifiants des inscrits.</returns>
+    /// <remarks>
+    /// Les personnes en liste d'attente sont comprises : elles ont réservé du temps pour
+    /// venir, et une annulation ou un changement de date les concerne autant que les autres.
+    /// </remarks>
+    private async Task<IReadOnlyList<Guid>> InscritsAsync(Guid eventId, CancellationToken cancellationToken) =>
+        await unitOfWork.ReadRepository<EventRegistration>().Query
+            .Where(inscription => inscription.CommunityEventId == eventId
+                && inscription.Status != EventRegistrationStatus.Cancelled)
+            .Select(inscription => inscription.MemberId)
+            .ToListAsync(cancellationToken);
+
+    [LoggerMessage(
+        EventId = 101,
+        Level = LogLevel.Information,
+        Message = "Modification de {Evenement} annoncée à {Nombre} inscrit(s)")]
+    private static partial void PrevenirModification(ILogger logger, string evenement, int nombre);
+
+    [LoggerMessage(
+        EventId = 102,
+        Level = LogLevel.Information,
+        Message = "Annulation de {Evenement} annoncée à {Nombre} inscrit(s)")]
+    private static partial void PrevenirAnnulation(ILogger logger, string evenement, int nombre);
 }
