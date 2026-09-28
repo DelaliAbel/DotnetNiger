@@ -62,10 +62,17 @@ internal sealed class CommentConfiguration : IEntityTypeConfiguration<Comment>
             .HasForeignKey(x => x.CommunityEventId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Réponse : sans cascade. Un commentaire peut être rattaché à un article, à un
+        // événement et à un parent, et SQL Server refuse plusieurs chemins de suppression
+        // vers la même table (erreur 1785) dès que la relation père-fils est elle aussi en
+        // cascade. La cascade depuis l'article ou l'événement suffit : la contrainte
+        // CK_Comments_ExactlyOneTarget oblige toute réponse à porter sa cible, donc les
+        // réponses partent avec elle. Le retrait d'un commentaire isolé, lui, passe par le
+        // fil explicite de la suppression de compte.
         builder.HasOne(x => x.ParentComment)
             .WithMany()
             .HasForeignKey(x => x.ParentCommentId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne<ApplicationUser>()
             .WithMany()

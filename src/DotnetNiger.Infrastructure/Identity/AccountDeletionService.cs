@@ -34,6 +34,15 @@ public sealed partial class AccountDeletionService(
     UserManager<ApplicationUser> userManager,
     ILogger<AccountDeletionService> logger) : IAccountDeletionService
 {
+    /// <summary>
+    /// Garde-fou du parcours d'un fil de commentaires.
+    /// </summary>
+    /// <remarks>
+    /// Chaque passage n'ajoute que des commentaires absents de l'ensemble, et l'ensemble
+    /// croît donc strictement : la boucle s'arrête d'elle-même. Cette borne protège
+    /// d'une hiérarchie circulaire introduite par écrit direct en base.
+    /// </remarks>
+    private const int NombreDetagesMaximum = 50;
     /// <inheritdoc />
     public async Task<AccountDeletionReport?> DeleteAsync(
         Guid accountId,
@@ -102,11 +111,60 @@ public sealed partial class AccountDeletionService(
 
     private async Task<int> SupprimerLesCommentairesAsync(Guid accountId, CancellationToken cancellationToken)
     {
-        var comments = context.Comments
+        var ids = await context.Comments
             .IgnoreQueryFilters()
-            .Where(comment => comment.AuthorId == accountId);
+            .Where(comment => comment.AuthorId == accountId)
+            .Select(comment => comment.Id)
+            .ToListAsync(cancellationToken);
 
-        return await comments.ExecuteDeleteAsync(cancellationToken);
+        // Les réponses ne sont pas retirées par la base : la relation père-fils est sans
+        // cascade, SQL Server refusant plusieurs chemins de suppression vers `Comments`
+        // (erreur 1785). Le fil est donc rassemblé ici, étage par étage, car une réponse
+        // peut être d'un autre auteur — c'est tout l'intérêt d'un fil.
+        var etage = 0;
+
+        while (etage++ < NombreDetagesMaximum)
+        {
+            var reponses = await context.Comments
+                .IgnoreQueryFilters()
+                .Where(comment => comment.ParentCommentId != null
+                    && ids.Contains(comment.ParentCommentId.Value)
+                    && !ids.Contains(comment.Id))
+                .Select(comment => comment.Id)
+                .ToListAsync(cancellationToken);
+
+            if (reponses.Count == 0)
+            {
+                break;
+            }
+
+            ids.AddRange(reponses);
+        }
+
+        // Suppression par feuilles : un parent ne part qu'une fois ses réponses parties.
+        // L'ordre inverse échouerait — l'ordre des auteurs ne dit rien de la profondeur,
+        // une réponse d'un autre auteur peut se retrouver dans un étage plus profond que la
+        // réponse qu'elle contient — et une contrainte vérifiée en cours d'énoncé, comme
+        // celle de SQLite, refuse qu'un parent disparaisse avant une réponse encore
+        // présente, là où SQL Server attend la fin de l'énoncé. Effacer les feuilles d'abord
+        // donne un ordre valide partout.
+        var total = 0;
+        int supprimes;
+
+        do
+        {
+            supprimes = await context.Comments
+                .IgnoreQueryFilters()
+                .Where(comment => ids.Contains(comment.Id)
+                    && !context.Comments.Any(
+                        reponse => reponse.ParentCommentId == comment.Id && ids.Contains(reponse.Id)))
+                .ExecuteDeleteAsync(cancellationToken);
+
+            total += supprimes;
+        }
+        while (supprimes > 0);
+
+        return total;
     }
 
     private async Task<int> SupprimerLesArticlesAsync(Guid accountId, CancellationToken cancellationToken)

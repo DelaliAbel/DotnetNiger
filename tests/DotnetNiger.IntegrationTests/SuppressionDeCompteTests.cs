@@ -187,6 +187,37 @@ public sealed class SuppressionDeCompteTests : IDisposable
     }
 
     [Fact]
+    public async Task SupprimerUnCompte_RetireLesReponsesASesCommentaires()
+    {
+        var article = new Article(_autreId, "Un article partagé", "Un chapô", "Un contenu", ArticleCategory.DotNetNews);
+        var commentaire = Comment.ForArticle(article.Id, _membreId, "Un commentaire");
+        var reponse = Comment.ForArticle(article.Id, _autreId, "Une réponse", commentaire.Id);
+        var reponseALaReponse = Comment.ForArticle(article.Id, _membreId, "Une réponse à la réponse", reponse.Id);
+
+        Contexte.Articles.Add(article);
+        Contexte.Comments.Add(commentaire);
+        Contexte.Comments.Add(reponse);
+        Contexte.Comments.Add(reponseALaReponse);
+        await Contexte.SaveChangesAsync();
+
+        var bilan = await ServiceDeSuppression().DeleteAsync(_membreId);
+
+        Assert.NotNull(bilan);
+
+        // Le fil part en entier : la base ne sait pas le faire en cascade, la suppression
+        // le rassemble donc elle-même. La réponse de l'autre auteur disparaît avec lui.
+        Assert.Equal(3, bilan.Comments);
+        Assert.Empty(await Contexte.Comments
+            .IgnoreQueryFilters()
+            .Where(c => c.Id == commentaire.Id || c.Id == reponse.Id || c.Id == reponseALaReponse.Id)
+            .ToListAsync());
+
+        // L'article et son auteur, eux, n'ont rien à voir avec ce compte.
+        Assert.Single(await Contexte.Articles.IgnoreQueryFilters().Where(a => a.Id == article.Id).ToListAsync());
+        Assert.Single(await Contexte.Users.Where(u => u.Id == _autreId).ToListAsync());
+    }
+
+    [Fact]
     public async Task SupprimerUnCompte_RetireSesContenusDejaRetiresLogiquement()
     {
         var article = new Article(_membreId, "Un article retiré", "Un chapô", "Un contenu", ArticleCategory.DotNetNews);
