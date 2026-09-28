@@ -51,7 +51,7 @@ public static class EmailTemplateCatalog
             "Votre compte est actif",
             [
                 $"Bonjour {valeurs.Texte(EmailVariables.NomMembre)},",
-                "Votre adresse est confirmée. La communauté dotNetNiger réunit les développeurs .NET du Niger autour d'événements, de ressources et de projets open source.",
+                "Votre adresse est confirmée. La communauté DotnetNiger réunit les développeurs .NET du Niger autour d'événements, de ressources et de projets open source.",
             ],
             new EmailAction("Découvrir la communauté", valeurs.Lien(EmailVariables.UrlCompte)),
             "L'inscription à la lettre d'information reste facultative."),

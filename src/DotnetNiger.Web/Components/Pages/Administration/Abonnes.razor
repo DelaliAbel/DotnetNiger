@@ -1,0 +1,161 @@
+@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
+
+@page "/administration/abonnes"
+@layout DotnetNiger.Web.Components.Layout.AdministrationLayout
+@using System.Globalization
+@using Microsoft.EntityFrameworkCore
+@using DotnetNiger.Application.Abstractions.Persistence
+@using DotnetNiger.Application.Common
+@using DotnetNiger.Domain.Entities.Content
+@using DotnetNiger.Domain.Enums
+@using DotnetNiger.Web.Controller.Contracts
+@inject IUnitOfWork UniteDeTravail
+
+<PageTitle>Abonnés - Administration</PageTitle>
+
+<header class="mb-6">
+    <h1 class="text-section font-semibold">Abonnés à la lettre</h1>
+    <p class="text-sm text-ink-600">
+        Seuls les abonnements confirmés reçoivent la lettre. Une demande en attente est une
+        adresse qui n'a pas encore dit oui.
+    </p>
+</header>
+
+<section class="mb-6 grid gap-4 md:grid-cols-3" aria-label="Répartition des abonnements">
+    @foreach (var compteur in _compteurs)
+    {
+        <div class="rounded-md border border-ink-200 bg-white p-4">
+            <p class="text-caption text-ink-500">@compteur.Libelle</p>
+            <p class="text-display font-semibold">@compteur.Total.ToString("N0", Culture)</p>
+        </div>
+    }
+</section>
+
+<nav class="mb-6 flex flex-wrap gap-2" aria-label="Filtrer les abonnés">
+    <a class="rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm hover:bg-ink-50"
+       href="/administration/abonnes">Tous</a>
+    <a class="rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm hover:bg-ink-50"
+       href="/administration/abonnes?statut=Confirmed">Confirmés</a>
+    <a class="rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm hover:bg-ink-50"
+       href="/administration/abonnes?statut=Pending">En attente</a>
+    <a class="rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm hover:bg-ink-50"
+       href="/administration/abonnes?statut=Unsubscribed">Désabonnés</a>
+</nav>
+
+@if (_page.TotalCount == 0)
+{
+    <p class="rounded-md border border-ink-200 bg-white px-4 py-8 text-center text-ink-500">
+        Aucun abonnement à afficher.
+    </p>
+}
+else
+{
+    <div class="overflow-x-auto rounded-md border border-ink-200 bg-white">
+        <table class="w-full text-left text-sm">
+            <thead class="border-b border-ink-200 text-caption uppercase text-ink-500">
+                <tr>
+                    <th class="px-4 py-3" scope="col">Adresse</th>
+                    <th class="px-4 py-3" scope="col">État</th>
+                    <th class="px-4 py-3" scope="col">Demandé le</th>
+                    <th class="px-4 py-3" scope="col">Confirmé le</th>
+                    <th class="px-4 py-3" scope="col">Désabonné le</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var abonnement in _page.Items)
+                {
+                    <tr class="border-b border-ink-100 last:border-0">
+                        <td class="px-4 py-3">@abonnement.Email</td>
+                        <td class="px-4 py-3">
+                            <span class="rounded-full px-3 py-1 text-caption @EtatClasse(abonnement.Status)">
+                                @Etat(abonnement.Status)
+                            </span>
+                        </td>
+                        <td class="px-4 py-3 text-ink-600">@Date(abonnement.RequestedAtUtc)</td>
+                        <td class="px-4 py-3 text-ink-600">@Date(abonnement.ConfirmedAtUtc)</td>
+                        <td class="px-4 py-3 text-ink-600">@Date(abonnement.UnsubscribedAtUtc)</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <Pager PageNumber="_page.Page" TotalPages="_page.TotalPages" TotalCount="_page.TotalCount"
+           Base="/administration/abonnes" Query="@_query" />
+}
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
+
+    private PageResponse<NewsletterSubscriptionResponse> _page = new([], 1, 20, 0, 0, false);
+    private IReadOnlyList<(string Libelle, int Total)> _compteurs = [];
+    private string? _query;
+
+    /// <summary>État à filtrer, ou <see langword="null"/> pour tous.</summary>
+    [SupplyParameterFromQuery(Name = "statut")]
+    public string? Statut { get; set; }
+
+    [SupplyParameterFromQuery(Name = "page")]
+    public int? Page { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var filtre = Enum.TryParse<NewsletterStatus>(Statut, ignoreCase: true, out var etat) ? etat : (NewsletterStatus?)null;
+
+        _query = filtre is null ? null : $"statut={filtre.Value}";
+
+        var abonnements = UniteDeTravail.ReadRepository<NewsletterSubscription>().Query;
+
+        _compteurs =
+        [
+            ("Confirmés", await abonnements.CountAsync(a => a.Status == NewsletterStatus.Confirmed)),
+            ("En attente", await abonnements.CountAsync(a => a.Status == NewsletterStatus.Pending)),
+            ("Désabonnés", await abonnements.CountAsync(a => a.Status == NewsletterStatus.Unsubscribed)),
+        ];
+
+        var requete = filtre is { } valeur
+            ? abonnements.Where(abonnement => abonnement.Status == valeur)
+            : abonnements;
+
+        var demande = new PageRequest(Page ?? 1, PageRequest.DefaultPageSize);
+        var total = await requete.CountAsync();
+
+        var items = await requete
+            .OrderByDescending(abonnement => abonnement.RequestedAtUtc)
+            .Skip(demande.Skip)
+            .Take(demande.PageSize)
+            .ToListAsync();
+
+        _page = ApiProjections.ToPage(
+            new PagedResult<NewsletterSubscription>(items, demande.PageNumber, demande.PageSize, total),
+            ToResponse);
+    }
+
+    private static NewsletterSubscriptionResponse ToResponse(NewsletterSubscription abonnement) =>
+        new(
+            abonnement.Id,
+            abonnement.Email,
+            abonnement.Status,
+            abonnement.RequestedAtUtc,
+            abonnement.ConfirmedAtUtc,
+            abonnement.UnsubscribedAtUtc);
+
+    private static string Date(DateTime? moment) =>
+        moment is { } valeur
+            ? valeur.ToLocalTime().ToString("d MMM yyyy", Culture)
+            : "—";
+
+    private static string Etat(NewsletterStatus statut) => statut switch
+    {
+        NewsletterStatus.Confirmed => "Confirmé",
+        NewsletterStatus.Pending => "En attente",
+        _ => "Désabonné",
+    };
+
+    private static string EtatClasse(NewsletterStatus statut) => statut switch
+    {
+        NewsletterStatus.Confirmed => "bg-vert-100 text-vert-700",
+        NewsletterStatus.Pending => "bg-orange-100 text-orange-700",
+        _ => "bg-ink-100 text-ink-600",
+    };
+}

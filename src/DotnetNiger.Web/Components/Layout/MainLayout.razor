@@ -1,11 +1,12 @@
 ﻿@inherits LayoutComponentBase
+@inject DotnetNiger.Application.Abstractions.ICurrentUserService Utilisateur
 
 <div class="app-shell">
     <a class="skip-link" href="#contenu">Aller au contenu</a>
 
     <header class="site-header">
         <a class="site-brand" href="/">
-            <span class="site-brand__name">dot<span class="site-brand__accent">Net</span>Niger</span>
+            <span class="site-brand__name">Dot<span class="site-brand__accent">net</span>Niger</span>
         </a>
 
         <nav class="site-nav" aria-label="Navigation principale">
@@ -17,6 +18,11 @@
             <NavLink class="site-nav__link" href="/evenements">Événements</NavLink>
             <NavLink class="site-nav__link" href="/partenaires">Partenaires</NavLink>
             <NavLink class="site-nav__link" href="/contact">Contact</NavLink>
+
+            @if (Utilisateur.IsInRole(DotnetNiger.Application.Common.RoleNames.Admin))
+            {
+                <NavLink class="site-nav__link" href="/administration">Administration</NavLink>
+            }
         </nav>
     </header>
 

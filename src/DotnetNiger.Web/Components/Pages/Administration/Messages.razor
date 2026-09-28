@@ -1,0 +1,170 @@
+@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
+
+@page "/administration/messages"
+@layout DotnetNiger.Web.Components.Layout.AdministrationLayout
+@using System.Globalization
+@using Microsoft.EntityFrameworkCore
+@using DotnetNiger.Application.Abstractions.Persistence
+@using DotnetNiger.Application.Common
+@using DotnetNiger.Domain.Entities.Community
+@using DotnetNiger.Web.Controller.Contracts
+@inject IUnitOfWork UniteDeTravail
+
+<PageTitle>Messages - Administration</PageTitle>
+
+<header class="mb-6 flex flex-wrap items-end justify-between gap-4">
+    <div>
+        <h1 class="text-section font-semibold">Messages reçus</h1>
+        <p class="text-sm text-ink-600">
+            @if (EnAttente)
+            {
+                <text>Messages sans réponse.</text>
+            }
+            else
+            {
+                <text>Tous les messages, du plus récent au plus ancien.</text>
+            }
+        </p>
+    </div>
+
+    <nav class="flex gap-2" aria-label="Filtrer les messages">
+        <a class="rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm hover:bg-ink-50"
+           href="/administration/messages">Tous</a>
+        <a class="rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm hover:bg-ink-50"
+           href="/administration/messages?enAttente=1">Sans réponse</a>
+    </nav>
+</header>
+
+@if (_confirmation is not null)
+{
+    <p class="mb-4 rounded-sm bg-vert-100 px-4 py-3 text-sm text-vert-700">@_confirmation</p>
+}
+
+@if (_page.TotalCount == 0)
+{
+    <p class="rounded-md border border-ink-200 bg-white px-4 py-8 text-center text-ink-500">
+        Aucun message à afficher.
+    </p>
+}
+else
+{
+    <ol class="flex flex-col gap-4">
+        @foreach (var message in _page.Items)
+        {
+            <li class="rounded-md border border-ink-200 bg-white p-4">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <h2 class="text-lead font-semibold">@message.Subject</h2>
+                    <span class="text-caption text-ink-500">
+                        @message.ReceivedAtUtc.ToString("d MMMM yyyy 'à' HH:mm", Culture)
+                    </span>
+                </div>
+
+                <p class="text-sm text-ink-600">
+                    De <span class="font-medium text-ink-800">@message.Name</span>
+                    &lt;<a class="text-violet-600 underline" href="mailto:@message.Email">@message.Email</a>&gt;
+                </p>
+
+                <p class="mt-3 whitespace-pre-line text-base">@message.Message</p>
+
+                <div class="mt-4 flex flex-wrap items-center gap-2">
+                    @if (message.HandledAtUtc is { } traite)
+                    {
+                        <span class="rounded-full bg-vert-100 px-3 py-1 text-caption text-vert-700">
+                            Répondu le @traite.ToString("d MMM yyyy", Culture)
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="rounded-full bg-orange-100 px-3 py-1 text-caption text-orange-700">Sans réponse</span>
+                    }
+
+                    @if (message.HandledAtUtc is null)
+                    {
+                        <form method="post" action="/administration/messages/@message.Id/traiter">
+                            <AntiforgeryToken />
+                            <button class="rounded-sm border border-ink-300 px-3 py-1 text-sm hover:bg-ink-50"
+                                    type="submit">
+                                Marquer comme lu
+                            </button>
+                        </form>
+                    }
+
+                    <form method="post" action="/administration/messages/@message.Id/retirer">
+                        <AntiforgeryToken />
+                        <button class="rounded-sm border border-ink-300 px-3 py-1 text-sm hover:bg-ink-50"
+                                type="submit">
+                            Retirer
+                        </button>
+                    </form>
+                </div>
+            </li>
+        }
+    </ol>
+
+    <Pager PageNumber="_page.Page" TotalPages="_page.TotalPages" TotalCount="_page.TotalCount"
+           Base="/administration/messages" Query="@_query" />
+}
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
+
+    private PageResponse<ContactMessageResponse> _page = new([], 1, 20, 0, 0, false);
+    private string? _confirmation;
+
+    /// <summary>Ne montrer que les messages qui n'ont pas encore reçu de réponse.</summary>
+    [SupplyParameterFromQuery(Name = "enAttente")]
+    public bool EnAttente { get; set; }
+
+    [SupplyParameterFromQuery(Name = "page")]
+    public int? Page { get; set; }
+
+    [SupplyParameterFromQuery(Name = "traite")]
+    public bool Traite { get; set; }
+
+    [SupplyParameterFromQuery(Name = "retire")]
+    public bool Retire { get; set; }
+
+    private string? _query;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _query = EnAttente ? "enAttente=1" : null;
+
+        _confirmation = (Traite, Retire) switch
+        {
+            (true, _) => "Message marqué comme ayant reçu une réponse.",
+            (_, true) => "Message retiré de la boîte de réception.",
+            _ => null,
+        };
+
+        var requete = UniteDeTravail.ReadRepository<ContactMessage>().Query.AsQueryable();
+
+        if (EnAttente)
+        {
+            requete = requete.Where(message => message.HandledAtUtc == null);
+        }
+
+        var demande = new PageRequest(Page ?? 1, PageRequest.DefaultPageSize);
+        var total = await requete.CountAsync();
+
+        var items = await requete
+            .OrderByDescending(message => message.ReceivedAtUtc)
+            .Skip(demande.Skip)
+            .Take(demande.PageSize)
+            .ToListAsync();
+
+        _page = ApiProjections.ToPage(
+            new PagedResult<ContactMessage>(items, demande.PageNumber, demande.PageSize, total),
+            ToResponse);
+    }
+
+    private static ContactMessageResponse ToResponse(ContactMessage message) =>
+        new(
+            message.Id,
+            message.Name,
+            message.Email,
+            message.Subject,
+            message.Body,
+            message.ReceivedAtUtc,
+            message.HandledAtUtc);
+}

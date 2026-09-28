@@ -5,6 +5,7 @@ using DotnetNiger.Infrastructure.Persistence;
 using DotnetNiger.Infrastructure;
 using DotnetNiger.Web;
 using DotnetNiger.Web.Authentication;
+using DotnetNiger.Web.Administration;
 using DotnetNiger.Web.Components;
 using DotnetNiger.Web.Controller.Common;
 using DotnetNiger.Web.Controller;
@@ -187,6 +188,9 @@ app.MapStaticAssets();
 app.MapExternalAccountEndpoints();
 app.MapAccountEndpoints();
 app.MapAccountVerificationEndpoints();
+
+// ---------- Back-office ----------
+app.MapAdministrationEndpoints();
 
 // ---------- API ----------
 // Préfixe unique, sans versionnement : le contrat n'a pas encore été publié à des clients

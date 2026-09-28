@@ -1,0 +1,59 @@
+@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
+
+@page "/administration"
+@layout DotnetNiger.Web.Components.Layout.AdministrationLayout
+@using Microsoft.EntityFrameworkCore
+@using DotnetNiger.Application.Abstractions.Persistence
+@using DotnetNiger.Domain.Entities.Community
+@using DotnetNiger.Domain.Entities.Content
+@using DotnetNiger.Domain.Enums
+@inject IUnitOfWork UniteDeTravail
+
+<PageTitle>Administration</PageTitle>
+
+<header class="mb-8">
+    <h1 class="text-section font-semibold">Administration</h1>
+    <p class="text-sm text-ink-600">Les trois écrans du site qui demandent une décision humaine.</p>
+</header>
+
+<section class="grid gap-4 md:grid-cols-3">
+    @foreach (var carte in _cartes)
+    {
+        <a class="rounded-md border border-ink-200 bg-white p-6 hover:border-violet-300"
+           href="@carte.Lien">
+            <p class="text-caption uppercase text-ink-500">@carte.Titre</p>
+            <p class="text-display font-semibold">@carte.Valeur</p>
+            <p class="text-sm text-ink-600">@carte.Precision</p>
+        </a>
+    }
+</section>
+
+@code {
+    private IReadOnlyList<(string Titre, int Valeur, string Precision, string Lien)> _cartes = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var messages = UniteDeTravail.ReadRepository<ContactMessage>().Query;
+        var abonnements = UniteDeTravail.ReadRepository<NewsletterSubscription>().Query;
+        var articles = UniteDeTravail.ReadRepository<Article>().Query;
+
+        _cartes =
+        [
+            (
+                "Sans réponse",
+                await messages.CountAsync(message => message.HandledAtUtc == null),
+                "messages de contact attendent une réponse",
+                "/administration/messages?enAttente=1"),
+            (
+                "Abonnés confirmés",
+                await abonnements.CountAsync(abonnement => abonnement.Status == NewsletterStatus.Confirmed),
+                "reçoivent la lettre d'information",
+                "/administration/abonnes?statut=Confirmed"),
+            (
+                "Brouillons",
+                await articles.CountAsync(article => article.Status == PublicationStatus.Draft),
+                "actualités rédigées et non publiées",
+                "/administration/actualites?statut=Draft"),
+        ];
+    }
+}

@@ -1,0 +1,35 @@
+@inherits LayoutComponentBase
+@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
+
+<div class="min-h-screen bg-ink-50">
+    <header class="bg-violet-800 text-white">
+        <div class="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-4 px-4 py-4 md:px-8">
+            <div>
+                <p class="text-micro text-violet-200">Administration</p>
+                <a class="text-lead font-semibold hover:underline" href="/">DotnetNiger</a>
+            </div>
+
+            <nav class="flex flex-wrap items-center gap-2" aria-label="Navigation de l'administration">
+                <NavLink class="rounded-sm px-3 py-2 text-sm text-violet-100 hover:bg-violet-700" href="/administration/messages">
+                    Messages
+                </NavLink>
+                <NavLink class="rounded-sm px-3 py-2 text-sm text-violet-100 hover:bg-violet-700" href="/administration/abonnes">
+                    Abonnés
+                </NavLink>
+                <NavLink class="rounded-sm px-3 py-2 text-sm text-violet-100 hover:bg-violet-700" href="/administration/actualites">
+                    Actualités
+                </NavLink>
+                <form method="post" action="/compte/deconnexion" class="ml-2">
+                    <AntiforgeryToken />
+                    <button class="rounded-sm border border-violet-400 px-3 py-2 text-sm hover:bg-violet-700" type="submit">
+                        Déconnexion
+                    </button>
+                </form>
+            </nav>
+        </div>
+    </header>
+
+    <main id="contenu" class="mx-auto max-w-[1440px] px-4 py-8 md:px-8">
+        @Body
+    </main>
+</div>

@@ -1,0 +1,63 @@
+@*
+    Navigation entre les pages d'une liste.
+
+    Les liens conservent les filtres de la page courante : revenir en arrière après avoir
+    changé de page ne doit pas faire perdre le filtre — on revient alors sur une liste
+    qu'on ne reconnaît plus.
+*@
+
+@if (TotalPages > 1)
+{
+    <nav class="mt-6 flex items-center justify-between gap-4" aria-label="Pages">
+    @if (PageNumber > 1)
+    {
+        <a class="rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm hover:bg-ink-50"
+           href="@Lien(PageNumber - 1)">Précédent</a>
+    }
+    else
+    {
+        <span class="px-3 py-2 text-sm text-ink-400">Précédent</span>
+    }
+
+    <p class="text-caption text-ink-500">
+        Page @PageNumber sur @TotalPages — @TotalCount au total
+    </p>
+
+    @if (PageNumber < TotalPages)
+    {
+        <a class="rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm hover:bg-ink-50"
+           href="@Lien(PageNumber + 1)">Suivant</a>
+    }
+    else
+    {
+        <span class="px-3 py-2 text-sm text-ink-400">Suivant</span>
+    }
+    </nav>
+}
+
+@code {
+    /// <summary>Numéro de la page affichée.</summary>
+    [Parameter, EditorRequired]
+    public int PageNumber { get; set; } = 1;
+
+    /// <summary>Nombre de pages disponibles.</summary>
+    [Parameter, EditorRequired]
+    public int TotalPages { get; set; } = 1;
+
+    /// <summary>Nombre total d'éléments filtrés.</summary>
+    [Parameter, EditorRequired]
+    public int TotalCount { get; set; }
+
+    /// <summary>Chemin de la liste, filtres compris.</summary>
+    [Parameter, EditorRequired]
+    public string Base { get; set; } = string.Empty;
+
+    /// <summary>Paramètres à reconduire, sous forme <c>cle=valeur</c> séparés par une esperluette.</summary>
+    [Parameter]
+    public string? Query { get; set; }
+
+    private string Lien(int numero) =>
+        string.IsNullOrWhiteSpace(Query)
+            ? $"{Base}?page={numero}"
+            : $"{Base}?page={numero}&{Query}";
+}
