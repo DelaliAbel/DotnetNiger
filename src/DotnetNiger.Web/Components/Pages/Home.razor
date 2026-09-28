@@ -1,7 +1,298 @@
 ﻿@page "/"
+@attribute [StreamRendering]
 
-<PageTitle>Home</PageTitle>
+@inject ISiteContentService Contenu
 
-<h1>Hello, world!</h1>
+<PageTitle>DotnetNiger — la communauté des développeurs .NET au Niger</PageTitle>
+<HeadContent>
+    <meta name="description" content="Rejoignez la communauté des développeurs .NET au Niger : événements, meetups, ressources techniques et projets open source." />
+    <meta property="og:title" content="DotnetNiger — la communauté des développeurs .NET au Niger" />
+    <meta property="og:description" content="Rejoignez la communauté des développeurs .NET au Niger : événements, meetups, ressources techniques et projets open source." />
+</HeadContent>
 
-Welcome to your new app.
+@if (_Accueil is null)
+{
+    <div class="wrap" style="padding-block: calc(var(--spacing) * 12);">
+        <p class="text-caption" style="color: var(--site-fg-muted);">Chargement…</p>
+    </div>
+}
+else
+{
+    <!-- 1. Bannière principale (hero) -->
+    <section class="hero">
+        <div class="wrap hero__grid">
+            <div>
+                <p class="hero__eyebrow">
+                    <DnIcon Name="code" Size="14" /> Communauté .NET au Niger
+                </p>
+                <h1 class="hero__title" style="margin-top: var(--spacing);">
+                    La communauté des développeurs <strong>.NET au Niger</strong>
+                </h1>
+                <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
+                    DotnetNiger connecte les développeurs .NET du Niger et d'Afrique de l'Ouest :
+                    événements et meetups, ressources techniques et projets open source, partagés
+                    par la communauté et pour la communauté.
+                </p>
+                <div class="hero__actions" style="margin-top: calc(var(--spacing) * 4);">
+                    <a class="btn btn--white btn--lg" href="/communaute">
+                        Rejoindre la communauté <DnIcon Name="arrow-right" Size="18" />
+                    </a>
+                    <a class="btn btn--accent btn--lg" href="/ressources">
+                        Explorer les ressources <DnIcon Name="book-open" Size="18" />
+                    </a>
+                </div>
+            </div>
+
+            <div class="hero__panel">
+                <div class="hero__panel__bar" aria-hidden="true">
+                    <span class="hero__panel__dot" style="background: #f17b26;"></span>
+                    <span class="hero__panel__dot" style="background: #03ad69;"></span>
+                    <span class="hero__panel__dot" style="background: #ad9be8;"></span>
+                </div>
+                <img class="hero__panel__image" src="/images/img4.jpeg" loading="lazy"
+                     alt="Rencontre de la communauté DotnetNiger : des développeurs .NET réunis autour d'un atelier" />
+            </div>
+        </div>
+    </section>
+
+    <!-- Chiffres clés -->
+    <section class="section" style="padding-block: calc(var(--spacing) * 8) 0;">
+        <div class="wrap">
+            <div class="numeros">
+                <div>
+                    <p class="numeros__valeur">@_Accueil.NombreMembres</p>
+                    <p class="numeros__libelle">membres de la communauté</p>
+                </div>
+                <div>
+                    <p class="numeros__valeur">@_Accueil.NombreProjets</p>
+                    <p class="numeros__libelle">projets open source</p>
+                </div>
+                <div>
+                    <p class="numeros__valeur">@_Accueil.NombreRessources</p>
+                    <p class="numeros__libelle">ressources techniques</p>
+                </div>
+                <div>
+                    <p class="numeros__valeur">@_Accueil.NombreEvenements</p>
+                    <p class="numeros__libelle">événements à découvrir</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. Présentation rapide -->
+    <section class="section" aria-labelledby="presentation-titre">
+        <div class="wrap">
+            <div class="section__head">
+                <p class="eyebrow">Notre mission</p>
+                <h2 id="presentation-titre" class="section__title">
+                    Un espace pour se <strong>connecter</strong>, <strong>apprendre</strong> et
+                    <strong>bâtir</strong> ensemble
+                </h2>
+                <p class="section__lead">
+                    DotnetNiger rassemble les développeurs .NET du Niger : nous organisons des
+                    événements, nous partageons des ressources techniques et nous accompagnons les
+                    projets open source de la communauté.
+                </p>
+            </div>
+
+            <div class="grid gap-2 md:grid-cols-3">
+                <article class="card card--hover">
+                    <div class="card__body">
+                        <span class="badge badge--violet"><DnIcon Name="users" Size="14" /> Se connecter</span>
+                        <h3 class="card__title">Une communauté bienveillante</h3>
+                        <p class="card__text">
+                            Du débutant à l'architecte, chacun y trouve une oreille attentive, un
+                            mentor et des pairs avec qui échanger au quotidien.
+                        </p>
+                    </div>
+                </article>
+                <article class="card card--hover">
+                    <div class="card__body">
+                        <span class="badge badge--vert"><DnIcon Name="book-open" Size="14" /> Apprendre</span>
+                        <h3 class="card__title">Des ressources de qualité</h3>
+                        <p class="card__text">
+                            Formations, tutoriels et guides sélectionnés et créés par des membres,
+                            pour progresser sur C#, ASP.NET Core, Blazor, MAUI et plus encore.
+                        </p>
+                    </div>
+                </article>
+                <article class="card card--hover">
+                    <div class="card__body">
+                        <span class="badge badge--orange"><DnIcon Name="code" Size="14" /> Bâtir</span>
+                        <h3 class="card__title">Des projets concrets</h3>
+                        <p class="card__text">
+                            Meetups, hackathons et projets open source : la communauté transforme ses
+                            idées en logiciels utiles au Niger et au-delà.
+                        </p>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Actualités & événements à venir -->
+    <section class="section section--alt" aria-labelledby="evenements-titre">
+        <div class="wrap">
+            <div class="section__head section__head--split">
+                <div>
+                    <p class="eyebrow">Nos prochaines rencontres</p>
+                    <h2 id="evenements-titre" class="section__title">Événements à venir</h2>
+                    <p class="section__lead">
+                        Meetups à Niamey, conférences en ligne et hackathons : participez à la vie
+                        de la communauté.
+                    </p>
+                </div>
+                <a class="btn btn--ghost" href="/evenements">
+                    Tous les événements <DnIcon Name="arrow-right" Size="16" />
+                </a>
+            </div>
+
+            <div class="grid gap-2 md:grid-cols-3">
+                @foreach (var evenement in _Accueil.EvenementsAVenir)
+                {
+                    <article class="card card--hover">
+                        <div class="card__media">
+                            <img src="@evenement.ImageUrl" alt="@evenement.Titre" loading="lazy"
+                                 style="width: 100%; height: 100%; object-fit: cover;" />
+                        </div>
+                        <div class="card__body">
+                            <p class="card__meta">
+                                <span class="badge badge--@CouleurType(evenement.Type)">@evenement.Type</span>
+                                <span style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <DnIcon Name="map-pin" Size="14" /> @evenement.Lieu
+                                </span>
+                            </p>
+                            <h3 class="card__title">@evenement.Titre</h3>
+                            <p class="card__text">@evenement.Description</p>
+                            <a class="link" href="/evenements">S'inscrire à l'événement <DnIcon Name="arrow-right" Size="14" /></a>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Ressources populaires -->
+    <section class="section" aria-labelledby="ressources-titre">
+        <div class="wrap">
+            <div class="section__head section__head--split">
+                <div>
+                    <p class="eyebrow">Apprendre et se perfectionner</p>
+                    <h2 id="ressources-titre" class="section__title">Ressources populaires</h2>
+                    <p class="section__lead">
+                        Formations, tutoriels, guides et outils : la sélection de la communauté pour
+                        passer à la pratique.
+                    </p>
+                </div>
+                <a class="btn btn--ghost" href="/ressources">
+                    Toutes les ressources <DnIcon Name="arrow-right" Size="16" />
+                </a>
+            </div>
+
+            <div class="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                @foreach (var ressource in _Accueil.RessourcesPopulaires)
+                {
+                    <article class="card card--hover">
+                        <div class="card__body">
+                            <span class="badge badge--ink">@ressource.Categorie</span>
+                            <h3 class="card__title">@ressource.Titre</h3>
+                            <p class="card__text">@ressource.Description</p>
+                            <p class="card__meta">Proposée par @ressource.Auteur</p>
+                            <a class="link" href="@ressource.Lien"
+                               target="@(ressource.Externe ? "_blank" : null)" rel="@(ressource.Externe ? "noopener" : null)">
+                                @(ressource.Externe ? "Ouvrir la ressource" : "Lire la ressource")
+                                <DnIcon Name="@(ressource.Externe ? "external-link" : "arrow-right")" Size="14" />
+                            </a>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. Actualités du blog -->
+    <section class="section section--alt" aria-labelledby="actus-titre">
+        <div class="wrap">
+            <div class="section__head section__head--split">
+                <div>
+                    <p class="eyebrow">Le blog de la communauté</p>
+                    <h2 id="actus-titre" class="section__title">Dernières actualités</h2>
+                    <p class="section__lead">
+                        Nouveautés de .NET, projets locaux et interviews de développeurs.
+                    </p>
+                </div>
+                <a class="btn btn--ghost" href="/blog">
+                    Tout le blog <DnIcon Name="arrow-right" Size="16" />
+                </a>
+            </div>
+
+            <div class="grid gap-2 md:grid-cols-2">
+                @foreach (var article in _Accueil.ArticlesRecents)
+                {
+                    <article class="card card--hover card--actus">
+                        <div class="card__body card--actus__body">
+                            <span class="badge badge--@CouleurCategorie(article.Categorie)">@article.Categorie</span>
+                            <div style="display: grid; gap: var(--spacing);">
+                                <h3 class="card__title" style="font-size: var(--text-base);">
+                                    <a href="/blog/@article.Slug" class="link">@article.Titre</a>
+                                </h3>
+                                <p class="card__text">@article.Extrait</p>
+                                <p class="card__meta">
+                                    <DnIcon Name="users" Size="14" /> @article.Auteur
+                                    <span aria-hidden="true">·</span>
+                                    @article.LectureMinutes min de lecture
+                                </p>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. Zone de connexion rapide -->
+    <section class="section" aria-labelledby="rejoindre-titre">
+        <div class="wrap">
+            <div class="bande">
+                <div class="grid gap-6 md:grid-cols-2" style="align-items: center;">
+                    <div>
+                        <p class="eyebrow" style="color: var(--color-vert-300);">Zone de connexion rapide</p>
+                        <h2 id="rejoindre-titre" class="bande__title" style="margin-top: var(--spacing);">
+                            Ne manquez plus rien de la communauté
+                        </h2>
+                        <p class="bande__lead">
+                            Inscrivez-vous à la newsletter pour recevoir les actualités, les nouveaux
+                            événements et les ressources du moment directement dans votre boîte mail.
+                        </p>
+                    </div>
+                    <div>
+                        <NewsletterForm @rendermode="InteractiveServer" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+@code {
+    private AccueilVue? _Accueil;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _Accueil = await Contenu.ChargerAccueilAsync();
+    }
+
+    private static string CouleurType(string type) => type switch
+    {
+        "Meetup" => "violet",
+        "Hackathon" => "orange",
+        _ => "vert",
+    };
+
+    private static string CouleurCategorie(string categorie) => categorie switch
+    {
+        "Interviews" => "orange",
+        "Projets locaux" => "vert",
+        _ => "violet",
+    };
+}

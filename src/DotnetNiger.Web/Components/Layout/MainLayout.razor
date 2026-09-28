@@ -5,32 +5,70 @@
     <a class="skip-link" href="#contenu">Aller au contenu</a>
 
     <header class="site-header">
-        <a class="site-brand" href="/">
-            <span class="site-brand__name">Dot<span class="site-brand__accent">net</span>Niger</span>
-        </a>
+        <div class="wrap site-header__inner">
+            <DnBrand />
 
-        <nav class="site-nav" aria-label="Navigation principale">
-            <NavLink class="site-nav__link" href="/">Accueil</NavLink>
-            <NavLink class="site-nav__link" href="/a-propos">À propos</NavLink>
-            <NavLink class="site-nav__link" href="/ressources">Ressources</NavLink>
-            <NavLink class="site-nav__link" href="/communaute">Communauté</NavLink>
-            <NavLink class="site-nav__link" href="/blog">Blog</NavLink>
-            <NavLink class="site-nav__link" href="/evenements">Événements</NavLink>
-            <NavLink class="site-nav__link" href="/partenaires">Partenaires</NavLink>
-            <NavLink class="site-nav__link" href="/contact">Contact</NavLink>
+            <nav id="site-nav" class="site-nav" aria-label="Navigation principale">
+                <div class="site-nav__head">
+                    <span class="text-caption" style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--site-fg-muted);">Menu</span>
+                    <button class="site-nav__close" type="button" data-nav-close aria-label="Fermer la navigation"
+                            onclick="DnNav.ferme(); return false;">
+                        <DnIcon Name="x" Size="16" />
+                    </button>
+                </div>
 
-            @if (Utilisateur.IsInRole(DotnetNiger.Application.Common.RoleNames.Admin))
-            {
-                <NavLink class="site-nav__link" href="/administration">Administration</NavLink>
-            }
-        </nav>
+                <NavLink class="site-nav__link" href="/" Match="NavLinkMatch.All">Accueil</NavLink>
+                <NavLink class="site-nav__link" href="/a-propos">À propos</NavLink>
+                <NavLink class="site-nav__link" href="/ressources">Ressources</NavLink>
+                <NavLink class="site-nav__link" href="/communaute">Communauté</NavLink>
+                <NavLink class="site-nav__link" href="/blog">Blog</NavLink>
+                <NavLink class="site-nav__link" href="/evenements">Événements</NavLink>
+                <NavLink class="site-nav__link" href="/partenaires">Partenaires</NavLink>
+                <NavLink class="site-nav__link" href="/contact">Contact</NavLink>
+
+                @if (Utilisateur.IsInRole(DotnetNiger.Application.Common.RoleNames.Admin))
+                {
+                    <NavLink class="site-nav__link" href="/administration">Administration</NavLink>
+                }
+
+                <!-- Compte : visible dans le tiroir sur mobile -->
+                <div class="site-nav__footer">
+                    <a class="site-nav__connexion" href="/compte/connexion">
+                        Se connecter <DnIcon Name="arrow-right" Size="16" />
+                    </a>
+                    <a class="btn btn--primary" href="/compte/inscription">Rejoindre la communauté</a>
+                </div>
+            </nav>
+
+            <div class="site-header__actions">
+                <!-- Compte : visible dans la barre d'en-tête sur ordinateur -->
+                <a class="btn btn--secondary site-header__connexion" href="/compte/connexion">Se connecter</a>
+                <a class="btn btn--primary site-header__cta" href="/compte/inscription">Rejoindre la communauté</a>
+
+                <button class="theme-toggle" type="button" data-theme-toggle aria-label="Activer le mode sombre" aria-pressed="false"
+                        onclick="DnTheme.toggle(); return false;">
+                    <span data-icone-soleil style="display: none"><DnIcon Name="sun" Size="16" /></span>
+                    <span data-icone-lune><DnIcon Name="moon" Size="16" /></span>
+                </button>
+
+                <button class="site-nav__toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-haspopup="dialog"
+                        onclick="DnNav.ouvre(); return false;">
+                    <span class="site-nav__toggle__icone"><DnIcon Name="menu" Size="18" /></span>
+                    <span class="sr-only">Ouvrir la navigation</span>
+                </button>
+            </div>
+        </div>
     </header>
+
+    <div class="site-nav__backdrop" data-nav-backdrop aria-hidden="true"></div>
 
     <main id="contenu" class="site-main">
         @Body
     </main>
 
     <SiteFooter />
+
+    <script src="/js/site.js"></script>
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>

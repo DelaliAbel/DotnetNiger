@@ -10,6 +10,7 @@ using DotnetNiger.Web.Components;
 using DotnetNiger.Web.Controller.Common;
 using DotnetNiger.Web.Controller;
 using DotnetNiger.Web.Services;
+using DotnetNiger.Web.Services.Ui;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -46,6 +47,11 @@ builder.Services.AddAuthorization();
 // ---------- Front Blazor ----------
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// ---------- Contenus du site public ----------
+// Phase 1 : données de garniture pour valider le rendu. Phase 2 : implémentation branchée
+// sur l'API, sans modifier les pages.
+builder.Services.AddScoped<ISiteContentService, PlaceholderSiteContentService>();
 
 // ---------- API : documentation native .NET ----------
 builder.Services.AddOpenApi();

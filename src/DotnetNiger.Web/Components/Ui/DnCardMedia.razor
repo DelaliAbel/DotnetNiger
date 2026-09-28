@@ -1,0 +1,22 @@
+@namespace DotnetNiger.Web.Components.Ui
+
+<div class="card__media @(string.IsNullOrWhiteSpace(ImageUrl) ? "card__media--defaut" : null)">
+    @if (string.IsNullOrWhiteSpace(ImageUrl))
+    {
+        <div class="card__media__defaut" aria-hidden="true">
+            <DnIcon Name="code" Size="28" />
+        </div>
+    }
+    else
+    {
+        <img src="@ImageUrl" alt="@Alt" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;" />
+    }
+</div>
+
+@code {
+    /// <summary>URL de l'image de couverture. Si absente, un visuel par défaut est affiché.</summary>
+    [Parameter] public string? ImageUrl { get; set; }
+
+    /// <summary>Description de l'image pour l'accessibilité.</summary>
+    [Parameter] public string Alt { get; set; } = string.Empty;
+}

@@ -1,11 +1,21 @@
+@inject ISiteContentService Contenu
+
 <footer class="site-footer">
     <div class="wrap">
         <div class="site-footer__grid">
             <div class="site-footer__brand">
-                <p class="site-footer__name">dot<span class="site-brand__accent">Net</span>Niger</p>
+                <p class="site-footer__name">Dot<span class="site-brand__accent">net</span>Niger</p>
                 <p class="site-footer__mission">
-                    La communauté des développeurs .NET au Niger.
+                    La communauté des développeurs .NET au Niger : connecter, apprendre et bâtir ensemble.
                 </p>
+                <nav class="site-footer__social" aria-label="Réseaux sociaux et canaux de la communauté">
+                    @foreach (var canal in _Canaux)
+                    {
+                        <a href="@canal.Url" target="_blank" rel="noopener" aria-label="@canal.Nom">
+                            <DnIcon Name="@canal.Icône" Size="18" />
+                        </a>
+                    }
+                </nav>
             </div>
 
             <nav class="site-footer__col" aria-label="Liens rapides">
@@ -16,21 +26,48 @@
                     <li><a href="/communaute">Communauté</a></li>
                     <li><a href="/blog">Blog</a></li>
                     <li><a href="/evenements">Événements</a></li>
+                    <li><a href="/partenaires">Partenaires</a></li>
                 </ul>
             </nav>
 
-            <nav class="site-footer__col" aria-label="Informations légales">
-                <h2 class="site-footer__title">Informations</h2>
+            <nav class="site-footer__col" aria-label="Ressources">
+                <h2 class="site-footer__title">Ressources</h2>
                 <ul class="site-footer__list">
-                    <li><a href="/mentions-legales">Mentions légales</a></li>
-                    <li><a href="/politique-de-confidentialite">Politique de confidentialité</a></li>
+                    <li><a href="/ressources">Formations et tutoriels</a></li>
+                    <li><a href="/ressources#outils">Bibliothèques et outils</a></li>
+                    <li><a href="/blog">Articles et guides</a></li>
+                    <li><a href="/communaute#projets">Projets open source</a></li>
+                    <li><a href="/communaute#contribuer">Contribuer</a></li>
+                </ul>
+            </nav>
+
+            <nav class="site-footer__col" aria-label="Communauté">
+                <h2 class="site-footer__title">Communauté</h2>
+                <ul class="site-footer__list">
+                    <li><a href="/communaute">Discord</a></li>
+                    <li><a href="/communaute">GitHub</a></li>
+                    <li><a href="/evenements">Meetups et hackathons</a></li>
                     <li><a href="/contact">Contact</a></li>
                 </ul>
             </nav>
         </div>
 
         <div class="site-footer__legal">
-            <p>&copy; @DateTime.Now.Year DotnetNiger</p>
+            <p>&copy; @DateTime.Now.Year DotnetNiger — la communauté des développeurs .NET au Niger</p>
+            <ul>
+                <li><a href="/mentions-legales">Mentions légales</a></li>
+                <li><a href="/politique-de-confidentialite">Politique de confidentialité</a></li>
+            </ul>
         </div>
     </div>
 </footer>
+
+@code {
+    private IReadOnlyList<CanalVue> _Canaux = Array.Empty<CanalVue>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var accueil = await Contenu.ChargerAccueilAsync();
+        _Canaux = accueil.Canaux;
+    }
+}

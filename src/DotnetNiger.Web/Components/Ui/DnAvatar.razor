@@ -1,0 +1,45 @@
+@namespace DotnetNiger.Web.Components.Ui
+
+@if (string.IsNullOrWhiteSpace(ImageUrl))
+{
+    <span class="avatar @TailleCss avatar--@Teinte" title="@Nom" aria-hidden="true">@Initiales</span>
+}
+else
+{
+    <img class="avatar @TailleCss avatar--img" src="@ImageUrl" alt="@Nom" loading="lazy" />
+}
+
+@code {
+    /// <summary>Nom affiché, utilisé pour calculer les initiales par défaut.</summary>
+    [Parameter, EditorRequired] public required string Nom { get; set; }
+
+    /// <summary>Variante de couleur : violet, vert, orange ou ink.</summary>
+    [Parameter] public string Teinte { get; set; } = "violet";
+
+    /// <summary>Présence d'une photo ; l'utilisateur pourra la fournir via l'API en phase 2.</summary>
+    [Parameter] public string? ImageUrl { get; set; }
+
+    /// <summary>Affiche la version réduite du cercle.</summary>
+    [Parameter] public bool Sm { get; set; }
+
+    private string TailleCss => Sm ? "avatar--sm" : string.Empty;
+
+    private string Initiales
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(Nom))
+            {
+                return "?";
+            }
+
+            var mots = Nom.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (mots.Length == 1)
+            {
+                return mots[0][..1].ToUpperInvariant();
+            }
+
+            return string.Concat(mots[0][..1], mots[^1][..1]).ToUpperInvariant();
+        }
+    }
+}
