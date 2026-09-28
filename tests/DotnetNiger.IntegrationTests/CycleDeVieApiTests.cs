@@ -80,7 +80,7 @@ public sealed class CycleDeVieApiTests : IDisposable
     public async Task ArchiverUnArticle_ChangeSonStatut()
     {
         var article = CreerArticle("Un article à archiver");
-        var controleur = new ArticlesController(UnitOfWork(), UtilisateurFictif.Administrateur(Guid.NewGuid()), TimeProvider.System);
+        var controleur = new ArticlesController(UnitOfWork(), UtilisateurFictif.Administrateur(Guid.NewGuid()), Lettre(), TimeProvider.System);
 
         await controleur.Archiver(article.Id, CancellationToken.None);
 
@@ -95,7 +95,7 @@ public sealed class CycleDeVieApiTests : IDisposable
         // l'administration, seul l'administrateur en est l'auteur.
         var article = CreerArticle("Un article protégé");
 
-        var controleur = new ArticlesController(UnitOfWork(), UtilisateurFictif.Membre(_membreId), TimeProvider.System);
+        var controleur = new ArticlesController(UnitOfWork(), UtilisateurFictif.Membre(_membreId), Lettre(), TimeProvider.System);
 
         var request = new UpdateArticleRequest(
             "Un titre usurpé",
@@ -116,7 +116,7 @@ public sealed class CycleDeVieApiTests : IDisposable
         var article = CreerArticle("Un article de l'association");
         var administrateur = Guid.NewGuid();
 
-        var controleur = new ArticlesController(UnitOfWork(), UtilisateurFictif.Administrateur(administrateur), TimeProvider.System);
+        var controleur = new ArticlesController(UnitOfWork(), UtilisateurFictif.Administrateur(administrateur), Lettre(), TimeProvider.System);
 
         var request = new UpdateArticleRequest(
             "Un titre corrigé",
@@ -139,7 +139,7 @@ public sealed class CycleDeVieApiTests : IDisposable
     public async Task SupprimerUnArticle_LeRetireSansEffacerLaLigne()
     {
         var article = CreerArticle("Un article à retirer");
-        var controleur = new ArticlesController(UnitOfWork(), UtilisateurFictif.Administrateur(Guid.NewGuid()), TimeProvider.System);
+        var controleur = new ArticlesController(UnitOfWork(), UtilisateurFictif.Administrateur(Guid.NewGuid()), Lettre(), TimeProvider.System);
 
         await controleur.Supprimer(article.Id, CancellationToken.None);
 
@@ -151,7 +151,7 @@ public sealed class CycleDeVieApiTests : IDisposable
     [Fact]
     public async Task CreerUnProjet_ParUnMembre_EstRefuse()
     {
-        var controleur = new ProjectsController(UnitOfWork(), UtilisateurFictif.Membre(_membreId), TimeProvider.System);
+        var controleur = new ProjectsController(UnitOfWork(), UtilisateurFictif.Membre(_membreId), Lettre(), TimeProvider.System);
 
         var request = new CreateProjectRequest(
             "Un projet",
@@ -170,7 +170,7 @@ public sealed class CycleDeVieApiTests : IDisposable
     [Fact]
     public async Task CreerUneRessource_ParUnMembre_EstAutorise()
     {
-        var controleur = new ResourcesController(UnitOfWork(), UtilisateurFictif.Membre(_membreId), TimeProvider.System);
+        var controleur = new ResourcesController(UnitOfWork(), UtilisateurFictif.Membre(_membreId), Lettre(), TimeProvider.System);
 
         var request = new CreateResourceRequest(
             "Un guide",
@@ -191,6 +191,7 @@ public sealed class CycleDeVieApiTests : IDisposable
             UtilisateurFictif.Membre(_membreId),
             _portee.ServiceProvider.GetRequiredService<IEmailDispatcher>(),
             _portee.ServiceProvider.GetRequiredService<IMemberDirectory>(),
+            _portee.ServiceProvider.GetRequiredService<INewsletterDiffusion>(),
             _portee.ServiceProvider.GetRequiredService<IOptions<EmailOptions>>(),
             TimeProvider.System,
             NullLogger<EventsController>.Instance);
@@ -235,6 +236,9 @@ public sealed class CycleDeVieApiTests : IDisposable
             .IgnoreQueryFilters()
             .SingleAsync(entite => EF.Property<Guid>(entite, "Id").Equals(id));
     }
+
+    private INewsletterDiffusion Lettre() =>
+        _portee.ServiceProvider.GetRequiredService<INewsletterDiffusion>();
 
     private IUnitOfWork UnitOfWork() => _portee.ServiceProvider.GetRequiredService<IUnitOfWork>();
 

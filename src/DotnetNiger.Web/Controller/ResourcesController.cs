@@ -3,6 +3,7 @@ using DotnetNiger.Application.Abstractions;
 using DotnetNiger.Application.Common;
 using DotnetNiger.Domain.Entities.Content;
 using DotnetNiger.Domain.Enums;
+using DotnetNiger.Infrastructure.Email;
 using DotnetNiger.Web.Controller.Common;
 using DotnetNiger.Web.Controller.Contracts;
 using Microsoft.AspNetCore.Authorization;
@@ -19,6 +20,7 @@ namespace DotnetNiger.Web.Controller;
 public sealed class ResourcesController(
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
+    INewsletterDiffusion newsletter,
     TimeProvider clock) : ApiControllerBase
 {
     /// <summary>Liste les ressources publiées.</summary>
@@ -91,6 +93,8 @@ public sealed class ResourcesController(
 
         unitOfWork.Repository<Resource>().Add(resource);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        await newsletter.DiffuserAsync(NouvellePublication.De(resource), cancellationToken);
 
         return CreatedAtAction(nameof(Lister), null, ApiProjections.ToSummary(resource));
     }
@@ -227,10 +231,16 @@ public sealed class ResourcesController(
 
         RequireAuteurOuAdministrateur(currentUser, resource.CreatorId);
 
+        var dejaPublie = resource.PublishedAtUtc is not null;
         resource.Publish(clock.GetUtcNow().UtcDateTime);
 
         unitOfWork.Repository<Resource>().Update(resource);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (!dejaPublie)
+        {
+            await newsletter.DiffuserAsync(NouvellePublication.De(resource), cancellationToken);
+        }
 
         return Ok(ApiProjections.ToSummary(resource));
     }

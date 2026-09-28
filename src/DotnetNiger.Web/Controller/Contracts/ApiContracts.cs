@@ -827,19 +827,4 @@ public sealed record NewsletterSubscriptionResponse(
     DateTime? ConfirmedAtUtc,
     DateTime? UnsubscribedAtUtc);
 
-/// <summary>Contenu à diffuser par la lettre d'information.</summary>
-/// <param name="ContentType">Nature du contenu (article, projet, événement…).</param>
-/// <param name="Title">Titre du contenu.</param>
-/// <param name="Summary">Résumé affiché dans la lettre.</param>
-/// <param name="Url">Adresse du contenu sur le site.</param>
-/// <param name="Author">Auteur du contenu.</param>
-public sealed record SendNewsletterRequest(
-    [Required, StringLength(60, MinimumLength = 2)] string ContentType,
-    [Required, StringLength(200, MinimumLength = 2)] string Title,
-    [Required, StringLength(500, MinimumLength = 2)] string Summary,
-    [Required, StringLength(500)] string Url,
-    [StringLength(150)] string? Author = null);
 
-/// <summary>Résultat d'une mise en file de diffusion.</summary>
-/// <param name="QueuedCount">Nombre de destinataires mis en file.</param>
-public sealed record NewsletterSendResponse(int QueuedCount);

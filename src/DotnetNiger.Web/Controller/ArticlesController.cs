@@ -4,6 +4,7 @@ using DotnetNiger.Application.Common;
 using DotnetNiger.Domain.Entities.Content;
 using DotnetNiger.Domain.Entities.Projects;
 using DotnetNiger.Domain.Enums;
+using DotnetNiger.Infrastructure.Email;
 using DotnetNiger.Web.Controller.Common;
 using DotnetNiger.Web.Controller.Contracts;
 using Microsoft.AspNetCore.Authorization;
@@ -20,6 +21,7 @@ namespace DotnetNiger.Web.Controller;
 public sealed class ArticlesController(
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
+    INewsletterDiffusion newsletter,
     TimeProvider clock) : ApiControllerBase
 {
     /// <summary>Liste les articles publiés.</summary>
@@ -115,13 +117,20 @@ public sealed class ArticlesController(
             article.SetCoverImage(request.CoverImageUrl);
         }
 
-        if (request.Publish)
+        var publie = request.Publish;
+
+        if (publie)
         {
             article.Publish(clock.GetUtcNow().UtcDateTime);
         }
 
         unitOfWork.Repository<Article>().Add(article);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (publie)
+        {
+            await newsletter.DiffuserAsync(NouvellePublication.De(article), cancellationToken);
+        }
 
         return CreatedAtAction(nameof(Lire), new { slug = article.Slug }, ApiProjections.ToDetail(article, string.Empty));
     }
@@ -197,10 +206,16 @@ public sealed class ArticlesController(
 
         RequireAdministrateur(currentUser);
 
+        var dejaPublie = article.PublishedAtUtc is not null;
         article.Publish(clock.GetUtcNow().UtcDateTime);
 
         unitOfWork.Repository<Article>().Update(article);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (!dejaPublie)
+        {
+            await newsletter.DiffuserAsync(NouvellePublication.De(article), cancellationToken);
+        }
 
         return Ok(ApiProjections.ToDetail(article, string.Empty));
     }

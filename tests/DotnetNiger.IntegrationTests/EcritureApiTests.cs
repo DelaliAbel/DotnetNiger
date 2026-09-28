@@ -3,6 +3,7 @@ using DotnetNiger.Application.Abstractions;
 using DotnetNiger.Application.Common;
 using DotnetNiger.Domain.Entities.Content;
 using DotnetNiger.Domain.Enums;
+using DotnetNiger.Infrastructure.Email;
 using DotnetNiger.Domain.Exceptions;
 using DotnetNiger.Infrastructure.Identity;
 using DotnetNiger.Infrastructure.Persistence;
@@ -146,6 +147,7 @@ public sealed class EcritureApiTests : IDisposable
         new(
             _portee.ServiceProvider.GetRequiredService<IUnitOfWork>(),
             utilisateur,
+            _portee.ServiceProvider.GetRequiredService<INewsletterDiffusion>(),
             TimeProvider.System);
 
     public void Dispose()

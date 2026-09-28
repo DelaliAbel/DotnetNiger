@@ -24,6 +24,7 @@ public sealed partial class EventsController(
     ICurrentUserService currentUser,
     IEmailDispatcher emails,
     IMemberDirectory members,
+    INewsletterDiffusion newsletter,
     IOptions<EmailOptions> emailOptions,
     TimeProvider clock,
     ILogger<EventsController> logger) : ApiControllerBase
@@ -314,13 +315,20 @@ public sealed partial class EventsController(
         communityEvent.SetRegistrationClosesAt(request.RegistrationClosesAtUtc);
         communityEvent.SetCoverImage(request.CoverImageUrl);
 
-        if (request.Publish)
+        var publie = request.Publish;
+
+        if (publie)
         {
             communityEvent.Publish(clock.GetUtcNow().UtcDateTime);
         }
 
         unitOfWork.Repository<CommunityEvent>().Add(communityEvent);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (publie)
+        {
+            await newsletter.DiffuserAsync(NouvellePublication.De(communityEvent), cancellationToken);
+        }
 
         return CreatedAtAction(nameof(Lire), new { id = communityEvent.Id }, ApiProjections.ToDetail(communityEvent, 0));
     }
@@ -409,10 +417,16 @@ public sealed partial class EventsController(
 
         RequireAdministrateur(currentUser);
 
+        var dejaPublie = communityEvent.PublishedAtUtc is not null;
         communityEvent.Publish(clock.GetUtcNow().UtcDateTime);
 
         unitOfWork.Repository<CommunityEvent>().Update(communityEvent);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (!dejaPublie)
+        {
+            await newsletter.DiffuserAsync(NouvellePublication.De(communityEvent), cancellationToken);
+        }
 
         return Ok(ApiProjections.ToDetail(communityEvent, await ConfirmedCountAsync(id, cancellationToken)));
     }

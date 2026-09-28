@@ -52,6 +52,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IMemberDirectory, MemberDirectory>();
         services.AddScoped<IEmailDispatcher, EmailDispatcher>();
+        services.AddScoped<INewsletterDiffusion, NewsletterDiffusion>();
         services.AddScoped<IOutbox, Outbox>();
         services.AddScoped<OutboxProcessor>();
 

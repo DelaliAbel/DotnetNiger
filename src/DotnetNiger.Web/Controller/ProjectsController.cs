@@ -3,6 +3,7 @@ using DotnetNiger.Application.Abstractions;
 using DotnetNiger.Application.Common;
 using DotnetNiger.Domain.Entities.Projects;
 using DotnetNiger.Domain.Enums;
+using DotnetNiger.Infrastructure.Email;
 using DotnetNiger.Web.Controller.Common;
 using DotnetNiger.Web.Controller.Contracts;
 using Microsoft.AspNetCore.Authorization;
@@ -19,6 +20,7 @@ namespace DotnetNiger.Web.Controller;
 public sealed class ProjectsController(
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
+    INewsletterDiffusion newsletter,
     TimeProvider clock) : ApiControllerBase
 {
     /// <summary>Liste les projets publiés.</summary>
@@ -175,10 +177,16 @@ public sealed class ProjectsController(
 
         RequireAdministrateur(currentUser);
 
+        var dejaPublie = project.PublishedAtUtc is not null;
         project.Publish(clock.GetUtcNow().UtcDateTime);
 
         unitOfWork.Repository<Project>().Update(project);
         await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        if (!dejaPublie)
+        {
+            await newsletter.DiffuserAsync(NouvellePublication.De(project), cancellationToken);
+        }
 
         return Ok(ApiProjections.ToSummary(project));
     }

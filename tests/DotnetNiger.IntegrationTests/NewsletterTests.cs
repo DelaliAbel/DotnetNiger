@@ -162,55 +162,6 @@ public sealed partial class NewsletterTests : IDisposable
     }
 
     [Fact]
-    public async Task SeulesLesAdressesConfirmeesRecoiventLaLettre()
-    {
-        await SabonnerEtConfirmerAsync(AdresseAwa);
-        await SabonnerAsync(AdresseMoussa);
-
-        // Awa a confirmé, Moussa non. Seul Awa doit recevoir la lettre.
-        var envoyes = await DiffuserAsync();
-
-        Assert.Equal(1, envoyes.QueuedCount);
-
-        var lettre = Assert.Single(await LettresEnFileAsync());
-        Assert.Equal(AdresseAwa, lettre.Recipient);
-    }
-
-    [Fact]
-    public async Task UneLettreALaAdresseCibleeContientSonLienDeDesabonnement()
-    {
-        await SabonnerEtConfirmerAsync(AdresseAwa);
-
-        await DiffuserAsync();
-
-        var lettre = Assert.Single(await LettresEnFileAsync());
-
-        // Le lien de désabonnement est propre à Awa : un lien partagé ferait se désabonner
-        // tout le monde dès que l'un d'eux s'en va.
-        var cle = CleDesabonnement(await AbonnementAsync(AdresseAwa));
-        Assert.Contains(cle, lettre.TextBody, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task DeuxAbonnesConfirmesRecoiventChacunLeurMessage()
-    {
-        await SabonnerEtConfirmerAsync(AdresseAwa);
-        await SabonnerEtConfirmerAsync(AdresseMoussa);
-
-        var envoyes = await DiffuserAsync();
-
-        // Deux messages distincts, jamais une liste en copie cachée : c'est la condition du
-        // désabonnement individuel.
-        Assert.Equal(2, envoyes.QueuedCount);
-
-        var lettres = await LettresEnFileAsync();
-        Assert.Equal(2, lettres.Count);
-        Assert.Equal(
-            [AdresseAwa, AdresseMoussa],
-            lettres.Select(l => l.Recipient).Order().ToArray());
-    }
-
-    [Fact]
     public async Task UnDesabonnementRomptLinscription()
     {
         await SabonnerEtConfirmerAsync(AdresseAwa);
@@ -245,19 +196,6 @@ public sealed partial class NewsletterTests : IDisposable
         await DesabonnerAsync("cle-inventee");
 
         Assert.Equal(NewsletterStatus.Confirmed, (await AbonnementAsync(AdresseAwa)).Status);
-    }
-
-    [Fact]
-    public async Task UnAbonneDesabonneNeRecoitPlusLaLettre()
-    {
-        await SabonnerEtConfirmerAsync(AdresseAwa);
-        await SabonnerEtConfirmerAsync(AdresseMoussa);
-        await DesabonnerAsync(CleDesabonnement(await AbonnementAsync(AdresseAwa)));
-
-        var envoyes = await DiffuserAsync();
-
-        Assert.Equal(1, envoyes.QueuedCount);
-        Assert.Equal(AdresseMoussa, Assert.Single(await LettresEnFileAsync()).Recipient);
     }
 
     [Fact]
@@ -324,38 +262,10 @@ public sealed partial class NewsletterTests : IDisposable
         Assert.Equal("forbidden", erreur.Code);
     }
 
-    [Fact]
-    public async Task UnMembreNeDiffusePasLaLettre()
-    {
-        var erreur = await Assert.ThrowsAsync<DomainException>(
-            () => DiffuserAsync(UtilisateurFictif.Membre(Guid.NewGuid())));
-
-        Assert.Equal("forbidden", erreur.Code);
-    }
-
     private static string CleDesabonnement(NewsletterSubscription abonnement) =>
         string.IsNullOrWhiteSpace(abonnement.UnsubscribeKey)
             ? throw new InvalidOperationException("L'abonnement n'a pas de clé de désabonnement.")
             : abonnement.UnsubscribeKey;
-
-    private async Task<NewsletterSendResponse> DiffuserAsync(ICurrentUserService? utilisateur = null)
-    {
-        using var portee = _fournisseur.CreateScope();
-
-        var controleur = CreerControleurAdmin(portee, utilisateur);
-        var resultat = await controleur.Diffuser(RequeteDeDiffusion(), default);
-
-        return Assert.IsType<NewsletterSendResponse>(
-            Assert.IsType<AcceptedResult>(resultat.Result).Value);
-    }
-
-    private static SendNewsletterRequest RequeteDeDiffusion() =>
-        new(
-            "Événement",
-            "Rencontre .NET de Niamey",
-            "Une soirée d'échange sur ASP.NET Core.",
-            "https://dotnetniger.test/evenements/rencontre-dotnet",
-            "Awa Traoré");
 
     private async Task SabonnerEtConfirmerAsync(string email)
     {
@@ -395,7 +305,9 @@ public sealed partial class NewsletterTests : IDisposable
     {
         using var portee = _fournisseur.CreateScope();
 
-        var controleur = CreerControleurAdmin(portee, utilisateur);
+        var controleur = new AdminNewsletterController(
+            portee.ServiceProvider.GetRequiredService<IUnitOfWork>(),
+            utilisateur ?? UtilisateurFictif.Administrateur(Guid.NewGuid()));
         var resultat = await controleur.Lister(statut, 1, 20, default);
 
         return Assert.IsType<PageResponse<NewsletterSubscriptionResponse>>(resultat.Value);
@@ -408,16 +320,6 @@ public sealed partial class NewsletterTests : IDisposable
             portee.ServiceProvider.GetRequiredService<IOptions<EmailOptions>>(),
             TimeProvider.System,
             NullLogger<NewsletterController>.Instance);
-
-    private static AdminNewsletterController CreerControleurAdmin(
-        IServiceScope portee,
-        ICurrentUserService? utilisateur) =>
-        new(
-            portee.ServiceProvider.GetRequiredService<IUnitOfWork>(),
-            utilisateur ?? UtilisateurFictif.Administrateur(Guid.NewGuid()),
-            portee.ServiceProvider.GetRequiredService<IEmailDispatcher>(),
-            portee.ServiceProvider.GetRequiredService<IOptions<EmailOptions>>(),
-            NullLogger<AdminNewsletterController>.Instance);
 
     private DotnetNigerDbContext Contexte =>
         _portee.ServiceProvider.GetRequiredService<DotnetNigerDbContext>();
