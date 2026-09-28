@@ -61,7 +61,7 @@ public sealed class ProjectsController(
         [FromBody] CreateProjectRequest request,
         CancellationToken cancellationToken)
     {
-        var auteur = RequireUser(currentUser);
+        var auteur = RequireAdministrateur(currentUser);
         var project = new Project(
             auteur,
             request.Name,
@@ -129,7 +129,7 @@ public sealed class ProjectsController(
             return NotFound();
         }
 
-        RequireAuteurOuAdministrateur(currentUser, project.CreatedById);
+        RequireAdministrateur(currentUser);
 
         project.UpdateDetails(
             request.Name,
@@ -173,7 +173,7 @@ public sealed class ProjectsController(
             return NotFound();
         }
 
-        RequireAuteurOuAdministrateur(currentUser, project.CreatedById);
+        RequireAdministrateur(currentUser);
 
         project.Publish(clock.GetUtcNow().UtcDateTime);
 
@@ -209,7 +209,7 @@ public sealed class ProjectsController(
             return NotFound();
         }
 
-        RequireAuteurOuAdministrateur(currentUser, project.CreatedById);
+        RequireAdministrateur(currentUser);
 
         project.Archive();
 
@@ -243,7 +243,7 @@ public sealed class ProjectsController(
             return NotFound();
         }
 
-        var auteur = RequireAuteurOuAdministrateur(currentUser, project.CreatedById);
+        var auteur = RequireAdministrateur(currentUser);
 
         unitOfWork.SoftDeletableRepository<Project>().Retire(
             project,

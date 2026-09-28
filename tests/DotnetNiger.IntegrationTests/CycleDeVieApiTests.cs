@@ -77,7 +77,7 @@ public sealed class CycleDeVieApiTests : IDisposable
     public async Task ArchiverUnArticle_ChangeSonStatut()
     {
         var article = CreerArticle("Un article à archiver");
-        var controleur = new ArticlesController(UnitOfWork(), UtilisateurFictif.Membre(_membreId), TimeProvider.System);
+        var controleur = new ArticlesController(UnitOfWork(), UtilisateurFictif.Administrateur(Guid.NewGuid()), TimeProvider.System);
 
         await controleur.Archiver(article.Id, CancellationToken.None);
 
@@ -86,12 +86,13 @@ public sealed class CycleDeVieApiTests : IDisposable
     }
 
     [Fact]
-    public async Task MettreAJourUnArticle_ParUnAutreMembre_EstRefuse()
+    public async Task MettreAJourUnArticle_ParUnMembre_EstRefuse()
     {
+        // Même son propre article ne se modifie pas : la rédaction du blog revient à
+        // l'administration, seul l'administrateur en est l'auteur.
         var article = CreerArticle("Un article protégé");
-        var autreMembre = Guid.NewGuid();
 
-        var controleur = new ArticlesController(UnitOfWork(), UtilisateurFictif.Membre(autreMembre), TimeProvider.System);
+        var controleur = new ArticlesController(UnitOfWork(), UtilisateurFictif.Membre(_membreId), TimeProvider.System);
 
         var request = new UpdateArticleRequest(
             "Un titre usurpé",
@@ -100,7 +101,6 @@ public sealed class CycleDeVieApiTests : IDisposable
             ArticleCategory.DotNetNews,
             "https://exemple.test/couverture.png");
 
-        // Un membre qui n'est pas l'auteur ne doit pas pouvoir réécrire l'article.
         var erreur = await Assert.ThrowsAsync<DomainException>(
             () => controleur.MettreAJour(article.Id, request, CancellationToken.None));
 
@@ -136,13 +136,48 @@ public sealed class CycleDeVieApiTests : IDisposable
     public async Task SupprimerUnArticle_LeRetireSansEffacerLaLigne()
     {
         var article = CreerArticle("Un article à retirer");
-        var controleur = new ArticlesController(UnitOfWork(), UtilisateurFictif.Membre(_membreId), TimeProvider.System);
+        var controleur = new ArticlesController(UnitOfWork(), UtilisateurFictif.Administrateur(Guid.NewGuid()), TimeProvider.System);
 
         await controleur.Supprimer(article.Id, CancellationToken.None);
 
         // La suppression est logique : la ligne reste, avec sa date de retrait.
         var recharge = await Charger<Article>(article.Id);
         Assert.NotNull(recharge.DeletedAtUtc);
+    }
+
+    [Fact]
+    public async Task CreerUnProjet_ParUnMembre_EstRefuse()
+    {
+        var controleur = new ProjectsController(UnitOfWork(), UtilisateurFictif.Membre(_membreId), TimeProvider.System);
+
+        var request = new CreateProjectRequest(
+            "Un projet",
+            "Un résumé",
+            "Une description",
+            "https://exemple.test/depot");
+
+        // Un projet n'est pas une publication de membre : la ressource est la seule
+        // production qu'un membre peut créer.
+        var erreur = await Assert.ThrowsAsync<DomainException>(
+            () => controleur.Creer(request, CancellationToken.None));
+
+        Assert.Equal("forbidden", erreur.Code);
+    }
+
+    [Fact]
+    public async Task CreerUneRessource_ParUnMembre_EstAutorise()
+    {
+        var controleur = new ResourcesController(UnitOfWork(), UtilisateurFictif.Membre(_membreId), TimeProvider.System);
+
+        var request = new CreateResourceRequest(
+            "Un guide",
+            "Un résumé",
+            ResourceCategory.Guide);
+
+        var resultat = await controleur.Creer(request, CancellationToken.None);
+
+        var created = Assert.IsType<CreatedAtActionResult>(resultat.Result);
+        Assert.IsType<ResourceSummaryResponse>(created.Value);
     }
 
     [Fact]

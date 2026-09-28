@@ -6,6 +6,7 @@ using DotnetNiger.Infrastructure.Identity;
 using DotnetNiger.Web.Controller.Common;
 using DotnetNiger.Web.Controller.Contracts;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,7 +24,10 @@ namespace DotnetNiger.Web.Controller;
 [Tags("Membres")]
 public sealed class MembersController(
     IUnitOfWork unitOfWork,
-    ICurrentUserService currentUser) : ApiControllerBase
+    ICurrentUserService currentUser,
+    UserManager<ApplicationUser> userManager,
+    SignInManager<ApplicationUser> signInManager,
+    IAccountDeletionService accountDeletion) : ApiControllerBase
 {
     /// <summary>Liste les profils publics.</summary>
     /// <param name="page">Numéro de page, à partir de 1.</param>
@@ -146,5 +150,119 @@ public sealed class MembersController(
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Ok(ApiProjections.ToResponse(membre));
+    }
+
+    /// <summary>Supprime définitivement le compte du membre connecté.</summary>
+    /// <param name="request">Double confirmation de la suppression.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Réponse vide.</returns>
+    /// <remarks>
+    /// L'opération est irréversible : le compte disparaît, ainsi que les articles,
+    /// ressources, projets, événements et commentaires dont il est l'auteur. Les
+    /// commentaires qu'il a reçus, les signalements qu'il a déposés et ses inscriptions à
+    /// des événements disparaissent également.
+    /// <para>
+    /// Deux conséquences sont voulues et méritent d'être connues avant de confirmer :
+    /// supprimer un commentaire emporte les réponses qui lui sont rattachées, et supprimer
+    /// un événement emporte les inscriptions des autres membres. Le fil de discussion et
+    /// la liste des participants ne peuvent pas être conservés sans leur racine, et la
+    /// conservation aurait exigé de réattribuer ces contenus à quelqu'un d'autre — ce que
+    /// l'interface de suppression refuse de faire implicitement.
+    /// </para>
+    /// <para>
+    /// Le dernier administrateur actif ne peut pas se supprimer : il n'existe alors plus
+    /// personne pour administrer le site depuis son interface.
+    /// </para>
+    /// </remarks>
+    /// <response code="204">Compte supprimé.</response>
+    /// <response code="400">Confirmation absente ou incomplète.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="404">Compte introuvable ou désactivé.</response>
+    /// <response code="409">Le compte est le dernier administrateur actif.</response>
+    [HttpDelete("me")]
+    [Authorize]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> SupprimerSonCompte(
+        [FromBody] DeleteOwnAccountRequest request,
+        CancellationToken cancellationToken)
+    {
+        var id = RequireUser(currentUser);
+
+        var membre = await unitOfWork.ReadRepository<ApplicationUser>().Query
+            .FirstOrDefaultAsync(user => user.Id == id, cancellationToken);
+
+        if (membre is null)
+        {
+            return NotFound();
+        }
+
+        // Les deux confirmations sont vérifiées avant tout effet : une demande partielle
+        // ne doit rien supprimer, même si elle est valide par ailleurs.
+        if (!request.ConfirmPermanentDeletion)
+        {
+            throw new DomainException(
+                "confirmation_required",
+                "Confirmez que vous comprenez que cette suppression est définitive.");
+        }
+
+        if (!string.Equals(
+                request.ConfirmEmail?.Trim(),
+                membre.Email,
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new DomainException(
+                "confirmation_mismatch",
+                "L'adresse de confirmation ne correspond pas à celle de votre compte.");
+        }
+
+        if (await EstDernierAdministrateurAsync(membre, cancellationToken))
+        {
+            throw new DomainException(
+                "last_admin",
+                "Impossible de supprimer le dernier compte d'administrateur actif.");
+        }
+
+        await accountDeletion.DeleteAsync(id, cancellationToken);
+
+        // La session survit à la suppression du compte dans le navigateur : sans cette
+        // déconnexion, l'appelant resterait authentifié par un cookie sans compte associé.
+        await signInManager.SignOutAsync();
+
+        return NoContent();
+    }
+
+    /// <summary>
+    /// Indique si un compte est le dernier administrateur actif du site.
+    /// </summary>
+    /// <param name="compte">Compte concerné, déjà chargé.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns><see langword="true"/> si aucun autre administrateur actif ne subsiste.</returns>
+    /// <remarks>
+    /// Même règle que dans l'administration des comptes, appliquée ici à la suppression
+    /// volontaire : se retirer soi-même est permis, laisser le site sans administrateur ne
+    /// l'est pas.
+    /// </remarks>
+    private async Task<bool> EstDernierAdministrateurAsync(
+        ApplicationUser compte,
+        CancellationToken cancellationToken)
+    {
+        if (!await userManager.IsInRoleAsync(compte, RoleNames.Admin))
+        {
+            return false;
+        }
+
+        var maintenant = DateTimeOffset.UtcNow;
+
+        var admins = await userManager.GetUsersInRoleAsync(RoleNames.Admin);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        return !admins.Any(
+            admin => admin.Id != compte.Id
+                && admin.IsActive
+                && (admin.LockoutEnd is null || admin.LockoutEnd <= maintenant));
     }
 }

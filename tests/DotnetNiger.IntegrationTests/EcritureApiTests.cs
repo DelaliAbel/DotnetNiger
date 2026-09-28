@@ -3,6 +3,7 @@ using DotnetNiger.Application.Abstractions;
 using DotnetNiger.Application.Common;
 using DotnetNiger.Domain.Entities.Content;
 using DotnetNiger.Domain.Enums;
+using DotnetNiger.Domain.Exceptions;
 using DotnetNiger.Infrastructure.Identity;
 using DotnetNiger.Infrastructure.Persistence;
 using DotnetNiger.Infrastructure;
@@ -81,9 +82,28 @@ public sealed class EcritureApiTests : IDisposable
     }
 
     [Fact]
+    public async Task CreerUnArticle_ParUnMembre_EstRefuse()
+    {
+        // Le blog est une publication de l'association : un membre ne rédige pas d'article.
+        var controleur = ConstruireControleur(UtilisateurFictif.Membre(_membreId));
+        var request = new CreateArticleRequest(
+            "Un article de démonstration",
+            "Un chapô court",
+            "Le contenu rédigé de l'article.",
+            ArticleCategory.DotNetNews,
+            Publish: true,
+            CoverImageUrl: "https://exemple.test/couverture.png");
+
+        var erreur = await Assert.ThrowsAsync<DomainException>(
+            () => controleur.Creer(request, CancellationToken.None));
+
+        Assert.Equal("forbidden", erreur.Code);
+    }
+
+    [Fact]
     public async Task CreerUnArticle_LieLAuteurEtConserveLImage()
     {
-        var controleur = ConstruireControleur(UtilisateurFictif.Membre(_membreId));
+        var controleur = ConstruireControleur(UtilisateurFictif.Administrateur(_membreId));
         var request = new CreateArticleRequest(
             "Un article de démonstration",
             "Un chapô court",

@@ -125,6 +125,20 @@ public sealed class Report : TimestampedEntity
         Close(ReportStatus.Dismissed, handledById, note, handledAtUtc);
     }
 
+    /// <summary>
+    /// Rend le signalement à la modération collective en retirant son gestionnaire.
+    /// </summary>
+    /// <remarks>
+    /// Appelé lorsqu'un compte d'administration est supprimé : le signalement lui-même
+    /// n'appartient pas au compte supprimé, et l'effacer ferait perdre une décision de
+    /// modération et son horodatage. Seule la référence au gestionnaire disparaît, le
+    /// statut et la conclusion étant conservés.
+    /// </remarks>
+    public void ReleaseHandler()
+    {
+        HandledById = null;
+    }
+
     private void Close(ReportStatus status, Guid handledById, string? note, DateTime handledAtUtc)
     {
         EnsureNotClosed();

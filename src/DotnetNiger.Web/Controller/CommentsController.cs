@@ -224,7 +224,11 @@ public sealed class CommentsController(
         return NoContent();
     }
 
-    /// <summary>Republie un commentaire masqué ou en attente de relecture.</summary>
+    /// <summary>
+    /// Republie un commentaire masqué ou en attente de relecture. Unique voie de
+    /// modération : il n'existe pas d'approbation distincte, la republication fait
+    /// déjà ce travail.
+    /// </summary>
     /// <param name="id">Identifiant du commentaire.</param>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
     /// <returns>Réponse vide.</returns>
@@ -239,38 +243,6 @@ public sealed class CommentsController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Republier(Guid id, CancellationToken cancellationToken)
-    {
-        RequireAdministrateur(currentUser);
-
-        var commentaire = await ChargerCommentaire(id, cancellationToken);
-
-        if (commentaire is null)
-        {
-            return NotFound();
-        }
-
-        commentaire.Republish();
-        unitOfWork.Repository<Comment>().Update(commentaire);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
-
-        return NoContent();
-    }
-
-    /// <summary>Valide un commentaire en attente de relecture.</summary>
-    /// <param name="id">Identifiant du commentaire.</param>
-    /// <param name="cancellationToken">Jeton d'annulation.</param>
-    /// <returns>Réponse vide.</returns>
-    /// <response code="204">Commentaire validé.</response>
-    /// <response code="401">Utilisateur anonyme.</response>
-    /// <response code="403">L'appelant n'est pas administrateur.</response>
-    /// <response code="404">Commentaire introuvable.</response>
-    [HttpPost("{id:guid}/approve")]
-    [Authorize(Roles = RoleNames.Admin)]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> Valider(Guid id, CancellationToken cancellationToken)
     {
         RequireAdministrateur(currentUser);
 

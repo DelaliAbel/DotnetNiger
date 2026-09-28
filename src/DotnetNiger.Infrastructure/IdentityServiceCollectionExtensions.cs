@@ -44,6 +44,7 @@ public static class IdentityServiceCollectionExtensions
 
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
         services.AddScoped<IExternalAccountService, ExternalAccountService>();
+        services.AddScoped<IAccountDeletionService, AccountDeletionService>();
 
         services
             .AddIdentity<ApplicationUser, ApplicationRole>(options =>

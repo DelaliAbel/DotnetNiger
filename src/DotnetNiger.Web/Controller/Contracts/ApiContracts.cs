@@ -94,12 +94,12 @@ public sealed record ArticleResponse(
 /// <param name="Publish">Publier immédiatement plutôt que garder en brouillon.</param>
 /// <param name="CoverImageUrl">Image de couverture, pour la vignette du blog.</param>
 public sealed record CreateArticleRequest(
-    [property: Required, StringLength(200)] string Title,
-    [property: Required, StringLength(500)] string Excerpt,
-    [property: Required] string Content,
+    [Required, StringLength(200)] string Title,
+    [Required, StringLength(500)] string Excerpt,
+    [Required] string Content,
     ArticleCategory Category,
     bool Publish = false,
-    [property: StringLength(2048)] string? CoverImageUrl = null);
+    [StringLength(2048)] string? CoverImageUrl = null);
 
 /// <summary>Résumé d'une ressource.</summary>
 /// <param name="Id">Identifiant.</param>
@@ -128,12 +128,12 @@ public sealed record ResourceSummaryResponse(
 /// <param name="Provider">Éditeur ou source.</param>
 /// <param name="CoverImageUrl">Image de couverture, pour la vignette.</param>
 public sealed record CreateResourceRequest(
-    [property: Required, StringLength(200)] string Title,
-    [property: Required, StringLength(500)] string Description,
+    [Required, StringLength(200)] string Title,
+    [Required, StringLength(500)] string Description,
     ResourceCategory Category,
-    [property: StringLength(2048)] string? ExternalUrl = null,
-    [property: StringLength(120)] string? Provider = null,
-    [property: StringLength(2048)] string? CoverImageUrl = null);
+    [StringLength(2048)] string? ExternalUrl = null,
+    [StringLength(120)] string? Provider = null,
+    [StringLength(2048)] string? CoverImageUrl = null);
 
 /// <summary>Résumé d'un événement.</summary>
 /// <param name="Id">Identifiant.</param>
@@ -165,7 +165,7 @@ public sealed record EventSummaryResponse(
 /// <summary>Demande d'inscription à un événement.</summary>
 /// <param name="EventId">Identifiant de l'événement.</param>
 public sealed record RegisterForEventRequest(
-    [property: Required] Guid EventId);
+    [Required] Guid EventId);
 
 /// <summary>Résumé d'un projet.</summary>
 /// <param name="Id">Identifiant.</param>
@@ -192,12 +192,12 @@ public sealed record ProjectSummaryResponse(
 /// <param name="Technologies">Technologies utilisées.</param>
 /// <param name="ImageUrl">Image de présentation, pour la vignette.</param>
 public sealed record CreateProjectRequest(
-    [property: Required, StringLength(160)] string Name,
-    [property: Required, StringLength(500)] string Summary,
-    [property: Required] string Description,
-    [property: Required, StringLength(2048)] string RepositoryUrl,
-    [property: StringLength(500)] string? Technologies = null,
-    [property: StringLength(2048)] string? ImageUrl = null);
+    [Required, StringLength(160)] string Name,
+    [Required, StringLength(500)] string Summary,
+    [Required] string Description,
+    [Required, StringLength(2048)] string RepositoryUrl,
+    [StringLength(500)] string? Technologies = null,
+    [StringLength(2048)] string? ImageUrl = null);
 
 /// <summary>Commentaire publié.</summary>
 /// <param name="Id">Identifiant.</param>
@@ -222,7 +222,7 @@ public sealed record CommentResponse(
 /// <param name="EventId">Événement commenté, si applicable.</param>
 /// <param name="ParentCommentId">Commentaire parent, pour une réponse.</param>
 public sealed record CreateCommentRequest(
-    [property: Required, StringLength(4000)] string Body,
+    [Required, StringLength(4000)] string Body,
     Guid? ArticleId = null,
     Guid? EventId = null,
     Guid? ParentCommentId = null);
@@ -266,7 +266,7 @@ public sealed record PartnerResponse(
 /// <param name="Details">Précisions facultatives.</param>
 public sealed record CreateReportRequest(
     ReportReason Reason,
-    [property: StringLength(1000)] string? Details = null);
+    [StringLength(1000)] string? Details = null);
 
 /// <summary>État d'un signalement, réservé à la modération.</summary>
 /// <param name="Id">Identifiant.</param>
@@ -290,11 +290,11 @@ public sealed record ReportResponse(
 /// <param name="Category">Catégorie.</param>
 /// <param name="CoverImageUrl">Image de couverture, ou <see langword="null"/> pour la retirer.</param>
 public sealed record UpdateArticleRequest(
-    [property: Required, StringLength(200)] string Title,
-    [property: Required, StringLength(500)] string Excerpt,
-    [property: Required] string Content,
+    [Required, StringLength(200)] string Title,
+    [Required, StringLength(500)] string Excerpt,
+    [Required] string Content,
     ArticleCategory Category,
-    [property: StringLength(2048)] string? CoverImageUrl = null);
+    [StringLength(2048)] string? CoverImageUrl = null);
 
 /// <summary>Demande de mise à jour d'une ressource.</summary>
 /// <param name="Title">Titre.</param>
@@ -305,13 +305,13 @@ public sealed record UpdateArticleRequest(
 /// <param name="Provider">Éditeur ou source.</param>
 /// <param name="CoverImageUrl">Image de couverture, ou <see langword="null"/> pour la retirer.</param>
 public sealed record UpdateResourceRequest(
-    [property: Required, StringLength(200)] string Title,
-    [property: Required, StringLength(500)] string Description,
+    [Required, StringLength(200)] string Title,
+    [Required, StringLength(500)] string Description,
     ResourceCategory Category,
-    [property: StringLength(32000)] string? Content = null,
-    [property: StringLength(2048)] string? ExternalUrl = null,
-    [property: StringLength(120)] string? Provider = null,
-    [property: StringLength(2048)] string? CoverImageUrl = null);
+    [StringLength(32000)] string? Content = null,
+    [StringLength(2048)] string? ExternalUrl = null,
+    [StringLength(120)] string? Provider = null,
+    [StringLength(2048)] string? CoverImageUrl = null);
 
 /// <summary>Demande de mise à jour d'un projet.</summary>
 /// <param name="Name">Nom du projet.</param>
@@ -322,13 +322,13 @@ public sealed record UpdateResourceRequest(
 /// <param name="Technologies">Technologies utilisées.</param>
 /// <param name="ImageUrl">Image de présentation, ou <see langword="null"/> pour la retirer.</param>
 public sealed record UpdateProjectRequest(
-    [property: Required, StringLength(160)] string Name,
-    [property: Required, StringLength(500)] string Summary,
-    [property: Required] string Description,
-    [property: Required, StringLength(2048)] string RepositoryUrl,
-    [property: StringLength(2048)] string? DemoUrl = null,
-    [property: StringLength(500)] string? Technologies = null,
-    [property: StringLength(2048)] string? ImageUrl = null);
+    [Required, StringLength(160)] string Name,
+    [Required, StringLength(500)] string Summary,
+    [Required] string Description,
+    [Required, StringLength(2048)] string RepositoryUrl,
+    [StringLength(2048)] string? DemoUrl = null,
+    [StringLength(500)] string? Technologies = null,
+    [StringLength(2048)] string? ImageUrl = null);
 
 /// <summary>Demande de création d'un événement.</summary>
 /// <param name="Title">Titre.</param>
@@ -344,17 +344,17 @@ public sealed record UpdateProjectRequest(
 /// <param name="CoverImageUrl">Image de couverture, pour la vignette.</param>
 /// <param name="Publish">Publier immédiatement plutôt que garder en brouillon.</param>
 public sealed record CreateEventRequest(
-    [property: Required, StringLength(200)] string Title,
-    [property: Required, StringLength(500)] string Summary,
-    [property: Required, StringLength(32000)] string Description,
+    [Required, StringLength(200)] string Title,
+    [Required, StringLength(500)] string Summary,
+    [Required, StringLength(32000)] string Description,
     CommunityEventFormat Format,
     DateTime StartsAtUtc,
     DateTime EndsAtUtc,
-    [property: StringLength(150)] string? Location = null,
-    [property: StringLength(2048)] string? OnlineUrl = null,
+    [StringLength(150)] string? Location = null,
+    [StringLength(2048)] string? OnlineUrl = null,
     int? Capacity = null,
     DateTime? RegistrationClosesAtUtc = null,
-    [property: StringLength(2048)] string? CoverImageUrl = null,
+    [StringLength(2048)] string? CoverImageUrl = null,
     bool Publish = false);
 
 /// <summary>Demande de mise à jour d'un événement.</summary>
@@ -370,17 +370,17 @@ public sealed record CreateEventRequest(
 /// <param name="RegistrationClosesAtUtc">Fin des inscriptions.</param>
 /// <param name="CoverImageUrl">Image de couverture, ou <see langword="null"/> pour la retirer.</param>
 public sealed record UpdateEventRequest(
-    [property: Required, StringLength(200)] string Title,
-    [property: Required, StringLength(500)] string Summary,
-    [property: Required, StringLength(32000)] string Description,
+    [Required, StringLength(200)] string Title,
+    [Required, StringLength(500)] string Summary,
+    [Required, StringLength(32000)] string Description,
     CommunityEventFormat Format,
     DateTime StartsAtUtc,
     DateTime EndsAtUtc,
-    [property: StringLength(150)] string? Location = null,
-    [property: StringLength(2048)] string? OnlineUrl = null,
+    [StringLength(150)] string? Location = null,
+    [StringLength(2048)] string? OnlineUrl = null,
     int? Capacity = null,
     DateTime? RegistrationClosesAtUtc = null,
-    [property: StringLength(2048)] string? CoverImageUrl = null);
+    [StringLength(2048)] string? CoverImageUrl = null);
 
 /// <summary>Événement complet.</summary>
 /// <param name="Id">Identifiant.</param>
@@ -440,11 +440,11 @@ public sealed record EventRegistrationResponse(
 /// <param name="Tier">Niveau de partenariat.</param>
 /// <param name="SortOrder">Ordre d'affichage.</param>
 public sealed record CreatePartnerRequest(
-    [property: Required, StringLength(150)] string Name,
-    [property: Required, StringLength(500)] string Description,
-    [property: Required, StringLength(2048)] string WebsiteUrl,
+    [Required, StringLength(150)] string Name,
+    [Required, StringLength(500)] string Description,
+    [Required, StringLength(2048)] string WebsiteUrl,
     PartnerTier Tier,
-    [property: StringLength(2048)] string? LogoUrl = null,
+    [StringLength(2048)] string? LogoUrl = null,
     int SortOrder = 0);
 
 /// <summary>Demande de mise à jour d'un partenaire.</summary>
@@ -455,11 +455,11 @@ public sealed record CreatePartnerRequest(
 /// <param name="Tier">Niveau de partenariat.</param>
 /// <param name="SortOrder">Ordre d'affichage.</param>
 public sealed record UpdatePartnerRequest(
-    [property: Required, StringLength(150)] string Name,
-    [property: Required, StringLength(500)] string Description,
-    [property: Required, StringLength(2048)] string WebsiteUrl,
+    [Required, StringLength(150)] string Name,
+    [Required, StringLength(500)] string Description,
+    [Required, StringLength(2048)] string WebsiteUrl,
     PartnerTier Tier,
-    [property: StringLength(2048)] string? LogoUrl = null,
+    [StringLength(2048)] string? LogoUrl = null,
     int SortOrder = 0);
 
 /// <summary>Demande de mise à jour du profil du membre connecté.</summary>
@@ -473,15 +473,15 @@ public sealed record UpdatePartnerRequest(
 /// <param name="XUrl">Profil X.</param>
 /// <param name="Technologies">Compétences déclarées.</param>
 public sealed record UpdateProfileRequest(
-    [property: Required, StringLength(150)] string FirstName,
-    [property: Required, StringLength(150)] string LastName,
-    [property: StringLength(2000)] string? Bio = null,
-    [property: StringLength(150)] string? City = null,
-    [property: StringLength(2048)] string? PhotoUrl = null,
-    [property: StringLength(100)] string? GitHubUsername = null,
-    [property: StringLength(2048)] string? LinkedInUrl = null,
-    [property: StringLength(2048)] string? XUrl = null,
-    [property: StringLength(300)] string? Technologies = null);
+    [Required, StringLength(150)] string FirstName,
+    [Required, StringLength(150)] string LastName,
+    [StringLength(2000)] string? Bio = null,
+    [StringLength(150)] string? City = null,
+    [StringLength(2048)] string? PhotoUrl = null,
+    [StringLength(100)] string? GitHubUsername = null,
+    [StringLength(2048)] string? LinkedInUrl = null,
+    [StringLength(2048)] string? XUrl = null,
+    [StringLength(300)] string? Technologies = null);
 
 /// <summary>Compte tel que l'administration le consulte.</summary>
 /// <param name="Id">Identifiant.</param>
@@ -516,7 +516,40 @@ public sealed record UpdateAccountRequest(
 /// <summary>Rôles à attribuer à un compte.</summary>
 /// <param name="Roles">Rôles complets attendus après l'opération.</param>
 public sealed record ChangeRolesRequest(
-    [property: Required, MinLength(1)] IReadOnlyList<string> Roles);
+    [Required, MinLength(1)] IReadOnlyList<string> Roles);
+
+/// <summary>Création d'un compte par l'administration.</summary>
+/// <param name="Email">Adresse de connexion.</param>
+/// <param name="Password">Mot de passe initial, soumis à la politique du site.</param>
+/// <param name="FirstName">Prénom, facultatif.</param>
+/// <param name="LastName">Nom, facultatif.</param>
+/// <param name="IsTeam">Membre de l'équipe organisatrice.</param>
+/// <param name="ConfirmEmail">
+/// Vrai si l'administration atteste que l'adresse a été contrôlée par un autre canal.
+/// À faux, le membre devra confirmer son adresse avant de se connecter.
+/// </param>
+/// <param name="Roles">Rôles attribués. <c>Member</c> si la liste est omise.</param>
+public sealed record CreateAccountRequest(
+    [Required, EmailAddress, StringLength(256)] string Email,
+    [Required, StringLength(128)] string Password,
+    [StringLength(100)] string? FirstName = null,
+    [StringLength(100)] string? LastName = null,
+    bool IsTeam = false,
+    bool ConfirmEmail = false,
+    IReadOnlyList<string>? Roles = null);
+
+/// <summary>Suppression définitive du compte du membre connecté.</summary>
+/// <param name="ConfirmEmail">Adresse du compte, à recopier pour confirmer.</param>
+/// <param name="ConfirmPermanentDeletion">Vrai pour confirmer l'irréversibilité.</param>
+/// <remarks>
+/// Deux confirmations sont exigées parce que l'opération est irréversible : l'interface
+/// les présente l'une après l'autre, et le serveur refuse une demande qui n'en porte
+/// qu'une, afin qu'un appel isolé — un lien suivi par erreur, un script — ne puisse pas
+/// effacer un compte.
+/// </remarks>
+public sealed record DeleteOwnAccountRequest(
+    [Required, EmailAddress, StringLength(256)] string ConfirmEmail,
+    bool ConfirmPermanentDeletion = false);
 
 /// <summary>Projets internes, pour la construction des réponses.</summary>
 internal static class ApiProjections

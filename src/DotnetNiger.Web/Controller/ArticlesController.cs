@@ -102,7 +102,7 @@ public sealed class ArticlesController(
         [FromBody] CreateArticleRequest request,
         CancellationToken cancellationToken)
     {
-        var auteur = RequireUser(currentUser);
+        var auteur = RequireAdministrateur(currentUser);
         var article = new Article(
             auteur,
             request.Title,
@@ -154,7 +154,7 @@ public sealed class ArticlesController(
             return NotFound();
         }
 
-        RequireAuteurOuAdministrateur(currentUser, article.AuthorId);
+        RequireAdministrateur(currentUser);
 
         article.UpdateDetails(request.Title, request.Excerpt, request.Content, request.Category);
         article.SetCoverImage(request.CoverImageUrl);
@@ -195,7 +195,7 @@ public sealed class ArticlesController(
             return NotFound();
         }
 
-        RequireAuteurOuAdministrateur(currentUser, article.AuthorId);
+        RequireAdministrateur(currentUser);
 
         article.Publish(clock.GetUtcNow().UtcDateTime);
 
@@ -231,7 +231,7 @@ public sealed class ArticlesController(
             return NotFound();
         }
 
-        RequireAuteurOuAdministrateur(currentUser, article.AuthorId);
+        RequireAdministrateur(currentUser);
 
         article.Archive();
 
@@ -267,7 +267,7 @@ public sealed class ArticlesController(
             return NotFound();
         }
 
-        RequireAuteurOuAdministrateur(currentUser, article.AuthorId);
+        RequireAdministrateur(currentUser);
 
         article.ReturnToDraft();
 
@@ -301,7 +301,7 @@ public sealed class ArticlesController(
             return NotFound();
         }
 
-        var auteur = RequireAuteurOuAdministrateur(currentUser, article.AuthorId);
+        var auteur = RequireAdministrateur(currentUser);
 
         // Retrait logique : les commentaires et les signalements liés restent rattachés à
         // l'article, et l'historique de publication est conservé.

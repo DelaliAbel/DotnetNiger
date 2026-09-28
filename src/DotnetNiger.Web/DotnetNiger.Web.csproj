@@ -25,6 +25,12 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+    <!--
+      Permet de sortir les secrets du dépôt en développement, notamment le mot de passe
+      du compte administrateur initial décrit dans docs/DECISIONS.md. Ces valeurs restent
+      sur la machine du développeur et ne sont jamais versionnées.
+    -->
+    <UserSecretsId>dotnetniger-web-local</UserSecretsId>
   </PropertyGroup>
 
   <!--

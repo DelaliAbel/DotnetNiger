@@ -117,6 +117,66 @@ public sealed class AdminAccountsController(
         return Ok(ApiProjections.ToAccount(compte, await RolesDeAsync(compte)));
     }
 
+    /// <summary>Crée un compte depuis l'administration.</summary>
+    /// <param name="request">Identité, mot de passe initial et rôles du compte.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Le compte créé, avec ses rôles.</returns>
+    /// <remarks>
+    /// L'administration choisit le mot de passe initial et le transmet au membre par un
+    /// canal qu'elle contrôle : le compte n'est donc pas présenté comme attendant une
+    /// inscription en ligne. L'adresse reste à confirmer, sauf si l'administration
+    /// atteste explicitement l'avoir vérifiée.
+    /// </remarks>
+    /// <response code="201">Compte créé.</response>
+    /// <response code="400">Adresse déjà utilisée, mot de passe refusé, ou rôle inconnu.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est pas administrateur.</response>
+    [HttpPost]
+    [ProducesResponseType<AdminAccountResponse>(StatusCodes.Status201Created)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    public async Task<ActionResult<AdminAccountResponse>> Creer(
+        [FromBody] CreateAccountRequest request,
+        CancellationToken cancellationToken)
+    {
+        RequireAdministrateur(currentUser);
+
+        var email = request.Email.Trim();
+
+        if (await userManager.FindByEmailAsync(email) is not null)
+        {
+            throw new DomainException("email_taken", "Un compte utilise déjà cette adresse.");
+        }
+
+        // L'absence de rôle ne doit pas créer un compte sans rôle : un compte qui n'en
+        // porte aucun n'accède ni à l'espace membre ni à l'administration.
+        var demandes = request.Roles is null or { Count: 0 }
+            ? [RoleNames.Member]
+            : await VerifierLesRôlesAsync([.. request.Roles], cancellationToken);
+
+        var compte = new ApplicationUser(email);
+
+        if (!string.IsNullOrWhiteSpace(request.FirstName) || !string.IsNullOrWhiteSpace(request.LastName))
+        {
+            compte.UpdateProfile(
+                request.FirstName?.Trim() ?? string.Empty,
+                request.LastName?.Trim() ?? string.Empty);
+        }
+
+        await VerifierAsync(userManager.CreateAsync(compte, request.Password), "invalid_password");
+
+        await AppliquerLesRolesAsync(compte, demandes);
+
+        if (request.ConfirmEmail)
+        {
+            var jeton = await userManager.GenerateEmailConfirmationTokenAsync(compte);
+            await VerifierAsync(userManager.ConfirmEmailAsync(compte, jeton), "confirm_error");
+        }
+
+        return CreatedAtAction(nameof(Lire), new { id = compte.Id }, ApiProjections.ToAccount(compte, demandes));
+    }
+
     /// <summary>Active ou désactive un compte, et gère son appartenance à l'équipe.</summary>
     /// <param name="id">Identifiant du compte.</param>
     /// <param name="request">Nouvel état du compte.</param>
