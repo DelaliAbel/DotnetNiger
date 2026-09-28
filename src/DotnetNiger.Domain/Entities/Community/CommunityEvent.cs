@@ -241,6 +241,11 @@ public sealed class CommunityEvent : SoftDeletableEntity
         => Capacity is not null && confirmedRegistrationsCount >= Capacity.Value;
 
     /// <summary>
+    /// Repasse l'événement à l'état de brouillon, sans le retirer du site s'il était publié.
+    /// </summary>
+    public void ReturnToDraft() => Status = PublicationStatus.Draft;
+
+    /// <summary>
     /// Archive l'événement une fois terminé.
     /// </summary>
     public void Archive() => Status = PublicationStatus.Archived;

@@ -12,6 +12,7 @@ using DotnetNiger.Infrastructure.Identity;
 using DotnetNiger.Infrastructure.Persistence;
 using DotnetNiger.Web.Controller;
 using DotnetNiger.Web.Controller.Contracts;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -305,6 +306,200 @@ public sealed class TrisEtFiltresApiTests : IDisposable
         Assert.Equal("forbidden", erreur.Code);
     }
 
+    [Fact]
+    public async Task LireUnEvenementParSlug_Public_NeRendQueLesPublies()
+    {
+        var publie = new CommunityEvent(
+            _membreId,
+            "Atelier sur les collections C#",
+            "Un résumé",
+            "Une description",
+            CommunityEventFormat.Online,
+            DateTime.UtcNow.AddDays(10),
+            DateTime.UtcNow.AddDays(10).AddHours(2));
+        publie.SetOnlineUrl("https://meet.test/collections");
+        publie.Publish(_maintenant);
+
+        var brouillon = new CommunityEvent(
+            _membreId,
+            "Conférence en préparation",
+            "Un résumé",
+            "Une description",
+            CommunityEventFormat.InPerson,
+            DateTime.UtcNow.AddDays(30),
+            DateTime.UtcNow.AddDays(30).AddHours(3));
+        brouillon.SetLocation("Niamey");
+
+        UnitOfWork().Repository<CommunityEvent>().Add(publie);
+        UnitOfWork().Repository<CommunityEvent>().Add(brouillon);
+        Sauver();
+
+        var controleur = EvenementsControleur();
+
+        var trouvable = await controleur.LireParSlug(publie.Slug, CancellationToken.None);
+        var evenement = Assert.IsType<EventSummaryResponse>(
+            Assert.IsType<OkObjectResult>(trouvable.Result).Value);
+
+        Assert.Equal(publie.Id, evenement.Id);
+        Assert.Equal(CommunityEventFormat.Online, evenement.Format);
+
+        var introuvable = await controleur.LireParSlug(brouillon.Slug, CancellationToken.None);
+
+        Assert.IsType<NotFoundResult>(introuvable.Result);
+    }
+
+    [Fact]
+    public async Task RepasserUneRessourceEnBrouillon_ParSonAuteur_LaRetireDesListesPubliques()
+    {
+        var ressource = CreerResource("Scripts du poste", ResourceCategory.Tool);
+        ressource.Publish(_maintenant);
+        UnitOfWork().Repository<Resource>().Add(ressource);
+        Sauver();
+        ViderLeSuivi();
+
+        var controleur = new ResourcesController(
+            UnitOfWork(),
+            UtilisateurFictif.Membre(_membreId),
+            Lettre(),
+            TimeProvider.System);
+
+        await controleur.RepasserEnBrouillon(ressource.Id, CancellationToken.None);
+
+        var etat = UnitOfWork().ReadRepository<Resource>().Query
+            .Single(candidat => candidat.Id == ressource.Id).Status;
+
+        Assert.Equal(PublicationStatus.Draft, etat);
+
+        var page = await controleur.Lister(cancellationToken: CancellationToken.None);
+
+        Assert.DoesNotContain(page.Value!.Items, item => item.Id == ressource.Id);
+    }
+
+    [Fact]
+    public async Task RepasserLaRessourceDUnAutreMembre_ParUnMembre_EstRefuse()
+    {
+        var ressource = CreerResource("Scripts du poste", ResourceCategory.Tool);
+        ressource.Publish(_maintenant);
+        UnitOfWork().Repository<Resource>().Add(ressource);
+        Sauver();
+
+        var controleur = new ResourcesController(
+            UnitOfWork(),
+            UtilisateurFictif.Membre(Guid.NewGuid()),
+            Lettre(),
+            TimeProvider.System);
+
+        var erreur = await Assert.ThrowsAsync<DomainException>(
+            () => controleur.RepasserEnBrouillon(ressource.Id, CancellationToken.None));
+
+        Assert.Equal("forbidden", erreur.Code);
+    }
+
+    [Fact]
+    public async Task RepasserUnProjetEnBrouillon_ParUnAdministrateur_LeRetireDesListesPubliques()
+    {
+        var projet = new Project(_membreId, "Outil en ligne", "Un résumé", "Une description", "https://github.com/exemple/outil");
+        projet.Publish(_maintenant);
+        UnitOfWork().Repository<Project>().Add(projet);
+        Sauver();
+        ViderLeSuivi();
+
+        var controleur = new ProjectsController(
+            UnitOfWork(),
+            UtilisateurFictif.Administrateur(Guid.NewGuid()),
+            Lettre(),
+            TimeProvider.System);
+
+        await controleur.RepasserEnBrouillon(projet.Id, CancellationToken.None);
+
+        var etat = UnitOfWork().ReadRepository<Project>().Query
+            .Single(candidat => candidat.Id == projet.Id).Status;
+
+        Assert.Equal(PublicationStatus.Draft, etat);
+    }
+
+    [Fact]
+    public async Task RepasserUnProjetEnBrouillon_ParUnMembre_EstRefuse()
+    {
+        var projet = new Project(_membreId, "Outil en ligne", "Un résumé", "Une description", "https://github.com/exemple/outil");
+        UnitOfWork().Repository<Project>().Add(projet);
+        Sauver();
+
+        var controleur = new ProjectsController(
+            UnitOfWork(),
+            UtilisateurFictif.Membre(_membreId),
+            Lettre(),
+            TimeProvider.System);
+
+        var erreur = await Assert.ThrowsAsync<DomainException>(
+            () => controleur.RepasserEnBrouillon(projet.Id, CancellationToken.None));
+
+        Assert.Equal("forbidden", erreur.Code);
+    }
+
+    [Fact]
+    public async Task RepasserUnEvenementEnBrouillon_ParUnAdministrateur_LeRetireDesListesPubliques()
+    {
+        var evenement = new CommunityEvent(
+            _membreId,
+            "Rencontre mensuelle",
+            "Un résumé",
+            "Une description",
+            CommunityEventFormat.Online,
+            DateTime.UtcNow.AddDays(12),
+            DateTime.UtcNow.AddDays(12).AddHours(2));
+        evenement.SetOnlineUrl("https://meet.test/rencontre");
+        evenement.Publish(_maintenant);
+
+        UnitOfWork().Repository<CommunityEvent>().Add(evenement);
+        Sauver();
+        ViderLeSuivi();
+
+        var controleur = new EventsController(
+            UnitOfWork(),
+            UtilisateurFictif.Administrateur(Guid.NewGuid()),
+            _portee.ServiceProvider.GetRequiredService<IEmailDispatcher>(),
+            _portee.ServiceProvider.GetRequiredService<IMemberDirectory>(),
+            _portee.ServiceProvider.GetRequiredService<INewsletterDiffusion>(),
+            _portee.ServiceProvider.GetRequiredService<IOptions<EmailOptions>>(),
+            TimeProvider.System,
+            NullLogger<EventsController>.Instance);
+
+        var repasse = await controleur.RepasserEnBrouillon(evenement.Id, CancellationToken.None);
+        var repondu = Assert.IsType<EventResponse>(
+            Assert.IsType<OkObjectResult>(repasse.Result).Value);
+
+        Assert.Equal(PublicationStatus.Draft, repondu.Status);
+
+        var page = await controleur.Lister(cancellationToken: CancellationToken.None);
+
+        Assert.DoesNotContain(page.Value!.Items, item => item.Id == evenement.Id);
+    }
+
+    [Fact]
+    public async Task RepasserUnEvenementEnBrouillon_ParUnMembre_EstRefuse()
+    {
+        var evenement = new CommunityEvent(
+            _membreId,
+            "Rencontre mensuelle",
+            "Un résumé",
+            "Une description",
+            CommunityEventFormat.Online,
+            DateTime.UtcNow.AddDays(12),
+            DateTime.UtcNow.AddDays(12).AddHours(2));
+        evenement.SetOnlineUrl("https://meet.test/rencontre");
+
+        UnitOfWork().Repository<CommunityEvent>().Add(evenement);
+        Sauver();
+
+        var controleur = EvenementsControleur();
+
+        var erreur = await Assert.ThrowsAsync<DomainException>(
+            () => controleur.RepasserEnBrouillon(evenement.Id, CancellationToken.None));
+
+        Assert.Equal("forbidden", erreur.Code);
+    }
+
     private Resource CreerResource(string titre, ResourceCategory categorie, string? fournisseur = null)
     {
         var ressource = new Resource(_membreId, titre, "Une description", categorie);
@@ -315,6 +510,9 @@ public sealed class TrisEtFiltresApiTests : IDisposable
 
     private void Sauver() =>
         UnitOfWork().SaveChangesAsync(CancellationToken.None).GetAwaiter().GetResult();
+
+    private void ViderLeSuivi() =>
+        _portee.ServiceProvider.GetRequiredService<DotnetNigerDbContext>().ChangeTracker.Clear();
 
     private EventsController EvenementsControleur() =>
         new(

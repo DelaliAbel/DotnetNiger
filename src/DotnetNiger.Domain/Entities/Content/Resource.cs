@@ -154,6 +154,11 @@ public sealed class Resource : SoftDeletableEntity
     }
 
     /// <summary>
+    /// Repasse la ressource à l'état de brouillon, sans la retirer du site si elle était publiée.
+    /// </summary>
+    public void ReturnToDraft() => Status = PublicationStatus.Draft;
+
+    /// <summary>
     /// Archive la ressource.
     /// </summary>
     public void Archive() => Status = PublicationStatus.Archived;

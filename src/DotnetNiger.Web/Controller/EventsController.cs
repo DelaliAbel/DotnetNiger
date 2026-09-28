@@ -143,6 +143,35 @@ public sealed partial class EventsController(
             await ConfirmedCountAsync(id, cancellationToken)));
     }
 
+    /// <summary>Lit un événement publié par son adresse lisible.</summary>
+    /// <param name="slug">Adresse lisible de l'événement.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>L'événement et son nombre d'inscriptions.</returns>
+    /// <response code="200">Événement trouvé.</response>
+    /// <response code="404">Événement introuvable ou non publié.</response>
+    [HttpGet("{slug}")]
+    [AllowAnonymous]
+    [ProducesResponseType<EventSummaryResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EventSummaryResponse>> LireParSlug(
+        string slug,
+        CancellationToken cancellationToken)
+    {
+        var communityEvent = await unitOfWork.ReadRepository<CommunityEvent>().Query
+            .FirstOrDefaultAsync(
+                candidat => candidat.Slug == slug && candidat.Status == PublicationStatus.Published,
+                cancellationToken);
+
+        if (communityEvent is null)
+        {
+            return NotFound();
+        }
+
+        return Ok(ApiProjections.ToSummary(
+            communityEvent,
+            await ConfirmedCountAsync(communityEvent.Id, cancellationToken)));
+    }
+
     /// <summary>Inscrit le membre connecté à un événement.</summary>
     /// <param name="id">Identifiant de l'événement.</param>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
@@ -487,6 +516,41 @@ public sealed partial class EventsController(
         RequireAdministrateur(currentUser);
 
         communityEvent.Archive();
+
+        unitOfWork.Repository<CommunityEvent>().Update(communityEvent);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Ok(ApiProjections.ToDetail(communityEvent, await ConfirmedCountAsync(id, cancellationToken)));
+    }
+
+    /// <summary>Repasse un événement en brouillon, le retirant du calendrier sans le supprimer.</summary>
+    /// <param name="id">Identifiant de l'événement.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>L'événement repassé en brouillon.</returns>
+    /// <response code="200">Événement repassé en brouillon.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est pas administrateur.</response>
+    /// <response code="404">Événement introuvable.</response>
+    [HttpPost("{id:guid}/draft")]
+    [Authorize(Roles = RoleNames.Admin)]
+    [ProducesResponseType<EventResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<EventResponse>> RepasserEnBrouillon(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var communityEvent = await ChargerEvenement(id, cancellationToken);
+
+        if (communityEvent is null)
+        {
+            return NotFound();
+        }
+
+        RequireAdministrateur(currentUser);
+
+        communityEvent.ReturnToDraft();
 
         unitOfWork.Repository<CommunityEvent>().Update(communityEvent);
         await unitOfWork.SaveChangesAsync(cancellationToken);

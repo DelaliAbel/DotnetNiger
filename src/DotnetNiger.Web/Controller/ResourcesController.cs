@@ -224,6 +224,42 @@ public sealed class ResourcesController(
         return Ok(ApiProjections.ToSummary(resource));
     }
 
+    /// <summary>Repasse une ressource en brouillon, la retirant du site sans la supprimer.</summary>
+    /// <param name="id">Identifiant de la ressource.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>La ressource repassée en brouillon.</returns>
+    /// <response code="200">Ressource repassée en brouillon.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est ni l'auteur ni un administrateur.</response>
+    /// <response code="404">Ressource introuvable.</response>
+    [HttpPost("{id:guid}/draft")]
+    [Authorize]
+    [ProducesResponseType<ResourceSummaryResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ResourceSummaryResponse>> RepasserEnBrouillon(
+        Guid id,
+        CancellationToken cancellationToken)
+    {
+        var resource = await unitOfWork.ReadRepository<Resource>().Query
+            .FirstOrDefaultAsync(candidat => candidat.Id == id, cancellationToken);
+
+        if (resource is null)
+        {
+            return NotFound();
+        }
+
+        RequireAuteurOuAdministrateur(currentUser, resource.CreatorId);
+
+        resource.ReturnToDraft();
+
+        unitOfWork.Repository<Resource>().Update(resource);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Ok(ApiProjections.ToSummary(resource));
+    }
+
     /// <summary>Republie une ressource archivée.</summary>
     /// <param name="id">Identifiant de la ressource.</param>
     /// <param name="cancellationToken">Jeton d'annulation.</param>

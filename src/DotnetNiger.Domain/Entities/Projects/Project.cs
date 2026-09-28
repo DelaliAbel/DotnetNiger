@@ -146,6 +146,11 @@ public sealed class Project : SoftDeletableEntity
     }
 
     /// <summary>
+    /// Repasse le projet à l'état de brouillon, sans le retirer du site s'il était publié.
+    /// </summary>
+    public void ReturnToDraft() => Status = PublicationStatus.Draft;
+
+    /// <summary>
     /// Archive le projet.
     /// </summary>
     public void Archive() => Status = PublicationStatus.Archived;
