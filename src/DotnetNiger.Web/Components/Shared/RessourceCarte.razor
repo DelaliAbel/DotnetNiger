@@ -1,0 +1,26 @@
+@* Carte de présentation d'une ressource (formation, outil, guide). *@
+
+<article class="card card--hover">
+    <div class="card__media card__media--defaut" aria-hidden="true">
+        <span class="ressource__icone"><DnIcon Name="@Icone" Size="22" /></span>
+    </div>
+    <div class="card__body">
+        <p class="card__meta">
+            <span class="badge badge--outline">@Ressource.Sujet</span>
+        </p>
+        <h3 class="card__title">@Ressource.Titre</h3>
+        <p class="card__text">@Ressource.Description</p>
+        <p class="card__meta">Proposée par @Ressource.Auteur</p>
+        <a class="link" href="@Ressource.Lien"
+           target="@(Ressource.Externe ? "_blank" : null)" rel="@(Ressource.Externe ? "noopener" : null)">
+            @(Ressource.Externe ? "Ouvrir la ressource" : "Lire la ressource")
+            <DnIcon Name="@(Ressource.Externe ? "external-link" : "arrow-right")" Size="14" />
+        </a>
+    </div>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public RessourceVue Ressource { get; set; } = default!;
+
+    [Parameter] public string Icone { get; set; } = "book-open";
+}

@@ -39,6 +39,9 @@ public sealed class RessourceVue
 
     public required string Categorie { get; init; }
 
+    /// <summary>Étiquette technique (ex. « Blazor », « ASP.NET Core », « MAUI »).</summary>
+    public string Sujet { get; init; } = "";
+
     public required string Description { get; init; }
 
     public required string Lien { get; init; }

@@ -1520,4 +1520,202 @@
       font-size: var(--text-section);
     }
   }
+
+  /* --- Variante centrée du héros (pages annexes, sans panneau) --- */
+  .hero--centre {
+    padding-block: calc(var(--spacing) * 10);
+    text-align: center;
+  }
+
+  .hero--centre .hero__eyebrow {
+    justify-self: center;
+  }
+
+  .hero--centre .hero__title {
+    margin-inline: auto;
+    max-width: 24ch;
+  }
+
+  .hero--centre .hero__lead {
+    margin-inline: auto;
+  }
+
+  .hero--centre .hero__actions {
+    justify-content: center;
+  }
+
+  /* --- Pastilles de navigation par catégorie (anchors) --- */
+  .chips {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--spacing);
+  }
+
+  .chips--section {
+    justify-content: flex-start;
+    margin-top: calc(var(--spacing) * 3);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 0.75);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-full);
+    padding: calc(var(--spacing) * 1) calc(var(--spacing) * 2);
+    color: var(--site-fg-muted);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
+    line-height: 1;
+    transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+  }
+
+  .chip:hover {
+    color: var(--color-violet-500);
+    border-color: rgb(81 43 212 / 0.5);
+    background: var(--color-violet-50);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .dark .chip:hover {
+    color: var(--color-violet-200);
+    border-color: rgb(173 155 232 / 0.55);
+    background: rgb(81 43 212 / 0.14);
+  }
+
+  .chip--active {
+    color: #fff;
+    background: var(--color-violet-500);
+    border-color: var(--color-violet-500);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .chip--active:hover {
+    color: #fff;
+    background: var(--color-violet-600);
+    border-color: var(--color-violet-600);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .dark .chip--active:hover {
+    color: #fff;
+    background: var(--color-violet-500);
+    border-color: var(--color-violet-500);
+  }
+
+  /* --- Recherche et filtres --- */
+  .filtres {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing);
+    max-width: 44rem;
+    margin-inline: auto;
+  }
+
+  .filtres__recherche {
+    flex: 1 1 16rem;
+    min-width: 0;
+  }
+
+  /* --- Pagination --- */
+  .pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing);
+    margin-top: calc(var(--spacing) * 8);
+  }
+
+  .pagination__pages {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: calc(var(--spacing) * 0.5);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .pagination__lien,
+  .pagination__fleche {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 0.5);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    padding: calc(var(--spacing) * 1) calc(var(--spacing) * 2);
+    min-width: calc(var(--spacing) * 5);
+    justify-content: center;
+    color: var(--site-fg-muted);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
+    line-height: 1;
+    transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease;
+  }
+
+  .pagination__lien:hover,
+  .pagination__fleche:hover {
+    color: var(--color-violet-500);
+    border-color: rgb(81 43 212 / 0.5);
+    background: var(--color-violet-50);
+  }
+
+  .dark .pagination__lien:hover,
+  .dark .pagination__fleche:hover {
+    color: var(--color-violet-200);
+    border-color: rgb(173 155 232 / 0.55);
+    background: rgb(81 43 212 / 0.14);
+  }
+
+  .pagination__lien--active {
+    color: #fff;
+    background: var(--color-violet-500);
+    border-color: var(--color-violet-500);
+  }
+
+  .pagination__fleche--desactivee {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .pagination__fleche--desactivee:hover {
+    color: var(--site-fg-muted);
+    border-color: var(--site-border);
+    background: transparent;
+  }
+
+  /* --- Bande Contribuer --- */
+  .contribuer__actions {
+    display: grid;
+    justify-items: start;
+    gap: var(--spacing);
+  }
+
+  .contribuer__note {
+    color: rgb(255 255 255 / 0.82);
+    font-size: var(--text-sm);
+    line-height: 1.5;
+  }
+
+  .contribuer__note .link {
+    color: #fff;
+    font-weight: 700;
+  }
+
+
+  /* --- Carte de ressource : en-tête visuel par catégorie --- */
+  .ressource__icone {
+    width: calc(var(--spacing) * 10);
+    height: calc(var(--spacing) * 10);
+    border-radius: var(--radius-lg);
+    display: inline-grid;
+    place-items: center;
+    background: rgb(255 255 255 / 0.12);
+    border: 1px solid rgb(255 255 255 / 0.22);
+    color: #fff;
+  }
 }

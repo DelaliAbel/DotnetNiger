@@ -182,6 +182,7 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
         {
             Titre = "Parcours Microsoft Learn — Premiers pas avec .NET",
             Categorie = "Formations et tutoriels",
+            Sujet = "Fondamentaux .NET",
             Description = "Une série de modules officiels, en français, pour découvrir .NET, C# et les outils de développement pas à pas.",
             Lien = "https://learn.microsoft.com/training/paths/build-first-app/",
             Externe = true,
@@ -191,6 +192,7 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
         {
             Titre = "Tutoriel C# par la pratique : 40 exercices corrigés",
             Categorie = "Formations et tutoriels",
+            Sujet = "C#",
             Description = "Écrit par des membres de la communauté, ce tutoriel accompagne chaque notion du C# avec des exercices corrigés.",
             Lien = "/ressources/tutoriel-csharp-40-exercices",
             Externe = false,
@@ -198,26 +200,9 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
         },
         new RessourceVue
         {
-            Titre = "Guide : architecture propre pour vos applications Blazor",
-            Categorie = "Articles de blog et guides",
-            Description = "Séparation des responsabilités, dépendances inversées, tests : un guide pour garder votre application Blazor maintenable à long terme.",
-            Lien = "/ressources/guide-architecture-blazor",
-            Externe = false,
-            Auteur = "Issoufou Hamadou",
-        },
-        new RessourceVue
-        {
-            Titre = "Boîte à outils : 12 bibliothèques .NET à connaître",
-            Categorie = "Bibliothèques et outils",
-            Description = "Sérialisation, journalisation, tests, analyse : la sélection de la communauté pour développer plus vite et plus sûrement.",
-            Lien = "/ressources/12-bibliotheques-dotnet",
-            Externe = false,
-            Auteur = "Moussa Djibrilla",
-        },
-        new RessourceVue
-        {
             Titre = "Formation en ligne : ASP.NET Core de A à Z",
             Categorie = "Formations et tutoriels",
+            Sujet = "ASP.NET Core",
             Description = "Du premier point de terminaison au déploiement : un parcours vidéo complet couvrant les fondamentaux d'ASP.NET Core.",
             Lien = "https://dotnet.microsoft.com/learn/videos",
             Externe = true,
@@ -225,8 +210,29 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
         },
         new RessourceVue
         {
+            Titre = "Collections et API de Microsoft Learn pour mobile",
+            Categorie = "Formations et tutoriels",
+            Sujet = ".NET MAUI",
+            Description = "Les apprentissages officiels pour démarrer .NET MAUI, identifier les performances et publier sur les stores.",
+            Lien = "https://learn.microsoft.com/dotnet/maui/",
+            Externe = true,
+            Auteur = "Microsoft Learn",
+        },
+        new RessourceVue
+        {
+            Titre = "Guide : architecture propre pour vos applications Blazor",
+            Categorie = "Articles de blog et guides",
+            Sujet = "Architecture",
+            Description = "Séparation des responsabilités, dépendances inversées, tests : un guide pour garder votre application Blazor maintenable à long terme.",
+            Lien = "/ressources/guide-architecture-blazor",
+            Externe = false,
+            Auteur = "Issoufou Hamadou",
+        },
+        new RessourceVue
+        {
             Titre = "Guide : sécuriser votre API avec ASP.NET Core Identity",
             Categorie = "Articles de blog et guides",
+            Sujet = "Sécurité",
             Description = "Inscription, connexion, rôles et cookies : les bons réflexes pour protéger votre API sans réinventer la roue.",
             Lien = "/ressources/guide-securiser-api-identity",
             Externe = false,
@@ -236,6 +242,7 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
         {
             Titre = "Dépendance d'injection en C# : comprendre enfin le sujet",
             Categorie = "Articles de blog et guides",
+            Sujet = "C# avancé",
             Description = "Pourquoi, comment, et dans quel ordre : la DI expliquée avec des analogies du quotidien et des exemples exécutables.",
             Lien = "/ressources/dependance-injection-expliquee",
             Externe = false,
@@ -243,12 +250,273 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
         },
         new RessourceVue
         {
-            Titre = "Collections et API de Microsoft Learn pour mobile",
+            Titre = "Guide : optimisez les performances d'une API ASP.NET Core",
+            Categorie = "Articles de blog et guides",
+            Sujet = "Performance",
+            Description = "Mise en cache, minimisation des allocations, pagination : les leviers mesurables pour une API qui tient la charge.",
+            Lien = "/ressources/guide-performance-api-aspnet",
+            Externe = false,
+            Auteur = "Issoufou Hamadou",
+        },
+        new RessourceVue
+        {
+            Titre = "Boîte à outils : 12 bibliothèques .NET à connaître",
+            Categorie = "Bibliothèques et outils",
+            Sujet = "Sélection",
+            Description = "Sérialisation, journalisation, tests, analyse : la sélection de la communauté pour développer plus vite et plus sûrement.",
+            Lien = "/ressources/12-bibliotheques-dotnet",
+            Externe = false,
+            Auteur = "Moussa Djibrilla",
+        },
+        new RessourceVue
+        {
+            Titre = "FluentValidation : des validations déclaratives expressives",
+            Categorie = "Bibliothèques et outils",
+            Sujet = "Validation",
+            Description = "Remplacez les blocs verbeux de validation par des règles lisibles, testables et indépendantes de vos modèles.",
+            Lien = "https://docs.fluentvalidation.net/",
+            Externe = true,
+            Auteur = "Zara Oumarou",
+        },
+        new RessourceVue
+        {
+            Titre = "BenchmarkDotNet : mesurez la performance de votre code",
+            Categorie = "Bibliothèques et outils",
+            Sujet = "Benchmark",
+            Description = "Des benchmarks rigoureux, des rapports lisibles et des conclusions fiables pour guider vos micro-optimisations.",
+            Lien = "https://benchmarkdotnet.org/",
+            Externe = true,
+            Auteur = "Hassan Adamou",
+        },
+        new RessourceVue
+        {
+            Titre = "Serilog : une journalisation structurée pour la production",
+            Categorie = "Bibliothèques et outils",
+            Sujet = "Journalisation",
+            Description = "Des journaux structurés, interrogeables et faciles à dépouiller pour comprendre ce qui se passe en production.",
+            Lien = "https://serilog.net/",
+            Externe = true,
+            Auteur = "Fatima Ousmane",
+        },
+        new RessourceVue
+        {
+            Titre = "Cours gratuit : C# pour les débutants",
             Categorie = "Formations et tutoriels",
-            Description = "Les apprentissages officiels pour démarrer .NET MAUI, identifier les performances et publier sur les stores.",
-            Lien = "https://learn.microsoft.com/dotnet/maui/",
+            Sujet = "C#",
+            Description = "Le parcours officiel de Microsoft pour découvrir la syntaxe du langage, les types et les premiers programmes, avec des exercices guidés.",
+            Lien = "https://learn.microsoft.com/training/",
+            Externe = true,
+            Auteur = "Microsoft",
+        },
+        new RessourceVue
+        {
+            Titre = "Programmation orientée objet en C# : le parcours complet",
+            Categorie = "Formations et tutoriels",
+            Sujet = "C# avancé",
+            Description = "Classes, interfaces, héritage, génériques et délégations : un parcours pas à pas pour structurer vos applications.",
+            Lien = "/ressources/parcours-poo-csharp",
+            Externe = false,
+            Auteur = "Hassan Adamou",
+        },
+        new RessourceVue
+        {
+            Titre = "Entity Framework Core : apprenez avec un projet concret",
+            Categorie = "Formations et tutoriels",
+            Sujet = "EF Core",
+            Description = "De la première migration au code de la couche d'accès aux données, en passant par les jointures et le chargement des relations.",
+            Lien = "/ressources/parcours-ef-core",
+            Externe = false,
+            Auteur = "Mahamadou Kane",
+        },
+        new RessourceVue
+        {
+            Titre = "Blazor pour les débutants : la série complète en vidéo",
+            Categorie = "Formations et tutoriels",
+            Sujet = "Blazor",
+            Description = "Composants, données, formulaires et intégration avec une API : une série vidéo qui vous emmène de zéro à une application fonctionnelle.",
+            Lien = "https://www.youtube.com/@dotnetniger",
+            Externe = true,
+            Auteur = "Issoufou Hamadou",
+        },
+        new RessourceVue
+        {
+            Titre = "Sécuriser vos APIs ASP.NET Core : le parcours pratique",
+            Categorie = "Formations et tutoriels",
+            Sujet = "Sécurité",
+            Description = "JWT, cookies, rôles et protections contre les failles courantes : les gestes essentiels pour protéger vos points de terminaison.",
+            Lien = "/ressources/parcours-securite-api",
+            Externe = false,
+            Auteur = "Fatima Harouna",
+        },
+        new RessourceVue
+        {
+            Titre = "xUnit : testez votre code avec confiance",
+            Categorie = "Bibliothèques et outils",
+            Sujet = "Tests",
+            Description = "Théories, données paramétrées, mocks et analyse de couverture : le réflexe des tests qui protège vos refactorisations.",
+            Lien = "https://xunit.net/",
+            Externe = true,
+            Auteur = "Abdoulaye Ibrahim",
+        },
+        new RessourceVue
+        {
+            Titre = "Dapper : des requêtes SQL simples et performantes",
+            Categorie = "Bibliothèques et outils",
+            Sujet = "Accès aux données",
+            Description = "Un micro-ORM minimaliste, transparent et très rapide pour les projets qui préfèrent un contrôle total sur le SQL.",
+            Lien = "https://www.learndapper.com/",
+            Externe = true,
+            Auteur = "Moussa Djibrilla",
+        },
+        new RessourceVue
+        {
+            Titre = "Polly : rendez vos appels HTTP résilients",
+            Categorie = "Bibliothèques et outils",
+            Sujet = "Résilience",
+            Description = "Réessais, disjoncteurs, délais et dégradation gracieuse : gardez votre application debout quand un service tiers vacille.",
+            Lien = "https://www.thepollyproject.org/",
+            Externe = true,
+            Auteur = "Salifou Maiga",
+        },
+        new RessourceVue
+        {
+            Titre = "Hangfire : des tâches planifiées en arrière-plan",
+            Categorie = "Bibliothèques et outils",
+            Sujet = "Tâches de fond",
+            Description = "E-mails, rapports, synchronisations : planifiez et suivez vos travaux de fond depuis une interface simple et fiable.",
+            Lien = "https://www.hangfire.io/",
+            Externe = true,
+            Auteur = "Aïcha Ousmane",
+        },
+        new RessourceVue
+        {
+            Titre = "Moq : simulez vos dépendances dans les tests",
+            Categorie = "Bibliothèques et outils",
+            Sujet = "Tests",
+            Description = "Fabriquez des doublures expressives pour isoler vos classes et tester les comportements sans toucher à la vraie infrastructure.",
+            Lien = "https://github.com/devlooped/moq",
+            Externe = true,
+            Auteur = "Hassan Adamou",
+        },
+        new RessourceVue
+        {
+            Titre = "Minimal APIs ou contrôleurs : comment choisir",
+            Categorie = "Articles de blog et guides",
+            Sujet = "Architecture",
+            Description = "Deux styles, deux philosophies : un comparatif honnête pour trancher selon la taille et l'ambition de votre projet.",
+            Lien = "/ressources/minimal-apis-ou-controleurs",
+            Externe = false,
+            Auteur = "Salifou Maiga",
+        },
+        new RessourceVue
+        {
+            Titre = "Le pipeline middleware ASP.NET Core expliqué avec des schémas",
+            Categorie = "Articles de blog et guides",
+            Sujet = "ASP.NET Core",
+            Description = "Ordre, branchement et responsabilités : comprenez visuellement ce qui se passe avant, pendant et après votre code.",
+            Lien = "/ressources/pipeline-middleware-aspnet",
+            Externe = false,
+            Auteur = "Fatima Harouna",
+        },
+        new RessourceVue
+        {
+            Titre = "Comprendre async/await sans mal de tête",
+            Categorie = "Articles de blog et guides",
+            Sujet = "C# avancé",
+            Description = "Le mot clé async, l'état de la machine, l'exception bloquante : la mécanique expliquée simplement, avec des exemples sans jargon.",
+            Lien = "/ressources/async-await-explique-simplement",
+            Externe = false,
+            Auteur = "Zara Oumarou",
+        },
+        new RessourceVue
+        {
+            Titre = "MemoryCache : les pièges à éviter en production",
+            Categorie = "Articles de blog et guides",
+            Sujet = "Performance",
+            Description = "Évictions, courses et invalidation : comment tirer le meilleur du cache en mémoire sans laisser les données périmées s'installer.",
+            Lien = "/ressources/memorycache-pieges",
+            Externe = false,
+            Auteur = "Mahamadou Kane",
+        },
+        new RessourceVue
+        {
+            Titre = "Tests d'intégration avec une vraie base de données",
+            Categorie = "Articles de blog et guides",
+            Sujet = "Tests",
+            Description = "Containers, isolation et régénération des données : tester contre SQL Server localement comme en CI, sans fragile.",
+            Lien = "/ressources/tests-integration-base-donnees",
+            Externe = false,
+            Auteur = "Moussa Djibrilla",
+        },
+        new RessourceVue
+        {
+            Titre = "Razor Pages ou Blazor : quelle approche pour votre projet ?",
+            Categorie = "Articles de blog et guides",
+            Sujet = "Blazor",
+            Description = "Rendu serveur classique ou composants riches : les critères de choix selon l'équipe, le délai et l'expérience recherchée.",
+            Lien = "/ressources/razor-pages-ou-blazor",
+            Externe = false,
+            Auteur = "Abdoulaye Ibrahim",
+        },
+        new RessourceVue
+        {
+            Titre = "Docker pour les développeurs .NET : conteneuriser une API",
+            Categorie = "Formations et tutoriels",
+            Sujet = "Déploiement",
+            Description = "Multi-étapes, images légères et fichiers compose : empaqueter votre application .NET pour qu'elle s'exécute partout de la même façon.",
+            Lien = "/ressources/parcours-docker-dotnet",
+            Externe = false,
+            Auteur = "Mahamadou Kane",
+        },
+        new RessourceVue
+        {
+            Titre = "SignalR pas à pas : ajouter du temps réel à votre application",
+            Categorie = "Formations et tutoriels",
+            Sujet = "Temps réel",
+            Description = "Hubs, groupes et reconnexion : construisez une messagerie et des notifications en direct, du serveur jusqu'au client.",
+            Lien = "/ressources/parcours-signalr",
+            Externe = false,
+            Auteur = "Aïcha Ousmane",
+        },
+        new RessourceVue
+        {
+            Titre = "Tests unitaires en C# : de zéro à la couverture",
+            Categorie = "Formations et tutoriels",
+            Sujet = "Tests",
+            Description = "Choisir xUnit, isoler une dépendance, écrire des théories et mesurer la couverture : les bases solides du développement piloté par les tests.",
+            Lien = "https://learn.microsoft.com/dotnet/core/testing/",
             Externe = true,
             Auteur = "Microsoft Learn",
+        },
+        new RessourceVue
+        {
+            Titre = "FluentAssertions : des tests qui se lisent comme des phrases",
+            Categorie = "Bibliothèques et outils",
+            Sujet = "Tests",
+            Description = "Des assertions expressives et des messages d'échec limpides pour écrire des tests que vos collègues comprennent au premier regard.",
+            Lien = "https://fluentassertions.com/",
+            Externe = true,
+            Auteur = "Fatima Ousmane",
+        },
+        new RessourceVue
+        {
+            Titre = "MediatR : découpler vos cas d'usage",
+            Categorie = "Bibliothèques et outils",
+            Sujet = "Architecture",
+            Description = "Requêtes, commandes et notifications : une manière simple de réduire le couplage et de centraliser les comportements transverses.",
+            Lien = "https://github.com/jbogard/MediatR",
+            Externe = true,
+            Auteur = "Issoufou Hamadou",
+        },
+        new RessourceVue
+        {
+            Titre = "Roslynator : des analyseurs de code pour C#",
+            Categorie = "Bibliothèques et outils",
+            Sujet = "Qualité",
+            Description = "Des centaines de règles et de corrections automatiques pour uniformiser le style et traquer les petites erreurs avant la revue.",
+            Lien = "https://josefpihrt.github.io/docs/roslynator/",
+            Externe = true,
+            Auteur = "Zara Oumarou",
         },
     };
 
