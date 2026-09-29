@@ -921,13 +921,20 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
     /// premiers de la garniture ne tenait plus dès lors qu'elle contenait un meetup
     /// passé : l'accueil annonçait alors un événement déjà terminé.
     /// </summary>
-    private static IReadOnlyList<EvenementVue> EvenementsAVenir() =>
-    [
-        .. Evenements
+    /// <param name="nombreMaximal">Nombre maximal renvoyé, ou <c>null</c> pour tous.</param>
+    private static IReadOnlyList<EvenementVue> EvenementsAVenir(int? nombreMaximal = 3)
+    {
+        IEnumerable<EvenementVue> aVenir = Evenements
             .Where(e => e.DateDebut >= DateOnly.FromDateTime(DateTime.Today))
-            .OrderBy(e => e.DateDebut)
-            .Take(3),
-    ];
+            .OrderBy(e => e.DateDebut);
+
+        if (nombreMaximal is { } maximum)
+        {
+            aVenir = aVenir.Take(maximum);
+        }
+
+        return [.. aVenir];
+    }
 
     public Task<IReadOnlyList<ArticleVue>> ChargerArticlesAsync(CancellationToken annulation = default) =>
         Task.FromResult<IReadOnlyList<ArticleVue>>(Articles);
@@ -961,7 +968,10 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
     public Task<CommunauteVue> ChargerCommunauteAsync(CancellationToken annulation = default) =>
         Task.FromResult(new CommunauteVue
         {
-            Evenements = Evenements.ToArray(),
+            // La section s'intitule « Meetups et événements » et renvoie vers la page
+            // complète : y annoncer un rendez-vous déjà terminé n'aide personne. Seuls
+            // les événements à venir, du plus proche au plus lointain.
+            Evenements = EvenementsAVenir(nombreMaximal: null).ToArray(),
             Projets = Projets.ToArray(),
             Canaux = Canaux.ToArray(),
             NombreMembres = MembresTotal,

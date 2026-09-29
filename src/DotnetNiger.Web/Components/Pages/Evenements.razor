@@ -184,8 +184,12 @@ else
 }
 
 @code {
-    /// <summary>Nombre d'événements affichés par page.</summary>
-    private const int EvenementsParPage = 6;
+    /// <summary>
+    /// Nombre d'événements affichés par page. L'agenda compte peu d'événements :
+    /// en fixer six laissait une page unique et une pagination jamais visible, donc
+    /// impossible à tester. Trois garde deux pages dès que l'agenda se remplit.
+    /// </summary>
+    private const int EvenementsParPage = 3;
 
     private static readonly (string Cle, string Nom)[] Types =
     [
