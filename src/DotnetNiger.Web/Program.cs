@@ -163,14 +163,36 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// La page « introuvable » est un composant Razor : la ré-exécution ne convient qu'aux
-// pages du site. Sur l'API, un 404 doit rester un 404 en JSON, et surtout la ré-exécution
-// transformerait une réponse d'API en document HTML.
-app.UseWhen(
-    contexte => !EstAppelApi(contexte.Request),
-    branche => branche.UseStatusCodePagesWithReExecute(
-        "/not-found",
-        createScopeForStatusCodePages: true));
+// La page « introuvable » est un composant Razor rendu dans la coquille (layout, barre de
+// navigation). Posé ici, dans le pipeline principal, le middleware enveloppe tous les
+// points de terminaison qui suivent : un chemin sans page produit ainsi une 404 avec le
+// corps HTML de la page « introuvable », et non une 404 vide qui ferait perdre la
+// navigation à l'utilisateur.
+app.UseStatusCodePagesWithReExecute(
+    "/not-found",
+    createScopeForStatusCodePages: true);
+
+// Garde-fou pour l'API : la ré-exécution ci-dessus rendrait un document HTML pour un 404
+// d'API. Posé juste après, ce middleware enveloppe à son tour les points de terminaison :
+// pour un chemin d'API, il écrit le corps JSON avant que la ré-exécution n'ait la main
+// (le corps commencé empêche la ré-exécution), et un chemin d'API inconnu reste une 404 JSON.
+app.Use(async (contexte, suivant) =>
+{
+    await suivant(contexte);
+    if (EstAppelApi(contexte.Request)
+        && contexte.Response.StatusCode == StatusCodes.Status404NotFound
+        && !contexte.Response.HasStarted)
+    {
+        contexte.Response.ContentType = "application/problem+json; charset=utf-8";
+        await contexte.Response.WriteAsJsonAsync(new
+        {
+            type = "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+            title = "Introuvable",
+            status = StatusCodes.Status404NotFound,
+            detail = "La ressource demandée n'existe pas."
+        });
+    }
+});
 
 app.UseHttpsRedirection();
 
