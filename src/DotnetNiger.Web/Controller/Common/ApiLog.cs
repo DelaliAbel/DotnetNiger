@@ -44,4 +44,13 @@ internal static partial class ApiLog
         Guid commentaireId,
         Guid auteur,
         CommentStatus statut);
+
+    [LoggerMessage(
+        EventId = 73,
+        Level = LogLevel.Warning,
+        Message = "Requête mal formée sur {Path} : {Message}")]
+    internal static partial void RequeteMalFormee(
+        ILogger logger,
+        string path,
+        string message);
 }

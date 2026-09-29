@@ -216,6 +216,7 @@ app.MapStaticAssets();
 app.MapExternalAccountEndpoints();
 app.MapAccountEndpoints();
 app.MapAccountVerificationEndpoints();
+app.MapPasswordResetEndpoints();
 
 // ---------- Back-office ----------
 app.MapAdministrationEndpoints();

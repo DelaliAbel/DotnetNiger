@@ -111,4 +111,67 @@ public class AccountInputValidationTests
     {
         Assert.Equal("Le formulaire est incomplet.", AccountInputValidation.Validate(null));
     }
+
+    [Fact]
+    public void Validate_refuse_une_demande_sans_adresse()
+    {
+        Assert.Equal(
+            "Indiquez votre adresse e-mail.",
+            AccountInputValidation.Validate(new ForgotPasswordInput { Email = string.Empty }));
+    }
+
+    [Fact]
+    public void Validate_refuse_une_demande_qui_n_est_pas_une_adresse()
+    {
+        Assert.Equal(
+            "Cette adresse n'est pas valide.",
+            AccountInputValidation.Validate(new ForgotPasswordInput { Email = "pas-une-adresse" }));
+    }
+
+    [Fact]
+    public void Validate_accepte_une_demande_d_adresse()
+    {
+        Assert.Null(AccountInputValidation.Validate(
+            new ForgotPasswordInput { Email = "amina@example.org" }));
+    }
+
+    [Fact]
+    public void Validate_refuse_une_reinitialisation_sans_jeton()
+    {
+        var input = new ResetPasswordInput
+        {
+            Email = "amina@example.org",
+            Password = "MotDePasseSolide1!",
+            ConfirmPassword = "MotDePasseSolide1!",
+        };
+
+        Assert.Equal("Ce lien est incomplet. Demandez-en un nouveau.", AccountInputValidation.Validate(input));
+    }
+
+    [Fact]
+    public void Validate_refuse_une_reinitialisation_sans_adresse()
+    {
+        var input = new ResetPasswordInput
+        {
+            Token = "jeton",
+            Password = "MotDePasseSolide1!",
+            ConfirmPassword = "MotDePasseSolide1!",
+        };
+
+        Assert.Equal("Ce lien est incomplet. Demandez-en un nouveau.", AccountInputValidation.Validate(input));
+    }
+
+    [Fact]
+    public void Validate_refuse_une_confirmation_divergente_apres_reinitialisation()
+    {
+        var input = new ResetPasswordInput
+        {
+            Token = "jeton",
+            Email = "amina@example.org",
+            Password = "MotDePasseSolide1!",
+            ConfirmPassword = "AutreMotDePasse1!",
+        };
+
+        Assert.Equal("Les deux mots de passe ne correspondent pas.", AccountInputValidation.Validate(input));
+    }
 }

@@ -3,107 +3,104 @@
 
 <PageTitle>Créer un compte - DotnetNiger</PageTitle>
 
-<section class="mx-auto w-full max-w-md">
-    <h1 class="mb-1 text-2xl font-semibold">Créer un compte</h1>
-    <p class="mb-6 text-sm text-neutral-600">
-        Votre adresse sert aussi d'identifiant. Elle ne sera jamais transmise à un tiers.
-    </p>
-
-    @if (!string.IsNullOrWhiteSpace(Error))
+<CadreCompte Titre="Créer un compte"
+            SurTitre="Rejoindre la communauté"
+            Lead="Votre adresse sert aussi d'identifiant. Elle ne sera jamais transmise à un tiers."
+            ArgumentsPanneau="ArgumentsPanneau">
+    @if (Error is not null)
     {
-        <p class="mb-4 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900">
-            @Error
-        </p>
+        <Alerte Variante="rouge">@Error</Alerte>
     }
-    else if (!string.IsNullOrWhiteSpace(EmailFailed))
+    else if (EmailFailed is not null)
     {
-        <p class="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-            Votre compte a été créé, mais le message de confirmation n'a pas pu partir.
-            Vérifiez que le serveur de courriels est correctement configuré, puis utilisez
-            la procédure de réinitialisation pour le renvoyer.
-        </p>
+        <Alerte Variante="orange">
+            Votre compte a été créé, mais le message de confirmation n'a pas pu partir. Vérifiez que le
+            serveur de courriels est correctement configuré, puis utilisez la procédure de
+            <a href="/compte/mot-de-passe-oublie" class="font-semibold underline">réinitialisation</a>
+            pour le renvoyer.
+        </Alerte>
     }
-    else if (!string.IsNullOrWhiteSpace(Sent))
+    else if (Sent is not null)
     {
-        <p class="mb-4 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900">
+        <Alerte Variante="vert">
             Votre compte a été créé. Un message de confirmation a été envoyé à
             <strong>@Email</strong> : ouvrez le lien qu'il contient pour l'activer.
-        </p>
-        <p class="text-sm text-neutral-600">
-            <a href="/compte/connexion" class="font-medium text-violet-700 underline">Retour à la connexion</a>
+        </Alerte>
+        <p class="compte__pied">
+            <a href="/compte/connexion" class="font-semibold text-violet-700 underline dark:text-violet-200">Retour à la connexion</a>
         </p>
     }
     else
     {
-        <form method="post" action="/compte/inscription/creer" class="space-y-4">
+        <form method="post" action="/compte/inscription/creer" class="grid gap-5">
             <AntiforgeryToken />
 
-            <label class="block">
-                <span class="mb-1 block text-sm font-medium">Prénom</span>
-                <input type="text" name="FirstName" required minlength="2" maxlength="80"
-                       autocomplete="given-name" class="w-full rounded-lg border border-neutral-300 px-3 py-2" />
-            </label>
+            <div class="grid gap-5 sm:grid-cols-2">
+                <div class="field">
+                    <label class="field__label" for="FirstName">Prénom</label>
+                    <input class="input" id="FirstName" type="text" name="FirstName" required minlength="2" maxlength="80"
+                           autocomplete="given-name" />
+                </div>
+                <div class="field">
+                    <label class="field__label" for="LastName">Nom</label>
+                    <input class="input" id="LastName" type="text" name="LastName" required minlength="2" maxlength="80"
+                           autocomplete="family-name" />
+                </div>
+            </div>
 
-            <label class="block">
-                <span class="mb-1 block text-sm font-medium">Nom</span>
-                <input type="text" name="LastName" required minlength="2" maxlength="80"
-                       autocomplete="family-name" class="w-full rounded-lg border border-neutral-300 px-3 py-2" />
-            </label>
+            <div class="field">
+                <label class="field__label" for="Email">Adresse e-mail</label>
+                <input class="input" id="Email" type="email" name="Email" required maxlength="256"
+                       autocomplete="email" />
+            </div>
 
-            <label class="block">
-                <span class="mb-1 block text-sm font-medium">Adresse e-mail</span>
-                <input type="email" name="Email" required maxlength="256"
-                       autocomplete="email" class="w-full rounded-lg border border-neutral-300 px-3 py-2" />
-            </label>
-
-            <label class="block">
-                <span class="mb-1 block text-sm font-medium">Mot de passe</span>
-                <input type="password" name="Password" required maxlength="128"
-                       autocomplete="new-password" class="w-full rounded-lg border border-neutral-300 px-3 py-2" />
-                <span class="mt-1 block text-xs text-neutral-600">
+            <div class="field">
+                <label class="field__label" for="Password">Mot de passe</label>
+                <input class="input" id="Password" type="password" name="Password" required maxlength="128"
+                       autocomplete="new-password" />
+                <p class="text-caption text-ink-500 dark:text-ink-400">
                     Au moins @MinimumLength caractères, avec une majuscule, une minuscule et un chiffre.
-                </span>
-            </label>
+                </p>
+            </div>
 
-            <label class="block">
-                <span class="mb-1 block text-sm font-medium">Confirmation du mot de passe</span>
-                <input type="password" name="ConfirmPassword" required maxlength="128"
-                       autocomplete="new-password" class="w-full rounded-lg border border-neutral-300 px-3 py-2" />
-            </label>
+            <div class="field">
+                <label class="field__label" for="ConfirmPassword">Confirmation du mot de passe</label>
+                <input class="input" id="ConfirmPassword" type="password" name="ConfirmPassword" required maxlength="128"
+                       autocomplete="new-password" />
+            </div>
 
-            <button type="submit"
-                    class="w-full rounded-lg bg-violet-700 px-4 py-2 font-medium text-white hover:bg-violet-800">
-                Créer mon compte
-            </button>
+            <button type="submit" class="btn btn--primary w-full">Créer mon compte</button>
         </form>
+
+        @if (EnabledProviders.Count > 0)
+        {
+            <p class="compte__separateur">ou s'inscrire avec un compte externe</p>
+            <div class="compte__fournisseurs">
+                @foreach (var provider in EnabledProviders)
+                {
+                    <a href="/connexion/@provider.Key" class="btn btn--ghost w-full">
+                        <DnIcon Name="external-link" Size="16" />
+                        S'inscrire avec @provider.Label
+                    </a>
+                }
+            </div>
+        }
+
+        <p class="compte__pied">
+            <span>Vous avez déjà un compte ?</span>
+            <a href="/compte/connexion" class="font-semibold text-violet-700 underline dark:text-violet-200">Se connecter</a>
+        </p>
     }
-
-    @if (EnabledProviders.Count > 0)
-    {
-        <div class="my-6 flex items-center gap-3 text-sm text-neutral-500">
-            <span class="h-px flex-1 bg-neutral-300"></span>
-            ou
-            <span class="h-px flex-1 bg-neutral-300"></span>
-        </div>
-
-        <div class="space-y-2">
-            @foreach (var provider in EnabledProviders)
-            {
-                <a href="/connexion/@provider.Key"
-                   class="block rounded-lg border border-neutral-300 px-4 py-2 text-center font-medium hover:bg-neutral-50">
-                    S'inscrire avec @provider.Label
-                </a>
-            }
-        </div>
-    }
-
-    <p class="mt-6 text-sm text-neutral-600">
-        Vous avez déjà un compte ?
-        <a href="/compte/connexion" class="font-medium text-violet-700 underline">Se connecter</a>
-    </p>
-</section>
+</CadreCompte>
 
 @code {
+    private static readonly string[] ArgumentsPanneau =
+    [
+        "Un profil visible par les entreprises et les écoles",
+        "Les événements et ateliers de la communauté",
+        "Aucune lettre d'information imposée",
+    ];
+
     [SupplyParameterFromQuery(Name = "erreur")]
     public string? Error { get; set; }
 

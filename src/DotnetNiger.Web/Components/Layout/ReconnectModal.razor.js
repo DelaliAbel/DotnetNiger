@@ -10,9 +10,15 @@ resumeButton.addEventListener("click", resume);
 
 function handleReconnectStateChanged(event) {
     if (event.detail.state === "show") {
-        reconnectModal.showModal();
+        // Le framework peut notifier deux fois le même état : ouvrir un <dialog> déjà
+        // ouvert lève une InvalidStateError, qui casserait la reconnexion en cours.
+        if (!reconnectModal.open) {
+            reconnectModal.showModal();
+        }
     } else if (event.detail.state === "hide") {
-        reconnectModal.close();
+        if (reconnectModal.open) {
+            reconnectModal.close();
+        }
     } else if (event.detail.state === "failed") {
         document.addEventListener("visibilitychange", retryWhenDocumentBecomesVisible);
     } else if (event.detail.state === "rejected") {

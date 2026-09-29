@@ -2,12 +2,25 @@
 
 <PageTitle>Accès refusé - DotnetNiger</PageTitle>
 
-<section class="mx-auto w-full max-w-md text-center">
-    <h1 class="mb-2 text-2xl font-semibold">Accès refusé</h1>
-    <p class="mb-6 text-sm text-neutral-600">
-        Votre compte n'a pas les droits nécessaires pour consulter cette page.
+<CadreCompte Titre="Accès refusé"
+            SurTitre="Espace membre"
+            Lead="Votre compte n'a pas les droits nécessaires pour consulter cette page."
+            ArgumentsPanneau="ArgumentsPanneau">
+    <p class="compte__pied">
+        <span>Si vous pensez qu'il s'agit d'une erreur, écrivez à l'équipe : le compte qui vous est
+        attribué n'a peut-être pas encore le bon rôle.</span>
     </p>
-    <a href="/" class="inline-block rounded-lg bg-violet-700 px-4 py-2 font-medium text-white">
-        Retour à l'accueil
-    </a>
-</section>
+
+    <div class="grid gap-3">
+        <a href="/" class="btn btn--primary w-full">Retour à l'accueil</a>
+        <a href="/communaute" class="btn btn--ghost w-full">Voir la communauté</a>
+    </div>
+</CadreCompte>
+
+@code {
+    private static readonly string[] ArgumentsPanneau =
+    [
+        "Les pages réservées aux membres de l'équipe",
+        "Les ressources et événements restent ouverts à tous",
+    ];
+}

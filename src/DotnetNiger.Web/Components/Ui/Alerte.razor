@@ -1,0 +1,36 @@
+@namespace DotnetNiger.Web.Components.Ui
+
+<div class="alerte alerte--@Variante" role="@RoleEffectif" @attributes="AttributsSupplementaires">
+    <span class="alerte__icone">
+        <DnIcon Name="@IconeParDefaut" Size="16" />
+    </span>
+    <div class="min-w-0">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    /// <summary>Tonalité de l'alerte : succès, erreur ou information.</summary>
+    [Parameter] public string Variante { get; set; } = "orange";
+
+    /// <summary>Rôle ARIA appliqué au conteneur ; <c>alert</c> pour une erreur, <c>status</c> sinon.</summary>
+    [Parameter] public string? Role { get; set; }
+
+    /// <summary>Nom d'icône dans <see cref="DnIcon"/> ; déduit de <see cref="Variante"/> si absent.</summary>
+    [Parameter] public string? Icone { get; set; }
+
+    /// <summary>Attributs additionnels-HTML, appliqués au conteneur.</summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? AttributsSupplementaires { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string IconeParDefaut => Icone ?? Variante switch
+    {
+        "vert" => "check",
+        "rouge" => "alert",
+        _ => "info",
+    };
+
+    private string RoleEffectif => Role ?? (Variante == "rouge" ? "alert" : "status");
+}

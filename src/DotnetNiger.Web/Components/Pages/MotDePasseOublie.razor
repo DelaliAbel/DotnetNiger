@@ -1,0 +1,73 @@
+@page "/compte/mot-de-passe-oublie"
+
+<PageTitle>Mot de passe oublié - DotnetNiger</PageTitle>
+
+<CadreCompte Titre="Mot de passe oublié"
+            SurTitre="Récupération d'accès"
+            Lead="Indiquez l'adresse de votre compte : nous vous enverrons un lien pour choisir un nouveau mot de passe."
+            ArgumentsPanneau="ArgumentsPanneau">
+    @if (Sent is not null)
+    {
+        @if (EmailNotConfigured is not null)
+        {
+            <Alerte Variante="orange">
+                Aucun serveur de courriels n'est configuré sur cette instance, aucun message n'a donc
+                pu partir. Le lien doit être remis manuellement à la personne qui en fait la demande.
+            </Alerte>
+        }
+        else
+        {
+            <Alerte Variante="vert">
+                Si un compte existe à cette adresse, un lien vient d'être envoyé. Il expire : si vous
+                ne le recevez pas, vérifiez vos courriers indésirables avant de recommencer.
+            </Alerte>
+        }
+
+        <p class="compte__pied">
+            <a href="/compte/connexion" class="font-semibold text-violet-700 underline dark:text-violet-200">Retour à la connexion</a>
+        </p>
+    }
+    else
+    {
+        @if (Error is not null)
+        {
+            <Alerte Variante="rouge">@Error</Alerte>
+        }
+
+        <form method="post" action="/compte/mot-de-passe-oublie/demander" class="grid gap-5">
+            <AntiforgeryToken />
+
+            <div class="field">
+                <label class="field__label" for="Email">Adresse e-mail</label>
+                <input class="input" id="Email" type="email" name="Email" required maxlength="256"
+                       autocomplete="username" value="@Email" />
+            </div>
+
+            <button type="submit" class="btn btn--primary w-full">Envoyer le lien</button>
+        </form>
+
+        <p class="compte__pied">
+            <a href="/compte/connexion" class="underline">Revenir à la connexion</a>
+        </p>
+    }
+</CadreCompte>
+
+@code {
+    private static readonly string[] ArgumentsPanneau =
+    [
+        "Un lien à usage unique, valable quelques heures",
+        "Aucun changement tant que vous n'avez pas choisi de nouveau mot de passe",
+    ];
+
+    [SupplyParameterFromQuery(Name = "erreur")]
+    public string? Error { get; set; }
+
+    [SupplyParameterFromQuery(Name = "envoye")]
+    public string? Sent { get; set; }
+
+    [SupplyParameterFromQuery(Name = "courriel")]
+    public string? Email { get; set; }
+
+    [SupplyParameterFromQuery(Name = "courrielNonConfigure")]
+    public string? EmailNotConfigured { get; set; }
+}

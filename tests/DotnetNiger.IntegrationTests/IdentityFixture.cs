@@ -38,6 +38,14 @@ public sealed class IdentityFixture : IDisposable
         services.AddLogging();
         services.AddHttpContextAccessor();
 
+        // SignInManager ouvre et ferme des sessions : il lui faut les schémas
+        // d'authentification, enregistrés par AddAuthentication, qu'un conteneur monté à la
+        // main ne reçoit pas de l'hôte Web. L'accès au contexte HTTP, lui, passe par
+        // AddHttpContextAccessor — mais sans requête en cours il ne renvoie rien : on installe
+        // un contexte de test pour que la connexion par mot de passe fonctionne.
+        services.AddAuthentication();
+        services.AddAuthorization();
+
         // Les jetons d'Identity (confirmation, mot de passe oublié) reposent sur Data
         // Protection. L'application l'ajoute implicitement via le hôte Web ; un conteneur
         // monté à la main doit le faire explicitement, sinon la résolution du premier
@@ -62,13 +70,20 @@ public sealed class IdentityFixture : IDisposable
             })
             .AddRoles<ApplicationRole>()
             .AddEntityFrameworkStores<DotnetNigerDbContext>()
-            .AddDefaultTokenProviders();
+            .AddDefaultTokenProviders()
+            .AddSignInManager();
 
         _fournisseur = services.BuildServiceProvider();
         _portee = _fournisseur.CreateScope();
 
         var contexte = _portee.ServiceProvider.GetRequiredService<DotnetNigerDbContext>();
         contexte.Database.EnsureCreated();
+
+        // SignInManager écrit le jeton de session dans la réponse : sans requête, l'accès au
+        // contexte échouerait sur « HttpContext must not be null ». Les tests de connexion
+        // s'en servent pour vérifier qu'un mot de passe a réellement changé.
+        _portee.ServiceProvider.GetRequiredService<IHttpContextAccessor>().HttpContext =
+            new DefaultHttpContext();
 
         // Les rôles sont créés comme au démarrage de l'application : le rattachement d'un
         // compte externe en a besoin, et son absence masquerait la vraie cause d'un échec.
@@ -92,6 +107,12 @@ public sealed class IdentityFixture : IDisposable
             UserManager,
             httpContextAccessor,
             _portee.ServiceProvider.GetRequiredService<ILogger<ExternalAccountService>>());
+
+    /// <summary>
+    /// Gestionnaire de connexion, pour les parcours qui ouvrent ou ferment une session.
+    /// </summary>
+    public SignInManager<ApplicationUser> SignInManager =>
+        _portee.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
 
     /// <summary>
     /// Accesseur de contexte sans utilisateur connecté.

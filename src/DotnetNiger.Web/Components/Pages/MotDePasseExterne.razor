@@ -3,84 +3,75 @@
 
 <PageTitle>Choisir un mot de passe - DotnetNiger</PageTitle>
 
-<section class="mx-auto w-full max-w-md">
-    <h1 class="mb-1 text-2xl font-semibold">
-        @(IsProof ? "Confirmez votre mot de passe" : "Choisissez un mot de passe")
-    </h1>
-    <p class="mb-6 text-sm text-neutral-600">
-        @if (IsProof)
-        {
-            <text>
-                Un compte existe déjà pour l'adresse
-                <strong>@Pending?.Email</strong>. Saisissez son mot de passe pour y rattacher
-                votre compte @Pending?.Provider.
-            </text>
-        }
-        else
-        {
-            <text>
-                Sur DotnetNiger, chaque compte a son propre mot de passe. Il vous permettra de
-                vous connecter même si votre fournisseur d'identité est indisponible.
-            </text>
-        }
-    </p>
-
+<CadreCompte SurTitre="Espace membre"
+            Titre="@(IsProof ? "Confirmez votre mot de passe" : "Choisissez un mot de passe")"
+            Lead="@(IsProof ? "Un compte existe déjà pour cette adresse, rattachez-le à votre compte externe." : "Sur DotnetNiger, chaque compte a son propre mot de passe, utilisable même si votre fournisseur d'identité est indisponible.")"
+            ArgumentsPanneau="ArgumentsPanneau">
     @if (Pending is null)
     {
-        <p class="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        <Alerte Variante="orange">
             Cette demande a expiré ou n'est pas valide. Recommencez depuis la page de connexion.
-        </p>
-        <p class="mt-4 text-sm">
-            <a href="/compte/connexion" class="font-medium text-violet-700 underline">Retour à la connexion</a>
+        </Alerte>
+        <p class="compte__pied">
+            <a href="/compte/connexion" class="font-semibold text-violet-700 underline dark:text-violet-200">Retour à la connexion</a>
         </p>
     }
     else
     {
-        @if (!string.IsNullOrWhiteSpace(Error))
+        @if (Error is not null)
         {
-            <p class="mb-4 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900">
-                @Error
-            </p>
+            <Alerte Variante="rouge">@Error</Alerte>
         }
 
         <form method="post"
               action="@(IsProof ? "/compte/mot-de-passe/preuve" : "/compte/mot-de-passe/enregistrer")"
-              class="space-y-4">
+              class="grid gap-5">
             <AntiforgeryToken />
             <input type="hidden" name="Token" value="@Token" />
 
-            <label class="block">
-                <span class="mb-1 block text-sm font-medium">
+            @if (IsProof)
+            {
+                <div class="field">
+                    <span class="field__label">Compte à rattacher</span>
+                    <p class="input text-ink-600 dark:text-ink-300">@Pending.Email</p>
+                </div>
+            }
+
+            <div class="field">
+                <label class="field__label" for="Password">
                     @(IsProof ? "Votre mot de passe actuel" : "Mot de passe")
-                </span>
-                <input type="password" name="Password" required maxlength="256"
-                       autocomplete="@(IsProof ? "current-password" : "new-password")"
-                       class="w-full rounded-lg border border-neutral-300 px-3 py-2" />
-            </label>
+                </label>
+                <input class="input" id="Password" type="password" name="Password" required maxlength="256"
+                       autocomplete="@(IsProof ? "current-password" : "new-password")" />
+            </div>
 
             @if (!IsProof)
             {
-                <label class="block">
-                    <span class="mb-1 block text-sm font-medium">Confirmation du mot de passe</span>
-                    <input type="password" name="ConfirmPassword" required maxlength="128"
-                           autocomplete="new-password"
-                           class="w-full rounded-lg border border-neutral-300 px-3 py-2" />
-                </label>
+                <div class="field">
+                    <label class="field__label" for="ConfirmPassword">Confirmation du mot de passe</label>
+                    <input class="input" id="ConfirmPassword" type="password" name="ConfirmPassword" required maxlength="128"
+                           autocomplete="new-password" />
+                </div>
             }
 
-            <button type="submit"
-                    class="w-full rounded-lg bg-violet-700 px-4 py-2 font-medium text-white hover:bg-violet-800">
+            <button type="submit" class="btn btn--primary w-full">
                 @(IsProof ? "Rattacher mon compte" : "Enregistrer mon mot de passe")
             </button>
         </form>
 
-        <p class="mt-4 text-sm text-neutral-600">
+        <p class="compte__pied">
             <a href="/compte/connexion" class="underline">Utiliser un autre compte</a>
         </p>
     }
-</section>
+</CadreCompte>
 
 @code {
+    private static readonly string[] ArgumentsPanneau =
+    [
+        "Un compte unique, quelle que soit la porte d'entrée",
+        "Vos identifiants restent sur DotnetNiger",
+    ];
+
     [SupplyParameterFromQuery(Name = "jeton")]
     public string? Token { get; set; }
 

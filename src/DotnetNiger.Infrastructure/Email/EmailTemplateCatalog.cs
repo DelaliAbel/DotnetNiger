@@ -78,7 +78,7 @@ public static class EmailTemplateCatalog
             "Ce lien expire. S'il ne vous correspond pas, ignorez ce message : votre mot de passe reste inchangé."),
         EmailValues.De(
             (EmailVariables.NomMembre, "Awa Traoré"),
-            (EmailVariables.UrlReinitialisation, "https://dotnetniger.test/compte/mot-de-passe?jeton=apercu")));
+            (EmailVariables.UrlReinitialisation, "https://dotnetniger.test/compte/reinitialiser-mot-de-passe?courriel=awa%40exemple.ne&jeton=apercu")));
 
     private static readonly EmailTemplate SuppressionCompte = new(
         EmailTemplateKeys.AccountDeletionConfirmation,

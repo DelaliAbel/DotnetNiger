@@ -1835,4 +1835,363 @@
     font-size: var(--text-sm);
     line-height: 1.6;
   }
+
+  /* --- Bandeau d'erreur Blazor -----------------------------------------
+     Le composant <div id="blazor-error-ui"> est posé par MainLayout sur
+     toutes les pages, et blazor.web.js ne lui écrit un style en ligne que
+     lorsqu'une erreur survient. Sans règle `display: none` par défaut, le
+     div restait donc visible en permanence, avec son texte anglais, sur
+     chaque page du site. Blazor écrit `display: block` en ligne pour
+     l'afficher : la règle ci-dessous ne sert que d'état initial. */
+  #blazor-error-ui {
+    display: none;
+    position: fixed;
+    inset-inline: 0;
+    bottom: 0;
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing);
+    padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 3);
+    background: var(--color-ink-900);
+    color: #fff;
+    font-size: var(--text-sm);
+    box-shadow: var(--shadow-lg);
+  }
+
+  #blazor-error-ui .reload {
+    color: var(--color-vert-300);
+    font-weight: 700;
+    text-underline-offset: 3px;
+  }
+
+  #blazor-error-ui .reload:hover {
+    color: #fff;
+  }
+
+  #blazor-error-ui .dismiss {
+    width: calc(var(--spacing) * 4);
+    height: calc(var(--spacing) * 4);
+    border-radius: var(--radius-full);
+    border: 1px solid rgb(255 255 255 / 0.3);
+    background: transparent;
+    color: #fff;
+    cursor: pointer;
+    font-size: var(--text-lead);
+    line-height: 1;
+    place-items: center;
+    display: inline-grid;
+  }
+
+  #blazor-error-ui .dismiss:hover {
+    background: rgb(255 255 255 / 0.14);
+  }
+
+  /* --- Alertes de page ------------------------------------------------
+     Remplacent les paragraphes colorés collés dans les pages de compte,
+     écrits avec des couleurs de la palette Tailwind par défaut
+     (emerald-300, red-300, amber-300) qui n'existent pas dans ce thème :
+     aucune règle n'était générée, et le message s'affichait sans fond ni
+     bordure. Le rouge est la seule couleur autorisée pour une erreur. */
+  .alerte {
+    align-items: flex-start;
+    gap: calc(var(--spacing) * 1.5);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    padding: calc(var(--spacing) * 2) calc(var(--spacing) * 2.5);
+    font-size: var(--text-sm);
+    line-height: 1.55;
+    display: flex;
+  }
+
+  .alerte__icone {
+    width: calc(var(--spacing) * 5);
+    height: calc(var(--spacing) * 5);
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+    place-items: center;
+    display: inline-grid;
+  }
+
+  .alerte--vert {
+    background: var(--color-vert-100);
+    border-color: rgb(0 135 81 / 0.35);
+    color: var(--color-vert-700);
+  }
+
+  .alerte--vert .alerte__icone {
+    background: rgb(0 135 81 / 0.18);
+    color: var(--color-vert-700);
+  }
+
+  .alerte--rouge {
+    background: rgb(214 63 63 / 0.08);
+    border-color: rgb(214 63 63 / 0.4);
+    color: var(--color-danger);
+  }
+
+  .alerte--rouge .alerte__icone {
+    background: rgb(214 63 63 / 0.16);
+    color: var(--color-danger);
+  }
+
+  .alerte--orange {
+    background: var(--color-orange-100);
+    border-color: rgb(227 102 11 / 0.35);
+    color: var(--color-orange-700);
+  }
+
+  .alerte--orange .alerte__icone {
+    background: rgb(227 102 11 / 0.16);
+    color: var(--color-orange-700);
+  }
+
+  .dark .alerte--vert {
+    background: rgb(0 135 81 / 0.16);
+    border-color: rgb(0 135 81 / 0.45);
+    color: var(--color-vert-300);
+  }
+
+  .dark .alerte--vert .alerte__icone {
+    color: var(--color-vert-300);
+    background: rgb(0 135 81 / 0.24);
+  }
+
+  .dark .alerte--rouge {
+    background: rgb(214 63 63 / 0.14);
+    border-color: rgb(214 63 63 / 0.45);
+    color: #f5a3a3;
+  }
+
+  .dark .alerte--rouge .alerte__icone {
+    color: #f5a3a3;
+    background: rgb(214 63 63 / 0.22);
+  }
+
+  .dark .alerte--orange {
+    background: rgb(227 102 11 / 0.14);
+    border-color: rgb(227 102 11 / 0.45);
+    color: var(--color-orange-300);
+  }
+
+  .dark .alerte--orange .alerte__icone {
+    color: var(--color-orange-300);
+    background: rgb(227 102 11 / 0.22);
+  }
+
+  /* --- Cadre de compte ------------------------------------------------
+     Ossature commune aux pages de connexion, d'inscription, de mot de
+     passe oublié et de réinitialisation : un panneau de présentation et
+     une carte de formulaire. Les former utilisaient `mx-auto w-full
+     max-w-md` sans le conteneur `.wrap`, et aucune classe du thème, d'où
+     un formulaire sans marge, sans bordure et sans bouton stylé. */
+  .compte {
+    display: grid;
+    min-height: 100%;
+    align-items: stretch;
+  }
+
+  @media (min-width: 64rem) {
+    .compte {
+      grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    }
+  }
+
+  .compte__panneau {
+    display: none;
+    flex-direction: column;
+    gap: calc(var(--spacing) * 3);
+    background: linear-gradient(160deg, var(--color-violet-900) 0%, var(--color-violet-600) 60%, var(--color-violet-500) 100%);
+    color: #fff;
+    padding: calc(var(--spacing) * 8) calc(var(--spacing) * 6);
+  }
+
+  @media (min-width: 64rem) {
+    .compte__panneau {
+      display: flex;
+    }
+  }
+
+  .compte__titre {
+    font-size: var(--text-section);
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  .compte__texte {
+    color: rgb(255 255 255 / 0.82);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    max-width: 40ch;
+  }
+
+  .compte__liste {
+    margin-top: auto;
+    gap: calc(var(--spacing) * 1.5);
+    font-size: var(--text-sm);
+    color: rgb(255 255 255 / 0.82);
+    display: grid;
+  }
+
+  .compte__liste li {
+    align-items: flex-start;
+    gap: calc(var(--spacing) * 1.25);
+    display: flex;
+  }
+
+  .compte__principal {
+    display: grid;
+    align-content: center;
+    padding: calc(var(--spacing) * 6) calc(var(--spacing) * 4);
+  }
+
+  @media (min-width: 48rem) {
+    .compte__principal {
+      padding: calc(var(--spacing) * 8) calc(var(--spacing) * 6);
+    }
+  }
+
+  .compte__carte {
+    width: 100%;
+    max-width: 30rem;
+    margin-inline: auto;
+    gap: calc(var(--spacing) * 4);
+    display: grid;
+    background: var(--site-surface);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: calc(var(--spacing) * 6);
+  }
+
+  @media (min-width: 48rem) {
+    .compte__carte {
+      padding: calc(var(--spacing) * 8);
+    }
+  }
+
+  .compte__entete {
+    gap: var(--spacing);
+    display: grid;
+  }
+
+  .compte__pied {
+    color: var(--site-fg-muted);
+    font-size: var(--text-sm);
+    gap: calc(var(--spacing) * 0.5);
+    display: grid;
+  }
+
+  .compte__separateur {
+    align-items: center;
+    gap: calc(var(--spacing) * 1.5);
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+    display: flex;
+  }
+
+  .compte__separateur::before,
+  .compte__separateur::after {
+    content: "";
+    height: 1px;
+    background: var(--site-border);
+    flex: 1;
+  }
+
+  .compte__fournisseurs {
+    gap: calc(var(--spacing) * 1.5);
+    display: grid;
+  }
+
+  .compte__option {
+    align-items: center;
+    gap: calc(var(--spacing) * 1.25);
+    color: var(--site-fg);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+  }
+
+  .compte__option input[type="checkbox"] {
+    width: calc(var(--spacing) * 4);
+    height: calc(var(--spacing) * 4);
+    accent-color: var(--color-violet-500);
+    cursor: pointer;
+  }
+
+  .compte__actions {
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(var(--spacing) * 2);
+    flex-wrap: wrap;
+    display: flex;
+  }
+
+  .compte__aide {
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+    display: grid;
+  }
+
+  /* --- Page introuvable -----------------------------------------------
+     L'ancienne version était le composant d'échafaudage par défaut :
+     deux titres anglais sans style, sans lien de repli et sans les
+     métadonnées de la page. */
+  .introuvable {
+    display: grid;
+    justify-items: center;
+    gap: calc(var(--spacing) * 3);
+    text-align: center;
+    padding-block: calc(var(--spacing) * 12);
+  }
+
+  .introuvable__code {
+    font-size: clamp(4rem, 18vw, 8rem);
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: transparent;
+    background: linear-gradient(92deg, var(--color-violet-500) 10%, var(--color-vert-500) 90%);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  .introuvable__titre {
+    font-size: var(--text-section);
+    font-weight: 800;
+    letter-spacing: -0.015em;
+  }
+
+  .introuvable__texte {
+    max-width: 52ch;
+    color: var(--site-fg-muted);
+    font-size: var(--text-lead);
+    line-height: 1.6;
+  }
+
+  .introuvable__chemin {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    background: var(--site-surface);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    padding: calc(var(--spacing) * 1) calc(var(--spacing) * 2);
+    color: var(--site-fg);
+    font-family: var(--font-mono);
+    font-size: var(--text-caption);
+  }
+
+  .introuvable__liens {
+    gap: calc(var(--spacing) * 1.5);
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  @media (min-width: 40rem) {
+    .introuvable__liens {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
 }

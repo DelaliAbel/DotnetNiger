@@ -1,5 +1,65 @@
 ﻿@page "/not-found"
 @layout MainLayout
+@using Microsoft.AspNetCore.Diagnostics
+@inject IHttpContextAccessor HttpContextAccessor
 
-<h3>Not Found</h3>
-<p>Sorry, the content you are looking for does not exist.</p>
+<PageTitle>Page introuvable - DotnetNiger</PageTitle>
+
+<section class="wrap">
+    <div class="introuvable">
+        <p class="introuvable__code" aria-hidden="true">404</p>
+
+        <h1 class="introuvable__titre">Cette page n'existe pas</h1>
+
+        <p class="introuvable__texte">
+            Le lien est peut-être ancien, ou l'adresse comporte une coquille. Rien n'est cassé de
+            votre côté : les pages ci-dessous restent accessibles.
+        </p>
+
+        @if (!string.IsNullOrWhiteSpace(RequestedPath))
+        {
+            <p class="introuvable__chemin">@RequestedPath</p>
+        }
+
+        <div class="introuvable__liens">
+            <a href="/" class="btn btn--secondary">
+                <DnIcon Name="arrow-left" Size="16" />
+                Retour à l'accueil
+            </a>
+            <a href="/ressources" class="btn btn--secondary">
+                <DnIcon Name="book-open" Size="16" />
+                Ressources
+            </a>
+            <a href="/communaute" class="btn btn--secondary">
+                <DnIcon Name="users" Size="16" />
+                Communauté
+            </a>
+            <a href="/evenements" class="btn btn--secondary">
+                <DnIcon Name="calendar" Size="16" />
+                Événements
+            </a>
+        </div>
+    </div>
+</section>
+
+@code {
+    /// <summary>
+    /// Chemin demandé à l'origine, quand la page est atteinte par ré-exécution d'un 404.
+    /// </summary>
+    /// <remarks>
+    /// La page est aussi accessible directement sur <c>/not-found</c>, auquel cas aucun chemin
+    /// d'origine n'existe et rien n'est affiché : annoncer « /not-found est introuvable » serait
+    /// absurde.
+    /// </remarks>
+    private string? RequestedPath { get; set; }
+
+    protected override void OnInitialized()
+    {
+        var reexecute = HttpContextAccessor.HttpContext?.Features.Get<IStatusCodeReExecuteFeature>();
+
+        if (reexecute is not null && !string.Equals(reexecute.OriginalPath, "/not-found", StringComparison.OrdinalIgnoreCase))
+        {
+            RequestedPath = reexecute.OriginalPath;
+        }
+    }
+}

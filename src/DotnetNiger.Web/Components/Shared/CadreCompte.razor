@@ -1,0 +1,52 @@
+@namespace DotnetNiger.Web.Components.Shared
+
+<section class="compte">
+    <div class="compte__panneau">
+        <p class="compte__titre">@TitrePanneau</p>
+        <p class="compte__texte">@TextePanneau</p>
+        <ul class="compte__liste">
+            @foreach (var argument in ArgumentsPanneau)
+            {
+                <li>
+                    <DnIcon Name="check" Size="16" />
+                    <span>@argument</span>
+                </li>
+            }
+        </ul>
+    </div>
+    <div class="compte__principal">
+        <div class="compte__carte">
+            <header class="compte__entete">
+                <p class="eyebrow">@SurTitre</p>
+                <h1 class="text-section font-extrabold tracking-tight">@Titre</h1>
+                @if (!string.IsNullOrWhiteSpace(Lead))
+                {
+                    <p class="text-sm text-ink-600 dark:text-ink-300">@Lead</p>
+                }
+            </header>
+            @ChildContent
+        </div>
+    </div>
+</section>
+
+@code {
+    /// <summary>Accroche du panneau de gauche, masqué sur mobile.</summary>
+    [Parameter] public string TitrePanneau { get; set; } = "L'écosystème .NET de Niamey";
+
+    /// <summary>Texte d'appui du panneau de gauche.</summary>
+    [Parameter] public string TextePanneau { get; set; } = "Un compte DotnetNiger donne accès aux ressources, aux événements et aux projets de la communauté.";
+
+    /// <summary>Arguments mis en avant dans le panneau de gauche.</summary>
+    [Parameter] public IReadOnlyList<string> ArgumentsPanneau { get; set; } = [];
+
+    /// <summary>Sur-titre affiché au-dessus du titre du formulaire.</summary>
+    [Parameter] public string SurTitre { get; set; } = "Espace membre";
+
+    /// <summary>Titre du formulaire.</summary>
+    [Parameter] public required string Titre { get; set; }
+
+    /// <summary>Phrase d'introduction sous le titre ; masquée si vide.</summary>
+    [Parameter] public string? Lead { get; set; }
+
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

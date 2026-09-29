@@ -5,78 +5,76 @@
 
 <PageTitle>Connexion - DotnetNiger</PageTitle>
 
-<section class="mx-auto w-full max-w-md">
-    <h1 class="mb-1 text-2xl font-semibold">Connexion</h1>
-    <p class="mb-6 text-sm text-neutral-600">
-        Connectez-vous pour publier une ressource, commenter ou vous inscrire à un événement.
-    </p>
-
-    @if (!string.IsNullOrWhiteSpace(Confirmation))
+<CadreCompte Titre="Connexion"
+            SurTitre="Espace membre"
+            Lead="Connectez-vous pour publier une ressource, commenter ou vous inscrire à un événement."
+            ArgumentsPanneau="ArgumentsPanneau">
+    @if (Confirmation is not null)
     {
-        <p class="mb-4 rounded-lg border border-emerald-300 bg-emerald-50 p-3 text-sm text-emerald-900">
-            @Confirmation
-        </p>
+        <Alerte Variante="vert">@Confirmation</Alerte>
     }
-    else if (!string.IsNullOrWhiteSpace(Error))
+    else if (Error is not null)
     {
-        <p class="mb-4 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-900">
-            @Error
-        </p>
+        <Alerte Variante="rouge">@Error</Alerte>
     }
 
-    <form method="post" action="/compte/connexion/se-connecter" class="space-y-4">
+    <form method="post" action="/compte/connexion/se-connecter" class="grid gap-5">
         <AntiforgeryToken />
         <input type="hidden" name="Retour" value="@ReturnUrl" />
 
-        <label class="block">
-            <span class="mb-1 block text-sm font-medium">Adresse e-mail</span>
-            <input type="email" name="Email" required autocomplete="username" maxlength="256"
-                   class="w-full rounded-lg border border-neutral-300 px-3 py-2" />
-        </label>
+        <div class="field">
+            <label class="field__label" for="Email">Adresse e-mail</label>
+            <input class="input" id="Email" type="email" name="Email" required maxlength="256"
+                   autocomplete="username" value="@Email" />
+        </div>
 
-        <label class="block">
-            <span class="mb-1 block text-sm font-medium">Mot de passe</span>
-            <input type="password" name="Password" required autocomplete="current-password" maxlength="256"
-                   class="w-full rounded-lg border border-neutral-300 px-3 py-2" />
-        </label>
+        <div class="field">
+            <div class="compte__actions">
+                <label class="field__label" for="Password">Mot de passe</label>
+                <a href="@MotDePasseOubliUrl" class="text-caption font-semibold text-violet-700 underline dark:text-violet-200">
+                    Mot de passe oublié ?
+                </a>
+            </div>
+            <input class="input" id="Password" type="password" name="Password" required maxlength="256"
+                   autocomplete="current-password" />
+        </div>
 
-        <label class="flex items-center gap-2 text-sm">
-            <input type="checkbox" name="RememberMe" value="true" class="size-4" />
+        <label class="compte__option">
+            <input type="checkbox" name="RememberMe" value="true" />
             Rester connecté
         </label>
 
-        <button type="submit"
-                class="w-full rounded-lg bg-violet-700 px-4 py-2 font-medium text-white hover:bg-violet-800">
-            Se connecter
-        </button>
+        <button type="submit" class="btn btn--primary w-full">Se connecter</button>
     </form>
 
     @if (EnabledProviders.Count > 0)
     {
-        <div class="my-6 flex items-center gap-3 text-sm text-neutral-500">
-            <span class="h-px flex-1 bg-neutral-300"></span>
-            ou
-            <span class="h-px flex-1 bg-neutral-300"></span>
-        </div>
-
-        <div class="space-y-2">
+        <p class="compte__separateur">ou continuer avec un compte externe</p>
+        <div class="compte__fournisseurs">
             @foreach (var provider in EnabledProviders)
             {
-                <a href="@ExternalLink(provider)"
-                   class="block rounded-lg border border-neutral-300 px-4 py-2 text-center font-medium hover:bg-neutral-50">
+                <a href="@ExternalLink(provider)" class="btn btn--ghost w-full">
+                    <DnIcon Name="external-link" Size="16" />
                     Continuer avec @provider
                 </a>
             }
         </div>
     }
 
-    <p class="mt-6 text-sm text-neutral-600">
-        Pas encore de compte ?
-        <a href="/compte/inscription" class="font-medium text-violet-700 underline">Créer un compte</a>
+    <p class="compte__pied">
+        <span>Pas encore de compte ?</span>
+        <a href="/compte/inscription" class="font-semibold text-violet-700 underline dark:text-violet-200">Créer un compte</a>
     </p>
-</section>
+</CadreCompte>
 
 @code {
+    private static readonly string[] ArgumentsPanneau =
+    [
+        "Publier une ressource et la partager avec la communauté",
+        "Commenter les articles et participer aux événements",
+        "Suivre les projets locaux et recevoir les nouvelles",
+    ];
+
     [SupplyParameterFromQuery(Name = "erreur")]
     public string? Error { get; set; }
 
@@ -95,11 +93,18 @@
     private List<string> EnabledProviders { get; set; } = new();
 
     private string? Confirmation =>
-        !string.IsNullOrWhiteSpace(Confirmed)
-            ? "Votre adresse est confirmée. Vous pouvez vous connecter."
-            : !string.IsNullOrWhiteSpace(Sent) && !string.IsNullOrWhiteSpace(Email)
+        Confirmed switch
+        {
+            "motdepasse" => "Mot de passe réinitialisé. Vous pouvez vous connecter avec votre nouveau mot de passe.",
+            not null when !string.IsNullOrWhiteSpace(Confirmed) => "Votre adresse est confirmée. Vous pouvez vous connecter.",
+            _ => !string.IsNullOrWhiteSpace(Sent) && !string.IsNullOrWhiteSpace(Email)
                 ? $"Un message de confirmation a été envoyé à {Email}."
-                : null;
+                : null,
+        };
+
+    private string MotDePasseOubliUrl => string.IsNullOrWhiteSpace(Email)
+        ? "/compte/mot-de-passe-oublie"
+        : $"/compte/mot-de-passe-oublie?courriel={Uri.EscapeDataString(Email)}";
 
     protected override void OnInitialized()
     {

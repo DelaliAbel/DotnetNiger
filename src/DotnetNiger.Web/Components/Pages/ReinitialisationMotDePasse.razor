@@ -1,0 +1,73 @@
+@page "/compte/reinitialiser-mot-de-passe"
+
+<PageTitle>Nouveau mot de passe - DotnetNiger</PageTitle>
+
+<CadreCompte Titre="Nouveau mot de passe"
+            SurTitre="Récupération d'accès"
+            Lead="@Lead"
+            ArgumentsPanneau="ArgumentsPanneau">
+    @if (LienIncomplet)
+    {
+        <Alerte Variante="orange">
+            Ce lien est incomplet ou a expiré. Demandez-en un nouveau : la page précédente suffit.
+        </Alerte>
+        <p class="compte__pied">
+            <a href="/compte/mot-de-passe-oublie" class="font-semibold text-violet-700 underline dark:text-violet-200">Demander un nouveau lien</a>
+        </p>
+    }
+    else
+    {
+        @if (Error is not null)
+        {
+            <Alerte Variante="rouge">@Error</Alerte>
+        }
+
+        <form method="post" action="/compte/reinitialiser-mot-de-passe" class="grid gap-5">
+            <AntiforgeryToken />
+            <input type="hidden" name="Token" value="@Token" />
+            <input type="hidden" name="Email" value="@Email" />
+
+            <div class="field">
+                <label class="field__label" for="Password">Nouveau mot de passe</label>
+                <input class="input" id="Password" type="password" name="Password" required maxlength="128"
+                       autocomplete="new-password" autofocus />
+            </div>
+
+            <div class="field">
+                <label class="field__label" for="ConfirmPassword">Confirmation du mot de passe</label>
+                <input class="input" id="ConfirmPassword" type="password" name="ConfirmPassword" required
+                       maxlength="128" autocomplete="new-password" />
+            </div>
+
+            <button type="submit" class="btn btn--primary w-full">Enregistrer le mot de passe</button>
+        </form>
+
+        <p class="compte__pied">
+            <span>Ce lien ne fonctionne qu'une fois. La session qui l'a utilisé est fermée ; les autres le seront à leur prochaine vérification.</span>
+        </p>
+    }
+</CadreCompte>
+
+@code {
+    /// <summary>Un jeton absent ou vide ne peut pas valider un mot de passe : c'est un lien tronqué.</summary>
+    private bool LienIncomplet => string.IsNullOrWhiteSpace(Token) || string.IsNullOrWhiteSpace(Email);
+
+    private static readonly string[] ArgumentsPanneau =
+    [
+        "Choisissez un mot de passe que vous seul connaissez",
+        "Votre clé de session change, ce qui met fin aux sessions en cours",
+    ];
+
+    [SupplyParameterFromQuery(Name = "jeton")]
+    public string? Token { get; set; }
+
+    [SupplyParameterFromQuery(Name = "courriel")]
+    public string? Email { get; set; }
+
+    [SupplyParameterFromQuery(Name = "erreur")]
+    public string? Error { get; set; }
+
+    private string Lead => string.IsNullOrWhiteSpace(Email)
+        ? "Choisissez le mot de passe qui remplacera celui que vous avez oublié."
+        : $"Vous réinitialisez le mot de passe du compte {Email}.";
+}
