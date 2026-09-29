@@ -16,6 +16,12 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
             Auteur = "Salifou Maiga",
             LectureMinutes = 8,
             Slug = "dotnet-10-disponible",
+            Contenu = @"Trois évolutions méritent une relecture du code avant la prochaine mise en production.
+
+Le rendu serveur s'affiche avant l'achèvement de la requête : une page de liste ne bloque plus le visiteur sur l'attente de la base. Le démarrage alloue aussi une dizaine de mégaoctets de moins, ce qui compte quand l'hébergement est ajusté au plus juste. Enfin, les records de configuration exposent par défaut des collections en lecture seule, et un projet compilé pour .NET 10 continue de fonctionner sur .NET 8.
+
+Commencez par mettre à jour les paquets sur la version que vous utilisez déjà, mesurez, puis basculez. Un guide pas à pas sur le déploiement suivra dans les prochaines semaines.",
+            DatePublication = new DateOnly(2026, 9, 24),
             ImageUrl = "/images/img3.jpg",
         },
         new ArticleVue
@@ -26,6 +32,12 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
             Auteur = "Abdoulaye Ibrahim",
             LectureMinutes = 12,
             Slug = "interview-aicha-ousmane-maui",
+            Contenu = @"« Je voulais une application que ma mère puisse installer sans aide. »
+
+C'est de cette phrase qu'est partie Aïcha Ousmane, qui développe depuis Niamey des applications de suivi des récoltes. Le choix de .NET MAUI s'est imposé par nécessité autant que par goût : une base de code unique pour Android et iOS divisait par deux la maintenance, sur une équipe de trois personnes.
+
+Elle insiste sur un point souvent négligé. Une application de terrain se connecte par intermittence, et il a fallu un mois passé à reproduire des coupures réseau avant de comprendre que l'utilisateur n'aurait jamais à voir l'écran de chargement.",
+            DatePublication = new DateOnly(2026, 9, 18),
         },
         new ArticleVue
         {
@@ -35,6 +47,12 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
             Auteur = "Issoufou Hamadou",
             LectureMinutes = 6,
             Slug = "toolbox-centieme-contributeur",
+            Contenu = @"DotnetNiger.Toolbox a franchi le cap des cent contributeurs.
+
+Le projet est né d'un besoin très concret : ne pas réécrire pour la quatrième fois la même lecture de fichier dans l'année. Le nombre de corrections acceptées compte moins que leur nature, très majoritairement des traductions, de la documentation et des corrections d'exigences.
+
+L'équipe en tire une leçon : un projet ouvert ne démarre pas avec du code, mais avec des instructions. Le fichier de documentation a été réécrit trois fois cette année, et chaque réécriture a augmenté le nombre de premiers contributeurs.",
+            DatePublication = new DateOnly(2026, 9, 11),
             ImageUrl = "/images/img2.jpg",
         },
         new ArticleVue
@@ -45,6 +63,12 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
             Auteur = "Moussa Djibrilla",
             LectureMinutes = 15,
             Slug = "blazor-en-production",
+            Contenu = @"Le portail que vous consultez est écrit avec Blazor et fonctionne en rendu serveur.
+
+La frontière entre page et composant interactif commande tout le reste. Tant qu'une page reste statique, elle se comporte comme un document : elle est indexable, elle fonctionne sans JavaScript, elle ne coûte qu'une requête. Dès qu'un composant devient interactif, un circuit ouvert apparaît.
+
+Le second enseignement concerne les erreurs. Dans un composant interactif, une exception ne remonte pas au serveur ; elle reste côté client et l'utilisateur voit un écran vide. Nous traitons donc les erreurs au plus près, dans le composant concerné, plutôt que d'espérer qu'elles ne surviendront pas.",
+            DatePublication = new DateOnly(2026, 9, 4),
         },
         new ArticleVue
         {
@@ -54,6 +78,12 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
             Auteur = "Fatima Harouna",
             LectureMinutes = 10,
             Slug = "bien-demarrer-aspnet-core",
+            Contenu = @"Écrire son premier point de terminaison avec ASP.NET Core tient en quelques lignes.
+
+L'application se déclare, se construit et s'exécute. Le point de terminaison se décrit avec une lambda typée : le compilateur vérifie les paramètres et la sérialisation se déduit du type de retour. Rien à configurer, rien à câbler.
+
+Vient ensuite la validation. Un point de terminaison qui lit directement les champs du formulaire transfère au modèle la responsabilité de se défendre, alors qu'il n'est pas conçu pour cela. Les annotations de validation rendent l'erreur explicite et la réponse exploitable.",
+            DatePublication = new DateOnly(2026, 8, 28),
             ImageUrl = "/images/img1.jpeg",
         },
         new ArticleVue
@@ -64,6 +94,12 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
             Auteur = "Abdoulaye Ibrahim",
             LectureMinutes = 9,
             Slug = "csharpei-cartes-mentales",
+            Contenu = @"Awa Souley a conçu CSharpei pour ses étudiants de classes préparatoires.
+
+Le constat de départ : la syntaxe de C# n'est pas difficile, mais sa densité visuelle l'est. Chaque notion du langage devient une carte que l'étudiant peut manipuler et réorganiser. « Je ne lui demande pas de mémoriser une grammaire, mais de dessiner ce qu'il veut que son programme fasse. »
+
+Présenté au premier meetup de la communauté, le projet a connu une seconde itération publiée en source ouverte, à la demande des participants.",
+            DatePublication = new DateOnly(2026, 8, 21),
         },
         new ArticleVue
         {
@@ -73,6 +109,12 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
             Auteur = "Issoufou Hamadou",
             LectureMinutes = 11,
             Slug = "securite-cinq-erreurs-api",
+            Contenu = @"Cinq erreurs reviennent dans presque toutes les API que nous avons relues.
+
+Le jeton d'authentification dans l'URL est la première : une URL de rappel finit dans l'historique du navigateur, dans les journaux du serveur et dans l'en-tête Referer. Vient ensuite le secret écrit en dur dans le dépôt, qui n'est plus un secret dès la première copie de l'exécutable.
+
+Les deux suivantes sont l'absence de limitation de débit, qui transforme la route la moins protégée en amplificateur gratuit, et la validation absente. La dernière, plus discrète, est le message d'erreur qui divulgue la structure de la base. ASP.NET Core fournit les briques pour les cinq.",
+            DatePublication = new DateOnly(2026, 8, 14),
             ImageUrl = "/images/img4.jpeg",
         },
         new ArticleVue
@@ -83,6 +125,12 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
             Auteur = "Moussa Djibrilla",
             LectureMinutes = 7,
             Slug = "hackathon-48-heures",
+            Contenu = @"48 heures, six équipes, un défi unique : rendre la vie plus simple à quelqu'un.
+
+Les équipes venaient de Niamey, Zinder et Maradi, autour du même constat : trop d'outils accessibles sont pensés pour l'Europe, et trop peu pour ici. Les projets finalistes portaient sur l'agriculture de précision, la gestion de stock des pharmacies de quartier et la mise en relation entre artisans.
+
+Aucun n'a été écarté pour des raisons techniques : le jury a évalué l'utilité réelle et la faisabilité dans le temps imparti. L'équipe qui a présenté une application qui ne répondait pas encore au besoin est repartie avec une idée claire, ce qui valait mieux qu'un prix.",
+            DatePublication = new DateOnly(2026, 8, 7),
         },
         new ArticleVue
         {
@@ -92,6 +140,12 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
             Auteur = "Zara Oumarou",
             LectureMinutes = 13,
             Slug = "csharp-moderne",
+            Contenu = @"C# a beaucoup changé en quelques années, et pas toujours dans le sens de la simplicité.
+
+Le record remplace la classe dans une grande partie des cas : il s'égalise, se compare et se sérialise. C'est la raison principale pour laquelle les records de configuration se sont imposés. Les motifs de correspondance transforment ensuite une cascade de conditions en une description de forme, que l'IDE corrige dès la compilation.
+
+Les générateurs de source, enfin, déplacent du code répétitif vers la compilation. Plus exigeants à écrire, ils payent sur les projets de taille moyenne. La règle pratique : commencer par la forme la plus simple que le langage permet, et ne descendre d'un cran que lorsque la lisibilité s'améliore visiblement.",
+            DatePublication = new DateOnly(2026, 7, 31),
             ImageUrl = "/images/img2.jpg",
         },
         new ArticleVue
@@ -102,6 +156,12 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
             Auteur = "Fatima Harouna",
             LectureMinutes = 14,
             Slug = "entretien-mahamadou-banque",
+            Contenu = @"Mahamadou développe des applications .NET dans une banque de la place depuis cinq ans.
+
+« Chez nous, on ne déploie pas un vendredi. » Chaque mise en production passe par une validation, et chaque validation demande de justifier l'impact sur les systèmes existants. La contrainte principale n'est pas la performance mais la traçabilité.
+
+Quand un régulateur pose une question sur une transaction, il faut pouvoir dire qui l'a traitée, quand, et avec quelle version du code. Cela pousse vers des traces structurées et vers des tests qui vérifient autant les scénarios d'échec que les scénarios nominaux.",
+            DatePublication = new DateOnly(2026, 7, 24),
         },
         new ArticleVue
         {
@@ -111,6 +171,12 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
             Auteur = "Salifou Maiga",
             LectureMinutes = 16,
             Slug = "optimiser-api-800-a-80",
+            Contenu = @"Notre API de démonstration répondait en 800 ms en moyenne. Elle répond aujourd'hui en 80 ms.
+
+Aucune machine plus grosse n'est intervenue : les quatre gains viennent du code. La requête répétait un même calcul coûteux pour chaque ligne renvoyée, et le déplacer a fait passer la moyenne de 800 à 300 ms. La pagination a supprimé quatre-vingt pour cent du travail, le client récupérant mille lignes pour en afficher vingt.
+
+La mise en cache des réponses inchangées pendant quelques secondes a absorbé les rafales de lecture simultanées. La dernière optimisation, la plus contre-intuitive, est un index sur la colonne de tri, sans laquelle la requête parcourait la table entière. Mesurez avant d'optimiser : nous avions supprimé deux index sur trois, sur la foi d'intuitions fausses.",
+            DatePublication = new DateOnly(2026, 7, 17),
         },
         new ArticleVue
         {
@@ -120,6 +186,12 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
             Auteur = "Aïcha Ousmane",
             LectureMinutes = 5,
             Slug = "club-net-universite-niamey",
+            Contenu = @"Des enseignants et des étudiants se sont associés pour créer un point de rencontre hebdomadaire.
+
+Le club .NET de l'université de Niamey tient sa première session et accueille les débutants. La séance du vendredi commence par une présentation courte, puis un atelier : un sujet par semaine, du premier point de terminaison aux tests d'intégration.
+
+Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le plus souvent sont ceux qui ont commencé seuls et se sont bloqués ; le club est surtout un endroit où poser une question sans honte de ne pas savoir. Les sessions sont gratuites et ouvertes aux étudiants comme aux professionnels.",
+            DatePublication = new DateOnly(2026, 7, 10),
             ImageUrl = "/images/img1.jpeg",
         },
     };

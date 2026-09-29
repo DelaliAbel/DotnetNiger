@@ -4,8 +4,7 @@
 
 <CadreCompte Titre="Nouveau mot de passe"
             SurTitre="Récupération d'accès"
-            Lead="@Lead"
-            ArgumentsPanneau="ArgumentsPanneau">
+            Lead="@Lead">
     @if (LienIncomplet)
     {
         <Alerte Variante="orange">
@@ -52,11 +51,6 @@
     /// <summary>Un jeton absent ou vide ne peut pas valider un mot de passe : c'est un lien tronqué.</summary>
     private bool LienIncomplet => string.IsNullOrWhiteSpace(Token) || string.IsNullOrWhiteSpace(Email);
 
-    private static readonly string[] ArgumentsPanneau =
-    [
-        "Choisissez un mot de passe que vous seul connaissez",
-        "Votre clé de session change, ce qui met fin aux sessions en cours",
-    ];
 
     [SupplyParameterFromQuery(Name = "jeton")]
     public string? Token { get; set; }

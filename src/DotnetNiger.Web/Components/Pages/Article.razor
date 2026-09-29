@@ -1,0 +1,124 @@
+@page "/blog/{Slug}"
+@using System.Globalization
+@attribute [StreamRendering]
+
+@inject ISiteContentService Contenu
+
+@if (_Article is null)
+{
+    @if (_Introuvable)
+    {
+        <section class="section">
+            <div class="wrap">
+                <EmptyState Icone="search"
+                            Titre="Cet article n'existe pas"
+                            Message="Le lien est peut-être ancien, ou l'article a été retiré. Le blog liste tous les articles publiés.">
+                    <a class="btn btn--ghost" href="/blog">
+                        Retour au blog <DnIcon Name="arrow-right" Size="16" />
+                    </a>
+                </EmptyState>
+            </div>
+        </section>
+    }
+    else
+    {
+        <div class="wrap" style="padding-block: calc(var(--spacing) * 12);">
+            <p class="text-caption" style="color: var(--site-fg-muted);">Chargement…</p>
+        </div>
+    }
+}
+else
+{
+    <PageTitle>@_Article.Titre — blog DotnetNiger</PageTitle>
+    <HeadContent>
+        <meta name="description" content="@_Article.Extrait" />
+        <meta property="og:title" content="@_Article.Titre — DotnetNiger" />
+        <meta property="og:description" content="@_Article.Extrait" />
+    </HeadContent>
+
+    <!-- 1. En-tête de l'article -->
+    <section class="hero hero--centre">
+        <div class="wrap">
+            <p class="hero__eyebrow">
+                <a class="link" href="/blog">Blog</a>
+                <span aria-hidden="true">·</span>
+                @_Article.Categorie
+            </p>
+            <h1 class="hero__title" style="margin-top: var(--spacing);">@_Article.Titre</h1>
+            <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
+                <time datetime="@_Article.DatePublication.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)">
+                    @_Article.DatePublication.ToString("d MMMM yyyy", Culture)
+                </time>
+                <span aria-hidden="true">·</span>
+                @_Article.Auteur
+                <span aria-hidden="true">·</span>
+                @_Article.LectureMinutes min de lecture
+            </p>
+        </div>
+    </section>
+
+    <!-- 2. Corps de l'article -->
+    <section class="section" aria-label="Contenu de l'article">
+        <div class="wrap">
+            <div class="grid gap-2 md:grid-cols-3" style="align-items: start;">
+                <div class="md:col-span-2">
+                    @if (!string.IsNullOrWhiteSpace(_Article.ImageUrl))
+                    {
+                        <DnCardMedia ImageUrl="@_Article.ImageUrl" Alt="" />
+                    }
+
+                    <div style="display: grid; gap: calc(var(--spacing) * 2); margin-top: calc(var(--spacing) * 2);">
+                        <p class="text-lead">@_Article.Extrait</p>
+                        @foreach (var paragraphe in Paragraphes)
+                        {
+                            <p class="card__text">@paragraphe</p>
+                        }
+                    </div>
+                </div>
+
+                <aside class="bande" aria-label="À propos de l'article">
+                    <p class="eyebrow" style="color: var(--color-vert-300);">Rédigé par</p>
+                    <p class="bande__title" style="margin-top: var(--spacing);">@_Article.Auteur</p>
+                    <p class="bande__lead">
+                        Membre de la communauté DotnetNiger. Article publié le
+                        @_Article.DatePublication.ToString("d MMMM yyyy", Culture).
+                    </p>
+                    <a class="btn btn--white" href="/blog">
+                        Tous les articles <DnIcon Name="arrow-right" Size="16" />
+                    </a>
+                </aside>
+            </div>
+        </div>
+    </section>
+}
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
+
+    [Parameter] public string? Slug { get; set; }
+
+    private ArticleVue? _Article;
+
+    private bool _Introuvable;
+
+    private string[] Paragraphes => _Article is null
+        ? []
+        : _Article.Contenu.Split("\n\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(Slug))
+        {
+            var articles = await Contenu.ChargerArticlesAsync();
+            _Article = articles.FirstOrDefault(a => string.Equals(a.Slug, Slug, StringComparison.Ordinal));
+            _Introuvable = _Article is null;
+
+            return;
+        }
+
+        // Sans slug, la route ne peut pas désigner d'article : on affiche la page d'accueil du
+        // blog plutôt que de laisser une page vide.
+        _Article = null;
+        _Introuvable = true;
+    }
+}

@@ -399,28 +399,19 @@
     align-content: start;
   }
 
-  /* Variation « actualité » : le badge se place au-dessus du contenu sur mobile,
-     puis à côté dès 640 px. */
-  .card--actus__body {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: calc(var(--spacing) * 2);
-  }
-
-  @media (min-width: 40rem) {
-    .card--actus__body {
-      flex-direction: row;
-      align-items: flex-start;
-    }
-  }
-
   .card__title {
     font-size: var(--text-lead);
     font-weight: 700;
     line-height: 1.35;
     letter-spacing: -0.01em;
     color: var(--site-fg);
+  }
+
+  /* Titre d'article en carte : `--text-lead` est calibré pour une carte de
+     deux colonnes sur l'accueil, pas pour la grille à trois colonnes du
+     blog, où il force des retours de ligne et des hauteurs inégales. */
+  .card__title--compact {
+    font-size: var(--text-base);
   }
 
   .card__text {
@@ -1605,18 +1596,83 @@
     border-color: var(--color-violet-500);
   }
 
-  /* --- Recherche et filtres --- */
+  /* --- Recherche et filtres ---
+     La barre aligne recherche, rubrique et tri sur une seule ligne. La
+     première version empilait les puces de rubrique sous le champ de
+     recherche : sur mobile la liste prenait six lignes de hauteur, et
+     aucun critère de tri n'était proposé. Un menu déroulant par critère
+     tient en trois contrôles quelle que soit la largeur. */
   .filtres {
-    display: flex;
-    flex-wrap: wrap;
-    gap: var(--spacing);
-    max-width: 44rem;
-    margin-inline: auto;
+    display: grid;
+    gap: calc(var(--spacing) * 3);
+    align-items: end;
   }
 
-  .filtres__recherche {
-    flex: 1 1 16rem;
-    min-width: 0;
+  @media (min-width: 56rem) {
+    .filtres {
+      grid-template-columns: minmax(0, 1fr) 13rem 12rem auto;
+    }
+  }
+
+  .filtres__champ {
+    display: grid;
+    gap: calc(var(--spacing) * 0.5);
+  }
+
+  .filtres__libelle {
+    font-size: var(--text-caption);
+    font-weight: 600;
+    color: var(--site-fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* Wrapper du menu déroulant : il porte la flèche, le `<select>` restant
+     transparent pour ne pas dépendre d'une image de fond (les couleurs
+     d'une data-URI ne suivent pas le thème). */
+  .select {
+    position: relative;
+    display: grid;
+  }
+
+  .select select {
+    appearance: none;
+    width: 100%;
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    background: var(--site-surface);
+    color: var(--site-fg);
+    padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 3) calc(var(--spacing) * 1.5) calc(var(--spacing) * 2);
+    font-size: var(--text-sm);
+    font-family: var(--font-sans);
+    cursor: pointer;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
+  }
+
+  .select select:hover {
+    border-color: var(--color-violet-400);
+  }
+
+  .select select:focus-visible {
+    outline: none;
+    border-color: var(--color-violet-500);
+    box-shadow: 0 0 0 3px rgb(81 43 212 / 0.2);
+  }
+
+  .select__chevron {
+    position: absolute;
+    right: calc(var(--spacing) * 1.5);
+    top: 50%;
+    translate: 0 -50%;
+    color: var(--site-fg-muted);
+    pointer-events: none;
+  }
+
+  .filtres__actions {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 2);
+    flex-wrap: wrap;
   }
 
   /* --- Pagination --- */
@@ -1981,98 +2037,45 @@
 
   /* --- Cadre de compte ------------------------------------------------
      Ossature commune aux pages de connexion, d'inscription, de mot de
-     passe oublié et de réinitialisation : un panneau de présentation et
-     une carte de formulaire. Les former utilisaient `mx-auto w-full
-     max-w-md` sans le conteneur `.wrap`, et aucune classe du thème, d'où
-     un formulaire sans marge, sans bordure et sans bouton stylé. */
+     passe oublié et de réinitialisation. La première version plaçait un
+     panneau de présentation à gauche du formulaire : il disparaissait sous
+     64rem, ce qui décalait le formulaire sur mobile, et il crowdingait
+     l'écran sur grand écran. Un formulaire centré se lit mieux dans les
+     deux cas, et il reste le seul contenu utile de ces pages. */
   .compte {
     display: grid;
-    min-height: 100%;
-    align-items: stretch;
-  }
-
-  @media (min-width: 64rem) {
-    .compte {
-      grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
-    }
-  }
-
-  .compte__panneau {
-    display: none;
-    flex-direction: column;
-    gap: calc(var(--spacing) * 3);
-    background: linear-gradient(160deg, var(--color-violet-900) 0%, var(--color-violet-600) 60%, var(--color-violet-500) 100%);
-    color: #fff;
-    padding: calc(var(--spacing) * 8) calc(var(--spacing) * 6);
-  }
-
-  @media (min-width: 64rem) {
-    .compte__panneau {
-      display: flex;
-    }
-  }
-
-  .compte__titre {
-    font-size: var(--text-section);
-    font-weight: 800;
-    letter-spacing: -0.015em;
-    text-wrap: balance;
-  }
-
-  .compte__texte {
-    color: rgb(255 255 255 / 0.82);
-    font-size: var(--text-sm);
-    line-height: 1.6;
-    max-width: 40ch;
-  }
-
-  .compte__liste {
-    margin-top: auto;
-    gap: calc(var(--spacing) * 1.5);
-    font-size: var(--text-sm);
-    color: rgb(255 255 255 / 0.82);
-    display: grid;
-  }
-
-  .compte__liste li {
-    align-items: flex-start;
-    gap: calc(var(--spacing) * 1.25);
-    display: flex;
-  }
-
-  .compte__principal {
-    display: grid;
     align-content: center;
+    justify-items: center;
+    /* Le centrage vertical a besoin d'une hauteur de référence : sans elle,
+       `align-content` n'a rien à centrer et le formulaire se colle en haut. */
+    min-height: 60vh;
     padding: calc(var(--spacing) * 6) calc(var(--spacing) * 4);
-  }
-
-  @media (min-width: 48rem) {
-    .compte__principal {
-      padding: calc(var(--spacing) * 8) calc(var(--spacing) * 6);
-    }
   }
 
   .compte__carte {
     width: 100%;
-    max-width: 30rem;
-    margin-inline: auto;
-    gap: calc(var(--spacing) * 4);
+    max-width: 26rem;
+    gap: calc(var(--spacing) * 3.5);
     display: grid;
     background: var(--site-surface);
     border: 1px solid var(--site-border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-sm);
-    padding: calc(var(--spacing) * 6);
+    padding: calc(var(--spacing) * 4.5);
   }
 
   @media (min-width: 48rem) {
+    .compte {
+      padding: calc(var(--spacing) * 8) calc(var(--spacing) * 6);
+    }
+
     .compte__carte {
-      padding: calc(var(--spacing) * 8);
+      padding: calc(var(--spacing) * 5.5);
     }
   }
 
   .compte__entete {
-    gap: var(--spacing);
+    gap: calc(var(--spacing) * 0.5);
     display: grid;
   }
 

@@ -15,6 +15,16 @@ public sealed class ArticleVue
 
     public required string Slug { get; init; }
 
+    /// <summary>
+    /// Corps de l'article, un paragraphe par bloc séparé par une ligne vide. Du texte et non
+    /// du HTML : la garniture n'a pas vocation à rendre une balise, et la lecture de l'article
+    /// n'a pas à s'appuyer sur du balisage produit ailleurs.
+    /// </summary>
+    public required string Contenu { get; init; }
+
+    /// <summary>Date de publication, affichée sur la carte et en tête de l'article.</summary>
+    public required DateOnly DatePublication { get; init; }
+
     public string? ImageUrl { get; init; }
 }
 

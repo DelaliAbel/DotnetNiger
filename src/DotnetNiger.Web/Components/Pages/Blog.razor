@@ -1,0 +1,309 @@
+@page "/blog"
+@attribute [StreamRendering]
+
+@inject ISiteContentService Contenu
+
+<PageTitle>Blog — notions, projets et portraits de développeurs .NET du Niger</PageTitle>
+<HeadContent>
+    <meta name="description" content="Les articles de la communauté DotnetNiger : nouveautés de .NET, retours d'expérience sur des projets locaux et interviews de développeurs nigeriens." />
+    <meta property="og:title" content="Blog — DotnetNiger" />
+    <meta property="og:description" content="Nouveautés de .NET, projets locaux et interviews : les articles écrits et maintenus par la communauté des développeurs .NET du Niger." />
+</HeadContent>
+
+@if (_Articles is null)
+{
+    <div class="wrap" style="padding-block: calc(var(--spacing) * 12);">
+        <p class="text-caption" style="color: var(--site-fg-muted);">Chargement…</p>
+    </div>
+}
+else
+{
+    <!-- 1. Bannière principale -->
+    <section class="hero hero--centre">
+        <div class="wrap">
+            <p class="hero__eyebrow">
+                <DnIcon Name="sparkles" Size="14" /> Le blog de la communauté
+            </p>
+            <h1 class="hero__title" style="margin-top: var(--spacing);">
+                Ce que la communauté <strong>apprend et publie</strong>
+            </h1>
+            <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
+                Nouveautés de la plateforme, retours d'expérience sur des projets menés ici et
+                portraits de celles et ceux qui construisent avec .NET au Niger.
+            </p>
+        </div>
+    </section>
+
+    <!-- 2. Recherche, rubrique et tri -->
+    <section class="section" aria-label="Rechercher et filtrer les articles" style="padding-block: calc(var(--spacing) * 5) 0;">
+        <div class="wrap">
+            <form method="get" action="/blog" class="filtres" role="search">
+                <div class="filtres__champ">
+                    <label class="filtres__libelle" for="recherche-blog">Recherche</label>
+                    <input id="recherche-blog" class="input" type="search" name="q"
+                           value="@_Recherche" placeholder="Titre, sujet, auteur…" />
+                </div>
+
+                <div class="filtres__champ">
+                    <label class="filtres__libelle" for="rubrique-blog">Rubrique</label>
+                    <span class="select">
+                        <select id="rubrique-blog" name="categorie">
+                            <option value="" selected="@(string.IsNullOrWhiteSpace(_Categorie))">Toutes les rubriques</option>
+                            @foreach (var (slug, nom) in Categories)
+                            {
+                                <option value="@slug" selected="@(slug == _Categorie)">@nom</option>
+                            }
+                        </select>
+                        <DnIcon Name="chevron-down" Size="16" Class="select__chevron" />
+                    </span>
+                </div>
+
+                <div class="filtres__champ">
+                    <label class="filtres__libelle" for="tri-blog">Trier par</label>
+                    <span class="select">
+                        <select id="tri-blog" name="tri">
+                            @foreach (var (cle, libelle) in Tris)
+                            {
+                                <option value="@cle" selected="@(cle == _Tri)">@libelle</option>
+                            }
+                        </select>
+                        <DnIcon Name="chevron-down" Size="16" Class="select__chevron" />
+                    </span>
+                </div>
+
+                <div class="filtres__actions">
+                    <button type="submit" class="btn btn--primary">
+                        <DnIcon Name="search" Size="16" /> Filtrer
+                    </button>
+                    @if (FiltresActifs)
+                    {
+                        <a class="link text-caption" href="/blog">Réinitialiser</a>
+                    }
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- 3. Articles -->
+    <section class="section" aria-labelledby="articles-titre">
+        <div class="wrap">
+            <div class="section__head section__head--split">
+                <div>
+                    <p class="eyebrow">Les publications</p>
+                    <h2 id="articles-titre" class="section__title">
+                        @Rubrique <strong>articles</strong>
+                    </h2>
+                    <p class="section__lead">
+                        @if (_Recherche is { Length: > 0 })
+                        {
+                            <text>@ResultatsFiltres.Length résultat(s) pour « @_Recherche ».</text>
+                        }
+                        else
+                        {
+                            <text>@ResultatsFiltres.Length articles publiés par la communauté, du plus récent au plus ancien.</text>
+                        }
+                    </p>
+                </div>
+                <span class="badge badge--violet">@ResultatsFiltres.Length articles</span>
+            </div>
+
+            @if (ResultatsPageCourante.Length == 0)
+            {
+                <EmptyState Icone="search"
+                            Titre="Aucun article ne correspond à votre recherche"
+                            Message="Essayez d'autres mots-clés, ou élargissez la recherche en réinitialisant le filtre de rubrique.">
+                    <a class="btn btn--ghost" href="/blog">
+                        Voir tous les articles <DnIcon Name="arrow-right" Size="16" />
+                    </a>
+                </EmptyState>
+            }
+            else
+            {
+                <div class="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                    @foreach (var article in ResultatsPageCourante)
+                    {
+                        <ArticleCarte Article="article" />
+                    }
+                </div>
+
+                <Pagination PageCourante="PageCourante"
+                            NombreDePages="NombreDePages"
+                            Libelle="Pagination des articles"
+                            UrlPage="UrlPage" />
+            }
+        </div>
+    </section>
+
+    <!-- 4. Écrire sur le blog -->
+    <section class="section" aria-labelledby="ecrire-titre">
+        <div class="wrap">
+            <div class="bande">
+                <div class="grid gap-6 md:grid-cols-2" style="align-items: center;">
+                    <div>
+                        <p class="eyebrow" style="color: var(--color-vert-300);">Contribuer</p>
+                        <h2 id="ecrire-titre" class="bande__title" style="margin-top: var(--spacing);">
+                            Un retour d'expérience à partager ?
+                        </h2>
+                        <p class="bande__lead">
+                            Un projet mené, une difficulté rencontrée, une découverte : ces articles
+                            sont écrits par des membres comme vous, et c'est ce qui fait leur valeur.
+                        </p>
+                    </div>
+                    <div class="contribuer__actions">
+                        <a class="btn btn--white btn--lg" href="/compte/inscription">
+                            Proposer un article <DnIcon Name="arrow-right" Size="18" />
+                        </a>
+                        <p class="contribuer__note">
+                            Connectez-vous pour publier directement :
+                            <a class="link" href="/compte/connexion?retour=/blog">se connecter</a>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+@code {
+    /// <summary>Nombre d'articles affichés par page.</summary>
+    private const int ArticlesParPage = 6;
+
+    private static readonly (string Slug, string Nom)[] Categories =
+    [
+        ("nouveautes", "Nouveautés de .NET"),
+        ("interviews", "Interviews"),
+        ("projets", "Projets locaux"),
+    ];
+
+    /// <summary>
+    /// Ordres de tri proposés. Le premier est le plus utile : sur un blog, on
+    /// cherche ce qui vient de sortir, pas l'ordre alphabétique.
+    /// </summary>
+    private static readonly (string Cle, string Libelle)[] Tris =
+    [
+        ("recent", "Plus récent d'abord"),
+        ("ancien", "Plus ancien d'abord"),
+        ("az", "Titre A → Z"),
+        ("za", "Titre Z → A"),
+        ("lecture", "Lecture la plus courte"),
+    ];
+
+    private IReadOnlyList<ArticleVue>? _Articles;
+
+    [SupplyParameterFromQuery(Name = "q")]
+    public string? _Recherche { get; set; }
+
+    [SupplyParameterFromQuery(Name = "categorie")]
+    public string? _Categorie { get; set; }
+
+    [SupplyParameterFromQuery(Name = "tri")]
+    public string? _Tri { get; set; }
+
+    [SupplyParameterFromQuery(Name = "page")]
+    public int? _Page { get; set; }
+
+    private ArticleVue[] ResultatsFiltres { get; set; } = [];
+
+    private string Rubrique { get; set; } = "Tous les";
+
+    private int PageCourante { get; set; } = 1;
+
+    private int NombreDePages { get; set; } = 1;
+
+    private ArticleVue[] ResultatsPageCourante =>
+        ResultatsFiltres.Skip((PageCourante - 1) * ArticlesParPage)
+            .Take(ArticlesParPage)
+            .ToArray();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var articles = await Contenu.ChargerArticlesAsync();
+
+        _Articles = [.. articles.OrderByDescending(a => a.DatePublication)];
+
+        if (_Page is { } pageDemandee && pageDemandee > 0)
+        {
+            PageCourante = pageDemandee;
+        }
+
+        AppliquerFiltres();
+    }
+
+    private void AppliquerFiltres()
+    {
+        IEnumerable<ArticleVue> resultats = _Articles ?? [];
+
+        var categorie = CategorieSelectionnee();
+        if (categorie is not null)
+        {
+            resultats = resultats.Where(a => a.Categorie == categorie);
+        }
+
+        var recherche = _Recherche?.Trim();
+        if (recherche is { Length: > 0 })
+        {
+            resultats = resultats.Where(a =>
+                a.Titre.Contains(recherche, StringComparison.OrdinalIgnoreCase)
+                || a.Extrait.Contains(recherche, StringComparison.OrdinalIgnoreCase)
+                || a.Categorie.Contains(recherche, StringComparison.OrdinalIgnoreCase)
+                || a.Auteur.Contains(recherche, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Un critère de tri inconnu retombe sur le plus récent plutôt que sur une
+        // liste vide : l'URL reste partageable, seule l'ordre change.
+        resultats = _Tri switch
+        {
+            "ancien" => resultats.OrderBy(a => a.DatePublication),
+            "az" => resultats.OrderBy(a => a.Titre, StringComparer.OrdinalIgnoreCase),
+            "za" => resultats.OrderByDescending(a => a.Titre, StringComparer.OrdinalIgnoreCase),
+            "lecture" => resultats.OrderBy(a => a.LectureMinutes).ThenByDescending(a => a.DatePublication),
+            _ => resultats.OrderByDescending(a => a.DatePublication),
+        };
+
+        ResultatsFiltres = [.. resultats];
+
+        NombreDePages = Math.Max(1, (int)Math.Ceiling(ResultatsFiltres.Length / (double)ArticlesParPage));
+        if (PageCourante > NombreDePages)
+        {
+            PageCourante = NombreDePages;
+        }
+
+        Rubrique = CategorieSelectionnee() ?? "Tous les";
+    }
+
+    /// <summary>Vrai dès qu'un critère a été utilisé ; pilote le lien de remise à zéro.</summary>
+    private bool FiltresActifs =>
+        !string.IsNullOrWhiteSpace(_Recherche)
+        || !string.IsNullOrWhiteSpace(_Categorie)
+        || (_Tri is { Length: > 0 } and not "recent");
+
+    private string? CategorieSelectionnee() =>
+        Categories.FirstOrDefault(c => c.Slug == _Categorie).Nom;
+
+    /// <summary>Construit l'URL d'une page en conservant la rubrique, le tri et la recherche en cours.</summary>
+    private string UrlPage(int page)
+    {
+        var paramètres = new List<string>();
+        if (!string.IsNullOrWhiteSpace(_Recherche))
+        {
+            paramètres.Add($"q={Uri.EscapeDataString(_Recherche)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(_Categorie))
+        {
+            paramètres.Add($"categorie={Uri.EscapeDataString(_Categorie)}");
+        }
+
+        if (_Tri is { Length: > 0 } and not "recent")
+        {
+            paramètres.Add($"tri={Uri.EscapeDataString(_Tri)}");
+        }
+
+        if (page > 1)
+        {
+            paramètres.Add($"page={page}");
+        }
+
+        return "/blog" + (paramètres.Count > 0 ? "?" + string.Join("&", paramètres) : "");
+    }
+}

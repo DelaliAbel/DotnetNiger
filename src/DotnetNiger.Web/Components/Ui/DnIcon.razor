@@ -2,7 +2,7 @@
 
 @if (Defs.TryGetValue(Name, out var definition))
 {
-    <svg class="dn-icon" width="@Size" height="@Size" viewBox="0 0 24 24" fill="@(definition.Rempli ? "currentColor" : "none")"
+    <svg class="@Classes" width="@Size" height="@Size" viewBox="0 0 24 24" fill="@(definition.Rempli ? "currentColor" : "none")"
          stroke="@(definition.Rempli ? "none" : "currentColor")" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         @foreach (var chemin in definition.Chemins)
         {
@@ -17,6 +17,14 @@
 
     /// <summary>Taille en pixels ; la géométrie reste celle d'un carré 24 × 24.</summary>
     [Parameter] public int Size { get; set; } = 20;
+
+    /// <summary>
+    /// Classes CSS additionnelles, pour les cas où l'icône doit être positionnée
+    /// (flèche d'un menu déroulant, par exemple) plutôt que de participer au flux.
+    /// </summary>
+    [Parameter] public string? Class { get; set; }
+
+    private string Classes => string.IsNullOrWhiteSpace(Class) ? "dn-icon" : $"dn-icon {Class}";
 
     private sealed record DefinitionIcon(string[] Chemins, bool Rempli);
 
@@ -44,6 +52,7 @@
             ["sparkles"] = new(new[] { "M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z", "M20 3v4", "M22 5h-4", "M4 17v2", "M5 18H3" }, Rempli: false),
             ["external-link"] = new(new[] { "M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6", "M15 3h6v6", "M10 14 21 3" }, Rempli: false),
             ["chevron-right"] = new(new[] { "m9 18 6-6-6-6" }, Rempli: false),
+            ["chevron-down"] = new(new[] { "m6 9 6 6 6-6" }, Rempli: false),
             ["play"] = new(new[] { "M8 5v14l11-7z" }, Rempli: true),
             ["mail"] = new(new[] { "M3 4h18v16H3z", "m3 7 9 6 9-6" }, Rempli: false),
             ["check"] = new(new[] { "M20 6 9 17l-5-5" }, Rempli: false),

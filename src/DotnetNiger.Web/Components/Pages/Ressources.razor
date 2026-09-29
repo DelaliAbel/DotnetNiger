@@ -34,31 +34,53 @@ else
         </div>
     </section>
 
-    <!-- 2. Recherche et filtres -->
+    <!-- 2. Recherche, catégorie et tri -->
     <section class="section" aria-label="Rechercher et filtrer les ressources" style="padding-block: calc(var(--spacing) * 5) 0;">
         <div class="wrap">
             <form method="get" action="/ressources" class="filtres" role="search">
-                @if (!string.IsNullOrWhiteSpace(_Categorie))
-                {
-                    <input type="hidden" name="categorie" value="@_Categorie" />
-                }
-                <label class="sr-only" for="recherche-ressources">Rechercher une ressource</label>
-                <input id="recherche-ressources" class="input filtres__recherche" type="search" name="q"
-                       value="@_Recherche" placeholder="Rechercher par titre, sujet ou auteur…" />
-                <button type="submit" class="btn btn--primary">Rechercher</button>
-            </form>
+                <div class="filtres__champ">
+                    <label class="filtres__libelle" for="recherche-ressources">Recherche</label>
+                    <input id="recherche-ressources" class="input" type="search" name="q"
+                           value="@_Recherche" placeholder="Titre, sujet, auteur…" />
+                </div>
 
-            <nav class="chips chips--section" aria-label="Filtrer par catégorie de ressource">
-                <a class="chip @(ChipEstActivee(null) ? "chip--active" : null)" href="@UrlFiltres(null)">
-                    Toutes les ressources
-                </a>
-                @foreach (var (slug, categorie) in Categories)
-                {
-                    <a class="chip @(ChipEstActivee(slug) ? "chip--active" : null)" href="@UrlFiltres(slug)">
-                        @categorie
-                    </a>
-                }
-            </nav>
+                <div class="filtres__champ">
+                    <label class="filtres__libelle" for="categorie-ressources">Catégorie</label>
+                    <span class="select">
+                        <select id="categorie-ressources" name="categorie">
+                            <option value="" selected="@(string.IsNullOrWhiteSpace(_Categorie))">Toutes les catégories</option>
+                            @foreach (var (slug, nom) in Categories)
+                            {
+                                <option value="@slug" selected="@(slug == _Categorie)">@nom</option>
+                            }
+                        </select>
+                        <DnIcon Name="chevron-down" Size="16" Class="select__chevron" />
+                    </span>
+                </div>
+
+                <div class="filtres__champ">
+                    <label class="filtres__libelle" for="tri-ressources">Trier par</label>
+                    <span class="select">
+                        <select id="tri-ressources" name="tri">
+                            @foreach (var (cle, libelle) in Tris)
+                            {
+                                <option value="@cle" selected="@(cle == _Tri)">@libelle</option>
+                            }
+                        </select>
+                        <DnIcon Name="chevron-down" Size="16" Class="select__chevron" />
+                    </span>
+                </div>
+
+                <div class="filtres__actions">
+                    <button type="submit" class="btn btn--primary">
+                        <DnIcon Name="search" Size="16" /> Filtrer
+                    </button>
+                    @if (FiltresActifs)
+                    {
+                        <a class="link text-caption" href="/ressources">Réinitialiser</a>
+                    }
+                </div>
+            </form>
         </div>
     </section>
 
@@ -153,6 +175,19 @@ else
         ("articles", "Articles de blog et guides"),
     };
 
+    /// <summary>
+    /// Ordres de tri proposés. Une ressource n'a pas de date de publication : c'est
+    /// une curated stable, pas un article. Le tri porte donc sur ce qu'elle porte
+    /// réellement — son titre et son auteur.
+    /// </summary>
+    private static readonly (string Cle, string Libelle)[] Tris = new[]
+    {
+        ("az", "Titre A → Z"),
+        ("za", "Titre Z → A"),
+        ("auteur", "Auteur A → Z"),
+        ("sujet", "Sujet A → Z"),
+    };
+
     private IReadOnlyList<RessourceVue>? _Ressources;
 
     [SupplyParameterFromQuery(Name = "q")]
@@ -160,6 +195,9 @@ else
 
     [SupplyParameterFromQuery(Name = "categorie")]
     public string? _Categorie { get; set; }
+
+    [SupplyParameterFromQuery(Name = "tri")]
+    public string? _Tri { get; set; }
 
     [SupplyParameterFromQuery(Name = "page")]
     public int? _Page { get; set; }
@@ -212,6 +250,16 @@ else
                 || r.Auteur.Contains(recherche, StringComparison.OrdinalIgnoreCase));
         }
 
+        // Un critère de tri inconnu retombe sur l'ordre alphabétique plutôt que sur
+        // une liste vide : l'URL reste partageable, seul l'ordre change.
+        resultats = _Tri switch
+        {
+            "za" => resultats.OrderByDescending(r => r.Titre, StringComparer.OrdinalIgnoreCase),
+            "auteur" => resultats.OrderBy(r => r.Auteur, StringComparer.OrdinalIgnoreCase).ThenBy(r => r.Titre, StringComparer.OrdinalIgnoreCase),
+            "sujet" => resultats.OrderBy(r => r.Sujet, StringComparer.OrdinalIgnoreCase).ThenBy(r => r.Titre, StringComparer.OrdinalIgnoreCase),
+            _ => resultats.OrderBy(r => r.Titre, StringComparer.OrdinalIgnoreCase),
+        };
+
         ResultatsFiltres = resultats.ToArray();
 
         NombreDePages = Math.Max(1, (int)Math.Ceiling(ResultatsFiltres.Length / (double)RessourcesParPage));
@@ -232,27 +280,13 @@ else
     private string? CategorieSelectionnee() =>
         Categories.FirstOrDefault(c => c.Slug == _Categorie).Nom;
 
-    private bool ChipEstActivee(string? slug) =>
-        string.Equals(slug, _Categorie, StringComparison.Ordinal);
+    /// <summary>Vrai dès qu'un critère a été utilisé ; pilote le lien de remise à zéro.</summary>
+    private bool FiltresActifs =>
+        !string.IsNullOrWhiteSpace(_Recherche)
+        || !string.IsNullOrWhiteSpace(_Categorie)
+        || (_Tri is { Length: > 0 } and not "az");
 
-    /// <summary>Construit l'URL des filtres en conservant la recherche en cours.</summary>
-    private string UrlFiltres(string? slug)
-    {
-        var paramètres = new List<string>();
-        if (!string.IsNullOrWhiteSpace(slug))
-        {
-            paramètres.Add($"categorie={Uri.EscapeDataString(slug)}");
-        }
-
-        if (_Recherche is { Length: > 0 })
-        {
-            paramètres.Add($"q={Uri.EscapeDataString(_Recherche)}");
-        }
-
-        return "/ressources" + (paramètres.Count > 0 ? "?" + string.Join("&", paramètres) : "");
-    }
-
-    /// <summary>Construit l'URL d'une page en conservant la catégorie et la recherche en cours.</summary>
+    /// <summary>Construit l'URL d'une page en conservant la catégorie, le tri et la recherche en cours.</summary>
     private string UrlPage(int page)
     {
         var paramètres = new List<string>();
@@ -264,6 +298,16 @@ else
         if (_Recherche is { Length: > 0 })
         {
             paramètres.Add($"q={Uri.EscapeDataString(_Recherche)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(_Categorie))
+        {
+            paramètres.Add($"categorie={Uri.EscapeDataString(_Categorie)}");
+        }
+
+        if (_Tri is { Length: > 0 } and not "az")
+        {
+            paramètres.Add($"tri={Uri.EscapeDataString(_Tri)}");
         }
 
         if (page > 1)

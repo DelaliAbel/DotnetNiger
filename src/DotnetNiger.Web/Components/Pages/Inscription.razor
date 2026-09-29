@@ -5,8 +5,7 @@
 
 <CadreCompte Titre="Créer un compte"
             SurTitre="Rejoindre la communauté"
-            Lead="Votre adresse sert aussi d'identifiant. Elle ne sera jamais transmise à un tiers."
-            ArgumentsPanneau="ArgumentsPanneau">
+            Lead="Votre adresse sert aussi d'identifiant. Elle ne sera jamais transmise à un tiers.">
     @if (Error is not null)
     {
         <Alerte Variante="rouge">@Error</Alerte>
@@ -32,10 +31,10 @@
     }
     else
     {
-        <form method="post" action="/compte/inscription/creer" class="grid gap-5">
+        <form method="post" action="/compte/inscription/creer" class="grid gap-4">
             <AntiforgeryToken />
 
-            <div class="grid gap-5 sm:grid-cols-2">
+            <div class="grid gap-4 sm:grid-cols-2">
                 <div class="field">
                     <label class="field__label" for="FirstName">Prénom</label>
                     <input class="input" id="FirstName" type="text" name="FirstName" required minlength="2" maxlength="80"
@@ -94,13 +93,6 @@
 </CadreCompte>
 
 @code {
-    private static readonly string[] ArgumentsPanneau =
-    [
-        "Un profil visible par les entreprises et les écoles",
-        "Les événements et ateliers de la communauté",
-        "Aucune lettre d'information imposée",
-    ];
-
     [SupplyParameterFromQuery(Name = "erreur")]
     public string? Error { get; set; }
 

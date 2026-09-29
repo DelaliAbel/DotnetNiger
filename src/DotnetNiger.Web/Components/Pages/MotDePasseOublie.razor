@@ -4,8 +4,7 @@
 
 <CadreCompte Titre="Mot de passe oublié"
             SurTitre="Récupération d'accès"
-            Lead="Indiquez l'adresse de votre compte : nous vous enverrons un lien pour choisir un nouveau mot de passe."
-            ArgumentsPanneau="ArgumentsPanneau">
+            Lead="Indiquez l'adresse de votre compte : nous vous enverrons un lien pour choisir un nouveau mot de passe.">
     @if (Sent is not null)
     {
         @if (EmailNotConfigured is not null)
@@ -53,11 +52,6 @@
 </CadreCompte>
 
 @code {
-    private static readonly string[] ArgumentsPanneau =
-    [
-        "Un lien à usage unique, valable quelques heures",
-        "Aucun changement tant que vous n'avez pas choisi de nouveau mot de passe",
-    ];
 
     [SupplyParameterFromQuery(Name = "erreur")]
     public string? Error { get; set; }

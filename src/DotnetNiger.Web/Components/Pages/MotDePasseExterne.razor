@@ -5,8 +5,7 @@
 
 <CadreCompte SurTitre="Espace membre"
             Titre="@(IsProof ? "Confirmez votre mot de passe" : "Choisissez un mot de passe")"
-            Lead="@(IsProof ? "Un compte existe déjà pour cette adresse, rattachez-le à votre compte externe." : "Sur DotnetNiger, chaque compte a son propre mot de passe, utilisable même si votre fournisseur d'identité est indisponible.")"
-            ArgumentsPanneau="ArgumentsPanneau">
+            Lead="@(IsProof ? "Un compte existe déjà pour cette adresse, rattachez-le à votre compte externe." : "Sur DotnetNiger, chaque compte a son propre mot de passe, utilisable même si votre fournisseur d'identité est indisponible.")">
     @if (Pending is null)
     {
         <Alerte Variante="orange">
@@ -66,11 +65,6 @@
 </CadreCompte>
 
 @code {
-    private static readonly string[] ArgumentsPanneau =
-    [
-        "Un compte unique, quelle que soit la porte d'entrée",
-        "Vos identifiants restent sur DotnetNiger",
-    ];
 
     [SupplyParameterFromQuery(Name = "jeton")]
     public string? Token { get; set; }

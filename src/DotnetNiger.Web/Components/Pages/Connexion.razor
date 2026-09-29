@@ -7,8 +7,7 @@
 
 <CadreCompte Titre="Connexion"
             SurTitre="Espace membre"
-            Lead="Connectez-vous pour publier une ressource, commenter ou vous inscrire à un événement."
-            ArgumentsPanneau="ArgumentsPanneau">
+            Lead="Connectez-vous pour publier une ressource, commenter ou vous inscrire à un événement.">
     @if (Confirmation is not null)
     {
         <Alerte Variante="vert">@Confirmation</Alerte>
@@ -18,7 +17,7 @@
         <Alerte Variante="rouge">@Error</Alerte>
     }
 
-    <form method="post" action="/compte/connexion/se-connecter" class="grid gap-5">
+    <form method="post" action="/compte/connexion/se-connecter" class="grid gap-4">
         <AntiforgeryToken />
         <input type="hidden" name="Retour" value="@ReturnUrl" />
 
@@ -68,12 +67,6 @@
 </CadreCompte>
 
 @code {
-    private static readonly string[] ArgumentsPanneau =
-    [
-        "Publier une ressource et la partager avec la communauté",
-        "Commenter les articles et participer aux événements",
-        "Suivre les projets locaux et recevoir les nouvelles",
-    ];
 
     [SupplyParameterFromQuery(Name = "erreur")]
     public string? Error { get; set; }

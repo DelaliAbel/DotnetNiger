@@ -1,0 +1,47 @@
+@using System.Globalization
+
+@* Carte de présentation d'un article de blog, utilisée par l'accueil et par le blog. *@
+
+<article class="card card--hover">
+    <DnCardMedia ImageUrl="@Article.ImageUrl" Alt="" />
+    <div class="card__body">
+        <p>
+            <span class="badge badge--@CouleurCategorie">@Article.Categorie</span>
+        </p>
+        <h3 class="card__title card__title--compact">
+            <a href="@Lien" class="link">@Article.Titre</a>
+        </h3>
+        <p class="card__text">@Article.Extrait</p>
+        <p class="card__meta">
+            <time datetime="@Article.DatePublication.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)">
+                @Article.DatePublication.ToString("d MMMM yyyy", Culture)
+            </time>
+            <span aria-hidden="true">·</span>
+            <DnIcon Name="users" Size="14" /> @Article.Auteur
+            <span aria-hidden="true">·</span>
+            @Article.LectureMinutes min
+        </p>
+    </div>
+</article>
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
+
+    [Parameter, EditorRequired] public ArticleVue Article { get; set; } = default!;
+
+    /// <summary>
+    /// Adresse de l'article. Surchargée par la page qui affiche la carte : la liste renvoie vers
+    /// le détail, l'accueil vers la même route, mais une page qui regroupe les titres dans une
+    /// autre section peut pointer ailleurs sans dupliquer la carte.
+    /// </summary>
+    [Parameter] public string? Url { get; set; }
+
+    private string Lien => Url ?? $"/blog/{Article.Slug}";
+
+    private string CouleurCategorie => Article.Categorie switch
+    {
+        "Interviews" => "orange",
+        "Projets locaux" => "vert",
+        _ => "violet",
+    };
+}

@@ -267,22 +267,7 @@ else
                 <div class="grid gap-2 md:grid-cols-2">
                     @foreach (var article in _Accueil.ArticlesRecents)
                     {
-                        <article class="card card--hover card--actus">
-                            <div class="card__body card--actus__body">
-                                <span class="badge badge--@CouleurCategorie(article.Categorie)">@article.Categorie</span>
-                                <div style="display: grid; gap: var(--spacing);">
-                                    <h3 class="card__title" style="font-size: var(--text-base);">
-                                        <a href="/blog/@article.Slug" class="link">@article.Titre</a>
-                                    </h3>
-                                    <p class="card__text">@article.Extrait</p>
-                                    <p class="card__meta">
-                                        <DnIcon Name="users" Size="14" /> @article.Auteur
-                                        <span aria-hidden="true">·</span>
-                                        @article.LectureMinutes min de lecture
-                                    </p>
-                                </div>
-                            </div>
-                        </article>
+                        <ArticleCarte Article="article" />
                     }
                 </div>
             }
@@ -326,12 +311,5 @@ else
         "Meetup" => "violet",
         "Hackathon" => "orange",
         _ => "vert",
-    };
-
-    private static string CouleurCategorie(string categorie) => categorie switch
-    {
-        "Interviews" => "orange",
-        "Projets locaux" => "vert",
-        _ => "violet",
     };
 }
