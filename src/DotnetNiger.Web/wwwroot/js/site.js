@@ -6,12 +6,27 @@ window.DnTheme = {
 
     set(theme) {
         document.documentElement.classList.toggle("dark", theme === "dark");
+        document.documentElement.setAttribute("data-theme", theme);
         localStorage.setItem("dn-theme", theme);
         this.sync();
     },
 
     toggle() {
         this.set(this.current() === "dark" ? "light" : "dark");
+    },
+
+    // Réapplique le thème mémorisé sur le <html>. Appelé au chargement et après
+    // chaque navigation enhanced de Blazor, qui régénère le document sans
+    // ré-exécuter le script d'amorçage du <head>.
+    applique() {
+        let theme;
+        try {
+            theme = localStorage.getItem("dn-theme");
+        } catch (e) { }
+        if (theme !== "dark" && theme !== "light") {
+            theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        this.set(theme);
     },
 
     sync() {
@@ -75,22 +90,35 @@ window.DnNav = {
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-    window.DnTheme.sync();
+    window.DnTheme.applique();
+    armeNavigation();
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") window.DnNav.ferme();
+    });
+
+    // La navigation enhanced de Blazor régénère le document sans ré-exécuter le
+    // script d'amorçage du <head> ni DOMContentLoaded : on réapplique le thème et
+    // on rattache les écouteurs perdus à chaque page suivante.
+    if (window.Blazor?.addEventListener) {
+        window.Blazor.addEventListener("enhancedload", () => {
+            window.DnTheme.applique();
+            armeNavigation();
+        });
+    }
+});
+
+function armeNavigation() {
     const nav = document.getElementById("site-nav");
     if (!nav) return;
     if (window.DnNav.estTiroir()) {
         nav.setAttribute("aria-hidden", "true");
         nav.setAttribute("inert", "");
     }
-
     nav.querySelectorAll("a").forEach((lien) =>
         lien.addEventListener("click", () => window.DnNav.ferme())
     );
 
     const fond = document.querySelector("[data-nav-backdrop]");
     fond?.addEventListener("click", () => window.DnNav.ferme());
-
-    document.addEventListener("keydown", (event) => {
-        if (event.key === "Escape") window.DnNav.ferme();
-    });
-});
+}
