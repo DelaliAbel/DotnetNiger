@@ -1,0 +1,157 @@
+@page "/partenaires"
+@attribute [StreamRendering]
+
+@inject ISiteContentService Contenu
+
+<PageTitle>Partenaires — celles et ceux qui soutiennent la communauté</PageTitle>
+<HeadContent>
+    <meta name="description" content="Les partenaires et sponsors de DotnetNiger : hébergement, connexion, captation vidéo, offre cloud et intervention lors des meetups et hackathons." />
+    <meta property="og:title" content="Partenaires — DotnetNiger" />
+    <meta property="og:description" content="Les entreprises, établissements et associations qui rendent les meetups, ateliers et hackathons de la communauté possibles." />
+</HeadContent>
+
+@if (_Partenaires is null)
+{
+    <div class="wrap" style="padding-block: calc(var(--spacing) * 12);">
+        <p class="text-caption" style="color: var(--site-fg-muted);">Chargement…</p>
+    </div>
+}
+else
+{
+    <!-- 1. Bannière principale -->
+    <section class="hero hero--centre">
+        <div class="wrap">
+            <p class="hero__eyebrow">
+                <DnIcon Name="users" Size="14" /> Soutenir la communauté
+            </p>
+            <h1 class="hero__title" style="margin-top: var(--spacing);">
+                Ce qui rend nos <strong>rencontres possibles</strong>
+            </h1>
+            <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
+                Salles, connexions, captation vidéo, crédits cloud, orateurs : les événements
+                gratuits de la communauté n'existent que grâce à ceux qui y investissent.
+            </p>
+        </div>
+    </section>
+
+    <!-- 2. Partenaires -->
+    <section class="section" aria-labelledby="partenaires-titre">
+        <div class="wrap">
+            <div class="section__head section__head--split">
+                <div>
+                    <p class="eyebrow">Partenaires</p>
+                    <h2 id="partenaires-titre" class="section__title">
+                        Hébergement, <strong>accompagnement et animation</strong>
+                    </h2>
+                    <p class="section__lead">
+                        Ils mettent à disposition leurs locaux, leur temps ou leur expertise pour
+                        que les ateliers et les clubs étudiants aient lieu.
+                    </p>
+                </div>
+                <a class="btn btn--ghost" href="/contact">
+                    Nous contacter <DnIcon Name="arrow-right" Size="16" />
+                </a>
+            </div>
+
+            @if (ParType("Partenaire").Count == 0)
+            {
+                <EmptyState Icone="users"
+                            Titre="Aucun partenaire pour le moment"
+                            Message="La liste est en cours de constitution. Écrivez-nous si votre organisation souhaite accueillir un événement.">
+                    <a class="btn btn--ghost" href="/contact">
+                        Proposer un partenariat <DnIcon Name="arrow-right" Size="16" />
+                    </a>
+                </EmptyState>
+            }
+            else
+            {
+                <div class="grid gap-2 md:grid-cols-2">
+                    @foreach (var partenaire in ParType("Partenaire"))
+                    {
+                        <PartenaireCarte Partenaire="partenaire" />
+                    }
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- 3. Sponsors -->
+    <section class="section section--alt" aria-labelledby="sponsors-titre">
+        <div class="wrap">
+            <div class="section__head">
+                <p class="eyebrow">Sponsors</p>
+                <h2 id="sponsors-titre" class="section__title">
+                    Ceux qui <strong>financent et prêtent</strong>
+                </h2>
+                <p class="section__lead">
+                    Crédits cloud, matériel, captation et interventions : des moyens
+                    concrets, qui se traduisent directement par des événements.
+                </p>
+            </div>
+
+            @if (ParType("Sponsor").Count == 0)
+            {
+                <EmptyState Icone="star"
+                            Titre="Aucun sponsor annoncé"
+                            Message="Les dons et sponsors sont les bienvenus pour financer la prochaine édition.">
+                    <a class="btn btn--ghost" href="/contact">
+                        En savoir plus <DnIcon Name="arrow-right" Size="16" />
+                    </a>
+                </EmptyState>
+            }
+            else
+            {
+                <div class="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                    @foreach (var sponsor in ParType("Sponsor"))
+                    {
+                        <PartenaireCarte Partenaire="sponsor" />
+                    }
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- 4. Devenir partenaire -->
+    <section class="section" aria-labelledby="devenir-titre">
+        <div class="wrap">
+            <div class="bande">
+                <div class="grid gap-6 md:grid-cols-2" style="align-items: center;">
+                    <div>
+                        <p class="eyebrow" style="color: var(--color-vert-300);">Contribuer</p>
+                        <h2 id="devenir-titre" class="bande__title" style="margin-top: var(--spacing);">
+                            Devenir partenaire
+                        </h2>
+                        <p class="bande__lead">
+                            Une salle, une connexion, un intervenant, un crédit cloud : même une
+                            contribution ponctuelle permet de tenir un événement. Les rencontres
+                            restent gratuites pour le public.
+                        </p>
+                    </div>
+                    <div class="contribuer__actions">
+                        <a class="btn btn--white btn--lg" href="/contact">
+                            Nous écrire <DnIcon Name="send" Size="18" />
+                        </a>
+                        <p class="contribuer__note">
+                            Vous pouvez aussi venir simplement : tout le monde est bienvenu aux
+                            <a class="link" href="/evenements">rencontres de la communauté</a>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+@code {
+    private IReadOnlyList<PartenaireVue>? _Partenaires;
+
+    protected override async Task OnInitializedAsync() =>
+        _Partenaires = await Contenu.ChargerPartenairesAsync();
+
+    /// <summary>
+    /// Partenaires d'un type donné. Le type vient de la donnée plutôt que d'une liste
+    /// figée ici : en ajouter un nouveau ne doit pas demander de modifier cette page.
+    /// </summary>
+    private List<PartenaireVue> ParType(string type) =>
+        [.. (_Partenaires ?? []).Where(p => p.Type == type)];
+}

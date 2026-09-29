@@ -1,0 +1,53 @@
+@* Carte d'un partenaire ou d'un sponsor, utilisée par la page /partenaires. *@
+
+<article class="card card--hover">
+    <div class="card__body">
+        <div class="partenaire__identite">
+            @if (!string.IsNullOrWhiteSpace(Partenaire.LogoUrl))
+            {
+                <img class="partenaire__logo" src="@Partenaire.LogoUrl" alt="" loading="lazy" />
+            }
+            else
+            {
+                <span class="partenaire__initiales" aria-hidden="true">@Initiales</span>
+            }
+
+            <div class="partenaire__nom">
+                <h3 class="card__title card__title--compact">@Partenaire.Nom</h3>
+                <span class="badge badge--@CouleurType">@Partenaire.Type</span>
+            </div>
+        </div>
+
+        <p class="card__text">@Partenaire.Description</p>
+
+        @if (!string.IsNullOrWhiteSpace(Partenaire.Lien))
+        {
+            <p class="card__meta">
+                <a class="link" href="@Partenaire.Lien" target="_blank" rel="noopener">
+                    Visiter le site <DnIcon Name="external-link" Size="14" />
+                    <span class="sr-only">de @Partenaire.Nom (nouvelle fenêtre)</span>
+                </a>
+            </p>
+        }
+    </div>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public PartenaireVue Partenaire { get; set; } = default!;
+
+    /// <summary>
+    /// Initiales affichées quand l'organisation n'a pas de logo. Une image absente
+    /// laisserait une carte vide ; des lettres donnent au moins un repère visuel
+    /// dans une grille de partenaires.
+    /// </summary>
+    private string Initiales
+    {
+        get
+        {
+            var mots = Partenaire.Nom.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return string.Concat(mots.Take(2).Select(m => char.ToUpperInvariant(m[0])));
+        }
+    }
+
+    private string CouleurType => Partenaire.Type == "Sponsor" ? "orange" : "violet";
+}

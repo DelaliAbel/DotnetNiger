@@ -2209,6 +2209,47 @@
     display: grid;
   }
 
+  /* --- Carte partenaire ---
+     Le logo n'est pas obligatoire dans la donnée : certaines organisations n'en
+     fournissent pas. Les initiales tiennent alors la place, pour que la grille reste
+     régulière et que la carte ne soit pas vide. */
+  .partenaire__identite {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 3);
+  }
+
+  .partenaire__logo {
+    width: calc(var(--spacing) * 9);
+    height: calc(var(--spacing) * 9);
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--site-border);
+    background: var(--site-surface);
+    object-fit: contain;
+    padding: calc(var(--spacing) * 1);
+  }
+
+  .partenaire__initiales {
+    display: inline-grid;
+    place-items: center;
+    width: calc(var(--spacing) * 9);
+    height: calc(var(--spacing) * 9);
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+    background: linear-gradient(150deg, var(--color-violet-500), var(--color-violet-800));
+    color: #fff;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .partenaire__nom {
+    display: grid;
+    gap: calc(var(--spacing) * 1);
+    justify-items: start;
+  }
+
   /* --- Lettre d'information --------------------------------------------
      Bloc du pied de page, donc présent sur toutes les pages. Il occupe toute la
      largeur de la grille : le formulaire aligné sur la droite aurait laissé un
