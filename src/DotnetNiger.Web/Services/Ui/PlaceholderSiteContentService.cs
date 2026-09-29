@@ -772,6 +772,8 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
         new CanalVue { Nom = "Facebook", Url = "https://www.facebook.com/dotnetniger", Icône = "facebook" },
     };
 
+    private const int MembresTotal = 840;
+
     private const string Presentation = "DotnetNiger est plus qu'une simple communauté de développeurs : c'est un catalyseur de la transformation numérique au Sahel. Fondée par des passionnés de l'écosystème Microsoft, notre organisation s'est donnée pour mission de démocratiser l'accès aux technologies de pointe et de former une nouvelle génération d'ingénieurs capables de relever les défis les plus complexes de notre époque.";
 
     private const string Mission = "Propulser le talent local au sommet de la tech mondiale.";
@@ -829,7 +831,7 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
             EvenementsAVenir = Evenements.Take(3).ToArray(),
             RessourcesPopulaires = Ressources.Take(6).ToArray(),
             Canaux = Canaux.ToArray(),
-            NombreMembres = 840,
+            NombreMembres = MembresTotal,
             NombreProjets = Projets.Length,
             NombreRessources = Ressources.Length,
             NombreEvenements = Evenements.Length,
@@ -862,5 +864,17 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
             Valeurs = Valeurs.ToArray(),
             Histoire = Jalons.ToArray(),
             Equipe = Membres.ToArray(),
+        });
+
+    public Task<CommunauteVue> ChargerCommunauteAsync(CancellationToken annulation = default) =>
+        Task.FromResult(new CommunauteVue
+        {
+            Evenements = Evenements.ToArray(),
+            Projets = Projets.ToArray(),
+            Canaux = Canaux.ToArray(),
+            NombreMembres = MembresTotal,
+            NombreProjets = Projets.Length,
+            NombreEvenements = Evenements.Length,
+            NombreCanaux = Canaux.Length,
         });
 }

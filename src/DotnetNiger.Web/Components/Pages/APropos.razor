@@ -80,18 +80,25 @@ else
                 </h2>
             </div>
 
-            <div class="grid gap-2 md:grid-cols-3">
-                @foreach (var valeur in _APropos.Valeurs)
-                {
-                    <article class="card card--hover">
-                        <div class="card__body">
-                            <span class="badge badge--violet"><DnIcon Name="@valeur.Icone" Size="14" /> @valeur.Titre</span>
-                            <h3 class="card__title" style="font-size: var(--text-base);">@valeur.Titre</h3>
-                            <p class="card__text">@valeur.Description</p>
-                        </div>
-                    </article>
-                }
-            </div>
+            @if (_APropos.Valeurs.Count == 0)
+            {
+                <EmptyState Icone="sparkles" Titre="Aucune valeur publiée pour le moment" />
+            }
+            else
+            {
+                <div class="grid gap-2 md:grid-cols-3">
+                    @foreach (var valeur in _APropos.Valeurs)
+                    {
+                        <article class="card card--hover">
+                            <div class="card__body">
+                                <span class="badge badge--violet"><DnIcon Name="@valeur.Icone" Size="14" /> @valeur.Titre</span>
+                                <h3 class="card__title" style="font-size: var(--text-base);">@valeur.Titre</h3>
+                                <p class="card__text">@valeur.Description</p>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
         </div>
     </section>
 
@@ -110,18 +117,25 @@ else
                 </p>
             </div>
 
-            <div class="grid gap-2 md:grid-cols-3">
-                @foreach (var jalon in _APropos.Histoire)
-                {
-                    <article class="card card--hover">
-                        <div class="card__body">
-                            <span class="badge badge--violet">@jalon.Periode</span>
-                            <h3 class="card__title">@jalon.Titre</h3>
-                            <p class="card__text">@jalon.Description</p>
-                        </div>
-                    </article>
-                }
-            </div>
+            @if (_APropos.Histoire.Count == 0)
+            {
+                <EmptyState Icone="calendar" Titre="Aucun jalon publié pour le moment" />
+            }
+            else
+            {
+                <div class="grid gap-2 md:grid-cols-3">
+                    @foreach (var jalon in _APropos.Histoire)
+                    {
+                        <article class="card card--hover">
+                            <div class="card__body">
+                                <span class="badge badge--violet">@jalon.Periode</span>
+                                <h3 class="card__title">@jalon.Titre</h3>
+                                <p class="card__text">@jalon.Description</p>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
         </div>
     </section>
 
@@ -139,41 +153,54 @@ else
                 </p>
             </div>
 
-            <div class="grid gap-2 md:grid-cols-3">
-                @foreach (var membre in _APropos.Equipe)
-                {
-                    <article class="card">
-                        <div class="card__media card__media--equipe">
-                            <img src="@membre.ImageUrl" alt="@membre.Nom" loading="lazy"
-                                 style="width: 100%; height: 100%; object-fit: cover;" />
-                        </div>
-                        <div class="card__body">
-                            <h3 class="card__title" style="font-size: var(--text-base);">@membre.Nom</h3>
-                            <p class="card__text">@membre.Role</p>
-                            <p class="card__meta">
-                                @if (!string.IsNullOrWhiteSpace(membre.LienGithub))
-                                {
-                                    <a class="equipe__social" href="@membre.LienGithub" target="_blank" rel="noopener" aria-label="GitHub de @membre.Nom">
-                                        <DnIcon Name="github" Size="16" />
-                                    </a>
-                                }
-                                @if (!string.IsNullOrWhiteSpace(membre.LienLinkedin))
-                                {
-                                    <a class="equipe__social" href="@membre.LienLinkedin" target="_blank" rel="noopener" aria-label="LinkedIn de @membre.Nom">
-                                        <DnIcon Name="linkedin" Size="16" />
-                                    </a>
-                                }
-                                @if (!string.IsNullOrWhiteSpace(membre.LienX))
-                                {
-                                    <a class="equipe__social" href="@membre.LienX" target="_blank" rel="noopener" aria-label="X de @membre.Nom">
-                                        <DnIcon Name="x" Size="16" />
-                                    </a>
-                                }
-                            </p>
-                        </div>
-                    </article>
-                }
-            </div>
+            @if (_APropos.Equipe.Count == 0)
+            {
+                <EmptyState Icone="users"
+                            Titre="L'équipe n'est pas encore présentée"
+                            Message="Les membres qui animent la communauté apparaîtront ici avec leur rôle et leurs liens.">
+                    <a class="btn btn--ghost" href="/communaute">
+                        Découvrir la communauté <DnIcon Name="arrow-right" Size="16" />
+                    </a>
+                </EmptyState>
+            }
+            else
+            {
+                <div class="grid gap-2 md:grid-cols-3">
+                    @foreach (var membre in _APropos.Equipe)
+                    {
+                        <article class="card">
+                            <div class="card__media card__media--equipe">
+                                <img src="@membre.ImageUrl" alt="@membre.Nom" loading="lazy"
+                                     style="width: 100%; height: 100%; object-fit: cover;" />
+                            </div>
+                            <div class="card__body">
+                                <h3 class="card__title" style="font-size: var(--text-base);">@membre.Nom</h3>
+                                <p class="card__text">@membre.Role</p>
+                                <p class="card__meta">
+                                    @if (!string.IsNullOrWhiteSpace(membre.LienGithub))
+                                    {
+                                        <a class="equipe__social" href="@membre.LienGithub" target="_blank" rel="noopener" aria-label="GitHub de @membre.Nom">
+                                            <DnIcon Name="github" Size="16" />
+                                        </a>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(membre.LienLinkedin))
+                                    {
+                                        <a class="equipe__social" href="@membre.LienLinkedin" target="_blank" rel="noopener" aria-label="LinkedIn de @membre.Nom">
+                                            <DnIcon Name="linkedin" Size="16" />
+                                        </a>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(membre.LienX))
+                                    {
+                                        <a class="equipe__social" href="@membre.LienX" target="_blank" rel="noopener" aria-label="X de @membre.Nom">
+                                            <DnIcon Name="x" Size="16" />
+                                        </a>
+                                    }
+                                </p>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
         </div>
     </section>
 

@@ -1,0 +1,22 @@
+@* Message affiché quand une liste de contenus ne renvoie rien. *@
+
+<div class="vide">
+    <span class="vide__icone" aria-hidden="true"><DnIcon Name="@Icone" Size="22" /></span>
+    <p class="vide__titre">@Titre</p>
+    @if (!string.IsNullOrWhiteSpace(Message))
+    {
+        <p class="vide__texte">@Message</p>
+    }
+    @ChildContent
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Titre { get; set; } = string.Empty;
+
+    [Parameter] public string? Message { get; set; }
+
+    [Parameter] public string Icone { get; set; } = "search";
+
+    /// <summary>Action proposée sous le message (lien de secours, bouton…).</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

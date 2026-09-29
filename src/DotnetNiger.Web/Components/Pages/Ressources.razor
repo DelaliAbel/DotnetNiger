@@ -10,7 +10,7 @@
     <meta property="og:description" content="Formations et tutoriels (Blazor, ASP.NET Core, MAUI), bibliothèques et outils, articles de blog et guides techniques pour apprendre et pratiquer .NET." />
 </HeadContent>
 
-@if (_Ressources.Length == 0)
+@if (_Ressources is null)
 {
     <div class="wrap" style="padding-block: calc(var(--spacing) * 12);">
         <p class="text-caption" style="color: var(--site-fg-muted);">Chargement…</p>
@@ -87,10 +87,13 @@ else
 
             @if (ResultatsPageCourante.Length == 0)
             {
-                <p class="section__lead" style="margin-top: calc(var(--spacing) * 6);">
-                    Aucune ressource ne correspond à votre recherche. Essayez d'autres mots-clés ou
-                    de changer de catégorie.
-                </p>
+                <EmptyState Icone="search"
+                            Titre="Aucune ressource ne correspond à votre recherche"
+                            Message="Essayez d'autres mots-clés ou élargissez la recherche en réinitialisant le filtre de catégorie.">
+                    <a class="btn btn--ghost" href="/ressources">
+                        Voir toutes les ressources <DnIcon Name="arrow-right" Size="16" />
+                    </a>
+                </EmptyState>
             }
             else
             {
@@ -101,49 +104,10 @@ else
                     }
                 </div>
 
-                <nav class="pagination" aria-label="Pagination des ressources">
-                    @if (PageCourante > 1)
-                    {
-                        <a class="pagination__fleche" href="@UrlPage(PageCourante - 1)" rel="prev">
-                            <DnIcon Name="arrow-left" Size="16" /> Précédent
-                        </a>
-                    }
-                    else
-                    {
-                        <span class="pagination__fleche pagination__fleche--desactivee" aria-disabled="true">
-                            <DnIcon Name="arrow-left" Size="16" /> Précédent
-                        </span>
-                    }
-
-                    <ol class="pagination__pages">
-                        @for (var numero = 1; numero <= NombreDePages; numero++)
-                        {
-                            <li>
-                                @if (numero == PageCourante)
-                                {
-                                    <span class="pagination__lien pagination__lien--active" aria-current="page">@numero</span>
-                                }
-                                else
-                                {
-                                    <a class="pagination__lien" href="@UrlPage(numero)">@numero</a>
-                                }
-                            </li>
-                        }
-                    </ol>
-
-                    @if (PageCourante < NombreDePages)
-                    {
-                        <a class="pagination__fleche" href="@UrlPage(PageCourante + 1)" rel="next">
-                            Suivant <DnIcon Name="arrow-right" Size="16" />
-                        </a>
-                    }
-                    else
-                    {
-                        <span class="pagination__fleche pagination__fleche--desactivee" aria-disabled="true">
-                            Suivant <DnIcon Name="arrow-right" Size="16" />
-                        </span>
-                    }
-                </nav>
+                <Pagination PageCourante="PageCourante"
+                            NombreDePages="NombreDePages"
+                            Libelle="Pagination des ressources"
+                            UrlPage="UrlPage" />
             }
         </div>
     </section>
@@ -189,7 +153,7 @@ else
         ("articles", "Articles de blog et guides"),
     };
 
-    private RessourceVue[] _Ressources = [];
+    private IReadOnlyList<RessourceVue>? _Ressources;
 
     [SupplyParameterFromQuery(Name = "q")]
     public string? _Recherche { get; set; }
@@ -219,6 +183,7 @@ else
     {
         var ressources = await Contenu.ChargerRessourcesAsync();
         _Ressources = ressources.ToArray();
+
         if (_Page is { } pageDemandee && pageDemandee > 0)
         {
             PageCourante = pageDemandee;
@@ -229,7 +194,7 @@ else
 
     private void AppliquerFiltres()
     {
-        IEnumerable<RessourceVue> resultats = _Ressources;
+        IEnumerable<RessourceVue> resultats = _Ressources ?? [];
 
         var categorie = CategorieSelectionnee();
         if (categorie is not null)

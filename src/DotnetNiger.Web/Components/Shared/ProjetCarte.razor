@@ -1,0 +1,32 @@
+@* Carte de présentation d'un projet open source porté par la communauté. *@
+
+<article class="card card--hover">
+    <div class="card__body">
+        <h3 class="card__title"
+            style="display: flex; align-items: center; gap: calc(var(--spacing) * 1); font-size: var(--text-base);">
+            <DnIcon Name="github" Size="18" /> @Projet.Nom
+        </h3>
+        <p class="card__text">@Projet.Description</p>
+        <p class="card__meta">
+            @foreach (var technologie in Projet.Technologies)
+            {
+                <span class="badge badge--outline">@technologie</span>
+            }
+        </p>
+        <p class="card__meta">
+            <span style="display: inline-flex; align-items: center; gap: 4px;">
+                <DnIcon Name="star" Size="14" /> @Projet.Etoiles
+            </span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;">
+                <DnIcon Name="users" Size="14" /> @Projet.Contributeurs contributeurs
+            </span>
+        </p>
+        <a class="link" href="@Projet.Lien" target="_blank" rel="noopener">
+            Voir le dépôt <DnIcon Name="external-link" Size="14" />
+        </a>
+    </div>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public ProjetVue Projet { get; set; } = default!;
+}

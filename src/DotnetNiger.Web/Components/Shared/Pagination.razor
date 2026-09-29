@@ -1,0 +1,62 @@
+@*
+    Pagination aux couleurs du site public. L'URL est fournie par la page
+    appelante : c'est elle qui sait quels filtres reconduire.
+*@
+
+@if (NombreDePages > 1)
+{
+    <nav class="pagination" aria-label="@Libelle">
+        @if (PageCourante > 1)
+        {
+            <a class="pagination__fleche" href="@UrlPage(PageCourante - 1)" rel="prev">
+                <DnIcon Name="arrow-left" Size="16" /> Précédent
+            </a>
+        }
+        else
+        {
+            <span class="pagination__fleche pagination__fleche--desactivee" aria-disabled="true">
+                <DnIcon Name="arrow-left" Size="16" /> Précédent
+            </span>
+        }
+
+        <ol class="pagination__pages">
+            @for (var numero = 1; numero <= NombreDePages; numero++)
+            {
+                <li>
+                    @if (numero == PageCourante)
+                    {
+                        <span class="pagination__lien pagination__lien--active" aria-current="page">@numero</span>
+                    }
+                    else
+                    {
+                        <a class="pagination__lien" href="@UrlPage(numero)">@numero</a>
+                    }
+                </li>
+            }
+        </ol>
+
+        @if (PageCourante < NombreDePages)
+        {
+            <a class="pagination__fleche" href="@UrlPage(PageCourante + 1)" rel="next">
+                Suivant <DnIcon Name="arrow-right" Size="16" />
+            </a>
+        }
+        else
+        {
+            <span class="pagination__fleche pagination__fleche--desactivee" aria-disabled="true">
+                Suivant <DnIcon Name="arrow-right" Size="16" />
+            </span>
+        }
+    </nav>
+}
+
+@code {
+    [Parameter, EditorRequired] public int PageCourante { get; set; } = 1;
+
+    [Parameter, EditorRequired] public int NombreDePages { get; set; } = 1;
+
+    [Parameter] public string Libelle { get; set; } = "Pagination";
+
+    /// <summary>Construit le lien d'une page à partir de son numéro.</summary>
+    [Parameter, EditorRequired] public Func<int, string> UrlPage { get; set; } = default!;
+}

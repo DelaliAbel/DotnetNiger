@@ -168,3 +168,21 @@ public sealed class AccueilVue
 
     public required int NombreEvenements { get; init; }
 }
+
+/// <summary>Données d'affichage de la page Communauté.</summary>
+public sealed class CommunauteVue
+{
+    public required IReadOnlyList<EvenementVue> Evenements { get; init; } = Array.Empty<EvenementVue>();
+
+    public required IReadOnlyList<ProjetVue> Projets { get; init; } = Array.Empty<ProjetVue>();
+
+    public required IReadOnlyList<CanalVue> Canaux { get; init; } = Array.Empty<CanalVue>();
+
+    public required int NombreMembres { get; init; }
+
+    public required int NombreProjets { get; init; }
+
+    public required int NombreEvenements { get; init; }
+
+    public required int NombreCanaux { get; init; }
+}

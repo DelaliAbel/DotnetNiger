@@ -147,28 +147,41 @@ else
                 </a>
             </div>
 
-            <div class="grid gap-2 md:grid-cols-3">
-                @foreach (var evenement in _Accueil.EvenementsAVenir)
-                {
-                    <article class="card card--hover">
-                        <div class="card__media">
-                            <img src="@evenement.ImageUrl" alt="@evenement.Titre" loading="lazy"
-                                 style="width: 100%; height: 100%; object-fit: cover;" />
-                        </div>
-                        <div class="card__body">
-                            <p class="card__meta">
-                                <span class="badge badge--@CouleurType(evenement.Type)">@evenement.Type</span>
-                                <span style="display: inline-flex; align-items: center; gap: 4px;">
-                                    <DnIcon Name="map-pin" Size="14" /> @evenement.Lieu
-                                </span>
-                            </p>
-                            <h3 class="card__title">@evenement.Titre</h3>
-                            <p class="card__text">@evenement.Description</p>
-                            <a class="link" href="/evenements">S'inscrire à l'événement <DnIcon Name="arrow-right" Size="14" /></a>
-                        </div>
-                    </article>
-                }
-            </div>
+            @if (_Accueil.EvenementsAVenir.Count == 0)
+            {
+                <EmptyState Icone="calendar"
+                            Titre="Aucun événement programmé"
+                            Message="La prochaine date de meetup sera annoncée ici et sur nos réseaux sociaux.">
+                    <a class="btn btn--ghost" href="/evenements">
+                        Tous les événements <DnIcon Name="arrow-right" Size="16" />
+                    </a>
+                </EmptyState>
+            }
+            else
+            {
+                <div class="grid gap-2 md:grid-cols-3">
+                    @foreach (var evenement in _Accueil.EvenementsAVenir)
+                    {
+                        <article class="card card--hover">
+                            <div class="card__media">
+                                <img src="@evenement.ImageUrl" alt="@evenement.Titre" loading="lazy"
+                                     style="width: 100%; height: 100%; object-fit: cover;" />
+                            </div>
+                            <div class="card__body">
+                                <p class="card__meta">
+                                    <span class="badge badge--@CouleurType(evenement.Type)">@evenement.Type</span>
+                                    <span style="display: inline-flex; align-items: center; gap: 4px;">
+                                        <DnIcon Name="map-pin" Size="14" /> @evenement.Lieu
+                                    </span>
+                                </p>
+                                <h3 class="card__title">@evenement.Titre</h3>
+                                <p class="card__text">@evenement.Description</p>
+                                <a class="link" href="/evenements">S'inscrire à l'événement <DnIcon Name="arrow-right" Size="14" /></a>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
         </div>
     </section>
 
@@ -189,24 +202,37 @@ else
                 </a>
             </div>
 
-            <div class="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-                @foreach (var ressource in _Accueil.RessourcesPopulaires)
-                {
-                    <article class="card card--hover">
-                        <div class="card__body">
-                            <span class="badge badge--ink">@ressource.Categorie</span>
-                            <h3 class="card__title">@ressource.Titre</h3>
-                            <p class="card__text">@ressource.Description</p>
-                            <p class="card__meta">Proposée par @ressource.Auteur</p>
-                            <a class="link" href="@ressource.Lien"
-                               target="@(ressource.Externe ? "_blank" : null)" rel="@(ressource.Externe ? "noopener" : null)">
-                                @(ressource.Externe ? "Ouvrir la ressource" : "Lire la ressource")
-                                <DnIcon Name="@(ressource.Externe ? "external-link" : "arrow-right")" Size="14" />
-                            </a>
-                        </div>
-                    </article>
-                }
-            </div>
+            @if (_Accueil.RessourcesPopulaires.Count == 0)
+            {
+                <EmptyState Icone="book-open"
+                            Titre="Aucune ressource publiée"
+                            Message="La bibliothèque de la communauté se remplit : revenez vite ou proposez votre première ressource.">
+                    <a class="btn btn--ghost" href="/ressources">
+                        Toutes les ressources <DnIcon Name="arrow-right" Size="16" />
+                    </a>
+                </EmptyState>
+            }
+            else
+            {
+                <div class="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                    @foreach (var ressource in _Accueil.RessourcesPopulaires)
+                    {
+                        <article class="card card--hover">
+                            <div class="card__body">
+                                <span class="badge badge--ink">@ressource.Categorie</span>
+                                <h3 class="card__title">@ressource.Titre</h3>
+                                <p class="card__text">@ressource.Description</p>
+                                <p class="card__meta">Proposée par @ressource.Auteur</p>
+                                <a class="link" href="@ressource.Lien"
+                                   target="@(ressource.Externe ? "_blank" : null)" rel="@(ressource.Externe ? "noopener" : null)">
+                                    @(ressource.Externe ? "Ouvrir la ressource" : "Lire la ressource")
+                                    <DnIcon Name="@(ressource.Externe ? "external-link" : "arrow-right")" Size="14" />
+                                </a>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
         </div>
     </section>
 
@@ -226,27 +252,40 @@ else
                 </a>
             </div>
 
-            <div class="grid gap-2 md:grid-cols-2">
-                @foreach (var article in _Accueil.ArticlesRecents)
-                {
-                    <article class="card card--hover card--actus">
-                        <div class="card__body card--actus__body">
-                            <span class="badge badge--@CouleurCategorie(article.Categorie)">@article.Categorie</span>
-                            <div style="display: grid; gap: var(--spacing);">
-                                <h3 class="card__title" style="font-size: var(--text-base);">
-                                    <a href="/blog/@article.Slug" class="link">@article.Titre</a>
-                                </h3>
-                                <p class="card__text">@article.Extrait</p>
-                                <p class="card__meta">
-                                    <DnIcon Name="users" Size="14" /> @article.Auteur
-                                    <span aria-hidden="true">·</span>
-                                    @article.LectureMinutes min de lecture
-                                </p>
+            @if (_Accueil.ArticlesRecents.Count == 0)
+            {
+                <EmptyState Icone="sparkles"
+                            Titre="Aucun article publié"
+                            Message="Le blog de la communauté n'a pas encore d'article : les membres peuvent proposer le premier.">
+                    <a class="btn btn--ghost" href="/blog">
+                        Tout le blog <DnIcon Name="arrow-right" Size="16" />
+                    </a>
+                </EmptyState>
+            }
+            else
+            {
+                <div class="grid gap-2 md:grid-cols-2">
+                    @foreach (var article in _Accueil.ArticlesRecents)
+                    {
+                        <article class="card card--hover card--actus">
+                            <div class="card__body card--actus__body">
+                                <span class="badge badge--@CouleurCategorie(article.Categorie)">@article.Categorie</span>
+                                <div style="display: grid; gap: var(--spacing);">
+                                    <h3 class="card__title" style="font-size: var(--text-base);">
+                                        <a href="/blog/@article.Slug" class="link">@article.Titre</a>
+                                    </h3>
+                                    <p class="card__text">@article.Extrait</p>
+                                    <p class="card__meta">
+                                        <DnIcon Name="users" Size="14" /> @article.Auteur
+                                        <span aria-hidden="true">·</span>
+                                        @article.LectureMinutes min de lecture
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    </article>
-                }
-            </div>
+                        </article>
+                    }
+                </div>
+            }
         </div>
     </section>
 
