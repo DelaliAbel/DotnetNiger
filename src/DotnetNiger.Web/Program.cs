@@ -218,6 +218,8 @@ app.MapAccountEndpoints();
 app.MapAccountVerificationEndpoints();
 app.MapPasswordResetEndpoints();
 
+app.MapNewsletterEndpoints();
+
 // ---------- Back-office ----------
 app.MapAdministrationEndpoints();
 

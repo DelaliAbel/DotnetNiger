@@ -3,7 +3,12 @@
 @* Carte de présentation d'un événement, utilisée par l'accueil, la communauté et la page événements. *@
 
 <article class="card card--hover">
-    <DnCardMedia ImageUrl="@Evenement.ImageUrl" Alt="" />
+    @* « Terminé » est posé sur l'image : dans la ligne de métadonnées, il passait
+       inaperçu à côté de la date, et c'est pourtant l'information qui décide si
+       l'on peut encore venir. *@
+    <DnCardMedia ImageUrl="@Evenement.ImageUrl" Alt=""
+                Etiquette="@(EstPasse ? "Terminé" : null)"
+                EtiquetteVariante="ink" />
     <div class="card__body">
         <p class="card__meta">
             <span class="badge badge--@CouleurType">@Evenement.Type</span>
@@ -20,10 +25,6 @@
             <time datetime="@Evenement.DateDebut.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)">
                 @DateLisible
             </time>
-            @if (EstPasse)
-            {
-                <span class="badge badge--ink">Terminé</span>
-            }
         </p>
     </div>
 </article>
@@ -34,12 +35,12 @@
     [Parameter, EditorRequired] public EvenementVue Evenement { get; set; } = default!;
 
     /// <summary>
-    /// Adresse de la fiche. Par défaut l'événement renvoie vers la liste, qui est le
-    /// seul point d'inscription tant qu'aucun formulaire dédié n'existe.
+    /// Adresse de la fiche. Par défaut l'événement renvoie vers sa propre page : depuis
+    /// l'accueil, la communauté et l'agenda, c'est le même lien.
     /// </summary>
     [Parameter] public string? Url { get; set; }
 
-    private string Lien => Url ?? "/evenements";
+    private string Lien => Url ?? $"/evenements/{Evenement.Slug}";
 
     /// <summary>Un événement dont la date de début est dépassée est conservé, mais signalé comme terminé.</summary>
     private bool EstPasse => Evenement.DateDebut < DateOnly.FromDateTime(DateTime.Today);
@@ -48,12 +49,13 @@
         ? $"du {Evenement.DateDebut.ToString("d MMMM", Culture)} au {fin.ToString("d MMMM yyyy", Culture)}"
         : Evenement.DateDebut.ToString("d MMMM yyyy", Culture);
 
-    private string CouleurType => Evenement.Type switch
-    {
-        "Meetup" => "violet",
-        "Hackathon" => "orange",
-        "Conférence" => "orange",
-        "Atelier" => "vert",
-        _ => "violet",
-    };
+    /// <summary>
+    /// Couleur du badge de type, prise dans le référentiel. Un switch local
+    /// retombait sur une couleur par défaut pour les types ajoutés récemment.
+    /// </summary>
+    private string CouleurType =>
+        Referentiel.TypeEvenementParSlug(TypeSlug)?.Couleur ?? "violet";
+
+    private string? TypeSlug => Referentiel.TypesEvenement
+        .FirstOrDefault(t => t.Nom == Evenement.Type)?.Slug;
 }

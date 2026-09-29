@@ -45,7 +45,15 @@
             <div class="site-header__actions">
                 <!-- Compte : visible dans la barre d'en-tête sur ordinateur -->
                 <a class="btn btn--secondary site-header__connexion" href="/compte/connexion">Se connecter</a>
-                <a class="btn btn--primary site-header__cta" href="/compte/inscription">Rejoindre la communauté</a>
+                @* Deux libellés plutôt qu'un seul raccourci en CSS : entre 64 et 90
+                   rem, la barre complète dépasse la largeur de la fenêtre. Le nom
+                   accessible reste fixe, sinon le lien n'en aurait plus dès que le
+                   libellé long est masqué. *@
+                <a class="btn btn--primary site-header__cta" href="/compte/inscription"
+                   aria-label="Rejoindre la communauté">
+                    <span class="site-header__cta-long">Rejoindre la communauté</span>
+                    <span class="site-header__cta-court">Rejoindre</span>
+                </a>
 
                 <button class="theme-toggle" type="button" data-theme-toggle aria-label="Activer le mode sombre" aria-pressed="false"
                         onclick="DnTheme.toggle(); return false;">

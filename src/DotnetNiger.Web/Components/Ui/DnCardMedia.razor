@@ -11,6 +11,11 @@
     {
         <img src="@ImageUrl" alt="@Alt" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;" />
     }
+
+    @if (!string.IsNullOrWhiteSpace(Etiquette))
+    {
+        <span class="card__media__etiquette @($"badge--{EtiquetteVariante}")">@Etiquette</span>
+    }
 </div>
 
 @code {
@@ -19,4 +24,13 @@
 
     /// <summary>Description de l'image pour l'accessibilité.</summary>
     [Parameter] public string Alt { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Texte posé sur l'image, pour un statut que la carte doit signaler d'un coup
+    /// d'œil (« Terminé »). Vide — le cas par défaut — si l'image ne porte rien.
+    /// </summary>
+    [Parameter] public string? Etiquette { get; set; }
+
+    /// <summary>Variante de badge de l'étiquette, alignée sur les couleurs du thème.</summary>
+    [Parameter] public string EtiquetteVariante { get; set; } = "ink";
 }

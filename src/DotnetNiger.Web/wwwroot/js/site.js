@@ -111,10 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function armeNavigation() {
     const nav = document.getElementById("site-nav");
     if (!nav) return;
-    if (window.DnNav.estTiroir()) {
-        nav.setAttribute("aria-hidden", "true");
-        nav.setAttribute("inert", "");
-    }
+    synchroniseNavigation(nav);
     nav.querySelectorAll("a").forEach((lien) =>
         lien.addEventListener("click", () => window.DnNav.ferme())
     );
@@ -122,3 +119,44 @@ function armeNavigation() {
     const fond = document.querySelector("[data-nav-backdrop]");
     fond?.addEventListener("click", () => window.DnNav.ferme());
 }
+
+// Aligne l'état du tiroir sur la largeur réelle de la fenêtre.
+//
+// `inert` rend les liens non cliquables, non focusables et invisibles pour les
+// technologies d'assistance. Posé au chargement, il doit être retiré dès que la
+// fenêtre s'élargit au-dessus du point de bascule : sinon la barre horizontale
+// s'affiche bien mais ses liens restent inertes, et le redimensionnement de la
+// fenêtre semble casser la navigation. Blazor ne rejouant ni DOMContentLoaded ni
+// enhancedload sur un simple redimensionnement, l'écouteur est posé une seule fois
+// et se sert des deux lignes ci-dessous pour se resynchroniser.
+function synchroniseNavigation(nav) {
+    if (window.DnNav.estTiroir()) {
+        if (!nav.classList.contains("is-open")) {
+            nav.setAttribute("aria-hidden", "true");
+            nav.setAttribute("inert", "");
+        }
+    } else {
+        // Au-dessus du point de bascule la navigation est affichée en ligne : plus
+        // rien ne doit la bloquer. On referme aussi un tiroir resté ouvert, pour ne
+        // pas laisser le corps verrouillé par une classe `nav-ouverte`.
+        nav.classList.remove("is-open");
+        nav.removeAttribute("inert");
+        nav.removeAttribute("aria-hidden");
+        const bouton = document.querySelector(".site-nav__toggle");
+        if (bouton) bouton.setAttribute("aria-expanded", "false");
+        document.querySelector("[data-nav-backdrop]")?.classList.remove("is-visible");
+        window.DnNav.verrouilleCorps(false);
+    }
+}
+
+let minuteurRedimensionnement = null;
+window.addEventListener("resize", () => {
+    // Le rafraichissement est regroupé : un redimensionnement à la souris génère
+    // des centaines d'événements, et la resynchronisation ne sert qu'une fois
+    // l'opération terminée.
+    clearTimeout(minuteurRedimensionnement);
+    minuteurRedimensionnement = setTimeout(() => {
+        const nav = document.getElementById("site-nav");
+        if (nav) synchroniseNavigation(nav);
+    }, 150);
+});

@@ -11,6 +11,13 @@ public sealed class ArticleVue
 
     public required string Auteur { get; init; }
 
+    /// <summary>
+    /// Titre professionnel de l'auteur (« Développeur backend », « Formatrice C# »).
+    /// Facultatif : certains articles sont publiés sous une signature collective, et
+    /// afficher une mention générique à leur place n'apporterait rien.
+    /// </summary>
+    public string? FonctionAuteur { get; init; }
+
     public required int LectureMinutes { get; init; }
 
     public required string Slug { get; init; }
@@ -32,6 +39,9 @@ public sealed class ArticleVue
 public sealed class EvenementVue
 {
     public required string Titre { get; init; }
+
+    /// <summary>Identifiant d'URL de la fiche, nécessaire à la route /evenements/{slug}.</summary>
+    public required string Slug { get; init; }
 
     public required string Type { get; init; }
 

@@ -367,6 +367,9 @@
   .card__media {
     aspect-ratio: 16 / 9;
     overflow: hidden;
+    /* Référence de l'étiquette posée sur l'image : sans elle, elle se
+       positionnerait par rapport à la carte entière. */
+    position: relative;
     background: linear-gradient(150deg, var(--color-violet-100), var(--color-violet-200));
   }
 
@@ -389,6 +392,19 @@
     background: rgb(255 255 255 / 0.12);
     border: 1px solid rgb(255 255 255 / 0.22);
     color: rgb(255 255 255 / 0.9);
+  }
+
+  /* Étiquette posée sur l'image (un rendez-vous terminé, par exemple). Elle porte
+     un fond sombre translucide : sur une photo, un badge clair se perdrait, alors
+     que l'information doit sauter aux yeux sans avoir à lire la date. */
+  .card__media__etiquette {
+    position: absolute;
+    top: calc(var(--spacing) * 1.5);
+    right: calc(var(--spacing) * 1.5);
+    background: rgb(15 15 25 / 0.78);
+    color: #fff;
+    border: 1px solid rgb(255 255 255 / 0.25);
+    backdrop-filter: blur(4px);
   }
 
   .card__body {
@@ -867,7 +883,10 @@
     align-items: center;
     justify-content: space-between;
     gap: calc(var(--spacing) * 2.5);
-    height: calc(var(--spacing) * 8);
+    /* 72 px plutôt que 64 px : des cibles de toucher confortables. La barre est
+       collante, elle occupe donc de la hauteur d'écran en permanence, et le gain
+       doit rester discret. */
+    height: calc(var(--spacing) * 9);
   }
 
   .site-header__actions {
@@ -1120,13 +1139,54 @@
     }
   }
 
-  /* Ordinateur compact (1024 – 1279 px) : la connexion passe dans le tiroir. */
+  /* Ordinateur compact (1024 – 1279 px) : la connexion passe dans le tiroir.
+     Au-delà de 1280px le tiroir n'existe plus et le bouton de connexion doit
+     rester visible, sinon la connexion devient inaccessible depuis l'en-tête :
+     c'est le libellé raccourci du bouton d'inscription qui fait la place. */
   @media (min-width: 64rem) and (max-width: 79.999rem) {
     .site-header__connexion {
       display: none;
     }
   }
 
+  /* Entre 64rem et 90rem, la barre complète (marque, huit liens, connexion,
+     inscription et bascule de thème) dépasse la largeur de la fenêtre et
+     provoke un défilement horizontal : le bouton de thème sortait de l'écran.
+     Le libellé long du bouton d'inscription devient « Rejoindre » et la
+     navigation se resserre. Au-delà de 90rem, tout tient de nouveau en
+     largeur et les deux libellés revient. */
+  .site-header__cta-court {
+    display: none;
+  }
+
+  @media (min-width: 64rem) and (max-width: 89.999rem) {
+    .site-header__cta-long {
+      display: none;
+    }
+
+    .site-header__cta-court {
+      display: inline;
+    }
+
+    .site-nav {
+      gap: 0;
+    }
+
+    .site-nav__link {
+      font-size: 0.75rem;
+      padding: calc(var(--spacing) * 0.5) calc(var(--spacing) * 0.75);
+    }
+  }
+
+  @media (min-width: 90rem) {
+    .site-header__cta-long {
+      display: inline;
+    }
+
+    .site-header__cta-court {
+      display: none;
+    }
+  }
   /* Ordinateur large (≥ 1280 px) : plus d'air et connexion visible. */
   @media (min-width: 80rem) {
     .site-nav {
@@ -2047,9 +2107,9 @@
      Ossature commune aux pages de connexion, d'inscription, de mot de
      passe oublié et de réinitialisation. La première version plaçait un
      panneau de présentation à gauche du formulaire : il disparaissait sous
-     64rem, ce qui décalait le formulaire sur mobile, et il crowdingait
-     l'écran sur grand écran. Un formulaire centré se lit mieux dans les
-     deux cas, et il reste le seul contenu utile de ces pages. */
+     64rem, ce qui décalait le formulaire sur mobile, et il prenait la
+     moitié de l'écran sur grand écran. Un formulaire centré se lit mieux
+     dans les deux cas, et il reste le seul contenu utile de ces pages. */
   .compte {
     display: grid;
     align-content: center;
@@ -2057,12 +2117,15 @@
     /* Le centrage vertical a besoin d'une hauteur de référence : sans elle,
        `align-content` n'a rien à centrer et le formulaire se colle en haut. */
     min-height: 60vh;
-    padding: calc(var(--spacing) * 6) calc(var(--spacing) * 4);
+    /* Même échelle de gouttière que `.wrap` : 16px au plus étroit, ce qui
+       laisse au formulaire la largeur de l'écran sur mobile, et 48px à
+       partir de 48rem. */
+    padding: calc(var(--spacing) * 6) clamp(16px, 5vw, calc(var(--spacing) * 6));
   }
 
   .compte__carte {
     width: 100%;
-    max-width: 26rem;
+    max-width: 28rem;
     gap: calc(var(--spacing) * 3.5);
     display: grid;
     background: var(--site-surface);
@@ -2074,7 +2137,7 @@
 
   @media (min-width: 48rem) {
     .compte {
-      padding: calc(var(--spacing) * 8) calc(var(--spacing) * 6);
+      padding-block: calc(var(--spacing) * 8);
     }
 
     .compte__carte {
@@ -2144,6 +2207,85 @@
     color: var(--site-fg-muted);
     font-size: var(--text-caption);
     display: grid;
+  }
+
+  /* --- Lettre d'information --------------------------------------------
+     Bloc du pied de page, donc présent sur toutes les pages. Il occupe toute la
+     largeur de la grille : le formulaire aligné sur la droite aurait laissé un
+     champ de saisie étroit sous 768px, là où l'on est censé pouvoir s'abonner. */
+  .infolettre {
+    display: grid;
+    gap: calc(var(--spacing) * 3);
+    align-items: center;
+    margin-top: calc(var(--spacing) * 6);
+    padding: calc(var(--spacing) * 4);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-lg);
+    background: var(--site-surface-strong);
+  }
+
+  @media (min-width: 64rem) {
+    .infolettre {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: calc(var(--spacing) * 6);
+      padding: calc(var(--spacing) * 5);
+    }
+  }
+
+  .infolettre__titre {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 1.5);
+    font-size: var(--text-base);
+    font-weight: 700;
+    color: var(--site-fg);
+  }
+
+  .infolettre__lead {
+    color: var(--site-fg-muted);
+    font-size: var(--text-sm);
+    line-height: 1.6;
+    margin-top: var(--spacing);
+    max-width: 52ch;
+  }
+
+  .infolettre__form {
+    display: grid;
+    gap: calc(var(--spacing) * 2);
+  }
+
+  .infolettre__champs {
+    display: grid;
+    gap: calc(var(--spacing) * 2);
+  }
+
+  @media (min-width: 30rem) {
+    .infolettre__champs {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+    }
+  }
+
+  .infolettre__note {
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+    line-height: 1.5;
+  }
+
+  /* --- Fiche article et fiche événement ---
+     Le retour à la liste n'apparaît qu'en fin de lecture, là où l'on le cherche une
+     fois le texte terminé. Le mettre aussi en tête le rendait illisible sur les deux
+     pages : à l'arrivée on n'en a pas besoin, et sur un article long il finit
+     hors de l'écran au moment précis où l'on le cherche. */
+  .article__fin {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(var(--spacing) * 2);
+    margin-top: calc(var(--spacing) * 5);
+    padding-top: calc(var(--spacing) * 3);
+    border-top: 1px solid var(--site-border);
   }
 
   /* --- Page introuvable -----------------------------------------------

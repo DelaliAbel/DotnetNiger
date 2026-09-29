@@ -49,9 +49,9 @@ else
                     <span class="select">
                         <select id="type-evenement" name="type">
                             <option value="" selected="@(string.IsNullOrWhiteSpace(_Type))">Tous les types</option>
-                            @foreach (var (cle, nom) in Types)
+                            @foreach (var type in Referentiel.TypesEvenement)
                             {
-                                <option value="@cle" selected="@(cle == _Type)">@nom</option>
+                                <option value="@type.Slug" selected="@(type.Slug == _Type)">@type.Nom</option>
                             }
                         </select>
                         <DnIcon Name="chevron-down" Size="16" Class="select__chevron" />
@@ -191,22 +191,15 @@ else
     /// </summary>
     private const int EvenementsParPage = 3;
 
-    private static readonly (string Cle, string Nom)[] Types =
-    [
-        ("meetup", "Meetup"),
-        ("conference", "Conférence"),
-        ("atelier", "Atelier"),
-        ("hackathon", "Hackathon"),
-    ];
-
     /// <summary>
     /// Ordres de tri. Sur un agenda, la date compte plus que tout : par défaut les
     /// événements à venir les plus proches ouvrent la liste.
     /// </summary>
     private static readonly (string Cle, string Libelle)[] Tris =
     [
+        ("recent", "Plus récent d'abord"),
         ("proche", "Date la plus proche"),
-        ("loin", "Date la plus lointaine"),
+        ("ancien", "Plus ancien d'abord"),
         ("az", "Titre A → Z"),
         ("za", "Titre Z → A"),
     ];
@@ -289,12 +282,16 @@ else
                 || e.Lieu.Contains(recherche, StringComparison.OrdinalIgnoreCase));
         }
 
+        // Par défaut, le plus récent d'abord : la liste montre ce qui vient d'être
+        // annoncé, pas le rendez-vous le plus imminent. « Date la plus proche » reste
+        // proposé pour qui veut organiser son agenda.
         resultats = _Tri switch
         {
-            "loin" => resultats.OrderByDescending(e => e.DateDebut),
+            "proche" => resultats.OrderBy(e => e.DateDebut),
+            "ancien" => resultats.OrderBy(e => e.DateDebut),
             "az" => resultats.OrderBy(e => e.Titre, StringComparer.OrdinalIgnoreCase),
             "za" => resultats.OrderByDescending(e => e.Titre, StringComparer.OrdinalIgnoreCase),
-            _ => resultats.OrderBy(e => e.DateDebut),
+            _ => resultats.OrderByDescending(e => e.DateDebut),
         };
 
         ResultatsFiltres = [.. resultats];
@@ -311,10 +308,10 @@ else
         !string.IsNullOrWhiteSpace(_Recherche)
         || !string.IsNullOrWhiteSpace(_Type)
         || _Periode is "tous" or "passes"
-        || (_Tri is { Length: > 0 } and not "proche");
+        || (_Tri is { Length: > 0 } and not "recent");
 
     private string? TypeSelectionne() =>
-        Types.FirstOrDefault(t => t.Cle == _Type).Nom;
+        Referentiel.TypeEvenementParSlug(_Type)?.Nom;
 
     /// <summary>Construit l'URL d'une page en conservant tous les critères en cours.</summary>
     private string UrlPage(int page)
@@ -335,7 +332,7 @@ else
             paramètres.Add($"periode={Uri.EscapeDataString(_Periode)}");
         }
 
-        if (_Tri is { Length: > 0 } and not "proche")
+        if (_Tri is { Length: > 0 } and not "recent")
         {
             paramètres.Add($"tri={Uri.EscapeDataString(_Tri)}");
         }

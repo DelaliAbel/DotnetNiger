@@ -14,7 +14,7 @@
                             Titre="Cet article n'existe pas"
                             Message="Le lien est peut-être ancien, ou l'article a été retiré. Le blog liste tous les articles publiés.">
                     <a class="btn btn--ghost" href="/blog">
-                        Retour au blog <DnIcon Name="arrow-right" Size="16" />
+                        <DnIcon Name="arrow-left" Size="16" /> Retour au blog
                     </a>
                 </EmptyState>
             </div>
@@ -42,17 +42,21 @@ else
             <p class="hero__eyebrow">
                 <a class="link" href="/blog">Blog</a>
                 <span aria-hidden="true">·</span>
-                @_Article.Categorie
-            </p>
-            <h1 class="hero__title" style="margin-top: var(--spacing);">@_Article.Titre</h1>
+                <a class="link" href="@UrlRubrique">@_Article.Categorie</a>
+            </p>            <h1 class="hero__title" style="margin-top: var(--spacing);">@_Article.Titre</h1>
             <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
                 <time datetime="@_Article.DatePublication.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)">
                     @_Article.DatePublication.ToString("d MMMM yyyy", Culture)
                 </time>
                 <span aria-hidden="true">·</span>
-                @_Article.Auteur
+                <span>@_Article.Auteur</span>
+                @if (!string.IsNullOrWhiteSpace(_Article.FonctionAuteur))
+                {
+                    <span aria-hidden="true">·</span>
+                    <span>@_Article.FonctionAuteur</span>
+                }
                 <span aria-hidden="true">·</span>
-                @_Article.LectureMinutes min de lecture
+                <span>@_Article.LectureMinutes min de lecture</span>
             </p>
         </div>
     </section>
@@ -74,26 +78,61 @@ else
                             <p class="card__text">@paragraphe</p>
                         }
                     </div>
+
+                    <!-- Retour au blog en fin de lecture, là où l'on cherche après avoir terminé. -->
+                    <div class="article__fin">
+                        <a class="btn btn--ghost" href="/blog">
+                            <DnIcon Name="arrow-left" Size="16" /> Retour au blog
+                        </a>
+                        <a class="btn btn--primary" href="@UrlRubrique">
+                            Plus d'articles en @_Article.Categorie
+                            <DnIcon Name="arrow-right" Size="16" />
+                        </a>
+                    </div>
                 </div>
 
-                <aside class="bande" aria-label="À propos de l'article">
+                <aside class="bande" aria-label="À propos de l'auteur">
                     <p class="eyebrow" style="color: var(--color-vert-300);">Rédigé par</p>
                     <p class="bande__title" style="margin-top: var(--spacing);">@_Article.Auteur</p>
+                    @if (!string.IsNullOrWhiteSpace(_Article.FonctionAuteur))
+                    {
+                        <p class="bande__lead">@_Article.FonctionAuteur</p>
+                    }
                     <p class="bande__lead">
-                        Membre de la communauté DotnetNiger. Article publié le
-                        @_Article.DatePublication.ToString("d MMMM yyyy", Culture).
+                        Article publié le @_Article.DatePublication.ToString("d MMMM yyyy", Culture).
                     </p>
-                    <a class="btn btn--white" href="/blog">
-                        Tous les articles <DnIcon Name="arrow-right" Size="16" />
-                    </a>
                 </aside>
             </div>
         </div>
     </section>
+
+    <!-- 3. Articles suggérés -->
+    @if (Suggestions.Length > 0)
+    {
+        <section class="section section--alt" aria-labelledby="suggestions-titre">
+            <div class="wrap">
+                <div class="section__head">
+                    <p class="eyebrow">À lire aussi</p>
+                    <h2 id="suggestions-titre" class="section__title">Suggestions</h2>
+                    <p class="section__lead">D'autres articles de la communauté, sur des sujets voisins.</p>
+                </div>
+
+                <div class="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                    @foreach (var suggestion in Suggestions)
+                    {
+                        <ArticleCarte Article="suggestion" />
+                    }
+                </div>
+            </div>
+        </section>
+    }
 }
 
 @code {
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
+
+    /// <summary>Nombre d'articles proposés en fin de lecture.</summary>
+    private const int NombreSuggestions = 3;
 
     [Parameter] public string? Slug { get; set; }
 
@@ -101,17 +140,30 @@ else
 
     private bool _Introuvable;
 
+    private ArticleVue[] Suggestions { get; set; } = [];
+
     private string[] Paragraphes => _Article is null
         ? []
         : _Article.Contenu.Split("\n\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    /// <summary>
+    /// Filtre la liste sur la rubrique de l'article. Le slug vient du référentiel :
+    /// le reconstruire depuis le libellé produisait «nouveautes-de-.net», que le
+    /// filtre de la page blog ne reconnaît pas.
+    /// </summary>
+    private string UrlRubrique => Referentiel.RubriqueArticleParNom(_Article?.Categorie) is { Slug: var slug }
+        ? $"/blog?categorie={Uri.EscapeDataString(slug)}"
+        : "/blog";
 
     protected override async Task OnParametersSetAsync()
     {
         if (!string.IsNullOrWhiteSpace(Slug))
         {
             var articles = await Contenu.ChargerArticlesAsync();
-            _Article = articles.FirstOrDefault(a => string.Equals(a.Slug, Slug, StringComparison.Ordinal));
-            _Introuvable = _Article is null;
+            var trouve = articles.FirstOrDefault(a => string.Equals(a.Slug, Slug, StringComparison.Ordinal));
+            _Article = trouve;
+            _Introuvable = trouve is null;
+            Suggestions = trouve is null ? [] : ChoisirSuggestions(articles, trouve);
 
             return;
         }
@@ -120,5 +172,27 @@ else
         // blog plutôt que de laisser une page vide.
         _Article = null;
         _Introuvable = true;
+        Suggestions = [];
+    }
+
+    /// <summary>
+    /// Articles de la même rubrique en priorité, complétés par les plus récents des autres
+    /// rubriques. On ne propose que des articles parus, jamais l'article lui-même.
+    /// </summary>
+    private static ArticleVue[] ChoisirSuggestions(IReadOnlyList<ArticleVue> articles, ArticleVue article)
+    {
+        var autres = articles
+            .Where(a => !string.Equals(a.Slug, article.Slug, StringComparison.Ordinal))
+            .ToArray();
+
+        var memeRubrique = autres
+            .Where(a => a.Categorie == article.Categorie)
+            .OrderByDescending(a => a.DatePublication);
+
+        var recents = autres
+            .Where(a => a.Categorie != article.Categorie)
+            .OrderByDescending(a => a.DatePublication);
+
+        return [.. memeRubrique.Concat(recents).Take(NombreSuggestions)];
     }
 }

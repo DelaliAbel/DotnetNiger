@@ -14,6 +14,7 @@ public sealed class PlaceholderSiteContentService : ISiteContentService
             Categorie = "Nouveautés de .NET",
             Extrait = "Performance, expérience d'installation simplifiée et nouveautés d'ASP.NET Core : tour d'horizon de la dernière version majeure de la plateforme.",
             Auteur = "Salifou Maiga",
+            FonctionAuteur = "Lead développeur",
             LectureMinutes = 8,
             Slug = "dotnet-10-disponible",
             Contenu = @"Trois évolutions méritent une relecture du code avant la prochaine mise en production.
@@ -30,6 +31,7 @@ Commencez par mettre à jour les paquets sur la version que vous utilisez déjà
             Categorie = "Interviews",
             Extrait = "D'une première app météo à une application de suivi de récoltes, elle raconte comment .NET MAUI l'aider à toucher Android et iOS avec une seule base de code.",
             Auteur = "Abdoulaye Ibrahim",
+            FonctionAuteur = "Président de la communauté",
             LectureMinutes = 12,
             Slug = "interview-aicha-ousmane-maui",
             Contenu = @"« Je voulais une application que ma mère puisse installer sans aide. »
@@ -45,6 +47,7 @@ Elle insiste sur un point souvent négligé. Une application de terrain se conne
             Categorie = "Projets locaux",
             Extrait = "La boîte à outils de la communauté vient de franchir un cap : cent contributeurs et plus de trois cents corrections acceptées depuis le lancement.",
             Auteur = "Issoufou Hamadou",
+            FonctionAuteur = "Développeur backend",
             LectureMinutes = 6,
             Slug = "toolbox-centieme-contributeur",
             Contenu = @"DotnetNiger.Toolbox a franchi le cap des cent contributeurs.
@@ -58,9 +61,10 @@ L'équipe en tire une leçon : un projet ouvert ne démarre pas avec du code, ma
         new ArticleVue
         {
             Titre = "Blazor en production : le retour d'expérience du portail de la communauté",
-            Categorie = "Projets locaux",
+            Categorie = "Blazor",
             Extrait = "Architecture, rendu serveur, déploiement : comment le site DotnetNiger lui-même est construit avec Blazor et ce que nous en avons appris.",
             Auteur = "Moussa Djibrilla",
+            FonctionAuteur = "Trésorier — partenariats",
             LectureMinutes = 15,
             Slug = "blazor-en-production",
             Contenu = @"Le portail que vous consultez est écrit avec Blazor et fonctionne en rendu serveur.
@@ -73,9 +77,10 @@ Le second enseignement concerne les erreurs. Dans un composant interactif, une e
         new ArticleVue
         {
             Titre = "Bien démarrer avec ASP.NET Core : votre premier point de terminaison",
-            Categorie = "Nouveautés de .NET",
+            Categorie = "ASP.NET Core",
             Extrait = "Minimal APIs, model binding, validation : un pas à pas pensé pour les étudiants et les développeurs qui arrivent à .NET par le web.",
             Auteur = "Fatima Harouna",
+            FonctionAuteur = "Communication et communauté",
             LectureMinutes = 10,
             Slug = "bien-demarrer-aspnet-core",
             Contenu = @"Écrire son premier point de terminaison avec ASP.NET Core tient en quelques lignes.
@@ -89,9 +94,10 @@ Vient ensuite la validation. Un point de terminaison qui lit directement les cha
         new ArticleVue
         {
             Titre = "CSharpei et les cartes mentales : apprendre C# autrement",
-            Categorie = "Interviews",
+            Categorie = "Outils & bibliothèques",
             Extrait = "Rencontre avec la créatrice d'un projet pédagogique qui vulgarise la syntaxe C# pour les classes préparatoires de l'université de Niamey.",
             Auteur = "Abdoulaye Ibrahim",
+            FonctionAuteur = "Président de la communauté",
             LectureMinutes = 9,
             Slug = "csharpei-cartes-mentales",
             Contenu = @"Awa Souley a conçu CSharpei pour ses étudiants de classes préparatoires.
@@ -104,9 +110,10 @@ Présenté au premier meetup de la communauté, le projet a connu une seconde it
         new ArticleVue
         {
             Titre = "Sécurité : les cinq erreurs les plus fréquentes dans les API .NET",
-            Categorie = "Nouveautés de .NET",
+            Categorie = "Sécurité",
             Extrait = "Jeton dans l'URL, secrets en dur, absence de limitation de débit : passez en revue les failles les plus courantes et comment le framework vous aide.",
             Auteur = "Issoufou Hamadou",
+            FonctionAuteur = "Développeur backend",
             LectureMinutes = 11,
             Slug = "securite-cinq-erreurs-api",
             Contenu = @"Cinq erreurs reviennent dans presque toutes les API que nous avons relues.
@@ -120,9 +127,10 @@ Les deux suivantes sont l'absence de limitation de débit, qui transforme la rou
         new ArticleVue
         {
             Titre = "Du prototype à la production : 48 heures à notre premier hackathon",
-            Categorie = "Projets locaux",
+            Categorie = "Retours d'expérience",
             Extrait = "Récit du hackathon DotnetNiger : six équipes, un même défi et des solutions concrètes pour le marché nigérien.",
             Auteur = "Moussa Djibrilla",
+            FonctionAuteur = "Trésorier — partenariats",
             LectureMinutes = 7,
             Slug = "hackathon-48-heures",
             Contenu = @"48 heures, six équipes, un défi unique : rendre la vie plus simple à quelqu'un.
@@ -135,9 +143,10 @@ Aucun n'a été écarté pour des raisons techniques : le jury a évalué l'util
         new ArticleVue
         {
             Titre = "C# moderne : de la programmation orientée objet à la programmation orientée données",
-            Categorie = "Nouveautés de .NET",
+            Categorie = "C#",
             Extrait = "Records, match patterns, source generators : les évolutions récentes du langage expliquées avec des exemples du quotidien.",
             Auteur = "Zara Oumarou",
+            FonctionAuteur = "Formatrice C# et responsable pédagogie",
             LectureMinutes = 13,
             Slug = "csharp-moderne",
             Contenu = @"C# a beaucoup changé en quelques années, et pas toujours dans le sens de la simplicité.
@@ -154,6 +163,7 @@ Les générateurs de source, enfin, déplacent du code répétitif vers la compi
             Categorie = "Interviews",
             Extrait = "Couche monolithique, tests, réglementation bancaire : le quotidien d'un développeur .NET dans une institution financière ouest-africaine.",
             Auteur = "Fatima Harouna",
+            FonctionAuteur = "Communication et communauté",
             LectureMinutes = 14,
             Slug = "entretien-mahamadou-banque",
             Contenu = @"Mahamadou développe des applications .NET dans une banque de la place depuis cinq ans.
@@ -166,9 +176,10 @@ Quand un régulateur pose une question sur une transaction, il faut pouvoir dire
         new ArticleVue
         {
             Titre = "Optimiser une API : de 800 ms à 80 ms sans changer d'infrastructure",
-            Categorie = "Nouveautés de .NET",
+            Categorie = "Architecture & performance",
             Extrait = "Caching, pagination, ensembles de résultats, compression : les techniques qui ont décuplé la vitesse de notre API de démonstration.",
             Auteur = "Salifou Maiga",
+            FonctionAuteur = "Lead développeur",
             LectureMinutes = 16,
             Slug = "optimiser-api-800-a-80",
             Contenu = @"Notre API de démonstration répondait en 800 ms en moyenne. Elle répond aujourd'hui en 80 ms.
@@ -184,6 +195,7 @@ La mise en cache des réponses inchangées pendant quelques secondes a absorbé 
             Categorie = "Projets locaux",
             Extrait = "Des enseignants et des étudiants s'associent à DotnetNiger pour créer un point de rencontre hebdomadaire sur le campus : bienvenue aux débutants.",
             Auteur = "Aïcha Ousmane",
+            FonctionAuteur = "Développeuse MAUI",
             LectureMinutes = 5,
             Slug = "club-net-universite-niamey",
             Contenu = @"Des enseignants et des étudiants se sont associés pour créer un point de rencontre hebdomadaire.
@@ -201,6 +213,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new EvenementVue
         {
             Titre = "Meetup DotnetNiger : découvrir .NET AI",
+            Slug = "meetup-dotnet-ai",
             Type = "Meetup",
             Lieu = "Niamey, en présentiel",
             Description = "Une soirée pour découvrir les API d'intelligence artificielle de .NET avec des démonstrations de génération augmentée sur des données locales.",
@@ -210,6 +223,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new EvenementVue
         {
             Titre = "Conférence en ligne : performance en ASP.NET Core",
+            Slug = "conference-performance-aspnet",
             Type = "Conférence",
             Lieu = "En ligne",
             Description = "Caching, middleware, allocations et profiling : un atelier de deux heures pour rendre vos API plus rapides, avec les questions du public.",
@@ -219,6 +233,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new EvenementVue
         {
             Titre = "Hackathon DotnetNiger #1 : une application pour l'agriculture en 48 heures",
+            Slug = "hackathon-agriculture",
             Type = "Hackathon",
             Lieu = "Niamey, en présentiel",
             Description = "Six équipes, vingt-quatre participants et un défi : tirer parti de .NET et de l'intelligence artificielle pour un projet agricole ouest-africain.",
@@ -229,6 +244,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new EvenementVue
         {
             Titre = "Atelier Blazor : construire votre premier composant réutilisable",
+            Slug = "atelier-blazor-composants",
             Type = "Atelier",
             Lieu = "En ligne",
             Description = "Un atelier pratique pour apprendre les bases de la création de composants : paramètres, événements, cycles de vie et factorisation.",
@@ -238,6 +254,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new EvenementVue
         {
             Titre = "Tech Talk : .NET MAUI et le déploiement mobile en Afrique",
+            Slug = "tech-talk-maui",
             Type = "Conférence",
             Lieu = "En ligne",
             Description = "Retour d'expérience sur le déploiement d'applications mobiles .NET MAUI à faible coût et hors connexion pour les zones rurales.",
@@ -247,11 +264,42 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new EvenementVue
         {
             Titre = "Table ronde : le métier de développeur .NET au Niger",
-            Type = "Meetup",
+            Slug = "table-ronde-metier-developpeur",
+            Type = "Table ronde",
             Lieu = "Niamey, en présentiel",
             Description = "Développeurs, recruteurs et étudiants échangent sur les parcours, les compétences recherchées et les débouchés de la filière .NET dans la sous-région.",
             ImageUrl = "https://picsum.photos/seed/tableronde/800/450",
             DateDebut = new DateOnly(2026, 05, 07),
+        },
+        new EvenementVue
+        {
+            Titre = "Webinaire : migrer une application de .NET Framework vers .NET 10",
+            Slug = "webinaire-migration-net-10",
+            Type = "Webinaire",
+            Lieu = "En ligne",
+            Description = "Ce qui casse, ce qui se migre tout seul, et l'ordre des étapes pour amener un vieux projet à .NET 10 sans le réécrire.",
+            ImageUrl = "https://picsum.photos/seed/migration10/800/450",
+            DateDebut = new DateOnly(2026, 11, 24),
+        },
+        new EvenementVue
+        {
+            Titre = "Session de mentorat : votre première contribution open source",
+            Slug = "mentorat-premiere-contribution",
+            Type = "Session de mentorat",
+            Lieu = "Niamey, en présentiel",
+            Description = "Choisir une issue, ouvrir une branche, obtenir une revue : chaque participant est accompagné sur sa première pull request.",
+            ImageUrl = "https://picsum.photos/seed/mentorat/800/450",
+            DateDebut = new DateOnly(2027, 1, 21),
+        },
+        new EvenementVue
+        {
+            Titre = "Rencontre régionale : le .NET à Zinder et Maradi",
+            Slug = "rencontre-regionale",
+            Type = "Rencontre régionale",
+            Lieu = "Zinder, en présentiel",
+            Description = "Première rencontre hors de la capitale : associations, étudiants et entreprises locales partagent leurs besoins et leurs projets.",
+            ImageUrl = "https://picsum.photos/seed/rencontre-regionale/800/450",
+            DateDebut = new DateOnly(2026, 10, 3),
         },
     };
 
@@ -290,7 +338,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new RessourceVue
         {
             Titre = "Collections et API de Microsoft Learn pour mobile",
-            Categorie = "Formations et tutoriels",
+            Categorie = "Documentation .NET",
             Sujet = ".NET MAUI",
             Description = "Les apprentissages officiels pour démarrer .NET MAUI, identifier les performances et publier sur les stores.",
             Lien = "https://learn.microsoft.com/dotnet/maui/",
@@ -310,7 +358,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new RessourceVue
         {
             Titre = "Guide : sécuriser votre API avec ASP.NET Core Identity",
-            Categorie = "Articles de blog et guides",
+            Categorie = "Sécurité et identité",
             Sujet = "Sécurité",
             Description = "Inscription, connexion, rôles et cookies : les bons réflexes pour protéger votre API sans réinventer la roue.",
             Lien = "/ressources/guide-securiser-api-identity",
@@ -400,7 +448,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new RessourceVue
         {
             Titre = "Entity Framework Core : apprenez avec un projet concret",
-            Categorie = "Formations et tutoriels",
+            Categorie = "Données et persistance",
             Sujet = "EF Core",
             Description = "De la première migration au code de la couche d'accès aux données, en passant par les jointures et le chargement des relations.",
             Lien = "/ressources/parcours-ef-core",
@@ -420,7 +468,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new RessourceVue
         {
             Titre = "Sécuriser vos APIs ASP.NET Core : le parcours pratique",
-            Categorie = "Formations et tutoriels",
+            Categorie = "Sécurité et identité",
             Sujet = "Sécurité",
             Description = "JWT, cookies, rôles et protections contre les failles courantes : les gestes essentiels pour protéger vos points de terminaison.",
             Lien = "/ressources/parcours-securite-api",
@@ -430,7 +478,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new RessourceVue
         {
             Titre = "xUnit : testez votre code avec confiance",
-            Categorie = "Bibliothèques et outils",
+            Categorie = "Tests et qualité",
             Sujet = "Tests",
             Description = "Théories, données paramétrées, mocks et analyse de couverture : le réflexe des tests qui protège vos refactorisations.",
             Lien = "https://xunit.net/",
@@ -440,7 +488,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new RessourceVue
         {
             Titre = "Dapper : des requêtes SQL simples et performantes",
-            Categorie = "Bibliothèques et outils",
+            Categorie = "Données et persistance",
             Sujet = "Accès aux données",
             Description = "Un micro-ORM minimaliste, transparent et très rapide pour les projets qui préfèrent un contrôle total sur le SQL.",
             Lien = "https://www.learndapper.com/",
@@ -450,7 +498,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new RessourceVue
         {
             Titre = "Polly : rendez vos appels HTTP résilients",
-            Categorie = "Bibliothèques et outils",
+            Categorie = "DevOps et déploiement",
             Sujet = "Résilience",
             Description = "Réessais, disjoncteurs, délais et dégradation gracieuse : gardez votre application debout quand un service tiers vacille.",
             Lien = "https://www.thepollyproject.org/",
@@ -460,7 +508,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new RessourceVue
         {
             Titre = "Hangfire : des tâches planifiées en arrière-plan",
-            Categorie = "Bibliothèques et outils",
+            Categorie = "DevOps et déploiement",
             Sujet = "Tâches de fond",
             Description = "E-mails, rapports, synchronisations : planifiez et suivez vos travaux de fond depuis une interface simple et fiable.",
             Lien = "https://www.hangfire.io/",
@@ -470,7 +518,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new RessourceVue
         {
             Titre = "Moq : simulez vos dépendances dans les tests",
-            Categorie = "Bibliothèques et outils",
+            Categorie = "Tests et qualité",
             Sujet = "Tests",
             Description = "Fabriquez des doublures expressives pour isoler vos classes et tester les comportements sans toucher à la vraie infrastructure.",
             Lien = "https://github.com/devlooped/moq",
@@ -510,7 +558,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new RessourceVue
         {
             Titre = "MemoryCache : les pièges à éviter en production",
-            Categorie = "Articles de blog et guides",
+            Categorie = "Données et persistance",
             Sujet = "Performance",
             Description = "Évictions, courses et invalidation : comment tirer le meilleur du cache en mémoire sans laisser les données périmées s'installer.",
             Lien = "/ressources/memorycache-pieges",
@@ -520,7 +568,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new RessourceVue
         {
             Titre = "Tests d'intégration avec une vraie base de données",
-            Categorie = "Articles de blog et guides",
+            Categorie = "Tests et qualité",
             Sujet = "Tests",
             Description = "Containers, isolation et régénération des données : tester contre SQL Server localement comme en CI, sans fragile.",
             Lien = "/ressources/tests-integration-base-donnees",
@@ -540,7 +588,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new RessourceVue
         {
             Titre = "Docker pour les développeurs .NET : conteneuriser une API",
-            Categorie = "Formations et tutoriels",
+            Categorie = "DevOps et déploiement",
             Sujet = "Déploiement",
             Description = "Multi-étapes, images légères et fichiers compose : empaqueter votre application .NET pour qu'elle s'exécute partout de la même façon.",
             Lien = "/ressources/parcours-docker-dotnet",
@@ -560,7 +608,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new RessourceVue
         {
             Titre = "Tests unitaires en C# : de zéro à la couverture",
-            Categorie = "Formations et tutoriels",
+            Categorie = "Tests et qualité",
             Sujet = "Tests",
             Description = "Choisir xUnit, isoler une dépendance, écrire des théories et mesurer la couverture : les bases solides du développement piloté par les tests.",
             Lien = "https://learn.microsoft.com/dotnet/core/testing/",
@@ -570,7 +618,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
         new RessourceVue
         {
             Titre = "FluentAssertions : des tests qui se lisent comme des phrases",
-            Categorie = "Bibliothèques et outils",
+            Categorie = "Tests et qualité",
             Sujet = "Tests",
             Description = "Des assertions expressives et des messages d'échec limpides pour écrire des tests que vos collègues comprennent au premier regard.",
             Lien = "https://fluentassertions.com/",

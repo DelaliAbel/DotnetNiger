@@ -38,10 +38,11 @@
 
     private string Lien => Url ?? $"/blog/{Article.Slug}";
 
-    private string CouleurCategorie => Article.Categorie switch
-    {
-        "Interviews" => "orange",
-        "Projets locaux" => "vert",
-        _ => "violet",
-    };
+    /// <summary>
+    /// Couleur du badge de rubrique, prise dans le référentiel. Un switch local
+    /// ne connaissait que les trois premières rubriques et colorait toutes les
+    /// autres de la même couleur.
+    /// </summary>
+    private string CouleurCategorie =>
+        Referentiel.RubriqueArticleParNom(Article.Categorie)?.Couleur ?? "violet";
 }

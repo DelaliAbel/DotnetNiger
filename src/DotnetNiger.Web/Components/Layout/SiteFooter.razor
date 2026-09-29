@@ -1,4 +1,5 @@
 @inject ISiteContentService Contenu
+@inject NavigationManager Navigation
 
 <footer class="site-footer">
     <div class="wrap">
@@ -33,9 +34,9 @@
             <nav class="site-footer__col" aria-label="Ressources">
                 <h2 class="site-footer__title">Ressources</h2>
                 <ul class="site-footer__list">
-                    <li><a href="/ressources">Formations et tutoriels</a></li>
-                    <li><a href="/ressources#outils">Bibliothèques et outils</a></li>
-                    <li><a href="/blog">Articles et guides</a></li>
+                    <li><a href="/ressources?categorie=formations">Formations et tutoriels</a></li>
+                    <li><a href="/ressources?categorie=outils">Bibliothèques et outils</a></li>
+                    <li><a href="/ressources?categorie=articles">Articles et guides</a></li>
                     <li><a href="/communaute#projets">Projets open source</a></li>
                     <li><a href="/communaute#contribuer">Contribuer</a></li>
                 </ul>
@@ -46,11 +47,52 @@
                 <ul class="site-footer__list">
                     <li><a href="/communaute">Discord</a></li>
                     <li><a href="/communaute">GitHub</a></li>
-                    <li><a href="/evenements">Meetups et hackathons</a></li>
+                    <li><a href="/evenements?type=meetup">Meetups</a></li>
+                    <li><a href="/evenements?type=hackathon">Hackathons</a></li>
                     <li><a href="/contact">Contact</a></li>
                 </ul>
             </nav>
         </div>
+
+        <!-- Lettre d'information : présente sur toutes les pages, le formulaire renvoie
+             vers la page d'origine pour que le message apparaisse sous les yeux de la
+             personne qui vient de s'inscrire. -->
+        <section class="infolettre" aria-labelledby="infolettre-titre">
+            <div class="infolettre__texte">
+                <h2 id="infolettre-titre" class="infolettre__titre">
+                    <DnIcon Name="mail" Size="18" /> La lettre de la communauté
+                </h2>
+                <p class="infolettre__lead">
+                    Un courriel par mois : les nouveaux articles, les prochains rendez-vous et
+                    les projets值得 soutenir. Désabonnement en un clic, dans chaque envoi.
+                </p>
+            </div>
+
+            <form method="post" action="/infolettre/sabonner" class="infolettre__form">
+                <AntiforgeryToken />
+                <input type="hidden" name="Retour" value="@CheminActuel" />
+
+                @if (Confirmation is not null)
+                {
+                    <Alerte Variante="vert">@Confirmation</Alerte>
+                }
+                else if (Erreur is not null)
+                {
+                    <Alerte Variante="rouge">@Erreur</Alerte>
+                }
+
+                <div class="infolettre__champs">
+                    <label class="sr-only" for="infolettre-email">Votre adresse e-mail</label>
+                    <input id="infolettre-email" class="input" type="email" name="Email" required
+                           maxlength="320" autocomplete="email" placeholder="votre@adresse.ni" />
+                    <button type="submit" class="btn btn--primary">S'abonner</button>
+                </div>
+                <p class="infolettre__note">
+                    En vous abonnant, vous acceptez de recevoir ce courriel mensuel.
+                    Aucune adresse n'est transmise à un tiers.
+                </p>
+            </form>
+        </section>
 
         <div class="site-footer__legal">
             <p>&copy; @DateTime.Now.Year DotnetNiger — la communauté des développeurs .NET au Niger</p>
@@ -64,6 +106,36 @@
 
 @code {
     private IReadOnlyList<CanalVue> _Canaux = Array.Empty<CanalVue>();
+
+    /// <summary>
+    /// Adresse confirmée, transmise par la redirection après soumission. Le message
+    /// rappelle l'adresse saisie : c'est le seul moyen, pour la personne, de vérifier
+    /// qu'elle n'a pas fait de faute de frappe.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "confirme")]
+    public string? Confirme { get; set; }
+
+    [SupplyParameterFromQuery(Name = "erreur")]
+    public string? Erreur { get; set; }
+
+    /// <summary>
+    /// Message affiché après l'envoi. Il est identique pour toute adresse, y compris
+    /// pour une adresse déjà abonnée : le redire autrement permettrait de tester qui
+    /// reçoit la lettre, exactement ce que l'API d'abonnement s'interdit.
+    /// </summary>
+    private string? Confirmation => !string.IsNullOrWhiteSpace(Confirme)
+        ? $"Si {Confirme} n'y est pas déjà, un courriel de confirmation vient de partir."
+        : null;
+
+    /// <summary>Page sur laquelle le formulaire a été soumis, pour y renvoyer le message.</summary>
+    private string CheminActuel
+    {
+        get
+        {
+            var chemin = Navigation.ToBaseRelativePath(Navigation.Uri);
+            return string.IsNullOrWhiteSpace(chemin) ? "/" : "/" + chemin;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {

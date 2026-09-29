@@ -49,9 +49,9 @@ else
                     <span class="select">
                         <select id="categorie-ressources" name="categorie">
                             <option value="" selected="@(string.IsNullOrWhiteSpace(_Categorie))">Toutes les catégories</option>
-                            @foreach (var (slug, nom) in Categories)
+                            @foreach (var categorie in Referentiel.CategoriesRessource)
                             {
-                                <option value="@slug" selected="@(slug == _Categorie)">@nom</option>
+                                <option value="@categorie.Slug" selected="@(categorie.Slug == _Categorie)">@categorie.Nom</option>
                             }
                         </select>
                         <DnIcon Name="chevron-down" Size="16" Class="select__chevron" />
@@ -168,13 +168,6 @@ else
     /// <summary>Nombre de ressources affichées par page.</summary>
     private const int RessourcesParPage = 9;
 
-    private static readonly (string Slug, string Nom)[] Categories = new[]
-    {
-        ("formations", "Formations et tutoriels"),
-        ("outils", "Bibliothèques et outils"),
-        ("articles", "Articles de blog et guides"),
-    };
-
     /// <summary>
     /// Ordres de tri proposés. Une ressource n'a pas de date de publication : c'est
     /// une curated stable, pas un article. Le tri porte donc sur ce qu'elle porte
@@ -182,6 +175,7 @@ else
     /// </summary>
     private static readonly (string Cle, string Libelle)[] Tris = new[]
     {
+        ("selection", "Sélection de l'équipe"),
         ("az", "Titre A → Z"),
         ("za", "Titre Z → A"),
         ("auteur", "Auteur A → Z"),
@@ -252,12 +246,16 @@ else
 
         // Un critère de tri inconnu retombe sur l'ordre alphabétique plutôt que sur
         // une liste vide : l'URL reste partageable, seul l'ordre change.
+        // Par défaut, l'ordre de la garniture : c'est l'ordre éditorial — les
+        // ressources les plus utiles d'abord. Une ressource n'a pas de date de
+        // publication, et un « plus récent d'abord » y serait un ordre inventé.
         resultats = _Tri switch
         {
+            "az" => resultats.OrderBy(r => r.Titre, StringComparer.OrdinalIgnoreCase),
             "za" => resultats.OrderByDescending(r => r.Titre, StringComparer.OrdinalIgnoreCase),
             "auteur" => resultats.OrderBy(r => r.Auteur, StringComparer.OrdinalIgnoreCase).ThenBy(r => r.Titre, StringComparer.OrdinalIgnoreCase),
             "sujet" => resultats.OrderBy(r => r.Sujet, StringComparer.OrdinalIgnoreCase).ThenBy(r => r.Titre, StringComparer.OrdinalIgnoreCase),
-            _ => resultats.OrderBy(r => r.Titre, StringComparer.OrdinalIgnoreCase),
+            _ => resultats,
         };
 
         ResultatsFiltres = resultats.ToArray();
@@ -278,13 +276,13 @@ else
     }
 
     private string? CategorieSelectionnee() =>
-        Categories.FirstOrDefault(c => c.Slug == _Categorie).Nom;
+        Referentiel.CategorieRessourceParSlug(_Categorie)?.Nom;
 
     /// <summary>Vrai dès qu'un critère a été utilisé ; pilote le lien de remise à zéro.</summary>
     private bool FiltresActifs =>
         !string.IsNullOrWhiteSpace(_Recherche)
         || !string.IsNullOrWhiteSpace(_Categorie)
-        || (_Tri is { Length: > 0 } and not "az");
+        || (_Tri is { Length: > 0 } and not "selection");
 
     /// <summary>Construit l'URL d'une page en conservant la catégorie, le tri et la recherche en cours.</summary>
     private string UrlPage(int page)
@@ -305,7 +303,7 @@ else
             paramètres.Add($"categorie={Uri.EscapeDataString(_Categorie)}");
         }
 
-        if (_Tri is { Length: > 0 } and not "az")
+        if (_Tri is { Length: > 0 } and not "selection")
         {
             paramètres.Add($"tri={Uri.EscapeDataString(_Tri)}");
         }

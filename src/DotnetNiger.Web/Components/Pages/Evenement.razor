@@ -1,0 +1,190 @@
+@page "/evenements/{Slug}"
+@using System.Globalization
+@attribute [StreamRendering]
+
+@inject ISiteContentService Contenu
+
+@if (_Evenement is null)
+{
+    @if (_Introuvable)
+    {
+        <section class="section">
+            <div class="wrap">
+                <EmptyState Icone="calendar"
+                            Titre="Cet événement n'existe pas"
+                            Message="Le lien est peut-être ancien, ou le rendez-vous a été retiré. L'agenda liste tous les événements.">
+                    <a class="btn btn--ghost" href="/evenements">
+                        <DnIcon Name="arrow-left" Size="16" /> Retour à l'agenda
+                    </a>
+                </EmptyState>
+            </div>
+        </section>
+    }
+    else
+    {
+        <div class="wrap" style="padding-block: calc(var(--spacing) * 12);">
+            <p class="text-caption" style="color: var(--site-fg-muted);">Chargement…</p>
+        </div>
+    }
+}
+else
+{
+    <PageTitle>@_Evenement.Titre — événements DotnetNiger</PageTitle>
+    <HeadContent>
+        <meta name="description" content="@_Evenement.Description" />
+        <meta property="og:title" content="@_Evenement.Titre — DotnetNiger" />
+        <meta property="og:description" content="@_Evenement.Description" />
+    </HeadContent>
+
+    <!-- 1. En-tête de l'événement -->
+    <section class="hero hero--centre">
+        <div class="wrap">
+            <p class="hero__eyebrow">
+                <a class="link" href="/evenements">Événements</a>
+                <span aria-hidden="true">·</span>
+                <a class="link" href="@UrlType">@_Evenement.Type</a>
+            </p>
+            <h1 class="hero__title" style="margin-top: var(--spacing);">@_Evenement.Titre</h1>
+            <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
+                <DnIcon Name="calendar" Size="16" />
+                <time datetime="@_Evenement.DateDebut.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)">
+                    @DateLisible
+                </time>
+                <span aria-hidden="true">·</span>
+                <DnIcon Name="map-pin" Size="16" /> @_Evenement.Lieu
+            </p>
+        </div>
+    </section>
+
+    <!-- 2. Détail -->
+    <section class="section" aria-label="Détail de l'événement">
+        <div class="wrap">
+            <div class="grid gap-2 md:grid-cols-3" style="align-items: start;">
+                <div class="md:col-span-2">
+                    @if (!string.IsNullOrWhiteSpace(_Evenement.ImageUrl))
+                    {
+                        <DnCardMedia ImageUrl="@_Evenement.ImageUrl" Alt=""
+                                    Etiquette="@(EstPasse ? "Terminé" : null)" />
+                    }
+
+                    <div style="display: grid; gap: calc(var(--spacing) * 2); margin-top: calc(var(--spacing) * 2);">
+                        <p class="text-lead">@_Evenement.Description</p>
+                    </div>
+
+                    <div class="article__fin">
+                        <a class="btn btn--ghost" href="/evenements">
+                            <DnIcon Name="arrow-left" Size="16" /> Retour à l'agenda
+                        </a>
+                        <a class="btn btn--primary" href="/compte/inscription">
+                            Participer à cet événement
+                            <DnIcon Name="arrow-right" Size="16" />
+                        </a>
+                    </div>
+                </div>
+
+                <aside class="bande" aria-label="Informations pratiques">
+                    <p class="eyebrow" style="color: var(--color-vert-300);">En pratique</p>
+                    <p class="bande__title" style="margin-top: var(--spacing);">@_Evenement.Type</p>
+                    <p class="bande__lead">
+                        Le @_Evenement.DateDebut.ToString("d MMMM yyyy", Culture) à @_Evenement.Lieu.
+                        @if (EstPasse)
+                        {
+                            <text> Cette rencontre a déjà eu lieu.</text>
+                        }
+                        else
+                        {
+                            <text> L'inscription est gratuite et ouverte aux membres de la communauté.</text>
+                        }
+                    </p>
+                </aside>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Prochains rendez-vous -->
+    @if (Suggestions.Length > 0)
+    {
+        <section class="section section--alt" aria-labelledby="prochains-titre">
+            <div class="wrap">
+                <div class="section__head">
+                    <p class="eyebrow">À suivre</p>
+                    <h2 id="prochains-titre" class="section__title">Les prochains rendez-vous</h2>
+                    <p class="section__lead">Les autres rencontres annoncées par la communauté.</p>
+                </div>
+
+                <div class="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                    @foreach (var suivant in Suggestions)
+                    {
+                        <EvenementCarte Evenement="suivant" />
+                    }
+                </div>
+            </div>
+        </section>
+    }
+}
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
+
+    /// <summary>Nombre de rendez-vous proposés en fin de page.</summary>
+    private const int NombreSuggestions = 3;
+
+    [Parameter] public string? Slug { get; set; }
+
+    private EvenementVue? _Evenement;
+
+    private bool _Introuvable;
+
+    private EvenementVue[] Suggestions { get; set; } = [];
+
+    /// <summary>Un rendez-vous dépassé est conservé, mais signalé comme terminé.</summary>
+    private bool EstPasse => _Evenement?.DateDebut < DateOnly.FromDateTime(DateTime.Today);
+
+    private string DateLisible => _Evenement?.DateFin is { } fin
+        ? $"du {_Evenement.DateDebut.ToString("d MMMM", Culture)} au {fin.ToString("d MMMM yyyy", Culture)}"
+        : _Evenement?.DateDebut.ToString("d MMMM yyyy", Culture) ?? string.Empty;
+
+    /// <summary>Filtre l'agenda sur le type de l'événement, via le slug du référentiel.</summary>
+    private string UrlType => Referentiel.TypeEvenementParSlug(TypeSlug) is { Slug: var slug }
+        ? $"/evenements?type={Uri.EscapeDataString(slug)}"
+        : "/evenements";
+
+    private string? TypeSlug => _Evenement is null
+        ? null
+        : Referentiel.TypesEvenement.FirstOrDefault(t => t.Nom == _Evenement.Type)?.Slug;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Slug))
+        {
+            _Evenement = null;
+            _Introuvable = true;
+            Suggestions = [];
+            return;
+        }
+
+        var evenements = await Contenu.ChargerEvenementsAsync();
+        var trouve = evenements.FirstOrDefault(e => string.Equals(e.Slug, Slug, StringComparison.Ordinal));
+        _Evenement = trouve;
+        _Introuvable = trouve is null;
+        Suggestions = trouve is null ? [] : ChoisirSuggestions(evenements, trouve);
+    }
+
+    /// <summary>
+    /// Les rendez-vous à venir, du plus proche au plus lointain. On ne propose que des
+    /// événements qui n'ont pas eu lieu, et jamais celui que l'on consulte.
+    /// </summary>
+    private static EvenementVue[] ChoisirSuggestions(IReadOnlyList<EvenementVue> evenements, EvenementVue evenement)
+    {
+        var aujourdhui = DateOnly.FromDateTime(DateTime.Today);
+
+        return
+        [
+            .. evenements
+                .Where(e => !string.Equals(e.Slug, evenement.Slug, StringComparison.Ordinal))
+                .Where(e => e.DateDebut >= aujourdhui)
+                .OrderBy(e => e.DateDebut)
+                .Take(NombreSuggestions),
+        ];
+    }
+}

@@ -49,9 +49,9 @@ else
                     <span class="select">
                         <select id="rubrique-blog" name="categorie">
                             <option value="" selected="@(string.IsNullOrWhiteSpace(_Categorie))">Toutes les rubriques</option>
-                            @foreach (var (slug, nom) in Categories)
+                            @foreach (var rubrique in Referentiel.RubriquesArticle)
                             {
-                                <option value="@slug" selected="@(slug == _Categorie)">@nom</option>
+                                <option value="@rubrique.Slug" selected="@(rubrique.Slug == _Categorie)">@rubrique.Nom</option>
                             }
                         </select>
                         <DnIcon Name="chevron-down" Size="16" Class="select__chevron" />
@@ -168,13 +168,6 @@ else
     /// <summary>Nombre d'articles affichés par page.</summary>
     private const int ArticlesParPage = 6;
 
-    private static readonly (string Slug, string Nom)[] Categories =
-    [
-        ("nouveautes", "Nouveautés de .NET"),
-        ("interviews", "Interviews"),
-        ("projets", "Projets locaux"),
-    ];
-
     /// <summary>
     /// Ordres de tri proposés. Le premier est le plus utile : sur un blog, on
     /// cherche ce qui vient de sortir, pas l'ordre alphabétique.
@@ -278,7 +271,7 @@ else
         || (_Tri is { Length: > 0 } and not "recent");
 
     private string? CategorieSelectionnee() =>
-        Categories.FirstOrDefault(c => c.Slug == _Categorie).Nom;
+        Referentiel.RubriqueArticleParSlug(_Categorie)?.Nom;
 
     /// <summary>Construit l'URL d'une page en conservant la rubrique, le tri et la recherche en cours.</summary>
     private string UrlPage(int page)
