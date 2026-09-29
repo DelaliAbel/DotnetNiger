@@ -1,0 +1,346 @@
+@page "/evenements"
+@attribute [StreamRendering]
+
+@inject ISiteContentService Contenu
+
+<PageTitle>Événements — meetups, ateliers et hackathons .NET au Niger</PageTitle>
+<HeadContent>
+    <meta name="description" content="Les rendez-vous de la communauté DotnetNiger : meetups, conférences en ligne, ateliers pratiques et hackathons organisés à Niamey et en ligne." />
+    <meta property="og:title" content="Événements — DotnetNiger" />
+    <meta property="og:description" content="Meetups, conférences, ateliers et hackathons : les rendez-vous de la communauté des développeurs .NET du Niger." />
+</HeadContent>
+
+@if (_Evenements is null)
+{
+    <div class="wrap" style="padding-block: calc(var(--spacing) * 12);">
+        <p class="text-caption" style="color: var(--site-fg-muted);">Chargement…</p>
+    </div>
+}
+else
+{
+    <!-- 1. Bannière principale -->
+    <section class="hero hero--centre">
+        <div class="wrap">
+            <p class="hero__eyebrow">
+                <DnIcon Name="calendar" Size="14" /> Agenda de la communauté
+            </p>
+            <h1 class="hero__title" style="margin-top: var(--spacing);">
+                Se retrouver pour <strong>apprendre ensemble</strong>
+            </h1>
+            <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
+                Des soirées de démonstration, des ateliers pratiques et un hackathon par an :
+                la plupart des rencontres sont en présentiel à Niamey, certaines en ligne.
+            </p>
+        </div>
+    </section>
+
+    <!-- 2. Recherche, type, période et tri -->
+    <section class="section" aria-label="Rechercher et filtrer les événements" style="padding-block: calc(var(--spacing) * 5) 0;">
+        <div class="wrap">
+            <form method="get" action="/evenements" class="filtres" role="search">
+                <div class="filtres__champ">
+                    <label class="filtres__libelle" for="recherche-evenements">Recherche</label>
+                    <input id="recherche-evenements" class="input" type="search" name="q"
+                           value="@_Recherche" placeholder="Titre, sujet, lieu…" />
+                </div>
+
+                <div class="filtres__champ">
+                    <label class="filtres__libelle" for="type-evenement">Type</label>
+                    <span class="select">
+                        <select id="type-evenement" name="type">
+                            <option value="" selected="@(string.IsNullOrWhiteSpace(_Type))">Tous les types</option>
+                            @foreach (var (cle, nom) in Types)
+                            {
+                                <option value="@cle" selected="@(cle == _Type)">@nom</option>
+                            }
+                        </select>
+                        <DnIcon Name="chevron-down" Size="16" Class="select__chevron" />
+                    </span>
+                </div>
+
+                <div class="filtres__champ">
+                    <label class="filtres__libelle" for="periode-evenement">Période</label>
+                    <span class="select">
+                        <select id="periode-evenement" name="periode">
+                            <option value="avenir" selected="@(_Periode == "avenir")">À venir</option>
+                            <option value="tous" selected="@(_Periode == "tous")">Tous</option>
+                            <option value="passes" selected="@(_Periode == "passes")">Passés</option>
+                        </select>
+                        <DnIcon Name="chevron-down" Size="16" Class="select__chevron" />
+                    </span>
+                </div>
+
+                <div class="filtres__champ">
+                    <label class="filtres__libelle" for="tri-evenement">Trier par</label>
+                    <span class="select">
+                        <select id="tri-evenement" name="tri">
+                            @foreach (var (cle, libelle) in Tris)
+                            {
+                                <option value="@cle" selected="@(cle == _Tri)">@libelle</option>
+                            }
+                        </select>
+                        <DnIcon Name="chevron-down" Size="16" Class="select__chevron" />
+                    </span>
+                </div>
+
+                <div class="filtres__actions" style="grid-column: 1 / -1;">
+                    <button type="submit" class="btn btn--primary">
+                        <DnIcon Name="search" Size="16" /> Filtrer
+                    </button>
+                    @if (FiltresActifs)
+                    {
+                        <a class="link text-caption" href="/evenements">Réinitialiser</a>
+                    }
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- 3. Résultats -->
+    <section class="section" aria-labelledby="agenda-titre">
+        <div class="wrap">
+            <div class="section__head section__head--split">
+                <div>
+                    <p class="eyebrow">Le programme</p>
+                    <h2 id="agenda-titre" class="section__title">
+                        @if (ResultatsFiltres.Length == 0)
+                        {
+                            <text>Aucun événement</text>
+                        }
+                        else
+                        {
+                            <text>@ResultatsFiltres.Length @(ResultatsFiltres.Length == 1 ? "événement" : "événements")</text>
+                        }
+                    </h2>
+                    <p class="section__lead">
+                        @if (_Recherche is { Length: > 0 })
+                        {
+                            <text>@ResultatsFiltres.Length résultat(s) pour « @_Recherche ».</text>
+                        }
+                        else
+                        {
+                            <text>Les inscriptions sont gratuites et ouvertes aux membres de la communauté.</text>
+                        }
+                    </p>
+                </div>
+                <span class="badge badge--violet">@NombreEvenementsAVenir @(NombreEvenementsAVenir == 1 ? "événement à venir" : "événements à venir")</span>
+            </div>
+
+            @if (ResultatsPageCourante.Length == 0)
+            {
+                <EmptyState Icone="calendar"
+                            Titre="Aucun événement ne correspond à ces critères"
+                            Message="Modifiez la période, ou élargissez la recherche en réinitialisant les filtres.">
+                    <a class="btn btn--ghost" href="/evenements">
+                        Voir tout l'agenda <DnIcon Name="arrow-right" Size="16" />
+                    </a>
+                </EmptyState>
+            }
+            else
+            {
+                <div class="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                    @foreach (var evenement in ResultatsPageCourante)
+                    {
+                        <EvenementCarte Evenement="evenement" />
+                    }
+                </div>
+
+                <Pagination PageCourante="PageCourante"
+                            NombreDePages="NombreDePages"
+                            Libelle="Pagination des événements"
+                            UrlPage="UrlPage" />
+            }
+        </div>
+    </section>
+
+    <!-- 4. Proposer un événement -->
+    <section class="section" aria-labelledby="proposer-titre">
+        <div class="wrap">
+            <div class="bande">
+                <div class="grid gap-6 md:grid-cols-2" style="align-items: center;">
+                    <div>
+                        <p class="eyebrow" style="color: var(--color-vert-300);">Contribuer</p>
+                        <h2 id="proposer-titre" class="bande__title" style="margin-top: var(--spacing);">
+                            Un événement à signaler ?
+                        </h2>
+                        <p class="bande__lead">
+                            Un meetup de votre association, une conférence, un atelier : l'agenda
+                            est ouvert aux propositions de la communauté.
+                        </p>
+                    </div>
+                    <div class="contribuer__actions">
+                        <a class="btn btn--white btn--lg" href="/compte/inscription">
+                            Rejoindre la communauté <DnIcon Name="arrow-right" Size="18" />
+                        </a>
+                        <p class="contribuer__note">
+                            Déjà membre ? Écrivez-nous sur
+                            <a class="link" href="/communaute">nos canaux</a>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+@code {
+    /// <summary>Nombre d'événements affichés par page.</summary>
+    private const int EvenementsParPage = 6;
+
+    private static readonly (string Cle, string Nom)[] Types =
+    [
+        ("meetup", "Meetup"),
+        ("conference", "Conférence"),
+        ("atelier", "Atelier"),
+        ("hackathon", "Hackathon"),
+    ];
+
+    /// <summary>
+    /// Ordres de tri. Sur un agenda, la date compte plus que tout : par défaut les
+    /// événements à venir les plus proches ouvrent la liste.
+    /// </summary>
+    private static readonly (string Cle, string Libelle)[] Tris =
+    [
+        ("proche", "Date la plus proche"),
+        ("loin", "Date la plus lointaine"),
+        ("az", "Titre A → Z"),
+        ("za", "Titre Z → A"),
+    ];
+
+    private IReadOnlyList<EvenementVue>? _Evenements;
+
+    [SupplyParameterFromQuery(Name = "q")]
+    public string? _Recherche { get; set; }
+
+    [SupplyParameterFromQuery(Name = "type")]
+    public string? _Type { get; set; }
+
+    [SupplyParameterFromQuery(Name = "periode")]
+    public string? _Periode { get; set; }
+
+    [SupplyParameterFromQuery(Name = "tri")]
+    public string? _Tri { get; set; }
+
+    [SupplyParameterFromQuery(Name = "page")]
+    public int? _Page { get; set; }
+
+    private EvenementVue[] ResultatsFiltres { get; set; } = [];
+
+    private int PageCourante { get; set; } = 1;
+
+    private int NombreDePages { get; set; } = 1;
+
+    private EvenementVue[] ResultatsPageCourante =>
+        ResultatsFiltres.Skip((PageCourante - 1) * EvenementsParPage)
+            .Take(EvenementsParPage)
+            .ToArray();
+
+    private DateOnly Aujourdhui => DateOnly.FromDateTime(DateTime.Today);
+
+    /// <summary>
+    /// Compte des rendez-vous non encore passés, tous types et périodes confondus. Il
+    /// sert de repère quand les filtres actifs n'en montrent qu'une partie.
+    /// </summary>
+    private int NombreEvenementsAVenir =>
+        _Evenements?.Count(e => e.DateDebut >= Aujourdhui) ?? 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _Evenements = await Contenu.ChargerEvenementsAsync();
+
+        if (_Page is { } pageDemandee && pageDemandee > 0)
+        {
+            PageCourante = pageDemandee;
+        }
+
+        AppliquerFiltres();
+    }
+
+    private void AppliquerFiltres()
+    {
+        // Un critère inconnu retombe sur la vue par défaut plutôt que sur une liste
+        // vide : une URL partagée par erreur reste lisible.
+        var periode = _Periode is "tous" or "passes" ? _Periode : "avenir";
+
+        IEnumerable<EvenementVue> resultats = _Evenements ?? [];
+        resultats = periode switch
+        {
+            "passes" => resultats.Where(e => e.DateDebut < Aujourdhui),
+            "tous" => resultats,
+            _ => resultats.Where(e => e.DateDebut >= Aujourdhui),
+        };
+
+        var type = TypeSelectionne();
+        if (type is not null)
+        {
+            resultats = resultats.Where(e => e.Type == type);
+        }
+
+        var recherche = _Recherche?.Trim();
+        if (recherche is { Length: > 0 })
+        {
+            resultats = resultats.Where(e =>
+                e.Titre.Contains(recherche, StringComparison.OrdinalIgnoreCase)
+                || e.Description.Contains(recherche, StringComparison.OrdinalIgnoreCase)
+                || e.Lieu.Contains(recherche, StringComparison.OrdinalIgnoreCase));
+        }
+
+        resultats = _Tri switch
+        {
+            "loin" => resultats.OrderByDescending(e => e.DateDebut),
+            "az" => resultats.OrderBy(e => e.Titre, StringComparer.OrdinalIgnoreCase),
+            "za" => resultats.OrderByDescending(e => e.Titre, StringComparer.OrdinalIgnoreCase),
+            _ => resultats.OrderBy(e => e.DateDebut),
+        };
+
+        ResultatsFiltres = [.. resultats];
+
+        NombreDePages = Math.Max(1, (int)Math.Ceiling(ResultatsFiltres.Length / (double)EvenementsParPage));
+        if (PageCourante > NombreDePages)
+        {
+            PageCourante = NombreDePages;
+        }
+    }
+
+    /// <summary>Vrai dès qu'un critère a été utilisé ; pilote le lien de remise à zéro.</summary>
+    private bool FiltresActifs =>
+        !string.IsNullOrWhiteSpace(_Recherche)
+        || !string.IsNullOrWhiteSpace(_Type)
+        || _Periode is "tous" or "passes"
+        || (_Tri is { Length: > 0 } and not "proche");
+
+    private string? TypeSelectionne() =>
+        Types.FirstOrDefault(t => t.Cle == _Type).Nom;
+
+    /// <summary>Construit l'URL d'une page en conservant tous les critères en cours.</summary>
+    private string UrlPage(int page)
+    {
+        var paramètres = new List<string>();
+        if (_Recherche is { Length: > 0 })
+        {
+            paramètres.Add($"q={Uri.EscapeDataString(_Recherche)}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(_Type))
+        {
+            paramètres.Add($"type={Uri.EscapeDataString(_Type)}");
+        }
+
+        if (_Periode is { Length: > 0 } and not "avenir")
+        {
+            paramètres.Add($"periode={Uri.EscapeDataString(_Periode)}");
+        }
+
+        if (_Tri is { Length: > 0 } and not "proche")
+        {
+            paramètres.Add($"tri={Uri.EscapeDataString(_Tri)}");
+        }
+
+        if (page > 1)
+        {
+            paramètres.Add($"page={page}");
+        }
+
+        return "/evenements" + (paramètres.Count > 0 ? "?" + string.Join("&", paramètres) : "");
+    }
+}

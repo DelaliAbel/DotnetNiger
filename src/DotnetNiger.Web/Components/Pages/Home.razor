@@ -162,23 +162,7 @@ else
                 <div class="grid gap-2 md:grid-cols-3">
                     @foreach (var evenement in _Accueil.EvenementsAVenir)
                     {
-                        <article class="card card--hover">
-                            <div class="card__media">
-                                <img src="@evenement.ImageUrl" alt="@evenement.Titre" loading="lazy"
-                                     style="width: 100%; height: 100%; object-fit: cover;" />
-                            </div>
-                            <div class="card__body">
-                                <p class="card__meta">
-                                    <span class="badge badge--@CouleurType(evenement.Type)">@evenement.Type</span>
-                                    <span style="display: inline-flex; align-items: center; gap: 4px;">
-                                        <DnIcon Name="map-pin" Size="14" /> @evenement.Lieu
-                                    </span>
-                                </p>
-                                <h3 class="card__title">@evenement.Titre</h3>
-                                <p class="card__text">@evenement.Description</p>
-                                <a class="link" href="/evenements">S'inscrire à l'événement <DnIcon Name="arrow-right" Size="14" /></a>
-                            </div>
-                        </article>
+                        <EvenementCarte Evenement="evenement" />
                     }
                 </div>
             }
@@ -306,10 +290,4 @@ else
         _Accueil = await Contenu.ChargerAccueilAsync();
     }
 
-    private static string CouleurType(string type) => type switch
-    {
-        "Meetup" => "violet",
-        "Hackathon" => "orange",
-        _ => "vert",
-    };
 }

@@ -205,6 +205,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
             Lieu = "Niamey, en présentiel",
             Description = "Une soirée pour découvrir les API d'intelligence artificielle de .NET avec des démonstrations de génération augmentée sur des données locales.",
             ImageUrl = "https://picsum.photos/seed/dotnetai/800/450",
+            DateDebut = new DateOnly(2026, 10, 08),
         },
         new EvenementVue
         {
@@ -213,6 +214,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
             Lieu = "En ligne",
             Description = "Caching, middleware, allocations et profiling : un atelier de deux heures pour rendre vos API plus rapides, avec les questions du public.",
             ImageUrl = "https://picsum.photos/seed/perfconf/800/450",
+            DateDebut = new DateOnly(2026, 10, 22),
         },
         new EvenementVue
         {
@@ -221,6 +223,8 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
             Lieu = "Niamey, en présentiel",
             Description = "Six équipes, vingt-quatre participants et un défi : tirer parti de .NET et de l'intelligence artificielle pour un projet agricole ouest-africain.",
             ImageUrl = "https://picsum.photos/seed/hackathon1/800/450",
+            DateDebut = new DateOnly(2026, 11, 14),
+            DateFin = new DateOnly(2026, 11, 15),
         },
         new EvenementVue
         {
@@ -229,6 +233,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
             Lieu = "En ligne",
             Description = "Un atelier pratique pour apprendre les bases de la création de composants : paramètres, événements, cycles de vie et factorisation.",
             ImageUrl = "https://picsum.photos/seed/atelierblazor/800/450",
+            DateDebut = new DateOnly(2026, 12, 03),
         },
         new EvenementVue
         {
@@ -237,6 +242,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
             Lieu = "En ligne",
             Description = "Retour d'expérience sur le déploiement d'applications mobiles .NET MAUI à faible coût et hors connexion pour les zones rurales.",
             ImageUrl = "https://picsum.photos/seed/maumobile/800/450",
+            DateDebut = new DateOnly(2026, 06, 18),
         },
         new EvenementVue
         {
@@ -245,6 +251,7 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
             Lieu = "Niamey, en présentiel",
             Description = "Développeurs, recruteurs et étudiants échangent sur les parcours, les compétences recherchées et les débouchés de la filière .NET dans la sous-région.",
             ImageUrl = "https://picsum.photos/seed/tableronde/800/450",
+            DateDebut = new DateOnly(2026, 05, 07),
         },
     };
 
@@ -899,8 +906,8 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
     public Task<AccueilVue> ChargerAccueilAsync(CancellationToken annulation = default) =>
         Task.FromResult(new AccueilVue
         {
-            ArticlesRecents = Articles.Take(4).ToArray(),
-            EvenementsAVenir = Evenements.Take(3).ToArray(),
+            ArticlesRecents = [.. Articles.OrderByDescending(a => a.DatePublication).Take(4)],
+            EvenementsAVenir = EvenementsAVenir(),
             RessourcesPopulaires = Ressources.Take(6).ToArray(),
             Canaux = Canaux.ToArray(),
             NombreMembres = MembresTotal,
@@ -908,6 +915,19 @@ Aucun prérequis au-delà de la syntaxe de base. Les étudiants qui arrivent le 
             NombreRessources = Ressources.Length,
             NombreEvenements = Evenements.Length,
         });
+
+    /// <summary>
+    /// Les événements non encore passés, du plus proche au plus lointain. Prendre les
+    /// premiers de la garniture ne tenait plus dès lors qu'elle contenait un meetup
+    /// passé : l'accueil annonçait alors un événement déjà terminé.
+    /// </summary>
+    private static IReadOnlyList<EvenementVue> EvenementsAVenir() =>
+    [
+        .. Evenements
+            .Where(e => e.DateDebut >= DateOnly.FromDateTime(DateTime.Today))
+            .OrderBy(e => e.DateDebut)
+            .Take(3),
+    ];
 
     public Task<IReadOnlyList<ArticleVue>> ChargerArticlesAsync(CancellationToken annulation = default) =>
         Task.FromResult<IReadOnlyList<ArticleVue>>(Articles);

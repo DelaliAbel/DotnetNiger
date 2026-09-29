@@ -1,0 +1,59 @@
+@using System.Globalization
+
+@* Carte de présentation d'un événement, utilisée par l'accueil, la communauté et la page événements. *@
+
+<article class="card card--hover">
+    <DnCardMedia ImageUrl="@Evenement.ImageUrl" Alt="" />
+    <div class="card__body">
+        <p class="card__meta">
+            <span class="badge badge--@CouleurType">@Evenement.Type</span>
+            <span class="evenement__lieu">
+                <DnIcon Name="map-pin" Size="14" /> @Evenement.Lieu
+            </span>
+        </p>
+        <h3 class="card__title card__title--compact">
+            <a href="@Lien" class="link">@Evenement.Titre</a>
+        </h3>
+        <p class="card__text">@Evenement.Description</p>
+        <p class="card__meta">
+            <DnIcon Name="calendar" Size="14" />
+            <time datetime="@Evenement.DateDebut.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)">
+                @DateLisible
+            </time>
+            @if (EstPasse)
+            {
+                <span class="badge badge--ink">Terminé</span>
+            }
+        </p>
+    </div>
+</article>
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
+
+    [Parameter, EditorRequired] public EvenementVue Evenement { get; set; } = default!;
+
+    /// <summary>
+    /// Adresse de la fiche. Par défaut l'événement renvoie vers la liste, qui est le
+    /// seul point d'inscription tant qu'aucun formulaire dédié n'existe.
+    /// </summary>
+    [Parameter] public string? Url { get; set; }
+
+    private string Lien => Url ?? "/evenements";
+
+    /// <summary>Un événement dont la date de début est dépassée est conservé, mais signalé comme terminé.</summary>
+    private bool EstPasse => Evenement.DateDebut < DateOnly.FromDateTime(DateTime.Today);
+
+    private string DateLisible => Evenement.DateFin is { } fin
+        ? $"du {Evenement.DateDebut.ToString("d MMMM", Culture)} au {fin.ToString("d MMMM yyyy", Culture)}"
+        : Evenement.DateDebut.ToString("d MMMM yyyy", Culture);
+
+    private string CouleurType => Evenement.Type switch
+    {
+        "Meetup" => "violet",
+        "Hackathon" => "orange",
+        "Conférence" => "orange",
+        "Atelier" => "vert",
+        _ => "violet",
+    };
+}

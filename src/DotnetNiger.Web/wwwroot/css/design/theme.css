@@ -429,6 +429,14 @@
     font-size: var(--text-caption);
   }
 
+  /* Lieu d'un événement : l'icône doit rester alignée avec le texte quand la
+     ligne se replie sur plusieurs rangs. */
+  .evenement__lieu {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 0.5);
+  }
+
   /* --- Badge --- */
   .badge {
     display: inline-flex;

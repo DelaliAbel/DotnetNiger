@@ -40,6 +40,12 @@ public sealed class EvenementVue
     public required string Description { get; init; }
 
     public string? ImageUrl { get; init; }
+
+    /// <summary>Premier jour de l'événement. Sans elle, impossible de distinguer un meetup à venir d'un hackathon passé.</summary>
+    public required DateOnly DateDebut { get; init; }
+
+    /// <summary>Dernier jour, pour un événement qui dure plus d'un jour ; nul pour une soirée ou un atelier.</summary>
+    public DateOnly? DateFin { get; init; }
 }
 
 /// <summary>Modèle de présentation d'une ressource (formation, tutoriel, guide, outil).</summary>
