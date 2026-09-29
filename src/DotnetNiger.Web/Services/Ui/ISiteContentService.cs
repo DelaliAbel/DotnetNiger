@@ -23,4 +23,6 @@ public interface ISiteContentService
     Task<IReadOnlyList<PartenaireVue>> ChargerPartenairesAsync(CancellationToken annulation = default);
 
     Task<IReadOnlyList<MembreVue>> ChargerMembresAsync(CancellationToken annulation = default);
+
+    Task<AProposVue> ChargerAProposAsync(CancellationToken annulation = default);
 }

@@ -1,0 +1,213 @@
+@page "/a-propos"
+@attribute [StreamRendering]
+
+@inject ISiteContentService Contenu
+
+<PageTitle>À propos — DotnetNiger, la communauté des développeurs .NET au Niger</PageTitle>
+<HeadContent>
+    <meta name="description" content="Qui sommes-nous, notre mission, nos valeurs et notre histoire : découvrez la communauté des développeurs .NET au Niger et son équipe." />
+    <meta property="og:title" content="À propos — DotnetNiger" />
+    <meta property="og:description" content="Découvrez la mission, les valeurs, l'histoire et l'équipe de la communauté des développeurs .NET au Niger." />
+</HeadContent>
+
+@if (_APropos is null)
+{
+    <div class="wrap" style="padding-block: calc(var(--spacing) * 12);">
+        <p class="text-caption" style="color: var(--site-fg-muted);">Chargement…</p>
+    </div>
+}
+else
+{
+    <!-- 1. Qui sommes-nous ? -->
+    <section class="hero">
+        <div class="wrap hero__grid hero__grid--inverse">
+            <div>
+                <p class="hero__eyebrow">
+                    <DnIcon Name="code" Size="14" /> Qui sommes-nous ?
+                </p>
+                <h1 class="hero__title" style="margin-top: var(--spacing);">
+                    Un catalyseur de la <strong>transformation numérique au Sahel</strong>
+                </h1>
+                <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
+                    @_APropos.Presentation
+                </p>
+                <div class="hero__actions" style="margin-top: calc(var(--spacing) * 4);">
+                    <a class="btn btn--white btn--lg" href="#mission">
+                        Découvrir notre vision <DnIcon Name="arrow-right" Size="18" />
+                    </a>
+                    <a class="btn btn--accent btn--lg" href="#equipe">
+                        Rencontrer l'équipe <DnIcon Name="users" Size="18" />
+                    </a>
+                </div>
+            </div>
+
+            <div class="hero__panel">
+                <div class="hero__panel__bar" aria-hidden="true">
+                    <span class="hero__panel__dot" style="background: #f17b26;"></span>
+                    <span class="hero__panel__dot" style="background: #03ad69;"></span>
+                    <span class="hero__panel__dot" style="background: #ad9be8;"></span>
+                </div>
+                <img class="hero__panel__image" src="/images/img3.jpg" loading="lazy"
+                     alt="Atelier DotnetNiger : des développeurs .NET du Niger autour de leurs ordinateurs portables" />
+            </div>
+        </div>
+    </section>
+
+    <!-- 2. Notre mission -->
+    <section class="section" aria-labelledby="mission-titre" id="mission">
+        <div class="wrap">
+            <div class="mission">
+                <div class="section__head" style="margin-bottom: 0;">
+                    <p class="eyebrow" style="color: var(--color-vert-300);">Notre mission</p>
+                    <h2 id="mission-titre" class="mission__titre">
+                        Propulser le talent local au sommet de la <strong>tech mondiale</strong>
+                    </h2>
+                    <p class="mission__detail">
+                        @_APropos.MissionDetail
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 3. Nos valeurs fondamentales -->
+    <section class="section" aria-labelledby="valeurs-titre">
+        <div class="wrap">
+            <div class="section__head">
+                <p class="eyebrow">Nos valeurs fondamentales</p>
+                <h2 id="valeurs-titre" class="section__title">
+                    Ce qui <strong>guide notre communauté</strong>
+                </h2>
+            </div>
+
+            <div class="grid gap-2 md:grid-cols-3">
+                @foreach (var valeur in _APropos.Valeurs)
+                {
+                    <article class="card card--hover">
+                        <div class="card__body">
+                            <span class="badge badge--violet"><DnIcon Name="@valeur.Icone" Size="14" /> @valeur.Titre</span>
+                            <h3 class="card__title" style="font-size: var(--text-base);">@valeur.Titre</h3>
+                            <p class="card__text">@valeur.Description</p>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Notre histoire -->
+    <section class="section" aria-labelledby="histoire-titre">
+        <div class="wrap">
+            <div class="section__head">
+                <p class="eyebrow">Notre histoire</p>
+                <h2 id="histoire-titre" class="section__title">
+                    De la <strong>fondation</strong> à la <strong>reconnaissance</strong>
+                </h2>
+                <p class="section__lead">
+                    Trois temps forts ont marqué le parcours de la communauté, des premières
+                    rencontres à Niamey jusqu'à l'intégration dans le réseau mondial des
+                    communautés .NET.
+                </p>
+            </div>
+
+            <div class="grid gap-2 md:grid-cols-3">
+                @foreach (var jalon in _APropos.Histoire)
+                {
+                    <article class="card card--hover">
+                        <div class="card__body">
+                            <span class="badge badge--violet">@jalon.Periode</span>
+                            <h3 class="card__title">@jalon.Titre</h3>
+                            <p class="card__text">@jalon.Description</p>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- 5. Équipe -->
+    <section class="section section--alt" aria-labelledby="equipe-titre" id="equipe">
+        <div class="wrap">
+            <div class="section__head">
+                <p class="eyebrow">L'équipe</p>
+                <h2 id="equipe-titre" class="section__title">
+                    Les personnes qui <strong>font vivre la communauté</strong>
+                </h2>
+                <p class="section__lead">
+                    Membres, contributeurs et responsables : celles et ceux qui accompagnent la
+                    croissance de DotnetNiger au quotidien.
+                </p>
+            </div>
+
+            <div class="grid gap-2 md:grid-cols-3">
+                @foreach (var membre in _APropos.Equipe)
+                {
+                    <article class="card">
+                        <div class="card__media card__media--equipe">
+                            <img src="@membre.ImageUrl" alt="@membre.Nom" loading="lazy"
+                                 style="width: 100%; height: 100%; object-fit: cover;" />
+                        </div>
+                        <div class="card__body">
+                            <h3 class="card__title" style="font-size: var(--text-base);">@membre.Nom</h3>
+                            <p class="card__text">@membre.Role</p>
+                            <p class="card__meta">
+                                @if (!string.IsNullOrWhiteSpace(membre.LienGithub))
+                                {
+                                    <a class="equipe__social" href="@membre.LienGithub" target="_blank" rel="noopener" aria-label="GitHub de @membre.Nom">
+                                        <DnIcon Name="github" Size="16" />
+                                    </a>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(membre.LienLinkedin))
+                                {
+                                    <a class="equipe__social" href="@membre.LienLinkedin" target="_blank" rel="noopener" aria-label="LinkedIn de @membre.Nom">
+                                        <DnIcon Name="linkedin" Size="16" />
+                                    </a>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(membre.LienX))
+                                {
+                                    <a class="equipe__social" href="@membre.LienX" target="_blank" rel="noopener" aria-label="X de @membre.Nom">
+                                        <DnIcon Name="x" Size="16" />
+                                    </a>
+                                }
+                            </p>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+    </section>
+
+    <!-- 6. Zone de connexion rapide -->
+    <section class="section" aria-labelledby="rejoindre-titre">
+        <div class="wrap">
+            <div class="bande">
+                <div class="grid gap-6 md:grid-cols-2" style="align-items: center;">
+                    <div>
+                        <p class="eyebrow" style="color: var(--color-vert-300);">Rejoindre la communauté</p>
+                        <h2 id="rejoindre-titre" class="bande__title" style="margin-top: var(--spacing);">
+                            La communauté vous attend
+                        </h2>
+                        <p class="bande__lead">
+                            Échangez avec des développeurs passionnés, découvrez des ressources
+                            et participez à la vie de DotnetNiger.
+                        </p>
+                    </div>
+                    <div>
+                        <a class="btn btn--white btn--lg" href="/communaute">
+                            Rejoindre la communauté <DnIcon Name="arrow-right" Size="18" />
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+@code {
+    private AProposVue? _APropos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _APropos = await Contenu.ChargerAProposAsync();
+    }
+}

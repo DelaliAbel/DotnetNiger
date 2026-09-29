@@ -88,6 +88,12 @@ public sealed class MembreVue
     public required string Teinte { get; init; } = "violet";
 
     public string? ImageUrl { get; init; }
+
+    public string? LienGithub { get; init; }
+
+    public string? LienLinkedin { get; init; }
+
+    public string? LienX { get; init; }
 }
 
 /// <summary>Modèle de présentation d'un lien vers un réseau social ou un canal de la communauté.</summary>
@@ -98,6 +104,46 @@ public sealed class CanalVue
     public required string Url { get; init; }
 
     public required string Icône { get; init; }
+}
+
+/// <summary>Modèle de présentation d'un jalon de l'histoire de la communauté.</summary>
+public sealed class JalonVue
+{
+    /// <summary>Période affichée (ex. « 2021 · 2022 » ou « 2024 »).</summary>
+    public required string Periode { get; init; }
+
+    public required string Titre { get; init; }
+
+    public required string Description { get; init; }
+}
+
+/// <summary>Modèle de présentation d'une valeur fondamentale de la communauté.</summary>
+public sealed class ValeurVue
+{
+    public required string Titre { get; init; }
+
+    public required string Description { get; init; }
+
+    public required string Icone { get; init; }
+}
+
+/// <summary>Données d'affichage de la page À propos.</summary>
+public sealed class AProposVue
+{
+    /// <summary>Texte long de présentation (« Qui sommes-nous ? »).</summary>
+    public required string Presentation { get; init; }
+
+    /// <summary>Titre de la mission (slogan).</summary>
+    public required string Mission { get; init; }
+
+    /// <summary>Paragraphe qui développe la mission.</summary>
+    public required string MissionDetail { get; init; }
+
+    public required IReadOnlyList<ValeurVue> Valeurs { get; init; } = Array.Empty<ValeurVue>();
+
+    public required IReadOnlyList<JalonVue> Histoire { get; init; } = Array.Empty<JalonVue>();
+
+    public required IReadOnlyList<MembreVue> Equipe { get; init; } = Array.Empty<MembreVue>();
 }
 
 /// <summary>Données d'affichage de la page d'accueil.</summary>

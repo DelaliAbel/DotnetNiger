@@ -710,6 +710,18 @@
     }
   }
 
+  /* Variante inverse : la photo passe à gauche sur ordinateur (texte à droite).
+     Sur mobile, le texte reste en premier et la photo est reprise en dessous. */
+  @media (min-width: 64rem) {
+    .hero__grid--inverse > div:first-child {
+      order: 2;
+    }
+
+    .hero__grid--inverse .hero__panel {
+      order: -1;
+    }
+  }
+
   .hero__eyebrow {
     display: inline-flex;
     align-items: center;
@@ -1409,5 +1421,103 @@
   .dn-icon {
     display: inline-block;
     vertical-align: text-bottom;
+  }
+
+  /* --- Carte d'équipe --- */
+  .card__media--equipe {
+    aspect-ratio: 1 / 1;
+  }
+
+  .card__media--equipe img {
+    transition: transform 200ms ease;
+  }
+
+  .card--hover:hover .card__media--equipe img {
+    transform: scale(1.04);
+  }
+
+  .equipe__social {
+    width: calc(var(--spacing) * 4);
+    height: calc(var(--spacing) * 4);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--site-border);
+    color: var(--site-fg-muted);
+    place-items: center;
+    transition: color 150ms ease, border-color 150ms ease, background-color 150ms ease;
+    display: inline-grid;
+  }
+
+  .equipe__social:hover {
+    color: var(--color-violet-500);
+    border-color: var(--color-violet-500);
+    background: var(--color-violet-50);
+  }
+
+  .dark .equipe__social:hover {
+    color: var(--color-violet-200);
+    background: rgb(81 43 212 / 0.14);
+  }
+
+  .equipe__social[aria-label^="GitHub"]:hover {
+    color: var(--color-ink-700);
+    border-color: var(--color-ink-500);
+  }
+
+  /* --- Bandeau mission --- */
+  .mission {
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-xl);
+    background: linear-gradient(160deg, var(--color-violet-900) 0%, var(--color-violet-600) 60%, var(--color-violet-500) 100%);
+    color: #fff;
+    padding: calc(var(--spacing) * 8);
+  }
+
+  .mission::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgb(255 255 255 / 0.14) 1px, transparent 1px);
+    background-size: 28px 28px;
+    pointer-events: none;
+  }
+
+  .mission > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .mission__titre {
+    font-size: var(--text-display);
+    line-height: 1.18;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    max-width: 24ch;
+    text-wrap: balance;
+  }
+
+  .mission__titre strong {
+    background: linear-gradient(92deg, #fff 20%, var(--color-vert-300) 90%);
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  .mission__detail {
+    margin-top: calc(var(--spacing) * 3);
+    max-width: 56ch;
+    color: rgb(255 255 255 / 0.85);
+    font-size: var(--text-lead);
+    line-height: 1.65;
+  }
+
+  @media (max-width: 39.999rem) {
+    .mission {
+      padding: calc(var(--spacing) * 5) calc(var(--spacing) * 3);
+    }
+
+    .mission__titre {
+      font-size: var(--text-section);
+    }
   }
 }
