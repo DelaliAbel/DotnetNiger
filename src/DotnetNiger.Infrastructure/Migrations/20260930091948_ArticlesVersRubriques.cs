@@ -24,23 +24,39 @@ namespace DotnetNiger.Infrastructure.Migrations
             // Les trois catégories de l'ancien enum deviennent des rubriques. Le nom de
             // la rubrique reprend l'ancien libellé : un article garde lisible la catégorie
             // qu'il portait, et l'administrateur pourra la réorganiser ensuite.
+            // L'amorçage a déjà peuplé la table sur une base neuve : insérer ici les
+            // mêmes rubriques violerait l'unicité du slug et interromprait le
+            // démarrage. Elles ne sont créées que si elles manquent.
             migrationBuilder.Sql(
                 """
-                DECLARE @nouveautes uniqueidentifier = NEWID();
-                DECLARE @projets uniqueidentifier = NEWID();
-                DECLARE @interviews uniqueidentifier = NEWID();
+                IF NOT EXISTS (SELECT 1 FROM [Rubriques] WHERE [Slug] = N'nouveautes')
+                BEGIN
+                    DECLARE @nouveautes uniqueidentifier = NEWID();
+                    DECLARE @projets uniqueidentifier = NEWID();
+                    DECLARE @interviews uniqueidentifier = NEWID();
 
-                INSERT INTO [Rubriques] ([Id], [Couleur], [Nom], [Ordre], [Slug]) VALUES
-                    (@nouveautes, N'violet', N'Nouveautés de .NET', 10, N'nouveautes'),
-                    (@projets, N'vert', N'Projets locaux', 110, N'projets'),
-                    (@interviews, N'orange', N'Interviews', 120, N'interviews');
+                    INSERT INTO [Rubriques] ([Id], [Couleur], [Nom], [Ordre], [Slug])
+                    SELECT @nouveautes, N'violet', N'Nouveautés de .NET', 10, N'nouveautes'
+                    WHERE NOT EXISTS (SELECT 1 FROM [Rubriques] WHERE [Slug] = N'projets')
+                      AND NOT EXISTS (SELECT 1 FROM [Rubriques] WHERE [Slug] = N'interviews');
+
+                    INSERT INTO [Rubriques] ([Id], [Couleur], [Nom], [Ordre], [Slug])
+                    SELECT @projets, N'vert', N'Projets locaux', 110, N'projets'
+                    WHERE NOT EXISTS (SELECT 1 FROM [Rubriques] WHERE [Slug] = N'projets');
+
+                    INSERT INTO [Rubriques] ([Id], [Couleur], [Nom], [Ordre], [Slug])
+                    SELECT @interviews, N'orange', N'Interviews', 120, N'interviews'
+                    WHERE NOT EXISTS (SELECT 1 FROM [Rubriques] WHERE [Slug] = N'interviews');
+                END
 
                 UPDATE [Articles] SET [RubriqueId] =
-                    CASE [Category]
-                        WHEN N'LocalProjects' THEN @projets
-                        WHEN N'Interview' THEN @interviews
-                        ELSE @nouveautes
-                    END;
+                    COALESCE(
+                        (SELECT TOP 1 [Id] FROM [Rubriques] WHERE [Slug] = CASE [Category]
+                            WHEN N'LocalProjects' THEN N'projets'
+                            WHEN N'Interview' THEN N'interviews'
+                            ELSE N'nouveautes' END),
+                        (SELECT TOP 1 [Id] FROM [Rubriques] ORDER BY [Ordre]))
+                WHERE [RubriqueId] IS NULL;
                 """);
 
             migrationBuilder.Sql(
