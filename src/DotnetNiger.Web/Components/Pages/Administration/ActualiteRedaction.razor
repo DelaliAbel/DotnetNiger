@@ -69,12 +69,12 @@ else
 
         <div class="flex flex-wrap gap-4">
             <label class="flex flex-col gap-1">
-                <span class="text-sm font-medium">Catégorie</span>
-                <select class="rounded-sm border border-ink-300 bg-white px-3 py-2 text-base" name="Category">
-                    @foreach (var categorie in Enum.GetValues<ArticleCategory>())
+                <span class="text-sm font-medium">Rubrique</span>
+                <select class="rounded-sm border border-ink-300 bg-white px-3 py-2 text-base" name="CategoryId">
+                    @foreach (var rubrique in _Rubriques)
                     {
-                        <option value="@((int)categorie)" selected="@(_article?.Category == categorie)">
-                            @Libelle(categorie)
+                        <option value="@rubrique.Id" selected="@(_article?.RubriqueId == rubrique.Id)">
+                            @rubrique.Nom
                         </option>
                     }
                 </select>
@@ -114,10 +114,22 @@ else
     private bool _introuvable;
     private string? _erreur;
 
+    /// <summary>
+    /// Rubriques proposées dans le menu. Elles viennent de la base : en ajouter une ne
+    /// demande ni code ni déploiement, et le menu de la rédaction ne peut pas proposer
+    /// une rubrique que le site public ignorerait.
+    /// </summary>
+    private IReadOnlyList<Rubrique> _Rubriques = [];
+
     private bool Modification => Id is not null;
 
     protected override async Task OnParametersSetAsync()
     {
+        _Rubriques = await UniteDeTravail.ReadRepository<Rubrique>().Query
+            .OrderBy(rubrique => rubrique.Ordre)
+            .ThenBy(rubrique => rubrique.Nom)
+            .ToListAsync();
+
         _erreur = Erreur switch
         {
             "deja-publie" => "Cet article est en ligne : repassez-le en brouillon avant de le modifier.",
@@ -130,6 +142,7 @@ else
         }
 
         _article = await UniteDeTravail.ReadRepository<Article>().Query
+            .Include(article => article.Rubrique)
             .FirstOrDefaultAsync(article => article.Id == identifiant);
 
         _introuvable = _article is null;
@@ -142,10 +155,4 @@ else
         _ => "Archivé",
     };
 
-    private static string Libelle(ArticleCategory categorie) => categorie switch
-    {
-        ArticleCategory.LocalProjects => "Projets locaux",
-        ArticleCategory.Interview => "Entretien",
-        _ => "Actualités .NET",
-    };
 }

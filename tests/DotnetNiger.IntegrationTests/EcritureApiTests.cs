@@ -91,7 +91,7 @@ public sealed class EcritureApiTests : IDisposable
             "Un article de démonstration",
             "Un chapô court",
             "Le contenu rédigé de l'article.",
-            ArticleCategory.DotNetNews,
+            RubriqueDeTest.Id(ContexteTest),
             Publish: true,
             CoverImageUrl: "https://exemple.test/couverture.png");
 
@@ -109,7 +109,7 @@ public sealed class EcritureApiTests : IDisposable
             "Un article de démonstration",
             "Un chapô court",
             "Le contenu rédigé de l'article.",
-            ArticleCategory.DotNetNews,
+            RubriqueDeTest.Id(ContexteTest),
             Publish: true,
             CoverImageUrl: "https://exemple.test/couverture.png");
 
@@ -149,6 +149,17 @@ public sealed class EcritureApiTests : IDisposable
             utilisateur,
             _portee.ServiceProvider.GetRequiredService<INewsletterDiffusion>(),
             TimeProvider.System);
+
+    /// <summary>
+    /// Contexte du test : celui qui possède les lignes créées ici.
+    /// </summary>
+    /// <remarks>
+    /// Une seule portée pour toute la classe. La rubrique de référence doit venir du
+    /// contexte qui va posséder l'article, sinon EF lareattache comme nouvelle et
+    /// échoue sur l'unicité du slug.
+    /// </remarks>
+    private DotnetNigerDbContext ContexteTest
+        => _portee.ServiceProvider.GetRequiredService<DotnetNigerDbContext>();
 
     public void Dispose()
     {

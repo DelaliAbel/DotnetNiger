@@ -35,10 +35,14 @@ public sealed class ActualiteInput
     public string Content { get; set; } = string.Empty;
 
     /// <summary>
-    /// Catégorie de l'article.
+    /// Rubrique de l'article.
     /// </summary>
-    [EnumDataType(typeof(ArticleCategory), ErrorMessage = "Choisissez une catégorie.")]
-    public ArticleCategory Category { get; set; } = ArticleCategory.DotNetNews;
+    /// <remarks>
+    /// Un identifiant et non un libellé : c'est le seul qui ne bouge pas quand la
+    /// rubrique est renommée. La liste des rubriques vient de la base.
+    /// </remarks>
+    [Required(ErrorMessage = "Choisissez une rubrique.")]
+    public Guid CategoryId { get; set; }
 
     /// <summary>
     /// Image de couverture.

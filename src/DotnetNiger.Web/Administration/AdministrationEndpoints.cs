@@ -5,6 +5,7 @@ using DotnetNiger.Application.Common;
 using DotnetNiger.Domain.Entities.Community;
 using DotnetNiger.Domain.Entities.Content;
 using DotnetNiger.Domain.Enums;
+using DotnetNiger.Domain.Exceptions;
 using DotnetNiger.Infrastructure.Email;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -120,7 +121,8 @@ public static class AdministrationEndpoints
                     return Results.Redirect($"/administration/actualites/{identifiant}?erreur=deja-publie");
                 }
 
-                article.UpdateDetails(input.Title, input.Excerpt, input.Content, input.Category);
+                var rubriqueMiseAJour = await TrouverRubriqueAsync(unitOfWork, input.CategoryId, cancellationToken);
+                article.UpdateDetails(input.Title, input.Excerpt, input.Content, rubriqueMiseAJour);
                 article.SetCoverImage(string.IsNullOrWhiteSpace(input.CoverImageUrl) ? null : input.CoverImageUrl);
 
                 var aRepublier = input.Publish;
@@ -141,7 +143,8 @@ public static class AdministrationEndpoints
                 return Results.Redirect($"/administration/actualites?publie={(aRepublier ? 1 : 0)}");
             }
 
-            var nouvelArticle = new Article(auteur, input.Title, input.Excerpt, input.Content, input.Category);
+            var rubriqueNouvelle = await TrouverRubriqueAsync(unitOfWork, input.CategoryId, cancellationToken);
+            var nouvelArticle = new Article(auteur, input.Title, input.Excerpt, input.Content, rubriqueNouvelle);
 
             if (!string.IsNullOrWhiteSpace(input.CoverImageUrl))
             {
@@ -269,6 +272,31 @@ public static class AdministrationEndpoints
     /// <summary>
     /// Traduit les annotations de validation en une phrase, la première suffice.
     /// </summary>
+    /// <summary>
+    /// Retrouve la rubrique désignée par son identifiant.
+    /// </summary>
+    /// <param name="unitOfWork">Unité de travail, pour la lecture.</param>
+    /// <param name="rubriqueId">Identifiant issu du formulaire.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>La rubrique demandée.</returns>
+    /// <exception cref="DomainException">Rubrique absente ou inconnue.</exception>
+    private static async Task<Rubrique> TrouverRubriqueAsync(
+        IUnitOfWork unitOfWork,
+        Guid rubriqueId,
+        CancellationToken cancellationToken)
+    {
+        if (rubriqueId == Guid.Empty)
+        {
+            throw new DomainException("categorie_requise", "Choisissez une rubrique.");
+        }
+
+        // Chargée en suivi : une rubrique détachée, dès lors qu'un article la référence,
+        // serait marquée « Added » et réinsérée sur une ligne existante.
+        return await unitOfWork.Repository<Rubrique>().TrackedQuery
+            .FirstOrDefaultAsync(rubrique => rubrique.Id == rubriqueId, cancellationToken)
+        ?? throw new DomainException("rubrique-introuvable", "Cette rubrique n'existe pas.");
+    }
+
     private static bool ModelStateErreur(ActualiteInput input, out string message)
     {
         var echecs = new List<ValidationResult>();

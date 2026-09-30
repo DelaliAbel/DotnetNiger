@@ -4,6 +4,7 @@ using DotnetNiger.Application.Common;
 using DotnetNiger.Domain.Entities.Content;
 using DotnetNiger.Domain.Entities.Projects;
 using DotnetNiger.Domain.Enums;
+using DotnetNiger.Domain.Exceptions;
 using DotnetNiger.Infrastructure.Email;
 using DotnetNiger.Web.Controller.Common;
 using DotnetNiger.Web.Controller.Contracts;
@@ -27,7 +28,7 @@ public sealed class ArticlesController(
     /// <summary>Liste les articles publiés.</summary>
     /// <param name="page">Numéro de page, à partir de 1.</param>
     /// <param name="pageSize">Taille de page.</param>
-    /// <param name="categorie">Filtre facultatif par catégorie.</param>
+    /// <param name="rubrique">Filtre facultatif par rubrique.</param>
     /// <param name="recherche">Filtre facultatif sur le titre ou le chapô.</param>
     /// <param name="trier">Ordre facultatif : <c>recent</c>, <c>ancien</c>, <c>titre</c> ou <c>titre-desc</c>.</param>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
@@ -39,17 +40,23 @@ public sealed class ArticlesController(
     public async Task<ActionResult<PageResponse<ArticleSummaryResponse>>> Lister(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
-        [FromQuery] ArticleCategory? categorie = null,
+        [FromQuery] Guid? rubrique = null,
         [FromQuery] string? recherche = null,
         [FromQuery] string? trier = null,
         CancellationToken cancellationToken = default)
     {
-        var requete = unitOfWork.ReadRepository<Article>().Query
+        // La rubrique est chargée : la projection renvoie son libellé, et une
+        // navigation non chargée vaudrait null.
+        // La rubrique est chargée : la projection renvoie son libellé, et une
+        // navigation non chargée vaudrait null. Le type est explicite car la requête
+        // reçoit ensuite des Where et des OrderBy.
+        IQueryable<Article> requete = unitOfWork.ReadRepository<Article>().Query
+            .Include(article => article.Rubrique)
             .Where(article => article.Status == PublicationStatus.Published);
 
-        if (categorie is { } valeur)
+        if (rubrique is { } valeur)
         {
-            requete = requete.Where(article => article.Category == valeur);
+            requete = requete.Where(article => article.RubriqueId == valeur);
         }
 
         if (!string.IsNullOrWhiteSpace(recherche))
@@ -93,6 +100,7 @@ public sealed class ArticlesController(
         CancellationToken cancellationToken)
     {
         var article = await unitOfWork.ReadRepository<Article>().Query
+            .Include(article => article.Rubrique)
             .FirstOrDefaultAsync(
                 candidat => candidat.Slug == slug && candidat.Status == PublicationStatus.Published,
                 cancellationToken);
@@ -124,12 +132,13 @@ public sealed class ArticlesController(
         CancellationToken cancellationToken)
     {
         var auteur = RequireAdministrateur(currentUser);
+        var rubrique = await TrouverRubriqueAsync(request.CategoryId, cancellationToken);
         var article = new Article(
             auteur,
             request.Title,
             request.Excerpt,
             request.Content,
-            request.Category);
+            rubrique);
 
         if (!string.IsNullOrWhiteSpace(request.CoverImageUrl))
         {
@@ -175,6 +184,7 @@ public sealed class ArticlesController(
         CancellationToken cancellationToken)
     {
         var article = await unitOfWork.ReadRepository<Article>().Query
+            .Include(article => article.Rubrique)
             .FirstOrDefaultAsync(candidat => candidat.Id == id, cancellationToken);
 
         if (article is null)
@@ -184,7 +194,8 @@ public sealed class ArticlesController(
 
         RequireAdministrateur(currentUser);
 
-        article.UpdateDetails(request.Title, request.Excerpt, request.Content, request.Category);
+        var rubrique = await TrouverRubriqueAsync(request.CategoryId, cancellationToken);
+        article.UpdateDetails(request.Title, request.Excerpt, request.Content, rubrique);
         article.SetCoverImage(request.CoverImageUrl);
 
         unitOfWork.Repository<Article>().Update(article);
@@ -216,6 +227,7 @@ public sealed class ArticlesController(
         CancellationToken cancellationToken)
     {
         var article = await unitOfWork.ReadRepository<Article>().Query
+            .Include(article => article.Rubrique)
             .FirstOrDefaultAsync(candidat => candidat.Id == id, cancellationToken);
 
         if (article is null)
@@ -258,6 +270,7 @@ public sealed class ArticlesController(
         CancellationToken cancellationToken)
     {
         var article = await unitOfWork.ReadRepository<Article>().Query
+            .Include(article => article.Rubrique)
             .FirstOrDefaultAsync(candidat => candidat.Id == id, cancellationToken);
 
         if (article is null)
@@ -294,6 +307,7 @@ public sealed class ArticlesController(
         CancellationToken cancellationToken)
     {
         var article = await unitOfWork.ReadRepository<Article>().Query
+            .Include(article => article.Rubrique)
             .FirstOrDefaultAsync(candidat => candidat.Id == id, cancellationToken);
 
         if (article is null)
@@ -328,6 +342,7 @@ public sealed class ArticlesController(
     public async Task<IActionResult> Supprimer(Guid id, CancellationToken cancellationToken)
     {
         var article = await unitOfWork.ReadRepository<Article>().Query
+            .Include(article => article.Rubrique)
             .FirstOrDefaultAsync(candidat => candidat.Id == id, cancellationToken);
 
         if (article is null)
@@ -347,5 +362,33 @@ public sealed class ArticlesController(
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return NoContent();
+    }
+
+    /// <summary>
+    /// Retrouve la rubrique désignée par son identifiant.
+    /// </summary>
+    /// <param name="rubriqueId">Identifiant transmis par le client.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>La rubrique demandée.</returns>
+    /// <exception cref="DomainException">La rubrique n'existe pas.</exception>
+    /// <remarks>
+    /// Le client envoie un identifiant et non un libellé : c'est le seul qui ne bouge pas
+    /// quand la rubrique est renommée. Un identifiant inconnu est une erreur explicite,
+    /// pas un article enregistré sous une rubrique au hasard.
+    /// </remarks>
+    private async Task<Rubrique> TrouverRubriqueAsync(Guid rubriqueId, CancellationToken cancellationToken)
+    {
+        if (rubriqueId == Guid.Empty)
+        {
+            throw new DomainException("categorie_requise", "Choisissez une rubrique.");
+        }
+
+        // La rubrique est chargée en suivi, et non via le dépôt de lecture. Celui-ci
+        // applique `AsNoTracking` : la rubrique obtenue serait détachée, et l'article qui
+        // la référence la ferait passer à l'état « Added » — donc réinsérée, sur une ligne
+        // qui existe déjà. Le visiteur verrait « slug déjà pris » au lieu de son article.
+        return await unitOfWork.Repository<Rubrique>().TrackedQuery
+            .FirstOrDefaultAsync(rubrique => rubrique.Id == rubriqueId, cancellationToken)
+        ?? throw new DomainException("not_found", "Cette rubrique n'existe pas.");
     }
 }

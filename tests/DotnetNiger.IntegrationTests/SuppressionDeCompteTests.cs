@@ -123,7 +123,7 @@ public sealed class SuppressionDeCompteTests : IDisposable
     [Fact]
     public async Task SupprimerUnCompte_EmporteCeQuilAProduit()
     {
-        var article = new Article(_membreId, "Un article épinglé", "Un chapô", "Un contenu", ArticleCategory.DotNetNews);
+        var article = new Article(_membreId, "Un article épinglé", "Un chapô", "Un contenu", RubriqueDeTest.Pour(ContexteTest));
         var ressource = new Resource(_membreId, "Un guide", "Un résumé", ResourceCategory.Guide);
         var projet = new Project(
             _membreId,
@@ -171,7 +171,7 @@ public sealed class SuppressionDeCompteTests : IDisposable
     [Fact]
     public async Task SupprimerUnCompte_LaisseIntactsLesContenusDesAutres()
     {
-        var article = new Article(_autreId, "Un article partagé", "Un chapô", "Un contenu", ArticleCategory.DotNetNews);
+        var article = new Article(_autreId, "Un article partagé", "Un chapô", "Un contenu", RubriqueDeTest.Pour(ContexteTest));
         var commentaire = Comment.ForArticle(article.Id, _autreId, "Un commentaire qui n'est pas de moi");
 
         Contexte.Articles.Add(article);
@@ -189,7 +189,7 @@ public sealed class SuppressionDeCompteTests : IDisposable
     [Fact]
     public async Task SupprimerUnCompte_RetireLesReponsesASesCommentaires()
     {
-        var article = new Article(_autreId, "Un article partagé", "Un chapô", "Un contenu", ArticleCategory.DotNetNews);
+        var article = new Article(_autreId, "Un article partagé", "Un chapô", "Un contenu", RubriqueDeTest.Pour(ContexteTest));
         var commentaire = Comment.ForArticle(article.Id, _membreId, "Un commentaire");
         var reponse = Comment.ForArticle(article.Id, _autreId, "Une réponse", commentaire.Id);
         var reponseALaReponse = Comment.ForArticle(article.Id, _membreId, "Une réponse à la réponse", reponse.Id);
@@ -220,7 +220,7 @@ public sealed class SuppressionDeCompteTests : IDisposable
     [Fact]
     public async Task SupprimerUnCompte_RetireSesContenusDejaRetiresLogiquement()
     {
-        var article = new Article(_membreId, "Un article retiré", "Un chapô", "Un contenu", ArticleCategory.DotNetNews);
+        var article = new Article(_membreId, "Un article retiré", "Un chapô", "Un contenu", RubriqueDeTest.Pour(ContexteTest));
         Contexte.Articles.Add(article);
         await Contexte.SaveChangesAsync();
 
@@ -236,7 +236,7 @@ public sealed class SuppressionDeCompteTests : IDisposable
     [Fact]
     public async Task SupprimerUnCompte_RendALaModerationLesSignalementsTraites()
     {
-        var cible = new Article(_autreId, "Un article signalé", "Un chapô", "Un contenu", ArticleCategory.DotNetNews);
+        var cible = new Article(_autreId, "Un article signalé", "Un chapô", "Un contenu", RubriqueDeTest.Pour(ContexteTest));
         Contexte.Articles.Add(cible);
         await Contexte.SaveChangesAsync();
 
@@ -301,7 +301,7 @@ public sealed class SuppressionDeCompteTests : IDisposable
     [Fact]
     public async Task SupprimerSonCompte_DoubleConfirmation_SupprimeLeCompte()
     {
-        var article = new Article(_membreId, "Un article à emporter", "Un chapô", "Un contenu", ArticleCategory.DotNetNews);
+        var article = new Article(_membreId, "Un article à emporter", "Un chapô", "Un contenu", RubriqueDeTest.Pour(ContexteTest));
         Contexte.Articles.Add(article);
         await Contexte.SaveChangesAsync();
 
@@ -393,6 +393,17 @@ public sealed class SuppressionDeCompteTests : IDisposable
         NormalizedEmail = email.ToUpperInvariant(),
         EmailConfirmed = true,
     };
+
+    /// <summary>
+    /// Contexte du test : celui qui possède les lignes créées ici.
+    /// </summary>
+    /// <remarks>
+    /// Une seule portée pour toute la classe. La rubrique de référence doit venir du
+    /// contexte qui va posséder l'article, sinon EF lareattache comme nouvelle et
+    /// échoue sur l'unicité du slug.
+    /// </remarks>
+    private DotnetNigerDbContext ContexteTest
+        => _portee.ServiceProvider.GetRequiredService<DotnetNigerDbContext>();
 
     public void Dispose()
     {

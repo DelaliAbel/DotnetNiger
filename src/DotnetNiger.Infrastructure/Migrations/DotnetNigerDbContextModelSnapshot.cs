@@ -293,11 +293,6 @@ namespace DotnetNiger.Infrastructure.Migrations
                     b.Property<Guid>("AuthorId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Category")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("nvarchar(32)");
-
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasMaxLength(32000)
@@ -327,6 +322,9 @@ namespace DotnetNiger.Infrastructure.Migrations
                     b.Property<DateTime?>("PublishedAtUtc")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid>("RubriqueId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Slug")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -351,6 +349,8 @@ namespace DotnetNiger.Infrastructure.Migrations
 
                     b.HasIndex("IsDeleted")
                         .HasDatabaseName("IX_Articles_IsDeleted");
+
+                    b.HasIndex("RubriqueId");
 
                     b.HasIndex("Slug")
                         .IsUnique();
@@ -1129,6 +1129,14 @@ namespace DotnetNiger.Infrastructure.Migrations
                         .HasForeignKey("AuthorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("DotnetNiger.Domain.Entities.Content.Rubrique", "Rubrique")
+                        .WithMany()
+                        .HasForeignKey("RubriqueId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Rubrique");
                 });
 
             modelBuilder.Entity("DotnetNiger.Domain.Entities.Content.Resource", b =>

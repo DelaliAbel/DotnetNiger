@@ -101,7 +101,7 @@ public sealed class CycleDeVieApiTests : IDisposable
             "Un titre usurpé",
             "Un chapô usurpé",
             "Un contenu usurpé",
-            ArticleCategory.DotNetNews,
+            RubriqueDeTest.Id(ContexteTest),
             "https://exemple.test/couverture.png");
 
         var erreur = await Assert.ThrowsAsync<DomainException>(
@@ -122,7 +122,7 @@ public sealed class CycleDeVieApiTests : IDisposable
             "Un titre corrigé",
             "Un chapô corrigé",
             "Un contenu corrigé",
-            ArticleCategory.DotNetNews,
+            RubriqueDeTest.Id(ContexteTest),
             "https://exemple.test/nouvelle.png");
 
         var resultat = await controleur.MettreAJour(article.Id, request, CancellationToken.None);
@@ -263,7 +263,7 @@ public sealed class CycleDeVieApiTests : IDisposable
 
     private Article CreerArticle(string titre)
     {
-        var article = new Article(_membreId, titre, "Un chapô", "Un contenu", ArticleCategory.DotNetNews);
+        var article = new Article(_membreId, titre, "Un chapô", "Un contenu", RubriqueDeTest.Pour(ContexteTest));
 
         UnitOfWork().Repository<Article>().Add(article);
         UnitOfWork().SaveChangesAsync(CancellationToken.None).GetAwaiter().GetResult();
@@ -291,6 +291,17 @@ public sealed class CycleDeVieApiTests : IDisposable
         _portee.ServiceProvider.GetRequiredService<INewsletterDiffusion>();
 
     private IUnitOfWork UnitOfWork() => _portee.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+    /// <summary>
+    /// Contexte du test : celui qui possède les lignes créées ici.
+    /// </summary>
+    /// <remarks>
+    /// Une seule portée pour toute la classe. La rubrique de référence doit venir du
+    /// contexte qui va posséder l'article, sinon EF lareattache comme nouvelle et
+    /// échoue sur l'unicité du slug.
+    /// </remarks>
+    private DotnetNigerDbContext ContexteTest
+        => _portee.ServiceProvider.GetRequiredService<DotnetNigerDbContext>();
 
     public void Dispose()
     {

@@ -14,6 +14,33 @@ namespace DotnetNiger.Domain.Common;
 public static class DomainGuard
 {
     /// <summary>
+    /// Vérifie qu'une référence obligatoire est renseignée.
+    /// </summary>
+    /// <typeparam name="T">Type de la référence.</typeparam>
+    /// <param name="value">Valeur à contrôler.</param>
+    /// <param name="field">Nom du champ, utilisé dans le code d'erreur.</param>
+    /// <returns>La référence, non nulle.</returns>
+    /// <exception cref="DomainException">La référence est <see langword="null"/>.</exception>
+    /// <remarks>
+    /// Une entité associée — une rubrique, un membre — ne peut pas être absente : la
+    /// laisser à <see langword="null"/> déplacerait l'échec au moment de la lecture, en
+    /// <c>NullReferenceException</c>, loin de sa cause. Le garde-fou transforme ce cas en
+    /// erreur de domaine, au moment où l'entité est construite.
+    /// </remarks>
+    public static T AgainstNull<T>(T? value, string field)
+        where T : class
+    {
+        if (value is null)
+        {
+            throw new DomainException(
+                "required_reference_missing",
+                $"{field} est obligatoire.");
+        }
+
+        return value;
+    }
+
+    /// <summary>
     /// Vérifie qu'un texte obligatoire est renseigné et le renvoie normalisé.
     /// </summary>
     /// <param name="value">Valeur à contrôler.</param>

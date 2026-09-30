@@ -53,7 +53,8 @@ public sealed record PageResponse<T>(
 /// <param name="Slug">Slug d'URL.</param>
 /// <param name="Title">Titre.</param>
 /// <param name="Excerpt">Chapô.</param>
-/// <param name="Category">Catégorie.</param>
+/// <param name="CategoryId">Identifiant de la rubrique.</param>
+/// <param name="Category">Libellé de la rubrique.</param>
 /// <param name="Author">Nom de l'auteur.</param>
 /// <param name="PublishedAtUtc">Date de publication.</param>
 public sealed record ArticleSummaryResponse(
@@ -61,7 +62,8 @@ public sealed record ArticleSummaryResponse(
     string Slug,
     string Title,
     string Excerpt,
-    ArticleCategory Category,
+    Guid CategoryId,
+    string Category,
     string Author,
     DateTime? PublishedAtUtc);
 
@@ -71,7 +73,8 @@ public sealed record ArticleSummaryResponse(
 /// <param name="Title">Titre.</param>
 /// <param name="Excerpt">Chapô.</param>
 /// <param name="Content">Contenu rédigé.</param>
-/// <param name="Category">Catégorie.</param>
+/// <param name="CategoryId">Identifiant de la rubrique.</param>
+/// <param name="Category">Libellé de la rubrique.</param>
 /// <param name="CoverImageUrl">Image de couverture.</param>
 /// <param name="Author">Nom de l'auteur.</param>
 /// <param name="PublishedAtUtc">Date de publication.</param>
@@ -81,7 +84,8 @@ public sealed record ArticleResponse(
     string Title,
     string Excerpt,
     string Content,
-    ArticleCategory Category,
+    Guid CategoryId,
+    string Category,
     string? CoverImageUrl,
     string Author,
     DateTime? PublishedAtUtc);
@@ -91,7 +95,8 @@ public sealed record ArticleResponse(
 /// <param name="Slug">Slug d'URL.</param>
 /// <param name="Title">Titre.</param>
 /// <param name="Excerpt">Chapô.</param>
-/// <param name="Category">Catégorie.</param>
+/// <param name="CategoryId">Identifiant de la rubrique.</param>
+/// <param name="Category">Libellé de la rubrique.</param>
 /// <param name="Status">État de publication.</param>
 /// <param name="Author">Nom de l'auteur.</param>
 /// <param name="PublishedAtUtc">Date de publication.</param>
@@ -101,7 +106,8 @@ public sealed record AdminArticleSummaryResponse(
     string Slug,
     string Title,
     string Excerpt,
-    ArticleCategory Category,
+    Guid CategoryId,
+    string Category,
     PublicationStatus Status,
     string Author,
     DateTime? PublishedAtUtc,
@@ -111,14 +117,14 @@ public sealed record AdminArticleSummaryResponse(
 /// <param name="Title">Titre.</param>
 /// <param name="Excerpt">Chapô.</param>
 /// <param name="Content">Contenu rédigé.</param>
-/// <param name="Category">Catégorie.</param>
+/// <param name="CategoryId">Identifiant de la rubrique.</param>
 /// <param name="Publish">Publier immédiatement plutôt que garder en brouillon.</param>
 /// <param name="CoverImageUrl">Image de couverture, pour la vignette du blog.</param>
 public sealed record CreateArticleRequest(
     [Required, StringLength(200)] string Title,
     [Required, StringLength(500)] string Excerpt,
     [Required] string Content,
-    ArticleCategory Category,
+    Guid CategoryId,
     bool Publish = false,
     [StringLength(2048)] string? CoverImageUrl = null);
 
@@ -389,13 +395,13 @@ public sealed record ReportResponse(
 /// <param name="Title">Titre.</param>
 /// <param name="Excerpt">Chapô.</param>
 /// <param name="Content">Contenu rédigé.</param>
-/// <param name="Category">Catégorie.</param>
+/// <param name="CategoryId">Identifiant de la rubrique.</param>
 /// <param name="CoverImageUrl">Image de couverture, ou <see langword="null"/> pour la retirer.</param>
 public sealed record UpdateArticleRequest(
     [Required, StringLength(200)] string Title,
     [Required, StringLength(500)] string Excerpt,
     [Required] string Content,
-    ArticleCategory Category,
+    Guid CategoryId,
     [StringLength(2048)] string? CoverImageUrl = null);
 
 /// <summary>Demande de mise à jour d'une ressource.</summary>
@@ -663,7 +669,7 @@ internal static class ApiProjections
     /// <param name="auteur">Nom de l'auteur, résolu hors requête.</param>
     /// <returns>Résumé sérialisable.</returns>
     public static ArticleSummaryResponse ToSummary(Article article, string auteur) =>
-        new(article.Id, article.Slug, article.Title, article.Excerpt, article.Category, auteur, article.PublishedAtUtc);
+        new(article.Id, article.Slug, article.Title, article.Excerpt, article.RubriqueId, article.Rubrique.Nom, auteur, article.PublishedAtUtc);
 
     /// <summary>
     /// Projette un article en résumé d'administration, état de publication compris.
@@ -677,7 +683,8 @@ internal static class ApiProjections
             article.Slug,
             article.Title,
             article.Excerpt,
-            article.Category,
+            article.RubriqueId,
+            article.Rubrique.Nom,
             article.Status,
             auteur,
             article.PublishedAtUtc,
@@ -696,7 +703,8 @@ internal static class ApiProjections
             article.Title,
             article.Excerpt,
             article.Content,
-            article.Category,
+            article.RubriqueId,
+            article.Rubrique.Nom,
             article.CoverImageUrl,
             auteur,
             article.PublishedAtUtc);

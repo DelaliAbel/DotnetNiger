@@ -119,7 +119,10 @@
                                 formulaire reste préférable pour tout ce qui demande une trace
                                 ou une réponse de l'équipe.
                             </p>
-                            <div class="site-footer__social" style="margin-top: calc(var(--spacing) * 1);">
+                            @* Variante claire : `.site-footer__social` est calibrée pour
+                               le fond sombre du pied de page, et son survol blanc
+                               disparaissait sur la carte. *@
+                            <div class="contact__canaux">
                                 @foreach (var canal in _Canaux)
                                 {
                                     <a href="@canal.Url" target="_blank" rel="noopener" aria-label="@canal.Nom">

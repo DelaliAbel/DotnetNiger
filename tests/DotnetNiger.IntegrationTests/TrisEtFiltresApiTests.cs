@@ -80,9 +80,9 @@ public sealed class TrisEtFiltresApiTests : IDisposable
     [Fact]
     public async Task TrierLesArticlesParTitre_PrendLePasSurLaPublication()
     {
-        var ancien = new Article(_membreId, "Zéphyr", "Un chapô", "Un contenu", ArticleCategory.DotNetNews);
+        var ancien = new Article(_membreId, "Zéphyr", "Un chapô", "Un contenu", RubriqueDeTest.Pour(ContexteTest));
         ancien.Publish(_maintenant);
-        var recent = new Article(_membreId, "Bêta", "Un chapô", "Un contenu", ArticleCategory.LocalProjects);
+        var recent = new Article(_membreId, "Bêta", "Un chapô", "Un contenu", RubriqueDeTest.Pour(ContexteTest));
         recent.Publish(_maintenant.AddHours(1));
 
         UnitOfWork().Repository<Article>().Add(ancien);
@@ -107,9 +107,9 @@ public sealed class TrisEtFiltresApiTests : IDisposable
     [Fact]
     public async Task RechercherLesArticles_TrouveDansLeTitre()
     {
-        var cible = new Article(_membreId, "Migrations EF Core", "Un chapô", "Un contenu", ArticleCategory.DotNetNews);
+        var cible = new Article(_membreId, "Migrations EF Core", "Un chapô", "Un contenu", RubriqueDeTest.Pour(ContexteTest));
         cible.Publish(_maintenant);
-        var autre = new Article(_membreId, "Carnet de communauté", "Un chapô", "Un contenu", ArticleCategory.Interview);
+        var autre = new Article(_membreId, "Carnet de communauté", "Un chapô", "Un contenu", RubriqueDeTest.Pour(ContexteTest));
         autre.Publish(_maintenant.AddHours(1));
 
         UnitOfWork().Repository<Article>().Add(cible);
@@ -529,6 +529,17 @@ public sealed class TrisEtFiltresApiTests : IDisposable
         _portee.ServiceProvider.GetRequiredService<INewsletterDiffusion>();
 
     private IUnitOfWork UnitOfWork() => _portee.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
+    /// <summary>
+    /// Contexte du test : celui qui possède les lignes créées ici.
+    /// </summary>
+    /// <remarks>
+    /// Une seule portée pour toute la classe. La rubrique de référence doit venir du
+    /// contexte qui va posséder l'article, sinon EF lareattache comme nouvelle et
+    /// échoue sur l'unicité du slug.
+    /// </remarks>
+    private DotnetNigerDbContext ContexteTest
+        => _portee.ServiceProvider.GetRequiredService<DotnetNigerDbContext>();
 
     public void Dispose()
     {

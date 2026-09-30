@@ -1,4 +1,5 @@
 using DotnetNiger.Domain.Common;
+using DotnetNiger.Domain.Content;
 using DotnetNiger.Domain.Enums;
 using DotnetNiger.Domain.Exceptions;
 
@@ -27,16 +28,23 @@ public sealed class Article : SoftDeletableEntity
     /// <param name="authorId">Identifiant du membre auteur, obligatoirement un administrateur.</param>
     /// <param name="title">Titre de l'article.</param>
     /// <param name="excerpt">Chapo affiché dans les listes.</param>
-    /// <param name="content">Corps de l'article au format HTML.</param>
-    /// <param name="category">Catégorie du blog.</param>
-    public Article(Guid authorId, string title, string excerpt, string content, ArticleCategory category)
+    /// <param name="markdown">Corps de l'article, en Markdown.</param>
+    /// <param name="rubrique">Rubrique éditoriale.</param>
+    /// <param name="slug">
+    /// Slug d'URL, à fournir lorsque le titre ne se prête pas à une dérivation
+    /// automatique ; absent, il est déduit du titre.
+    /// </param>
+    public Article(Guid authorId, string title, string excerpt, string markdown, Rubrique rubrique, string? slug = null)
     {
         AuthorId = DomainGuard.AgainstEmpty(authorId, nameof(authorId));
         Title = Required(title, FieldLimits.Title, nameof(title));
         Excerpt = Required(excerpt, FieldLimits.Excerpt, nameof(excerpt));
-        Content = Required(content, FieldLimits.Content, nameof(content));
-        Category = category;
-        Slug = SlugFactory.Create(title);
+        Content = Required(ArticleContent.VersHtml(markdown), FieldLimits.Content, nameof(markdown));
+        Rubrique = DomainGuard.AgainstNull(rubrique, nameof(rubrique));
+        RubriqueId = rubrique.Id;
+        Slug = string.IsNullOrWhiteSpace(slug)
+            ? SlugFactory.Create(Title)
+            : DomainGuard.AgainstTooLong(slug, FieldLimits.Slug, nameof(slug));
     }
 
     /// <summary>
@@ -55,14 +63,24 @@ public sealed class Article : SoftDeletableEntity
     public string Excerpt { get; private set; } = string.Empty;
 
     /// <summary>
-    /// Obtient le corps de l'article au format HTML.
+    /// Obtient le corps de l'article au format HTML, produit par le convertisseur.
     /// </summary>
+    /// <remarks>
+    /// Propriété en lecture seule : seul le constructeur et la mise à jour l'alimentent,
+    /// et tous deux passent par <see cref="ArticleContent.VersHtml"/>. Un corps ne peut
+    /// donc pas être écrit en HTML arbitraire, même par un administrateur.
+    /// </remarks>
     public string Content { get; private set; } = string.Empty;
 
     /// <summary>
-    /// Obtient la catégorie du blog.
+    /// Obtient la rubrique éditoriale de l'article.
     /// </summary>
-    public ArticleCategory Category { get; private set; }
+    public Rubrique Rubrique { get; private set; } = null!;
+
+    /// <summary>
+    /// Obtient l'identifiant de la rubrique, clé étrangère de la relation.
+    /// </summary>
+    public Guid RubriqueId { get; private set; }
 
     /// <summary>
     /// Obtient l'état éditorial.
@@ -89,9 +107,9 @@ public sealed class Article : SoftDeletableEntity
     /// </summary>
     /// <param name="title">Nouveau titre.</param>
     /// <param name="excerpt">Nouveau chapo.</param>
-    /// <param name="content">Nouveau corps HTML.</param>
-    /// <param name="category">Nouvelle catégorie.</param>
-    public void UpdateDetails(string title, string excerpt, string content, ArticleCategory category)
+    /// <param name="markdown">Nouveau corps, en Markdown.</param>
+    /// <param name="rubrique">Nouvelle rubrique.</param>
+    public void UpdateDetails(string title, string excerpt, string markdown, Rubrique rubrique)
     {
         var newTitle = Required(title, FieldLimits.Title, nameof(title));
 
@@ -102,8 +120,9 @@ public sealed class Article : SoftDeletableEntity
         }
 
         Excerpt = Required(excerpt, FieldLimits.Excerpt, nameof(excerpt));
-        Content = Required(content, FieldLimits.Content, nameof(content));
-        Category = category;
+        Content = Required(ArticleContent.VersHtml(markdown), FieldLimits.Content, nameof(markdown));
+        Rubrique = DomainGuard.AgainstNull(rubrique, nameof(rubrique));
+        RubriqueId = rubrique.Id;
     }
 
     /// <summary>

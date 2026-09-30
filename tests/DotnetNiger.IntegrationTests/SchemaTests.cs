@@ -33,7 +33,10 @@ public sealed class SchemaTests(SqliteFixture fixture) : IClassFixture<SqliteFix
         return utilisateur;
     }
 
-    private static Article CreerArticle(Guid auteurId)
+    /// <summary>Crée un article rattaché à la rubrique du contexte fourni.</summary>
+    /// <param name="auteurId">Identifiant de l'auteur.</param>
+    /// <param name="context">Contexte qui possède l'article et sa rubrique.</param>
+    private static Article CreerArticle(Guid auteurId, DotnetNigerDbContext context)
     {
         // Le titre est unique par article : le slug en découle, et l'index unique sur le
         // slug rejetterait sinon les articles de titre identique.
@@ -42,7 +45,7 @@ public sealed class SchemaTests(SqliteFixture fixture) : IClassFixture<SqliteFix
             $"Article {Guid.NewGuid():N}",
             "Un résumé court.",
             "Le contenu de l'article.",
-            ArticleCategory.DotNetNews);
+            RubriqueDeTest.Pour(context));
     }
 
     private static async Task<ApplicationUser> EnregistrerUtilisateurAsync(DotnetNigerDbContext context)
@@ -56,7 +59,7 @@ public sealed class SchemaTests(SqliteFixture fixture) : IClassFixture<SqliteFix
 
     private static async Task<Article> EnregistrerArticleAsync(DotnetNigerDbContext context, Guid auteurId)
     {
-        var article = CreerArticle(auteurId);
+        var article = CreerArticle(auteurId, context);
         context.Articles.Add(article);
         await context.SaveChangesAsync();
 
@@ -120,7 +123,7 @@ public sealed class SchemaTests(SqliteFixture fixture) : IClassFixture<SqliteFix
         var auteurInconnu = Guid.NewGuid();
         var context = fixture.CreateContextFor(new HorlogeTest(Instant), UtilisateurFictif.Anonyme);
 
-        await context.Articles.AddAsync(CreerArticle(auteurInconnu));
+        await context.Articles.AddAsync(CreerArticle(auteurInconnu, context));
 
         await Assert.ThrowsAsync<DbUpdateException>(() => context.SaveChangesAsync());
     }
@@ -180,8 +183,8 @@ public sealed class SchemaTests(SqliteFixture fixture) : IClassFixture<SqliteFix
         var auteur = await EnregistrerUtilisateurAsync(context);
 
         var titre = $"Article {Guid.NewGuid():N}";
-        var premier = new Article(auteur.Id, titre, "Résumé", "Contenu", ArticleCategory.Interview);
-        var second = new Article(auteur.Id, titre, "Résumé", "Contenu", ArticleCategory.Interview);
+        var premier = new Article(auteur.Id, titre, "Résumé", "Contenu", RubriqueDeTest.Pour(context));
+        var second = new Article(auteur.Id, titre, "Résumé", "Contenu", RubriqueDeTest.Pour(context));
 
         Assert.Equal(premier.Slug, second.Slug);
 
@@ -208,8 +211,10 @@ public sealed class SchemaTests(SqliteFixture fixture) : IClassFixture<SqliteFix
         // L'entité doit être modifiée via le contexte qui va l'écrire : la muter
         // directement ne change rien pour un contexte qui ne la suit pas.
         var slug = article.Slug;
-        var aModifier = await contextPlusTard.Articles.SingleAsync(candidate => candidate.Slug == slug);
-        aModifier.UpdateDetails(aModifier.Title, "Un résumé révisé.", aModifier.Content, aModifier.Category);
+        var aModifier = await contextPlusTard.Articles
+            .Include(candidate => candidate.Rubrique)
+            .SingleAsync(candidate => candidate.Slug == slug);
+        aModifier.UpdateDetails(aModifier.Title, "Un résumé révisé.", aModifier.Content, aModifier.Rubrique);
         await contextPlusTard.SaveChangesAsync();
 
         var relu = await contextPlusTard.Articles.SingleAsync(candidate => candidate.Slug == slug);
@@ -244,7 +249,7 @@ public sealed class SchemaTests(SqliteFixture fixture) : IClassFixture<SqliteFix
         // La suppression est demandée par un membre connecté : c'est lui qui est horodaté.
         var context = fixture.CreateContextFor(new HorlogeTest(Instant), UtilisateurFictif.Membre(auteur.Id));
 
-        var article = new Article(auteur.Id, $"Article {Guid.NewGuid():N}", "Résumé", "Contenu", ArticleCategory.LocalProjects);
+        var article = new Article(auteur.Id, $"Article {Guid.NewGuid():N}", "Résumé", "Contenu", RubriqueDeTest.Pour(context));
         context.Articles.Add(article);
         await context.SaveChangesAsync();
 

@@ -28,7 +28,7 @@ public sealed class AdminArticlesController(
     /// Liste tous les articles, quel que soit leur état de publication.
     /// </summary>
     /// <param name="statut">État à filtrer, ou <see langword="null"/> pour tous.</param>
-    /// <param name="categorie">Filtre facultatif par catégorie.</param>
+    /// <param name="rubrique">Filtre facultatif par rubrique.</param>
     /// <param name="recherche">Filtre facultatif sur le titre ou le chapô.</param>
     /// <param name="trier">Ordre facultatif : <c>recent</c>, <c>ancien</c>, <c>titre</c> ou <c>titre-desc</c>.</param>
     /// <param name="page">Numéro de page, à partir de 1.</param>
@@ -46,7 +46,7 @@ public sealed class AdminArticlesController(
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public async Task<ActionResult<PageResponse<AdminArticleSummaryResponse>>> Lister(
         [FromQuery] PublicationStatus? statut = null,
-        [FromQuery] ArticleCategory? categorie = null,
+        [FromQuery] Guid? rubrique = null,
         [FromQuery] string? recherche = null,
         [FromQuery] string? trier = null,
         [FromQuery] int page = 1,
@@ -55,16 +55,18 @@ public sealed class AdminArticlesController(
     {
         RequireAdministrateur(currentUser);
 
-        var requete = unitOfWork.ReadRepository<Article>().Query;
+        // La projection renvoie le libellé de la rubrique : elle doit être chargée.
+        IQueryable<Article> requete = unitOfWork.ReadRepository<Article>().Query
+            .Include(article => article.Rubrique);
 
         if (statut is { } etat)
         {
             requete = requete.Where(article => article.Status == etat);
         }
 
-        if (categorie is { } valeur)
+        if (rubrique is { } valeur)
         {
-            requete = requete.Where(article => article.Category == valeur);
+            requete = requete.Where(article => article.RubriqueId == valeur);
         }
 
         if (!string.IsNullOrWhiteSpace(recherche))

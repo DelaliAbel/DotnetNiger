@@ -63,7 +63,7 @@ else
                     <div class="min-w-0">
                         <h2 class="text-lead font-semibold">@article.Title</h2>
                         <p class="text-caption text-ink-500">
-                            @Categorie(article.Category) — @article.Author
+                            @article.Category — @article.Author
                             @if (article.PublishedAtUtc is { } publie)
                             {
                                 <text> — publié le @publie.ToString("d MMMM yyyy", Culture)</text>
@@ -189,7 +189,9 @@ else
             _ => null,
         };
 
-        var requete = UniteDeTravail.ReadRepository<Article>().Query;
+        // La liste affiche le libellé de la rubrique : elle doit être chargée.
+        IQueryable<Article> requete = UniteDeTravail.ReadRepository<Article>().Query
+            .Include(article => article.Rubrique);
 
         if (filtre is { } valeur)
         {
@@ -237,10 +239,4 @@ else
         _ => "bg-ink-100 text-ink-600",
     };
 
-    private static string Categorie(ArticleCategory categorie) => categorie switch
-    {
-        ArticleCategory.LocalProjects => "Projets locaux",
-        ArticleCategory.Interview => "Entretien",
-        _ => "Actualités .NET",
-    };
 }

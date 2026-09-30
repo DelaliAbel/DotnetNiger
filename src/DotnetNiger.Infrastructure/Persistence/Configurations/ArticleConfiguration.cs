@@ -32,10 +32,6 @@ internal sealed class ArticleConfiguration : IEntityTypeConfiguration<Article>
             .IsRequired()
             .HasMaxLength(FieldLimits.Content);
 
-        builder.Property(x => x.Category)
-            .IsRequired()
-            .AsEnumText();
-
         builder.Property(x => x.Status)
             .IsRequired()
             .AsEnumText();
@@ -59,6 +55,17 @@ internal sealed class ArticleConfiguration : IEntityTypeConfiguration<Article>
 
         builder.HasIndex(x => x.Slug)
             .IsUnique();
+
+        // La rubrique est une entité à part entière : la relation est déclarée
+        // explicitement faute de propriété de navigation du côté de l'article. Restrict,
+        // car une rubrique utilisée par un article ne peut pas être supprimée.
+        builder.HasOne(x => x.Rubrique)
+            .WithMany()
+            .HasForeignKey(x => x.RubriqueId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Navigation(x => x.Rubrique)
+            .IsRequired();
 
         builder.HasIndex(x => new { x.Status, x.PublishedAtUtc })
             .HasDatabaseName("IX_Articles_Status_PublishedAtUtc");

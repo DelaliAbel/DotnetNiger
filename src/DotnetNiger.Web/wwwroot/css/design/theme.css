@@ -2304,6 +2304,44 @@
     flex-shrink: 0;
   }
 
+  /* Réseaux sociaux sur fond clair. La classe du pied de page est calibrée pour le fond
+     sombre du pied : bordure translucide blanche et survol blanc, ce qui rendait les
+     icônes invisibles au survol sur la carte de la page contact. */
+  .contact__canaux {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(var(--spacing) * 1.5);
+    margin-top: calc(var(--spacing) * 2);
+  }
+
+  .contact__canaux a {
+    display: inline-grid;
+    place-items: center;
+    width: calc(var(--spacing) * 5);
+    height: calc(var(--spacing) * 5);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--site-border);
+    background: var(--site-surface);
+    color: var(--site-fg-muted);
+    transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+  }
+
+  .contact__canaux a:hover {
+    color: var(--color-violet-700);
+    background: var(--color-violet-50);
+    border-color: var(--color-violet-400);
+  }
+
+  .dark .contact__canaux a:hover {
+    color: var(--color-violet-200);
+    background: rgb(81 43 212 / 0.18);
+    border-color: var(--color-violet-500);
+  }
+
+  .contact__canaux .dn-icon {
+    flex-shrink: 0;
+  }
+
   /* --- Pages légales ---
      Mentions légales et politique de confidentialité sont deux textes longs,
      lus d'un bout à l'autre. Une colonne de 70 caractères est le confort de
