@@ -32,6 +32,9 @@ public sealed class DotnetNigerDbContext
     /// </summary>
     public DbSet<Article> Articles => Set<Article>();
 
+    /// <summary>Rubriques éditoriales du blog ; données, et non constantes.</summary>
+    public DbSet<Rubrique> Rubriques => Set<Rubrique>();
+
     /// <summary>
     /// Obtient les ressources.
     /// </summary>

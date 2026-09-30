@@ -152,6 +152,11 @@ await app.Services.InitializeDatabaseAsync(app.Configuration);
 // Idempotent : le même code peut s'exécuter à chaque démarrage.
 await app.Services.GetRequiredService<IdentityBootstrapper>().InitializeAsync();
 
+// ---------- Rubriques du blog ----------
+// Idempotent également : seules les rubriques absentes sont insérées, pour ne pas
+// écraser celles qu'un administrateur a pu renommer ou réordonner.
+await app.Services.GetRequiredService<RubriqueBootstrapper>().InitializeAsync();
+
 // ---------- Pipeline ----------
 // Doit précéder la redirection HTTPS et l'authentification pour qu'une règle métier
 // refusée par l'API soit traduite, quel que soit le mode d'exécution.

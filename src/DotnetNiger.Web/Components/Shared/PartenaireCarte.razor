@@ -22,9 +22,14 @@
 
         @if (!string.IsNullOrWhiteSpace(Partenaire.Lien))
         {
-            <p class="card__meta">
-                <a class="link" href="@Partenaire.Lien" target="_blank" rel="noopener">
-                    Visiter le site <DnIcon Name="external-link" Size="14" />
+            @* Le nom de l'organisation n'est destiné qu'aux lecteurs d'écran : laissé
+               dans la largeur du lien, il rendait « Visiter le site » long et dilué.
+               `sr-only` le retire du flux, et le titre du lien porte le même nom pour
+               le survol. *@
+            <p>
+                <a class="partenaire__visite" href="@Partenaire.Lien" target="_blank" rel="noopener"
+                   title="Ouvrir le site de @Partenaire.Nom (nouvelle fenêtre)">
+                    <DnIcon Name="external-link" Size="16" /> Visiter le site
                     <span class="sr-only">de @Partenaire.Nom (nouvelle fenêtre)</span>
                 </a>
             </p>

@@ -493,6 +493,38 @@ namespace DotnetNiger.Infrastructure.Migrations
                     b.ToTable("Resources", (string)null);
                 });
 
+            modelBuilder.Entity("DotnetNiger.Domain.Entities.Content.Rubrique", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Couleur")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Nom")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Ordre")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
+
+                    b.ToTable("Rubriques", (string)null);
+                });
+
             modelBuilder.Entity("DotnetNiger.Domain.Entities.Moderation.Report", b =>
                 {
                     b.Property<Guid>("Id")

@@ -9,6 +9,12 @@ public static class FieldLimits
     /// <summary>Longueur maximale d'un titre.</summary>
     public const int Title = 200;
 
+    /// <summary>
+    /// Longueur maximale d'un libellé court : couleur de badge, type de rubrique,
+    /// ou tout identifiant destiné à être choisi dans une liste plutôt que saisi.
+    /// </summary>
+    public const int Label = 50;
+
     /// <summary>Longueur maximale d'un slug.</summary>
     public const int Slug = 200;
 

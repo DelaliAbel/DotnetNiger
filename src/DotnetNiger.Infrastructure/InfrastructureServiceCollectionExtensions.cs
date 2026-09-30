@@ -55,6 +55,9 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<INewsletterDiffusion, NewsletterDiffusion>();
         services.AddScoped<IOutbox, Outbox>();
         services.AddScoped<OutboxProcessor>();
+        // Rubriques du blog amorcées au démarrage, de façon idempotente : elles sont
+        // des données, la table doit donc être peuplée sur une base neuve.
+        services.AddSingleton<RubriqueBootstrapper>();
 
         services.Configure<OutboxOptions>(configuration.GetSection(OutboxOptions.SectionName));
         services.AddHostedService<OutboxDispatcher>();

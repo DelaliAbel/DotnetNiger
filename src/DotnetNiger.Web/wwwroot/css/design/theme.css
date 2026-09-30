@@ -2266,6 +2266,41 @@
     justify-items: start;
   }
 
+  /* « Visiter le site » sortait en 12px, corps de méta-donnée, sur une carte où il est
+     pourtant le seul lien sortant : l'action principale de la fiche passait après la
+     description. Même corps que la description, et un bouton plutôt qu'un lien
+     souligné, pour qu'on le voie sans avoir à le chercher. */
+  .partenaire__visite {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 1.5);
+    margin-top: calc(var(--spacing) * 1);
+    padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 2.5);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    background: var(--site-surface);
+    color: var(--site-fg);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
+    transition: border-color 150ms ease, color 150ms ease, background-color 150ms ease;
+  }
+
+  .partenaire__visite:hover {
+    color: var(--color-violet-700);
+    border-color: var(--color-violet-500);
+    background: var(--color-violet-50);
+  }
+
+  .dark .partenaire__visite:hover {
+    color: var(--color-violet-200);
+    background: rgb(81 43 212 / 0.18);
+  }
+
+  .partenaire__visite .dn-icon {
+    flex-shrink: 0;
+  }
+
   /* --- Lettre d'information --------------------------------------------
      Bloc du pied de page, donc présent sur toutes les pages. Il occupe toute la
      largeur de la grille : le formulaire aligné sur la droite aurait laissé un
