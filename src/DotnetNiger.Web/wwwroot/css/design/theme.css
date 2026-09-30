@@ -263,6 +263,22 @@
     color: var(--color-violet-200);
   }
 
+  /* Le fil d'Ariane de la fiche article et de la fiche événement pose deux liens sur
+     un fond sombre. La classe `.link` leur imposait le violet du thème : mesuré à
+     1,95:1 sur le fond du héros, quand le texte voisin est à 14,7:1 — le fil
+     disparaissait. Le sélecteur passe par `.link` volontairement, pour l'emporter sur
+     `.dark .link`, qui a autant de classes que `.hero__eyebrow` mais ne cible pas un
+     élément : à spécificité égale, l'élément l'emporte. */
+  .hero__eyebrow a.link {
+    color: inherit;
+    text-decoration-color: rgb(255 255 255 / 0.5);
+  }
+
+  .hero__eyebrow a.link:hover {
+    color: #fff;
+    text-decoration-color: currentColor;
+  }
+
   /* --- Sur-titre de section --- */
   .eyebrow {
     display: inline-flex;
