@@ -736,7 +736,10 @@
 
   @media (min-width: 64rem) {
     .hero__grid {
-      grid-template-columns: minmax(0, 6fr) minmax(0, 6fr);
+      /* La colonne de droite est élargie : elle porte la photo du héros de l'accueil,
+         qui à parts égales restait à 512px sur un écran large. Le texte garde la
+         moitié, ce qui suffit à son titre et à son chapeau. */
+      grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
       align-items: stretch;
     }
   }
@@ -2299,6 +2302,62 @@
 
   .partenaire__visite .dn-icon {
     flex-shrink: 0;
+  }
+
+  /* --- Pages légales ---
+     Mentions légales et politique de confidentialité sont deux textes longs,
+     lus d'un bout à l'autre. Une colonne de 70 caractères est le confort de
+     lecture ; le reste de la page reste vide volontairement, pour que l'œil
+     ne saute pas d'un bloc à l'autre. */
+  .legal {
+    max-width: 46rem;
+    margin-inline: auto;
+    display: grid;
+    gap: calc(var(--spacing) * 6);
+  }
+
+  .legal__bloc {
+    display: grid;
+    gap: calc(var(--spacing) * 2);
+    color: var(--site-fg);
+  }
+
+  .legal__titre {
+    font-size: var(--text-lead);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--site-fg);
+    scroll-margin-top: calc(var(--spacing) * 12);
+  }
+
+  .legal__sous-titre {
+    font-size: var(--text-base);
+    font-weight: 700;
+    color: var(--site-fg);
+    margin-top: var(--spacing);
+  }
+
+  .legal__bloc p {
+    color: var(--site-fg-muted);
+    line-height: 1.7;
+  }
+
+  .legal__liste {
+    display: grid;
+    gap: calc(var(--spacing) * 1.5);
+    color: var(--site-fg-muted);
+    line-height: 1.7;
+    padding-left: calc(var(--spacing) * 2.5);
+    list-style: disc;
+  }
+
+  .legal__liste strong {
+    color: var(--site-fg);
+  }
+
+  .legal__note {
+    font-size: var(--text-caption);
+    color: var(--site-fg-muted);
   }
 
   /* --- Lettre d'information --------------------------------------------

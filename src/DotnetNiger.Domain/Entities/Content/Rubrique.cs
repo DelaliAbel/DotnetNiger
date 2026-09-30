@@ -29,11 +29,17 @@ public sealed class Rubrique : Entity
     /// Initialise une rubrique à partir de son libellé.
     /// </summary>
     /// <param name="nom">Libellé affiché dans les menus et sur les cartes.</param>
-    /// <exception cref="DomainException">Libellé absent ou trop long.</exception>
-    public Rubrique(string nom)
+    /// <param name="slug">
+    /// Slug d'URL, à fournir lorsque le libellé ne se prête pas à une dérivation
+    /// automatique : « Nouveautés de .NET » donnerait «nouveautes-de-net», alors que
+    /// l'URL attendue et déjà diffusée est «nouveautes». Absent, le slug est déduit du
+    /// libellé.
+    /// </param>
+    /// <exception cref="DomainException">Libellé ou slug absent, ou trop long.</exception>
+    public Rubrique(string nom, string? slug = null)
     {
         Nom = Required(nom);
-        Slug = SlugFactory.Create(Nom);
+        Slug = string.IsNullOrWhiteSpace(slug) ? SlugFactory.Create(Nom) : Required(slug);
     }
 
     /// <summary>

@@ -1,0 +1,167 @@
+@page "/contact"
+@attribute [StreamRendering]
+
+@inject ISiteContentService Contenu
+
+<PageTitle>Contact — écrire à la communauté DotnetNiger</PageTitle>
+<HeadContent>
+    <meta name="description" content="Une question, une proposition de collaboration, une demande de partenariat ou de formation : écrivez à l'équipe de la communauté DotnetNiger." />
+    <meta property="og:title" content="Contact — DotnetNiger" />
+    <meta property="og:description" content="Écrivez à la communauté DotnetNiger : question, proposition de collaboration, partenariat ou demande de formation." />
+</HeadContent>
+
+<!-- 1. En-tête -->
+<section class="hero hero--centre">
+    <div class="wrap">
+        <p class="hero__eyebrow">
+            <DnIcon Name="send" Size="14" /> Nous écrire
+        </p>
+        <h1 class="hero__title" style="margin-top: var(--spacing);">
+            Une question, une <strong> proposition</strong>
+        </h1>
+        <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
+            Partenariat, formation, intervention, ou simple question sur un article : lisez
+            la suite, le formulaire vient après.
+        </p>
+    </div>
+</section>
+
+<section class="section" aria-label="Formulaire de contact">
+    <div class="wrap">
+        <div class="grid gap-4 lg:grid-cols-5" style="align-items: start;">
+
+            <!-- 2. Formulaire -->
+            <div class="lg:col-span-3">
+                <div class="card">
+                    <div class="card__body">
+                        <h2 id="formulaire" class="text-section font-extrabold tracking-tight">Votre message</h2>
+                        <p class="text-sm text-ink-600 dark:text-ink-300">
+                            Les champs marqués d'un astérisque sont nécessaires pour vous répondre.
+                        </p>
+
+                        @if (!string.IsNullOrWhiteSpace(Envoye))
+                        {
+                            <Alerte Variante="vert">
+                                Votre message est bien arrivé. L'équipe vous répondra à l'adresse
+                                indiquée, en général sous quelques jours.
+                            </Alerte>
+                        }
+                        else if (Erreur is not null)
+                        {
+                            <Alerte Variante="rouge">@Erreur</Alerte>
+                        }
+
+                        <form method="post" action="/contact/envoyer" class="grid gap-4">
+                            <AntiforgeryToken />
+
+                            <div class="field">
+                                <label class="field__label" for="contact-nom">Nom *</label>
+                                <input class="input" id="contact-nom" type="text" name="Nom" required
+                                       maxlength="150" autocomplete="name" />
+                            </div>
+
+                            <div class="field">
+                                <label class="field__label" for="contact-email">Adresse e-mail *</label>
+                                <input class="input" id="contact-email" type="email" name="Email" required
+                                       maxlength="320" autocomplete="email" />
+                                <p class="text-caption text-ink-500 dark:text-ink-400">
+                                    C'est à cette adresse que la réponse sera envoyée.
+                                </p>
+                            </div>
+
+                            <div class="field">
+                                <label class="field__label" for="contact-sujet">Objet *</label>
+                                <span class="select">
+                                    <select id="contact-sujet" name="Sujet" required>
+                                        @foreach (var sujet in Sujets)
+                                        {
+                                            <option value="@sujet">@sujet</option>
+                                        }
+                                    </select>
+                                    <DnIcon Name="chevron-down" Size="16" Class="select__chevron" />
+                                </span>
+                            </div>
+
+                            <div class="field">
+                                <label class="field__label" for="contact-message">Message *</label>
+                                <textarea class="input" id="contact-message" name="Message" required
+                                          rows="8" maxlength="32000"
+                                          placeholder="Dites-nous ce que vous cherchez, en quelques lignes."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn--primary w-full">
+                                Envoyer le message <DnIcon Name="send" Size="16" />
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Pourquoi et vers qui -->
+            <aside class="lg:col-span-2" aria-label="Informations complémentaires">
+                <div class="bande" style="margin-bottom: calc(var(--spacing) * 3);">
+                    <p class="eyebrow" style="color: var(--color-vert-300);">Avant d'écrire</p>
+                    <h2 class="bande__title" style="margin-top: var(--spacing);">Ce qui obtient une réponse</h2>
+                    <ul class="compte__liste" style="margin-top: calc(var(--spacing) * 2);">
+                        <li><DnIcon Name="check" Size="16" /><span>Un sujet précis : « bug sur l'inscription à un meetup » plutôt que « bonjour ».</span></li>
+                        <li><DnIcon Name="check" Size="16" /><span>Une adresse que vous consultez, pour ne pas perdre la réponse.</span></li>
+                        <li><DnIcon Name="check" Size="16" /><span>Pour un article, le lien de la page concernée.</span></li>
+                    </ul>
+                </div>
+
+                @if (_Canaux is { Count: > 0 })
+                {
+                    <div class="card">
+                        <div class="card__body">
+                            <h2 class="card__title card__title--compact">Ou passez par nos canaux</h2>
+                            <p class="card__text">
+                                Pour une question rapide, la communauté se rassemble sur ces espaces. Le
+                                formulaire reste préférable pour tout ce qui demande une trace
+                                ou une réponse de l'équipe.
+                            </p>
+                            <div class="site-footer__social" style="margin-top: calc(var(--spacing) * 1);">
+                                @foreach (var canal in _Canaux)
+                                {
+                                    <a href="@canal.Url" target="_blank" rel="noopener" aria-label="@canal.Nom">
+                                        <DnIcon Name="@canal.Icône" Size="18" />
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </aside>
+        </div>
+    </div>
+</section>
+
+@code {
+    /// <summary>
+    /// Objets proposés. Le menu évite une saisie libre et des sujets vagues comme
+    /// « question », sans rien imposer : le champ reste sélectionnable.
+    /// </summary>
+    private static readonly string[] Sujets =
+    [
+        "Question sur un article ou une ressource",
+        "Proposition de collaboration",
+        "Partenariat ou sponsoring",
+        "Formation, atelier ou intervention",
+        "Problème technique ou signalement",
+        "Autre",
+    ];
+
+    private IReadOnlyList<CanalVue>? _Canaux;
+
+    /// <summary>Message déposé, signalé par la redirection après envoi.</summary>
+    [SupplyParameterFromQuery(Name = "envoye")]
+    public string? Envoye { get; set; }
+
+    [SupplyParameterFromQuery(Name = "erreur")]
+    public string? Erreur { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var accueil = await Contenu.ChargerAccueilAsync();
+        _Canaux = accueil.Canaux;
+    }
+}

@@ -225,6 +225,8 @@ app.MapPasswordResetEndpoints();
 
 app.MapNewsletterEndpoints();
 
+app.MapContactEndpoints();
+
 // ---------- Back-office ----------
 app.MapAdministrationEndpoints();
 

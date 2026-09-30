@@ -79,7 +79,7 @@ public sealed partial class RubriqueBootstrapper(
         for (var index = 0; index < manquantes.Length; index++)
         {
             var (slug, nom, couleur) = manquantes[index];
-            var rubrique = new Rubrique(nom);
+            var rubrique = new Rubrique(nom, slug);
             rubrique.Organiser(couleur, ordreDepart + index);
             context.Rubriques.Add(rubrique);
         }
