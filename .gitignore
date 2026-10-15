@@ -4,6 +4,10 @@
 [Oo]ut/
 artifacts/
 
+## Documentation de travail — PDF, extraits de site, notes de lecture. Elle reste
+## sur le poste : ce sont des sources, pas la documentation du projet.
+docs/
+
 ## Secrets — ne doivent jamais être versionnés
 appsettings.*.local.json
 *.env
