@@ -2,6 +2,7 @@
 
 @inject ISiteContentService Contenu
 @inject DotnetNiger.Application.Abstractions.ICurrentUserService Utilisateur
+@inject DotnetNiger.Web.Services.Reglages.ServiceReglages Reglages
 
 <PageTitle>DotnetNiger — la communauté des développeurs .NET au Niger</PageTitle>
 <HeadContent>
@@ -298,21 +299,24 @@ else
                     </p>
                 </div>
 
-                <div class="canaux">
-                    @foreach (var canal in CanauxTries)
-                    {
-                        <a class="canal" href="@canal.Url" target="_blank" rel="noopener noreferrer">
-                            <span class="canal__icone">
-                                <DnIcon Name="@canal.Icône" Size="18" />
-                            </span>
-                            <span class="canal__texte">
-                                <span class="canal__nom">@canal.Nom</span>
-                                <span class="canal__hint">@Accroche(canal.Nom)</span>
-                            </span>
-                            <DnIcon Name="arrow-up-right" Size="16" />
-                        </a>
-                    }
-                </div>
+                @if (CanauxTries.Length > 0)
+                {
+                    <div class="canaux">
+                        @foreach (var canal in CanauxTries)
+                        {
+                            <a class="canal" href="@canal.Url" target="_blank" rel="noopener noreferrer">
+                                <span class="canal__icone">
+                                    <DnIcon Name="@canal.Icone" Size="18" />
+                                </span>
+                                <span class="canal__texte">
+                                    <span class="canal__nom">@canal.Nom</span>
+                                    <span class="canal__hint">@Accroche(canal.Nom)</span>
+                                </span>
+                                <DnIcon Name="arrow-up-right" Size="16" />
+                            </a>
+                        }
+                    </div>
+                }
 
                 @if (!Utilisateur.IsAuthenticated)
                 {
@@ -330,18 +334,20 @@ else
 @code {
     private AccueilVue? _Accueil;
 
+    private IReadOnlyList<DotnetNiger.Web.Services.Reglages.CanalSite> _canaux = [];
+
     /// <summary>Canaux mis en avant, dans l'ordre où un nouvel arrivant en a besoin.</summary>
-    private static readonly string[] CanauxPrioritaires = ["Discord", "GitHub", "LinkedIn"];
+    private static readonly string[] CanauxPrioritaires = ["WhatsApp", "GitHub", "LinkedIn"];
 
     /// <summary>
-    /// Les trois canaux principaux, plutôt que les six. Sur l'accueil, l'internaute
+    /// Les trois canaux renseignés, plutôt que tous. Sur l'accueil, l'internaute
     /// cherche un endroit où poser une question puis où montrer un projet : lui
     /// présenter six liens le renvoie à la page communautaire sans l'aider. Les autres
     /// canaux restent listés là-bas.
     /// </summary>
-    private CanalVue[] CanauxTries => _Accueil is null
-    ? []
-    : [.. _Accueil.Canaux.OrderBy(canal => Rang(canal.Nom)).Take(3)];
+    private DotnetNiger.Web.Services.Reglages.CanalSite[] CanauxTries => [.. _canaux
+        .OrderBy(canal => Rang(canal.Nom))
+        .Take(3)];
 
     private static int Rang(string nom)
     {
@@ -352,7 +358,7 @@ else
     /// <summary>Phrase d'accroche de chaque canal, absente du modèle partagé.</summary>
     private static string Accroche(string nom) => nom switch
     {
-        "Discord" => "Poser une question, répondre à une autre",
+        "WhatsApp" => "Poser une question, répondre à une autre",
         "GitHub" => "Contribuer aux projets de la communauté",
         "LinkedIn" => "Suivre l'activité professionnelle",
         "X (Twitter)" => "Les annonces, en direct",
@@ -363,5 +369,6 @@ else
     protected override async Task OnInitializedAsync()
     {
         _Accueil = await Contenu.ChargerAccueilAsync();
+        _canaux = (await Reglages.LirePourAffichageAsync()).Canaux;
     }
 }

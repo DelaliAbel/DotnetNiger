@@ -1,6 +1,6 @@
 @page "/contact"
 
-@inject ISiteContentService Contenu
+@inject DotnetNiger.Web.Services.Reglages.ServiceReglages Reglages
 
 <PageTitle>Contact — écrire à la communauté DotnetNiger</PageTitle>
 <HeadContent>
@@ -125,7 +125,7 @@
                                 @foreach (var canal in _Canaux)
                                 {
                                     <a href="@canal.Url" target="_blank" rel="noopener" aria-label="@canal.Nom">
-                                        <DnIcon Name="@canal.Icône" Size="18" />
+                                        <DnIcon Name="@canal.Icone" Size="18" />
                                     </a>
                                 }
                             </div>
@@ -152,7 +152,7 @@
         "Autre",
     ];
 
-    private IReadOnlyList<CanalVue>? _Canaux;
+    private IReadOnlyList<DotnetNiger.Web.Services.Reglages.CanalSite> _Canaux = [];
 
     /// <summary>Message déposé, signalé par la redirection après envoi.</summary>
     [SupplyParameterFromQuery(Name = "envoye")]
@@ -163,7 +163,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var accueil = await Contenu.ChargerAccueilAsync();
-        _Canaux = accueil.Canaux;
+        _Canaux = (await Reglages.LirePourAffichageAsync()).Canaux;
     }
 }

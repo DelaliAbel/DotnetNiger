@@ -3,6 +3,7 @@
 @inject ISiteContentService Contenu
 
 @inject DotnetNiger.Application.Abstractions.ICurrentUserService Utilisateur
+@inject DotnetNiger.Web.Services.Reglages.ServiceReglages Reglages
 
 <PageTitle>Communauté — rejoindre les développeurs .NET du Niger</PageTitle>
 <HeadContent>
@@ -35,9 +36,12 @@ else
                     communauté.
                 </p>
                 <div class="hero__actions mt-4">
-                    <a class="btn btn--white btn--lg" href="/communaute#canaux">
-                        Rejoindre le Discord <DnIcon Name="discord" Size="18" />
-                    </a>
+                    @if (_reglages?.Valeurs.Whatsapp is { Length: > 0 } whatsappCanal)
+                    {
+                        <a class="btn btn--white btn--lg" href="@whatsappCanal" target="_blank" rel="noopener">
+                            Rejoindre le groupe WhatsApp <DnIcon Name="whatsapp" Size="18" />
+                        </a>
+                    }
                     <a class="btn btn--accent btn--lg" href="/communaute#evenements">
                         Prochains meetups <DnIcon Name="calendar" Size="18" />
                     </a>
@@ -73,7 +77,7 @@ else
                     <p class="numeros__libelle">projets open source</p>
                 </div>
                 <div>
-                    <p class="numeros__valeur">@_Communaute.NombreCanaux</p>
+                    <p class="numeros__valeur">@NombreCanaux</p>
                     <p class="numeros__libelle">canaux pour échanger</p>
                 </div>
             </div>
@@ -178,32 +182,38 @@ else
                 Choisissez <strong>votre façon d'échanger</strong>
             </h2>
             <p class="section__lead">
-                Une question rapide sur Discord, une contribution sur GitHub ou une mise en
+                Une question rapide sur WhatsApp, une contribution sur GitHub ou une mise en
                 relation professionnelle : rejoignez le canal qui vous convient.
             </p>
         </div>
 
-        @if (_Communaute.Canaux.Count == 0)
-        {
-            <EmptyState Icone="globe"
-            Titre="Aucun canal publié"
-            Message="Les adresses Discord, GitHub et réseaux sociaux de la communauté seront listées ici." />
-        }
-        else
+        @if (AUnCanal)
         {
             <div class="canaux">
-                @foreach (var canal in _Communaute.Canaux)
+                @if (_reglages?.Valeurs.Whatsapp is { Length: > 0 } whatsapp)
                 {
-                    <a class="canal" href="@canal.Url" target="_blank" rel="noopener">
-                        <span class="canal__icone"><DnIcon Name="@canal.Icône" Size="20" /></span>
-                        <span class="canal__texte">
-                            <span class="canal__nom">@canal.Nom</span>
-                            <span class="canal__hint">Ouvrir le canal</span>
-                        </span>
-                        <DnIcon Name="arrow-up-right" Size="16" />
+                    <a class="canal" href="@whatsapp" target="_blank" rel="noopener">
+                        <span class="canal__icone"><DnIcon Name="whatsapp" Size="20" /></span>
+                        <span class="canal__nom">WhatsApp</span>
+                        <span class="canal__role">Discussions du quotidien, questions rapides</span>
+                    </a>
+                }
+
+                @if (_reglages?.Valeurs.Github is { Length: > 0 } github)
+                {
+                    <a class="canal" href="@github" target="_blank" rel="noopener">
+                        <span class="canal__icone"><DnIcon Name="github" Size="20" /></span>
+                        <span class="canal__nom">GitHub</span>
+                        <span class="canal__role">Projets, contributions, revue de code</span>
                     </a>
                 }
             </div>
+        }
+        else
+        {
+            <EmptyState Icone="globe"
+                        Titre="Aucun canal publié"
+                        Message="Les adresses WhatsApp et GitHub de la communauté seront listées ici dès que l'administration les aura renseignées dans Paramètres." />
         }
     </div>
 </section>
@@ -316,9 +326,21 @@ else
         _Communaute?.Projets.Skip((PageProjets - 1) * ProjetsParPage).Take(ProjetsParPage).ToArray()
         ?? [];
 
+    private DotnetNiger.Web.Services.Reglages.ReglagesAffiches? _reglages;
+
+    /// <summary>
+    /// Vrai si au moins un canal est renseigné. Sans canal, la page affiche un état vide
+    /// plutôt qu'une grille vide.
+    /// </summary>
+    private bool AUnCanal => _reglages?.Canaux.Count > 0;
+
+    /// <summary>Nombre de canaux renseignés, pour le compteur en tête de page.</summary>
+    private int NombreCanaux => _reglages?.Canaux.Count ?? 0;
+
     protected override async Task OnInitializedAsync()
     {
         _Communaute = await Contenu.ChargerCommunauteAsync();
+        _reglages = await Reglages.LirePourAffichageAsync();
 
         var total = _Communaute.Projets.Count;
         NombreDePagesProjets = Math.Max(1, (int)Math.Ceiling(total / (double)ProjetsParPage));

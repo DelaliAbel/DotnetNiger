@@ -157,4 +157,35 @@ public sealed class EmailValues
 
         return valeur;
     }
+
+    /// <summary>
+    /// Copie l'ensemble en y remplaçant toutes les occurrences d'un texte par un autre.
+    /// </summary>
+    /// <param name="rechercher">Texte à remplacer.</param>
+    /// <param name="remplacer">Texte de substitution.</param>
+    /// <returns>Un nouvel ensemble, sans effet sur l'original.</returns>
+    /// <remarks>
+    /// Destiné à l'aperçu des modèles : le domaine fictif des valeurs d'exemple cède la
+    /// place au vrai domaine du site. Le remplacement est textuel et non structurel, ce
+    /// qui convient parce qu'il ne sert qu'à de l'affichage.
+    /// </remarks>
+    public EmailValues Remplacant(string rechercher, string remplacer)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(rechercher);
+        ArgumentNullException.ThrowIfNull(remplacer);
+
+        if (string.Equals(rechercher, remplacer, StringComparison.Ordinal))
+        {
+            return this;
+        }
+
+        var valeurs = new Dictionary<string, string>(_valeurs.Count, StringComparer.Ordinal);
+
+        foreach (var (nom, valeur) in _valeurs)
+        {
+            valeurs[nom] = valeur.Replace(rechercher, remplacer, StringComparison.Ordinal);
+        }
+
+        return new EmailValues(valeurs);
+    }
 }

@@ -44,5 +44,21 @@ public sealed record EmailTemplate(
     /// </summary>
     /// <param name="branding">Identité du site.</param>
     /// <returns>Le message d'exemple.</returns>
-    public EmailMessage RendreExemple(EmailBranding branding) => Rendre(Exemple, branding);
+    /// <remarks>
+    /// Les valeurs d'exemple portent le domaine fictif <c>dotnetniger.test</c>, pour qu'un
+    /// lien de test ne mène jamais vers un vrai compte. L'aperçu, lui, doit montrer ce que le
+    /// membre recevra réellement : le domaine fictif est donc remplacé par celui du site avant
+    /// rendu. Sans cela, l'administration jugerait un modèle sur des liens qui n'existent pas.
+    /// </remarks>
+    public EmailMessage RendreExemple(EmailBranding branding)
+    {
+        ArgumentNullException.ThrowIfNull(branding);
+
+        var base_ = branding.SiteUrl.TrimEnd('/');
+        var fictif = EmailBranding.Fictif.SiteUrl.TrimEnd('/');
+
+        return Rendre(
+            base_ == fictif ? Exemple : Exemple.Remplacant(fictif, base_),
+            branding);
+    }
 }

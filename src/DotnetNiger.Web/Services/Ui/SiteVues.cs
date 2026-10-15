@@ -171,16 +171,6 @@ public sealed class MembreVue
     public string? LienX { get; init; }
 }
 
-/// <summary>Modèle de présentation d'un lien vers un réseau social ou un canal de la communauté.</summary>
-public sealed class CanalVue
-{
-    public required string Nom { get; init; }
-
-    public required string Url { get; init; }
-
-    public required string Icône { get; init; }
-}
-
 /// <summary>Modèle de présentation d'un jalon de l'histoire de la communauté.</summary>
 public sealed class JalonVue
 {
@@ -230,8 +220,6 @@ public sealed class AccueilVue
 
     public required IReadOnlyList<RessourceVue> RessourcesPopulaires { get; init; } = Array.Empty<RessourceVue>();
 
-    public required IReadOnlyList<CanalVue> Canaux { get; init; } = Array.Empty<CanalVue>();
-
     public required int NombreMembres { get; init; }
 
     public required int NombreProjets { get; init; }
@@ -248,13 +236,9 @@ public sealed class CommunauteVue
 
     public required IReadOnlyList<ProjetVue> Projets { get; init; } = Array.Empty<ProjetVue>();
 
-    public required IReadOnlyList<CanalVue> Canaux { get; init; } = Array.Empty<CanalVue>();
-
     public required int NombreMembres { get; init; }
 
     public required int NombreProjets { get; init; }
 
     public required int NombreEvenements { get; init; }
-
-    public required int NombreCanaux { get; init; }
 }

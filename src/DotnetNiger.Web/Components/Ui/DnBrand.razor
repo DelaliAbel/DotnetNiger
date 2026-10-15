@@ -1,6 +1,30 @@
 @namespace DotnetNiger.Web.Components.Ui
+@inject DotnetNiger.Web.Services.Reglages.ServiceReglages Reglages
+
+@*
+    Marque du site : le logo déposé dans Paramètres quand il existe, les initiales sinon.
+
+    Le logo est un réglage de base, pas une image en dur : l'administration le change sans
+    qu'il faille toucher au code ni redéployer. Sans logo, les initiales font le même
+    travail qu'avant.
+*@
 
 <a class="site-brand" href="/" aria-label="DotnetNiger — retour à l'accueil">
-    <span class="site-brand__logo" aria-hidden="true">dn</span>
+    @if (_logo is { Length: > 0 })
+    {
+        <img class="site-brand__logo site-brand__logo--image" src="@_logo" alt="" />
+    }
+    else
+    {
+        <span class="site-brand__logo" aria-hidden="true">dn</span>
+    }
+
     <span class="site-brand__name">Dot<span class="site-brand__accent">net</span>Niger</span>
 </a>
+
+@code {
+    private string? _logo;
+
+    protected override async Task OnInitializedAsync()
+        => _logo = (await Reglages.LireAsync()).Logo;
+}

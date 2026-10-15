@@ -155,16 +155,6 @@ internal static class TextesDuSite
             },
         };
 
-    public static readonly CanalVue[] Canaux = new[]
-        {
-            new CanalVue { Nom = "Discord", Url = "https://discord.gg/dotnetniger", Icône = "discord" },
-            new CanalVue { Nom = "GitHub", Url = "https://github.com/dotnetniger", Icône = "github" },
-            new CanalVue { Nom = "LinkedIn", Url = "https://www.linkedin.com/company/dotnetniger", Icône = "linkedin" },
-            new CanalVue { Nom = "X (Twitter)", Url = "https://x.com/dotnetniger", Icône = "x" },
-            new CanalVue { Nom = "YouTube", Url = "https://www.youtube.com/@dotnetniger", Icône = "youtube" },
-            new CanalVue { Nom = "Facebook", Url = "https://www.facebook.com/dotnetniger", Icône = "facebook" },
-        };
-
     public static readonly ValeurVue[] Valeurs = new[]
         {
             new ValeurVue

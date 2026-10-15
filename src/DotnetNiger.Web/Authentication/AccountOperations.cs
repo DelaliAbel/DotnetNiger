@@ -18,9 +18,19 @@ public sealed partial class AccountOperations(
     SignInManager<ApplicationUser> signInManager,
     IEmailSender emails,
     IOptions<EmailOptions> emailOptions,
+    DotnetNiger.Web.Services.Reglages.ServiceReglages reglages,
     ILogger<AccountOperations> logger)
 {
     private readonly EmailOptions _email = emailOptions.Value;
+    private readonly DotnetNiger.Web.Services.Reglages.ServiceReglages _reglages = reglages;
+
+    /// <summary>
+    /// Identité des courriels, logo compris. Le logo vient des réglages du site : un message
+    /// de confirmation qui porterait encore l'ancienne icône après son remplacement donnerait
+    /// au membre l'impression d'avoir reçu un message d'un autre site.
+    /// </summary>
+    private async Task<EmailBranding> BrandeAsync()
+        => EmailBranding.DepuisOptions(_email, (await _reglages.LireAsync()).Logo);
 
     /// <summary>
     /// Adresse de la page d'accueil du parcours compte.

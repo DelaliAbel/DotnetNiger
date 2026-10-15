@@ -47,7 +47,6 @@ public sealed class ContenuSiteService(
             ArticlesRecents = [.. articlesRecents.Select(EnVue)],
             EvenementsAVenir = [.. evenementsAVenir.Select(EnVue)],
             RessourcesPopulaires = [.. ressources.Select(EnVue)],
-            Canaux = TextesDuSite.Canaux,
             NombreMembres = nombreMembres,
             NombreProjets = nombreProjets,
             NombreRessources = totalRessources,
@@ -152,11 +151,9 @@ public sealed class ContenuSiteService(
         {
             Evenements = [.. listeEvenements.Select(EnVue)],
             Projets = [.. projets.Select(EnVue)],
-            Canaux = TextesDuSite.Canaux,
             NombreMembres = nombreMembres,
             NombreProjets = totalProjets,
             NombreEvenements = totalEvenements,
-            NombreCanaux = TextesDuSite.Canaux.Length,
         };
     }
 

@@ -13,6 +13,11 @@ namespace DotnetNiger.Infrastructure.Email;
 /// une image de fond disparaît chez la plupart des destinataires. C'est aussi pourquoi le
 /// logo est suivi de son nom en toutes lettres : lorsque l'image est bloquée, le texte
 /// prend le relais et le message reste identifiable.
+/// <para>
+/// Chaque bouton d'appel est doublé de son adresse en toutes lettres. Un client qui bloque
+/// les images, ou qui refuse le lien enveloppé, laisserait le destinataire sans issue ; le
+/// lien en clair, lui, se copie et se colle même là où rien ne s'affiche.
+/// </para>
 /// </remarks>
 internal static class EmailLayout
 {
@@ -104,18 +109,30 @@ internal static class EmailLayout
               <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:{{FondPage}};">
                 <tr>
                   <td align="center" style="padding:32px 12px;">
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:100%;max-width:600px;background:#FFFFFF;border:1px solid {{GrisClair}};border-radius:12px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="width:100%;max-width:600px;background:#FFFFFF;border:1px solid {{GrisClair}};border-radius:12px;overflow:hidden;">
                       <tr>
-                        <td align="center" style="padding:28px 32px 20px;border-bottom:1px solid {{GrisClair}};">
+                        <td style="height:4px;line-height:4px;font-size:0;background:{{Violet}};">&nbsp;</td>
+                      </tr>
+                      <tr>
+                        <td style="padding:24px 32px 20px;border-bottom:1px solid {{GrisClair}};">
 
             """);
-
         // Le logo est une image : la plupart des clients la bloquent. Le nom du site est donc
-        // écrit juste au-dessous, et sert de repli lisible lorsque l'image ne s'affiche pas.
+        // écrit juste à côté, et sert de repli lisible lorsque l'image ne s'affiche pas.
+        // Les deux tiennent sur une même ligne : centré, le logo sauterait à la ligne sur un
+        // client étroit et laisserait le nom seul en dessous.
         html.Append(CultureInfo.InvariantCulture, $$"""
-                            <img src="{{EmailEncoding.Html.Encode(branding.LogoUrl)}}" alt="{{EmailEncoding.Html.Encode(EmailBranding.SiteName)}}" width="64" height="64" style="display:block;margin:0 auto 12px;border:0;" />
-                            <div style="font-size:22px;font-weight:700;color:{{Violet}};letter-spacing:-0.2px;">{{EmailEncoding.Html.Encode(EmailBranding.SiteName)}}</div>
-                            <div style="font-size:13px;color:{{Gris}};margin-top:2px;">{{EmailEncoding.Html.Encode(EmailBranding.Tagline)}}</div>
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+                              <tr>
+                                <td width="64" valign="middle" style="width:64px;">
+                                  <img src="{{EmailEncoding.Html.Encode(branding.LogoUrl)}}" alt="{{EmailEncoding.Html.Encode(EmailBranding.SiteName)}}" width="48" height="48" style="display:block;border:0;border-radius:10px;" />
+                                </td>
+                                <td valign="middle" style="padding-left:14px;">
+                                  <div style="font-size:20px;font-weight:700;color:{{Violet}};letter-spacing:-0.3px;line-height:1.2;">{{EmailEncoding.Html.Encode(EmailBranding.SiteName)}}</div>
+                                  <div style="font-size:13px;color:{{Gris}};margin-top:3px;line-height:1.4;">{{EmailEncoding.Html.Encode(EmailBranding.Tagline)}}</div>
+                                </td>
+                              </tr>
+                            </table>
                           </td>
                         </tr>
                         <tr>
@@ -124,7 +141,7 @@ internal static class EmailLayout
             """);
 
         html.Append(CultureInfo.InvariantCulture, $"""
-                            <h1 style="margin:0 0 16px;font-size:20px;line-height:1.35;font-weight:700;">{EmailEncoding.Html.Encode(contenu.Titre)}</h1>
+                            <h1 style="margin:0 0 16px;font-size:21px;line-height:1.3;font-weight:700;letter-spacing:-0.2px;">{EmailEncoding.Html.Encode(contenu.Titre)}</h1>
             """);
 
         for (var i = 0; i < contenu.Paragraphes.Count; i++)
@@ -152,13 +169,18 @@ internal static class EmailLayout
 
             html.Append(CultureInfo.InvariantCulture, $"""
 
-                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 20px;">
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 8px;">
                               <tr>
                                 <td style="border-radius:8px;background:{Violet};box-shadow:0 2px 0 {VioletClair};">
                                   <a href="{url}" style="display:inline-block;padding:13px 26px;font-size:15px;font-weight:600;color:#FFFFFF;text-decoration:none;">{libelle}</a>
                                 </td>
                               </tr>
                             </table>
+
+                            <p style="margin:0 0 20px;font-size:13px;color:{Gris};word-break:break-all;">
+                              Si le bouton ne fonctionne pas, ouvrez cette adresse&nbsp;:<br />
+                              <a href="{url}" style="color:{Violet};">{url}</a>
+                            </p>
                 """);
         }
 

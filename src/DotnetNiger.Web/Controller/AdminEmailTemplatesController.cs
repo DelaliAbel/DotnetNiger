@@ -27,6 +27,7 @@ public sealed partial class AdminEmailTemplatesController(
     UserManager<ApplicationUser> userManager,
     IOutbox outbox,
     IOptions<EmailOptions> emailOptions,
+    DotnetNiger.Web.Services.Reglages.ServiceReglages reglages,
     ILogger<AdminEmailTemplatesController> logger) : ApiControllerBase
 {
     /// <summary>
@@ -88,7 +89,10 @@ public sealed partial class AdminEmailTemplatesController(
         }
 
         var destinataire = administrateur.Email;
-        var message = modele.RendreExemple(EmailBranding.DepuisOptions(emailOptions.Value));
+        var message = modele.RendreExemple(
+            EmailBranding.DepuisOptions(
+                emailOptions.Value,
+                (await reglages.LireAsync(cancellationToken)).Logo));
 
         await outbox.EnqueueAsync(
             modele.Cle,

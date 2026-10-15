@@ -3293,6 +3293,16 @@
     overflow-wrap: anywhere;
   }
 
+  /* Le logo déposé par l'administration remplace le carré d'initiales. Il doit garder
+     la hauteur d'origine et s'ajuster à sa largeur : un logo horizontal ne doit pas
+     déformer la barre, ni disparaître sur un téléphone. */
+  .site-brand__logo--image {
+    width: auto;
+    height: calc(var(--spacing) * 7);
+    object-fit: contain;
+    object-position: left center;
+  }
+
   /* --- Signalement d'un commentaire ---
      Le formulaire est replié derrière un « Signaler » : sur une discussion, un panneau
      ouvert sous chaque commentaire noierait le fil. Le membre n'a rien à remplir

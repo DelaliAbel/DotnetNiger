@@ -1,4 +1,5 @@
 @inject NavigationManager Navigation
+@inject DotnetNiger.Web.Services.Reglages.ServiceReglages Reglages
 
 <footer class="site-footer">
     <div class="wrap">
@@ -8,14 +9,18 @@
                 <p class="site-footer__mission">
                     La communauté des développeurs .NET au Niger : connecter, apprendre et bâtir ensemble.
                 </p>
-                <nav class="site-footer__social" aria-label="Réseaux sociaux et canaux de la communauté">
-                    @foreach (var canal in _Canaux)
-                    {
-                        <a href="@canal.Url" target="_blank" rel="noopener" aria-label="@canal.Nom">
-                            <DnIcon Name="@canal.Icône" Size="18" />
-                        </a>
-                    }
-                </nav>
+                @if (_canaux.Count > 0)
+                {
+                    <nav class="site-footer__social" aria-label="Réseaux sociaux et canaux de la communauté">
+                        @foreach (var canal in _canaux)
+                        {
+                            <a href="@canal.Url" target="_blank" rel="noopener" aria-label="@canal.Nom"
+                               title="@canal.Nom">
+                                <DnIcon Name="@canal.Icone" Size="18" />
+                            </a>
+                        }
+                    </nav>
+                }
             </div>
 
             <nav class="site-footer__col" aria-label="Liens rapides">
@@ -44,8 +49,16 @@
             <nav class="site-footer__col" aria-label="Communauté">
                 <h2 class="site-footer__title">Communauté</h2>
                 <ul class="site-footer__list">
-                    <li><a href="/communaute">Discord</a></li>
-                    <li><a href="/communaute">GitHub</a></li>
+                    @if (_reglages?.Valeurs.Whatsapp is { Length: > 0 } whatsapp)
+                    {
+                        <li><a href="@whatsapp" target="_blank" rel="noopener">WhatsApp</a></li>
+                    }
+
+                    @if (_reglages?.Valeurs.Github is { Length: > 0 } github)
+                    {
+                        <li><a href="@github" target="_blank" rel="noopener">GitHub</a></li>
+                    }
+
                     <li><a href="/evenements?type=meetup">Meetups</a></li>
                     <li><a href="/evenements?type=hackathon">Hackathons</a></li>
                     <li><a href="/contact">Contact</a></li>
@@ -107,7 +120,19 @@
     // Les canaux viennent des textes du site, pas de la base : le pied de page est
     // rendu sur toutes les pages, et interroger la base ici ferait courir une seconde
     // lecture sur le même contexte que celle de la page, en parallèle.
-    private IReadOnlyList<CanalVue> _Canaux = TextesDuSite.Canaux;
+    private DotnetNiger.Web.Services.Reglages.ReglagesAffiches? _reglages;
+
+    /// <summary>
+    /// Canaux renseignés, et eux seuls. Un canal sans adresse ne doit pas laisser une icône
+    /// qui mène nulle part : mieux vaut une barre de liens absente qu'une icône morte.
+    /// </summary>
+    private IReadOnlyList<DotnetNiger.Web.Services.Reglages.CanalSite> _canaux = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        _reglages = await Reglages.LirePourAffichageAsync();
+        _canaux = _reglages.Canaux;
+    }
 
     /// <summary>
     /// Adresse confirmée, transmise par la redirection après soumission. Le message

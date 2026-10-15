@@ -48,7 +48,7 @@ public sealed partial class AccountOperations
                     EmailValues.De(
                         (EmailVariables.NomMembre, user.FullName ?? string.Empty),
                         (EmailVariables.UrlConfirmation, url)),
-                    EmailBranding.DepuisOptions(_email)),
+                    await BrandeAsync()),
             cancellationToken);
     }
 
@@ -70,7 +70,7 @@ public sealed partial class AccountOperations
                     EmailValues.De(
                         (EmailVariables.NomMembre, user.FullName ?? string.Empty),
                         (EmailVariables.UrlCompte, _email.BuildUrl(CommunityUrl))),
-                    EmailBranding.DepuisOptions(_email)),
+                    await BrandeAsync()),
             cancellationToken);
     }
 
@@ -100,7 +100,7 @@ public sealed partial class AccountOperations
                     EmailValues.De(
                         (EmailVariables.NomMembre, user.FullName ?? string.Empty),
                         (EmailVariables.UrlCompte, _email.BuildUrl(CommunityUrl))),
-                    EmailBranding.DepuisOptions(_email)),
+                    await BrandeAsync()),
             cancellationToken);
     }
 

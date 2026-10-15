@@ -44,7 +44,7 @@ public sealed partial class AccountOperations
                     EmailValues.De(
                         (EmailVariables.NomMembre, user.FullName ?? string.Empty),
                         (EmailVariables.UrlReinitialisation, url)),
-                    EmailBranding.DepuisOptions(_email)),
+                    await BrandeAsync()),
             cancellationToken);
     }
 
