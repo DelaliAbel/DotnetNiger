@@ -44,8 +44,10 @@ coverage*.xml
 
 ## Node / Tailwind
 node_modules/
-# CSS généré : se régénère avec `npm run css:minify`
-src/DotnetNiger.Web/wwwroot/css/app.css
+
+# Le CSS compilé est volontairement versionné, contrairement à l'usage habituel :
+# l'hébergeur de production n'a pas Node, et bloque npm par politique de groupe.
+# Il est régénéré par `npm run css:minify` et commité à chaque modification du thème.
 
 ## Bases de données locales
 App_Data/

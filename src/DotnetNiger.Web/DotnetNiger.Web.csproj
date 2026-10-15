@@ -27,9 +27,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
     <!--
-      Permet de sortir les secrets du dépôt en développement, notamment le mot de passe
-      du compte administrateur initial décrit dans docs/DECISIONS.md. Ces valeurs restent
-      sur la machine du développeur et ne sont jamais versionnées.
+      Permet de sortir les secrets du dépôt en développement. Ces valeurs restent sur la
+      machine du développeur et ne sont jamais versionnées.
     -->
     <UserSecretsId>dotnetniger-web-local</UserSecretsId>
   </PropertyGroup>
@@ -37,28 +36,49 @@
   <!--
     Compilation Tailwind.
 
-    Le CSS produit à partir de `wwwroot/css/design/theme.css` n'est pas versionné : il est
-    régénéré à chaque build, ce qui garantit qu'il corresponde toujours au thème. Node et
-    npm sont donc requis pour compiler ce projet.
+    `wwwroot/css/app.css` produit à partir de `wwwroot/css/design/theme.css` est versionné.
+    C'est une exception à l'usage, et elle est délibérée : l'hébergeur de production bloque
+    npm par politique de groupe, et la compilation du projet y échouerait. Sans ce fichier
+    versionné, le site se publierait sans aucune feuille de style.
 
-    Pour travailler sur le thème en boucle :
-        npm run css:watch
+    Conséquence : recompiler le CSS fait partie du travail sur le thème, et le résultat se
+    commite. Une modification de theme.css sans `npm run css:minify` ne se voit pas.
 
-    Pour compiler sans Node (par exemple une image de build ne disposant que du SDK .NET) :
-        dotnet build -p:TailwindEnabled=false
+    Sur un poste qui a Node, les cibles ci-dessous compilent le CSS avant le build. Sur un
+    poste qui n'en a pas — le serveur de publication — elles sont court-circuitées, et le
+    CSS versionné est publié tel quel. Si ce CSS manque et que Node est indisponible, la
+    compilation échoue : publier un site sans style doit se voir, pas se découvrir ensuite.
   -->
   <PropertyGroup>
     <TailwindRoot>$(MSBuildThisFileDirectory)../../</TailwindRoot>
     <TailwindEnabled Condition="'$(TailwindEnabled)' == ''">true</TailwindEnabled>
     <TailwindOutput>$(MSBuildThisFileDirectory)wwwroot/css/app.css</TailwindOutput>
+    <TailwindAvailable Condition="'$(TailwindEnabled)' == 'true' And Exists('$(TailwindRoot)node_modules')">true</TailwindAvailable>
   </PropertyGroup>
 
-  <Target Name="TailwindInstall" Condition="'$(TailwindEnabled)' == 'true' And Exists('$(TailwindRoot)package.json') And !Exists('$(TailwindRoot)node_modules')">
-    <Message Importance="high" Text="Installation des dépendances Tailwind (npm ci)..." />
-    <Exec Command="npm ci" WorkingDirectory="$(TailwindRoot)" />
+  <!-- Sans Node, le thème est publié tel qu'il est versionné. -->
+  <Target Name="TailwindSansNode"
+          Condition="'$(TailwindAvailable)' != 'true' And Exists('$(TailwindOutput)')"
+          BeforeTargets="BeforeBuild">
+    <Message Importance="high" Text="Node absent : le thème est publié depuis le CSS versionné." />
   </Target>
 
-  <Target Name="TailwindBuildCss" BeforeTargets="BeforeBuild" DependsOnTargets="TailwindInstall" Condition="'$(TailwindEnabled)' == 'true' And Exists('$(TailwindRoot)package.json')">
+  <!-- Sans Node et sans CSS versionné, il n'y a rien à publier : mieux vaut échouer ici. -->
+  <Target Name="TailwindAbsent"
+          Condition="'$(TailwindAvailable)' != 'true' And !Exists('$(TailwindOutput)')"
+          BeforeTargets="BeforeBuild">
+    <Error Text="Le thème compilé est absent de $(TailwindOutput) et Node est indisponible. Exécuter 'npm ci' puis 'npm run css:minify', et recommencer." />
+  </Target>
+
+  <Target Name="TailwindInstall" Condition="'$(TailwindAvailable)' == 'true'">
+    <Message Importance="high" Text="Installation des dépendances Tailwind (npm ci)..." />
+    <Exec Command="npm ci" WorkingDirectory="$(TailwindRoot)" Condition="!Exists('$(TailwindRoot)node_modules')" />
+  </Target>
+
+  <Target Name="TailwindBuildCss"
+          BeforeTargets="BeforeBuild"
+          DependsOnTargets="TailwindInstall"
+          Condition="'$(TailwindAvailable)' == 'true'">
     <Exec Command="npm run css:minify" WorkingDirectory="$(TailwindRoot)" />
   </Target>
 
