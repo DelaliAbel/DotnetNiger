@@ -2,6 +2,7 @@ using DotnetNiger.Application.Common;
 using DotnetNiger.Infrastructure.Email;
 using DotnetNiger.Infrastructure.Identity;
 using DotnetNiger.Infrastructure.Persistence;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
@@ -24,6 +25,19 @@ public static class IdentityServiceCollectionExtensions
     /// Les règles de mot de passe, la durée de confirmation et le verrouillage sont lus
     /// dans la section <c>AccountSecurity</c>, afin de pouvoir les durcir en production
     /// sans recompiler.
+    /// <para>
+    /// Les clés de protection des données sont conservées en base, et non dans le dossier
+    /// temporaire du processus. Sans cela, chaque recyclage de l'hébergeur crée un nouveau
+    /// trousseau : tous les cookies de connexion cessent d'être lus, les jetons antiforgery
+    /// déjà émis deviennent invalides, et chaque membre est déconnecté — avec un formulaire
+    /// qui renvoie une erreur 400 à corps vide, faute d'explication. La base est le seul
+    /// endroit qui survit au redémarrage.
+    /// </para>
+    /// <para>
+    /// Le nom d'application est fixé : sans lui, deux exécutables ne partagent pas leurs
+    /// clés, et le trousseau planté par un premier démarrage deviendrait illisible dès le
+    /// déploiement suivant.
+    /// </para>
     /// </remarks>
     public static IServiceCollection AddDotnetNigerIdentity(
         this IServiceCollection services,
@@ -45,6 +59,10 @@ public static class IdentityServiceCollectionExtensions
         services.AddSingleton<IEmailSender, SmtpEmailSender>();
         services.AddScoped<IExternalAccountService, ExternalAccountService>();
         services.AddScoped<IAccountDeletionService, AccountDeletionService>();
+
+        services.AddDataProtection()
+            .PersistKeysToDbContext<DotnetNigerDbContext>()
+            .SetApplicationName("DotnetNiger");
 
         services
             .AddIdentity<ApplicationUser, ApplicationRole>(options =>

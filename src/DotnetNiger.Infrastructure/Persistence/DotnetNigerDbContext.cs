@@ -7,6 +7,7 @@ using DotnetNiger.Domain.Entities.Notifications;
 using DotnetNiger.Domain.Entities.Partners;
 using DotnetNiger.Domain.Entities.Projects;
 using DotnetNiger.Infrastructure.Identity;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,8 +17,16 @@ namespace DotnetNiger.Infrastructure.Persistence;
 /// Contexte de persistance unique de DotnetNiger : contenu éditorial, comptes ASP.NET
 /// Identity, inscriptions et modération.
 /// </summary>
+/// <remarks>
+/// Le contexte porte aussi le trousseau de protection des données. L'interface
+/// <see cref="IDataProtectionKeyContext"/> ne demande qu'un <see cref="DbSet{TEntity}"/>
+/// dont le type possède la clé <c>Id</c> en chaîne et la colonne <c>Xml</c> en texte — les
+/// trois propriétés attendues sont là. Les remplacer par une table dédiée isolerait les
+/// clés du reste du schéma sans rien gagner.
+/// </remarks>
 public sealed class DotnetNigerDbContext
-    : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>
+    : IdentityDbContext<ApplicationUser, ApplicationRole, Guid>,
+        IDataProtectionKeyContext
 {
     /// <summary>
     /// Initialise un nouveau contexte.
@@ -91,6 +100,12 @@ public sealed class DotnetNigerDbContext
 
     /// <summary>Réglages du site : logo, contact et canaux de la communauté.</summary>
     public DbSet<ReglageSite> SiteSettings => Set<ReglageSite>();
+
+    /// <summary>
+    /// Trousseau de protection des données, conservé en base pour survivre aux recyclages
+    /// de l'hébergeur. La table est créée par la migration dédiée.
+    /// </summary>
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder builder)

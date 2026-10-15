@@ -19,8 +19,9 @@
       la page communauté.
 - [x] **5. Un lien non renseigné ne s'affiche pas.** `ServiceReglages.Canaux()` ne renvoie
       que les canaux renseignés ; la barre d'icônes disparaît entièrement si aucun ne l'est.
-- [ ] **6. Un lien qui n'existe pas n'est pas une erreur.** La validation accepte un lien
-      mort ; son entretien revient à l'administrateur.
+- [x] **6. Un lien qui n'existe pas n'est pas une erreur.** La garde du domaine ne contrôle
+      que la forme de l'adresse — absolue, en http ou https — et ne va jamais la chercher sur
+      le réseau. Une adresse morte reste affichée tant qu'elle est visée.
 
 ## Connexion externe
 
