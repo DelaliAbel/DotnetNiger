@@ -1,5 +1,6 @@
 using DotnetNiger.Application.Abstractions.Persistence;
 using DotnetNiger.Domain.Entities.Comments;
+using DotnetNiger.Domain.Entities.Moderation;
 using DotnetNiger.Domain.Enums;
 using DotnetNiger.Infrastructure.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -143,6 +144,56 @@ public sealed class ServiceCommentaires(IUnitOfWork uniteDeTravail)
         await uniteDeTravail.SaveChangesAsync(cancellationToken);
 
         return (true, "Votre commentaire est supprimé.");
+    }
+
+    /// <summary>
+    /// Signale un commentaire à la modération.
+    /// </summary>
+    /// <param name="commentaireId">Identifiant du commentaire signalé.</param>
+    /// <param name="rapporteurId">Identifiant du membre qui signale.</param>
+    /// <param name="motif">Motif du signalement.</param>
+    /// <param name="details">Précisions facultatives.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Le résultat de la demande, motif compris en cas de refus.</returns>
+    /// <remarks>
+    /// Le signalement ne masque rien et ne suspend rien : il place le commentaire devant la
+    /// modération. C'est la seule action qu'un membre autre que l'auteur puisse mener sur un
+    /// commentaire, et elle doit rester possible même quand l'auteur est l'administrateur.
+    /// </remarks>
+    public async Task<(bool Reussi, string Message)> SignalerAsync(
+        Guid commentaireId,
+        Guid rapporteurId,
+        ReportReason motif,
+        string? details,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await uniteDeTravail.ReadRepository<Comment>().Query
+            .AnyAsync(comment => comment.Id == commentaireId, cancellationToken))
+        {
+            return (false, "Ce commentaire n'existe plus.");
+        }
+
+        // Un même membre ne signale pas deux fois le même commentaire : sinon un spammeur
+        // gonflerait la file de modération sans rien y apprendre.
+        var dejaSignale = await uniteDeTravail.ReadRepository<Report>().Query
+            .AnyAsync(
+                signalement => signalement.TargetType == ReportTargetType.Comment
+                    && signalement.TargetId == commentaireId
+                    && signalement.ReporterId == rapporteurId
+                    && signalement.Status != ReportStatus.Resolved,
+                cancellationToken);
+
+        if (dejaSignale)
+        {
+            return (false, "Vous avez déjà signalé ce commentaire.");
+        }
+
+        uniteDeTravail.Repository<Report>().Add(
+            new Report(ReportTargetType.Comment, commentaireId, motif, rapporteurId, details));
+
+        await uniteDeTravail.SaveChangesAsync(cancellationToken);
+
+        return (true, "Merci : la modération va examiner ce commentaire.");
     }
 
     /// <summary>

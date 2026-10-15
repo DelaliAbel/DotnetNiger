@@ -180,19 +180,41 @@ public sealed partial class CommunityEvent : SoftDeletableEntity
     /// </summary>
     public void Archive() => Status = PublicationStatus.Archived;
 
+    /// <summary>
+    /// Vérifie que le format et les deux adresses qui en dépendent s'accordent.
+    /// </summary>
+    /// <remarks>
+    /// Appelée à la publication, quand les deux adresses ont été posées. Les setters ne
+    /// font qu'une moitié de la vérification chacun : au moment où le lieu est posé, le
+    /// lien de participation n'est pas encore connu.
+    /// </remarks>
     private void EnsureFormatConsistency()
     {
-        var requiresLocation = Format is CommunityEventFormat.InPerson or CommunityEventFormat.Hybrid;
-        var requiresOnlineUrl = Format is CommunityEventFormat.Online or CommunityEventFormat.Hybrid;
+        EnsureLocationIsSet();
+        EnsureOnlineUrlIsSet();
+    }
 
-        if (requiresLocation && string.IsNullOrWhiteSpace(Location))
+    /// <summary>
+    /// Vérifie qu'un événement en personne ou hybride indique un lieu.
+    /// </summary>
+    private void EnsureLocationIsSet()
+    {
+        if (Format is CommunityEventFormat.InPerson or CommunityEventFormat.Hybrid
+            && string.IsNullOrWhiteSpace(Location))
         {
             throw new DomainException(
                 "event_location_required",
                 "Un événement en personne ou hybride doit indiquer un lieu.");
         }
+    }
 
-        if (requiresOnlineUrl && string.IsNullOrWhiteSpace(OnlineUrl))
+    /// <summary>
+    /// Vérifie qu'un événement en ligne ou hybride indique un lien de participation.
+    /// </summary>
+    private void EnsureOnlineUrlIsSet()
+    {
+        if (Format is CommunityEventFormat.Online or CommunityEventFormat.Hybrid
+            && string.IsNullOrWhiteSpace(OnlineUrl))
         {
             throw new DomainException(
                 "event_online_url_required",

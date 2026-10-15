@@ -91,7 +91,15 @@ else
 
                     <p class="admin-moderation__objet">@ligne.Sujet</p>
 
-                    <blockquote class="admin-moderation__texte">@ligne.Corps</blockquote>
+                    <blockquote class="admin-moderation__texte @(_deplie.Contains(ligne.Id) ? string.Empty : "admin-moderation__texte--borne")">@ligne.Corps</blockquote>
+
+                    @if (CompteLignes(ligne.Corps) > 5)
+                    {
+                        <button type="button" class="admin-moderation__deplier"
+                                @onclick="() => Basculer(ligne.Id)">
+                            @(_deplie.Contains(ligne.Id) ? "Réduire" : "Voir tout")
+                        </button>
+                    }
 
                     <div class="admin-moderation__actions">
                         <a class="btn btn--primary btn--sm" href="@Reponse(ligne)">
@@ -164,6 +172,48 @@ else
     private Guid? _aSupprimer;
 
     private readonly List<Annonce> _messages = [];
+
+    /// <summary>Messages dont le texte a été déplié.</summary>
+    private readonly HashSet<Guid> _deplie = [];
+
+    /// <summary>Déplie ou replie le texte d'un message.</summary>
+    /// <param name="id">Identifiant du message.</param>
+    private void Basculer(Guid id)
+    {
+        if (!_deplie.Add(id))
+        {
+            _deplie.Remove(id);
+        }
+    }
+
+    /// <summary>
+    /// Estime le nombre de lignes d'un texte, pour savoir s'il mérite d'être replié.
+    /// </summary>
+    /// <param name="texte">Texte à mesurer.</param>
+    /// <returns>Un nombre de lignes approché.</returns>
+    /// <remarks>
+    /// Une boîte de réception se parcourt d'un regard : le message le plus long ne doit pas
+    /// chasser les suivants hors de l'écran. L'estimation évite d'aller mesurer au
+    /// navigateur, et un texte court ne se voit jamais proposer « voir tout ».
+    /// </remarks>
+    private static int CompteLignes(string texte)
+    {
+        const int CaracteresParLigne = 90;
+
+        var lignes = 1;
+
+        foreach (var caractere in texte)
+        {
+            if (caractere is not ('\n' or '\r'))
+            {
+                continue;
+            }
+
+            lignes++;
+        }
+
+        return Math.Max(lignes, (texte.Length / CaracteresParLigne) + 1);
+    }
 
     /// <summary>Messages qui passent les filtres de la barre.</summary>
     private List<LigneMessageAdmin> Liste =>

@@ -1,4 +1,5 @@
 using DotnetNiger.Application.Abstractions;
+using DotnetNiger.Domain.Enums;
 using DotnetNiger.Web.Controller.Common;
 using DotnetNiger.Web.Services.Commentaires;
 using Microsoft.AspNetCore.Mvc;
@@ -16,6 +17,13 @@ public sealed record CommentaireInput(string? ArticleId, string? EventId, string
 /// <param name="Id">Identifiant du commentaire à retirer.</param>
 /// <param name="Retour">Chemin de la fiche, vers laquelle revenir.</param>
 public sealed record SuppressionCommentaireInput(string? Id, string? Retour);
+
+/// <summary>Formulaire de signalement d'un commentaire.</summary>
+/// <param name="Id">Identifiant du commentaire signalé.</param>
+/// <param name="Motif">Motif du signalement.</param>
+/// <param name="Details">Précisions facultatives.</param>
+/// <param name="Retour">Chemin de la fiche, vers laquelle revenir.</param>
+public sealed record SignalementCommentaireInput(string? Id, ReportReason Motif, string? Details, string? Retour);
 
 /// <summary>
 /// Dépôt et suppression des commentaires depuis la fiche d'un article ou d'un événement.
@@ -96,6 +104,42 @@ public sealed class CommentairesController : FormulaireControllerBase
         var resultat = await _service.SupprimerAsync(
             commentaireId,
             _utilisateur.UserId!.Value,
+            cancellationToken);
+
+        return RedirectionAvecMessage(retour, resultat.Reussi ? "confirmation" : "erreur", resultat.Message);
+    }
+
+    /// <summary>Signale un commentaire à la modération.</summary>
+    /// <param name="input">Identifiant du commentaire, motif et chemin de retour.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Redirection vers la fiche, confirmation ou erreur.</returns>
+    /// <remarks>
+    /// Le signalement passe par un formulaire et non par un appel d'API : il doit fonctionner
+    /// sur une fiche rendue côté serveur, sans script, comme le dépôt et la suppression.
+    /// </remarks>
+    [HttpPost("signaler")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Signaler(
+        [FromForm] SignalementCommentaireInput input,
+        CancellationToken cancellationToken)
+    {
+        var retour = CheminAutorise(input.Retour);
+
+        if (!EstMembre(_utilisateur))
+        {
+            return RedirectionConnexion(retour);
+        }
+
+        if (!Guid.TryParse(input.Id, out var commentaireId))
+        {
+            return RedirectionAvecMessage(retour, "erreur", "Commentaire introuvable.");
+        }
+
+        var resultat = await _service.SignalerAsync(
+            commentaireId,
+            _utilisateur.UserId!.Value,
+            input.Motif,
+            string.IsNullOrWhiteSpace(input.Details) ? null : input.Details,
             cancellationToken);
 
         return RedirectionAvecMessage(retour, resultat.Reussi ? "confirmation" : "erreur", resultat.Message);

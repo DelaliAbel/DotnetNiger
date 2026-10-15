@@ -3293,12 +3293,50 @@
     overflow-wrap: anywhere;
   }
 
+  /* --- Signalement d'un commentaire ---
+     Le formulaire est replié derrière un « Signaler » : sur une discussion, un panneau
+     ouvert sous chaque commentaire noierait le fil. Le membre n'a rien à remplir
+     tant qu'il ne l'a pas demandé. */
+  .commentaire__signalement {
+    margin-top: calc(var(--spacing) * 0.5);
+  }
+
+  .commentaire__signalement > summary {
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .commentaire__signalement > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .commentaire__signalement-form {
+    display: grid;
+    gap: calc(var(--spacing) * 0.75);
+    margin-top: calc(var(--spacing) * 1);
+    padding: calc(var(--spacing) * 1.5);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-sm);
+    background: var(--site-surface-alt);
+    max-width: 32rem;
+  }
+
+  .commentaire__signalement-form .btn {
+    justify-self: start;
+  }
+
   /* --- Fiches de contenu (article et événement) ---
      Les deux fiches partagent leur mise en page. Le style passe par des classes plutôt
      que par des attributs inline : ces derniers ne se corrigent qu'en editant chaque
      balise, alors qu'une règle ici se change une fois pour les deux pages. */
   .fiche__titre {
     margin-top: var(--spacing);
+    /* Le titre d'une fiche n'a pas besoin de la taille du titre d'accueil. À 48 px, un
+       titre d'article prenait cinq lignes sur un téléphone ; la taille suit la largeur de
+       l'écran et se stabilise sur un poste, ce qui garde les titres courts imposants et
+       les longs lisibles. */
+    font-size: clamp(1.6rem, 5.5vw, 2.6rem);
+    line-height: 1.18;
   }
 
   .fiche__accentuation {
@@ -4295,8 +4333,8 @@
 
   .admin-moderation__ligne {
     display: grid;
-    gap: calc(var(--spacing) * 1.5);
-    padding: calc(var(--spacing) * 2.5);
+    gap: calc(var(--spacing) * 1);
+    padding: calc(var(--spacing) * 1.75);
     border: 1px solid var(--site-border);
     border-left-width: 3px;
     border-radius: var(--radius-md);
@@ -4361,11 +4399,12 @@
     overflow-wrap: anywhere;
   }
 
-  /* Le texte signalé est cité, pas réécrit : il doit rester lisible tel quel, y compris
-     quand le membre a collé un lien ou un long paragraphe. */
+  /* Le texte signalé est cité, pas réécrit : il doit rester lisible tel quel. Il est
+     toutefois borné — un commentaire de dix lignes ferait de la carte un mur, et la
+     file de modération se parcourt d'un regard. Le bouton « voir tout » déplie. */
   .admin-moderation__texte {
     margin: 0;
-    padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 2);
+    padding: calc(var(--spacing) * 1) calc(var(--spacing) * 1.5);
     border-radius: var(--radius-sm);
     background: var(--site-surface-alt);
     color: var(--site-fg);
@@ -4373,6 +4412,30 @@
     line-height: var(--leading-relaxed);
     overflow-wrap: anywhere;
     white-space: pre-wrap;
+  }
+
+  .admin-moderation__texte--borne {
+    display: -webkit-box;
+    -webkit-line-clamp: 5;
+    line-clamp: 5;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .admin-moderation__deplier {
+    justify-self: start;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+    font-weight: 600;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .admin-moderation__deplier:hover {
+    color: var(--site-fg);
   }
 
   .admin-moderation__details {
@@ -4603,13 +4666,9 @@
     gap: calc(var(--spacing) * 0.75);
   }
 
-  @media (max-width: 47.999rem) {
-    .admin-tableau--defilant {
-      display: block;
-      overflow-x: auto;
-      white-space: nowrap;
-    }
-  }
+  /* Le comportement des tableaux sur téléphone est traité plus bas, avec le reste de
+     l'administration : la seule règle qui le concernait interdisait de replier le texte,
+     ce qui rendait les titre illisibles. */
 
   /* --- Barre de filtres --- */
 
@@ -4812,6 +4871,79 @@
      largeur du tiroir d'édition. */
   .admin-tiroir--etroit {
     width: min(34rem, 100%);
+  }
+
+  /* --- Administration sur téléphone ---
+     Un tableau de six colonnes sur un écran de 375 px ne se lit pas : il se fait défiler
+     horizontalement, ce qui cache la colonne des actions. La réponse n'est pas de
+     réduire les colonnes, mais de laisser le texte se replier dans sa colonne et de
+     ne garder d'une seule ligne que les actions, qui ne se coupent pas. */
+  @media (max-width: 47.999rem) {
+    .admin-entete {
+      flex-direction: column;
+      align-items: stretch;
+      gap: calc(var(--spacing) * 1.5);
+    }
+
+    .admin-entete .btn {
+      justify-content: center;
+      width: 100%;
+    }
+
+    .admin-bandeau {
+      gap: calc(var(--spacing) * 1.25);
+      margin-bottom: calc(var(--spacing) * 2);
+    }
+
+    /* Un champ de filtre de 12 rem ne tient pas dans une moitié d'écran : on le laisse
+       prendre toute la largeur et on empile. */
+    .admin-bandeau__champ {
+      min-width: 0;
+      width: 100%;
+    }
+
+    .admin-tableau--defilant {
+      display: block;
+      overflow-x: auto;
+    }
+
+    .admin-tableau--defilant td,
+    .admin-tableau--defilant th {
+      /* Le texte se replie dans sa colonne ; seule la ligne d'actions reste d'un tenant,
+         sinon chaque bouton de la ligne se retrouverait sur sa propre ligne. */
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .admin-tableau--defilant .admin-tableau__actions {
+      white-space: nowrap;
+      flex-wrap: nowrap;
+    }
+
+    .admin-tiroir,
+    .admin-tiroir--etroit {
+      width: 100%;
+      padding: calc(var(--spacing) * 2);
+    }
+
+    .admin-formulaire__actions {
+      flex-direction: column-reverse;
+      align-items: stretch;
+    }
+
+    .admin-formulaire__actions .btn {
+      justify-content: center;
+      width: 100%;
+    }
+
+    .admin-moderation__entete {
+      flex-direction: column;
+      gap: calc(var(--spacing) * 0.5);
+    }
+
+    .admin-moderation__actions {
+      gap: calc(var(--spacing) * 0.5);
+    }
   }
 
   /* --- Messages --- */

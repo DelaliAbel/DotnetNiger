@@ -18,6 +18,10 @@
     Un visiteur anonyme voit les commentaires mais pas le formulaire : lui en proposer un
     qu'il ne pourrait pas déposer l'obligerait à s'inscrire avant même de savoir s'il a
     quelque chose à dire.
+
+    Le signalement, lui, n'est proposé qu'aux membres et jamais sur son propre commentaire :
+    se signaler soi-même ne veut rien dire, et cela encombrerait chaque fil d'un bouton
+    sans usage.
 *@
 
 <section class="commentaires" aria-labelledby="@_TitreId">
@@ -88,7 +92,7 @@
 
                     <p class="commentaire__texte">@commentaire.Body</p>
 
-                    @if (EstMoi(commentaire))
+                    @if (UtilisateurCourant.IsAuthenticated && !EstMoi(commentaire))
                     {
                         <form method="post" action="/commentaires/suppression" class="mt-1">
                             <AntiforgeryToken />
@@ -96,6 +100,36 @@
                             <input type="hidden" name="Retour" value="@CheminRetour" />
                             <button class="btn btn--ghost btn--sm" type="submit">Supprimer</button>
                         </form>
+                    }
+
+                    @if (UtilisateurCourant.IsAuthenticated)
+                    {
+                        <details class="commentaire__signalement">
+                            <summary class="btn btn--ghost btn--sm">Signaler</summary>
+
+                            <form method="post" action="/commentaires/signaler" class="commentaire__signalement-form">
+                                <AntiforgeryToken />
+                                <input type="hidden" name="Id" value="@commentaire.Id" />
+                                <input type="hidden" name="Retour" value="@CheminRetour" />
+
+                                <label class="field__label" for="motif-@commentaire.Id">Motif</label>
+                                <select class="input" id="motif-@commentaire.Id" name="Motif">
+                                    @foreach (var motif in Motifs)
+                                    {
+                                        <option value="@motif">@Libelle(motif)</option>
+                                    }
+                                </select>
+
+                                <label class="field__label" for="details-@commentaire.Id">Précisions (facultatif)</label>
+                                <textarea class="input" id="details-@commentaire.Id" name="Details"
+                                          rows="2" maxlength="1000"
+                                          placeholder="Ce qui pose problème, et où."></textarea>
+
+                                <button class="btn btn--secondary btn--sm" type="submit">
+                                    Envoyer le signalement
+                                </button>
+                            </form>
+                        </details>
                     }
 
                     @if (reponses.Count > 0)
@@ -117,6 +151,17 @@
                                     </div>
 
                                     <p class="commentaire__texte">@reponse.Body</p>
+
+                                    @if (UtilisateurCourant.IsAuthenticated && !EstMoi(reponse))
+                                    {
+                                        <form method="post" action="/commentaires/signaler">
+                                            <AntiforgeryToken />
+                                            <input type="hidden" name="Id" value="@reponse.Id" />
+                                            <input type="hidden" name="Retour" value="@CheminRetour" />
+                                            <input type="hidden" name="Motif" value="@nameof(ReportReason.InappropriateContent)" />
+                                            <button class="btn btn--ghost btn--sm" type="submit">Signaler</button>
+                                        </form>
+                                    }
 
                                     @if (EstMoi(reponse))
                                     {
@@ -150,6 +195,21 @@
     [Parameter] public string CheminRetour { get; set; } = "/";
 
     private IReadOnlyList<CommentaireVue> Modele { get; set; } = [];
+
+    /// <summary>Motifs proposés dans le formulaire de signalement.</summary>
+    private static readonly ReportReason[] Motifs = Enum.GetValues<ReportReason>();
+
+    /// <summary>Intitulé d'un motif, en français.</summary>
+    /// <param name="motif">Motif du signalement.</param>
+    /// <returns>Le libellé affiché.</returns>
+    private static string Libelle(ReportReason motif) => motif switch
+    {
+        ReportReason.Spam => "Contenu indésirable",
+        ReportReason.Harassment => "Harcèlement",
+        ReportReason.InappropriateContent => "Contenu inapproprié",
+        ReportReason.IncorrectInformation => "Information fausse",
+        _ => "Autre motif",
+    };
 
     private string _TitreId => ArticleId is not null ? "titre-commentaires" : "titre-commentaires-evenement";
 

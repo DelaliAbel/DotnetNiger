@@ -41,20 +41,30 @@ public sealed partial class CommunityEvent
     /// Définit le lieu physique.
     /// </summary>
     /// <param name="location">Adresse ou salle, ou <see langword="null"/> si l'événement est purement en ligne.</param>
+    /// <remarks>
+    /// Seul le lieu est vérifié ici. La cohérence complète du format ne peut pas l'être :
+    /// le lieu est posé avant le lien de participation, et exiger ce dernier à ce stade
+    /// rendrait tout événement en ligne ou hybride impossible à créer, même lorsque le lien
+    /// est fourni deux lignes plus loin.
+    /// </remarks>
     public void SetLocation(string? location)
     {
         Location = DomainGuard.OptionalAgainstTooLong(location, FieldLimits.Location, nameof(location));
-        EnsureFormatConsistency();
+        EnsureLocationIsSet();
     }
 
     /// <summary>
     /// Définit le lien de participation en ligne.
     /// </summary>
     /// <param name="onlineUrl">URL absolue, ou <see langword="null"/> si l'événement est purement en personne.</param>
+    /// <remarks>
+    /// Seul le lien est vérifié ici, pour la même raison que dans <see cref="SetLocation"/> :
+    /// le lieu peut ne pas être encore posé.
+    /// </remarks>
     public void SetOnlineUrl(string? onlineUrl)
     {
         OnlineUrl = DomainGuard.OptionalAgainstHttpUrl(onlineUrl, nameof(onlineUrl));
-        EnsureFormatConsistency();
+        EnsureOnlineUrlIsSet();
     }
 
     /// <summary>

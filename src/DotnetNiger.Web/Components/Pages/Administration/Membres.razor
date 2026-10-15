@@ -514,7 +514,7 @@ else
 
         if (!reponse.Ok)
         {
-            return Raison(reponse);
+            return $"Écriture du compte refusée ({reponse.Statut}) : {Raison(reponse)}";
         }
 
         var changement = await Ecrire("PUT", $"/api/admin/accounts/{ligne.Id}/roles", new
@@ -522,7 +522,9 @@ else
             roles = new[] { _formeRole },
         });
 
-        return changement.Ok ? null : Raison(changement);
+        return changement.Ok
+            ? null
+            : $"Changement de rôle refusé ({changement.Statut}) : {Raison(changement)}";
     }
 
     /// <summary>Répartit un nom affiché entre prénom et nom.</summary>
@@ -623,16 +625,24 @@ else
 
     private static string EtiquetteRole(string role) => role == RoleNames.Admin ? "badge--violet" : "badge--ink";
 
-    /// <summary>Message d'erreur d'une réponse refusée, tel que le serveur l'a formulé.</summary>
+    /// <summary>
+    /// Message d'erreur d'une réponse refusée, tel que le serveur l'a formulé.
+    /// </summary>
     /// <param name="reponse">Réponse de l'appel.</param>
-    /// <returns>Un texte compréhensible, jamais un code.</returns>
+    /// <returns>Un texte compréhensible, jamais un code seul.</returns>
+    /// <remarks>
+    /// Le code de statut est conservé quand le serveur n'a rien dit d'utile : un « 405 »
+    /// sans rien dire d'utile : un « 405 » nu n'aide à rien, mais « 405 sur
+    /// PUT /api/.../roles » indique immédiatement où chercher. C'est la seule trace
+    /// exploitable d'un appel qui échoue dans le navigateur.
+    /// </remarks>
     private static string Raison(ReponseApi reponse)
         => reponse.Erreurs
             ?? reponse.Detail
             ?? reponse.Titre
             ?? (reponse.Statut == 0
-                ? "Le serveur n'a pas répondu."
-                : $"Le serveur a répondu {reponse.Statut}.");
+                ? "Le serveur n'a pas répondu. La connexion a peut-être été coupée."
+                : $"Le serveur a répondu {reponse.Statut} sans explication.");
 
     /// <summary>Un message affiché à l'écran, le temps qu'il soit effacé.</summary>
     /// <param name="Texte">Contenu du message.</param>
