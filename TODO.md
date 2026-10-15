@@ -23,6 +23,14 @@
       que la forme de l'adresse — absolue, en http ou https — et ne va jamais la chercher sur
       le réseau. Une adresse morte reste affichée tant qu'elle est visée.
 
+## Défaut de production
+
+- [x] **16. Un recyclage de l'hébergeur déconnectait tout le monde.** Les clés de
+      protection des données vivaient en mémoire : à chaque redémarrage, les cookies de
+      connexion devenaient illisibles et les jetons antiforgery déjà émis déclenchaient une
+      erreur 400 à corps vide. Le trousseau est désormais écrit en base
+      (`DataProtectionKeys`, migration `TrousseauDeDonnees`) et survit au redémarrage.
+
 ## Connexion externe
 
 - [ ] **7. Tester la connexion par Google et par GitHub**, une fois les clés renseignées.
