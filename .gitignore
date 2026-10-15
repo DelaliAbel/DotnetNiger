@@ -10,6 +10,8 @@ docs/
 
 ## Secrets — ne doivent jamais être versionnés
 appsettings.*.local.json
+# Configuration de production : vit sur le serveur, jamais dans le dépôt.
+appsettings.Production.json
 *.env
 .env
 .env.*
