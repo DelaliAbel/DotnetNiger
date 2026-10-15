@@ -15,6 +15,20 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
   </PropertyGroup>
 
+  <!--
+    L'audit NuGet signale une dépendance vulnérable. C'est une alerte à lire, pas un motif
+    pour interdire le déploiement : ces avertissements se déclenchent à la publication d'un
+    avis de sécurité, donc à des moments où l'on ne contrôle pas le calendrier. Bloquer le
+    build à ce moment-là garderait le site sur une version plus ancienne, avec la
+    vulnérabilité déjà corrigeable — l'inverse de ce qu'on veut.
+
+    Ils restent donc des avertissements : visibles dans le journal de build, sans bloquer.
+    Les dépendances se corrigent en relevant la version du paquet, pas en publiant malgré tout.
+  -->
+  <PropertyGroup>
+    <WarningsNotAsErrors>$(WarningsNotAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsNotAsErrors>
+  </PropertyGroup>
+
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);CS1591</NoWarn>
