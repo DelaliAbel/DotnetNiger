@@ -1,7 +1,8 @@
 @page "/a-propos"
-@attribute [StreamRendering]
 
 @inject ISiteContentService Contenu
+
+@inject DotnetNiger.Application.Abstractions.ICurrentUserService Utilisateur
 
 <PageTitle>À propos — DotnetNiger, la communauté des développeurs .NET au Niger</PageTitle>
 <HeadContent>
@@ -12,8 +13,8 @@
 
 @if (_APropos is null)
 {
-    <div class="wrap" style="padding-block: calc(var(--spacing) * 12);">
-        <p class="text-caption" style="color: var(--site-fg-muted);">Chargement…</p>
+    <div class="wrap py-12">
+        <p class="text-caption text-[var(--site-fg-muted)]">Chargement…</p>
     </div>
 }
 else
@@ -25,17 +26,17 @@ else
                 <p class="hero__eyebrow">
                     <DnIcon Name="code" Size="14" /> Qui sommes-nous ?
                 </p>
-                <h1 class="hero__title" style="margin-top: var(--spacing);">
+                <h1 class="hero__title mt-1">
                     Un catalyseur de la <strong>transformation numérique au Sahel</strong>
                 </h1>
-                <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
+                <p class="hero__lead mt-3">
                     @_APropos.Presentation
                 </p>
-                <div class="hero__actions" style="margin-top: calc(var(--spacing) * 4);">
-                    <a class="btn btn--white btn--lg" href="#mission">
+                <div class="hero__actions mt-4">
+                    <a class="btn btn--white btn--lg" href="/a-propos#mission">
                         Découvrir notre vision <DnIcon Name="arrow-right" Size="18" />
                     </a>
-                    <a class="btn btn--accent btn--lg" href="#equipe">
+                    <a class="btn btn--accent btn--lg" href="/a-propos#equipe">
                         Rencontrer l'équipe <DnIcon Name="users" Size="18" />
                     </a>
                 </div>
@@ -43,12 +44,12 @@ else
 
             <div class="hero__panel">
                 <div class="hero__panel__bar" aria-hidden="true">
-                    <span class="hero__panel__dot" style="background: #f17b26;"></span>
-                    <span class="hero__panel__dot" style="background: #03ad69;"></span>
-                    <span class="hero__panel__dot" style="background: #ad9be8;"></span>
+                    <span class="hero__panel__dot bg-orange-400"></span>
+                    <span class="hero__panel__dot bg-vert-400"></span>
+                    <span class="hero__panel__dot bg-violet-300"></span>
                 </div>
                 <img class="hero__panel__image" src="/images/img3.jpg" loading="lazy"
-                     alt="Atelier DotnetNiger : des développeurs .NET du Niger autour de leurs ordinateurs portables" />
+                alt="Atelier DotnetNiger : des développeurs .NET du Niger autour de leurs ordinateurs portables" />
             </div>
         </div>
     </section>
@@ -57,8 +58,8 @@ else
     <section class="section" aria-labelledby="mission-titre" id="mission">
         <div class="wrap">
             <div class="mission">
-                <div class="section__head" style="margin-bottom: 0;">
-                    <p class="eyebrow" style="color: var(--color-vert-300);">Notre mission</p>
+                <div class="section__head mb-0">
+                    <p class="eyebrow text-vert-300">Notre mission</p>
                     <h2 id="mission-titre" class="mission__titre">
                         Propulser le talent local au sommet de la <strong>tech mondiale</strong>
                     </h2>
@@ -92,7 +93,7 @@ else
                         <article class="card card--hover">
                             <div class="card__body">
                                 <span class="badge badge--violet"><DnIcon Name="@valeur.Icone" Size="14" /> @valeur.Titre</span>
-                                <h3 class="card__title" style="font-size: var(--text-base);">@valeur.Titre</h3>
+                                <h3 class="card__title text-base">@valeur.Titre</h3>
                                 <p class="card__text">@valeur.Description</p>
                             </div>
                         </article>
@@ -156,62 +157,64 @@ else
             @if (_APropos.Equipe.Count == 0)
             {
                 <EmptyState Icone="users"
-                            Titre="L'équipe n'est pas encore présentée"
-                            Message="Les membres qui animent la communauté apparaîtront ici avec leur rôle et leurs liens.">
-                    <a class="btn btn--ghost" href="/communaute">
-                        Découvrir la communauté <DnIcon Name="arrow-right" Size="16" />
-                    </a>
-                </EmptyState>
-            }
-            else
-            {
-                <div class="grid gap-2 md:grid-cols-3">
-                    @foreach (var membre in _APropos.Equipe)
-                    {
-                        <article class="card">
-                            <div class="card__media card__media--equipe">
-                                <img src="@membre.ImageUrl" alt="@membre.Nom" loading="lazy"
-                                     style="width: 100%; height: 100%; object-fit: cover;" />
-                            </div>
-                            <div class="card__body">
-                                <h3 class="card__title" style="font-size: var(--text-base);">@membre.Nom</h3>
-                                <p class="card__text">@membre.Role</p>
-                                <p class="card__meta">
-                                    @if (!string.IsNullOrWhiteSpace(membre.LienGithub))
-                                    {
-                                        <a class="equipe__social" href="@membre.LienGithub" target="_blank" rel="noopener" aria-label="GitHub de @membre.Nom">
-                                            <DnIcon Name="github" Size="16" />
-                                        </a>
-                                    }
-                                    @if (!string.IsNullOrWhiteSpace(membre.LienLinkedin))
-                                    {
-                                        <a class="equipe__social" href="@membre.LienLinkedin" target="_blank" rel="noopener" aria-label="LinkedIn de @membre.Nom">
-                                            <DnIcon Name="linkedin" Size="16" />
-                                        </a>
-                                    }
-                                    @if (!string.IsNullOrWhiteSpace(membre.LienX))
-                                    {
-                                        <a class="equipe__social" href="@membre.LienX" target="_blank" rel="noopener" aria-label="X de @membre.Nom">
-                                            <DnIcon Name="x" Size="16" />
-                                        </a>
-                                    }
-                                </p>
-                            </div>
-                        </article>
-                    }
-                </div>
-            }
-        </div>
-    </section>
+                Titre="L'équipe n'est pas encore présentée"
+                Message="Les membres qui animent la communauté apparaîtront ici avec leur rôle et leurs liens.">
+                <a class="btn btn--ghost" href="/communaute">
+                    Découvrir la communauté <DnIcon Name="arrow-right" Size="16" />
+                </a>
+            </EmptyState>
+        }
+        else
+        {
+            <div class="grid gap-2 md:grid-cols-3">
+                @foreach (var membre in _APropos.Equipe)
+                {
+                    <article class="card">
+                        <div class="card__media card__media--equipe">
+                            <img class="h-full w-full object-cover" src="@membre.ImageUrl" alt="@membre.Nom" loading="lazy" />
+                        </div>
+                        <div class="card__body">
+                            <h3 class="card__title text-base">@membre.Nom</h3>
+                            <p class="card__text">@membre.Role</p>
+                            <p class="card__meta">
+                                @if (!string.IsNullOrWhiteSpace(membre.LienGithub))
+                                {
+                                    <a class="equipe__social" href="@membre.LienGithub" target="_blank" rel="noopener" aria-label="GitHub de @membre.Nom">
+                                        <DnIcon Name="github" Size="16" />
+                                    </a>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(membre.LienLinkedin))
+                                {
+                                    <a class="equipe__social" href="@membre.LienLinkedin" target="_blank" rel="noopener" aria-label="LinkedIn de @membre.Nom">
+                                        <DnIcon Name="linkedin" Size="16" />
+                                    </a>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(membre.LienX))
+                                {
+                                    <a class="equipe__social" href="@membre.LienX" target="_blank" rel="noopener" aria-label="X de @membre.Nom">
+                                        <DnIcon Name="x" Size="16" />
+                                    </a>
+                                }
+                            </p>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </div>
+</section>
 
-    <!-- 6. Zone de connexion rapide -->
-    <section class="section" aria-labelledby="rejoindre-titre">
-        <div class="wrap">
-            <div class="bande">
-                <div class="grid gap-6 md:grid-cols-2" style="align-items: center;">
+<!-- 6. Zone de connexion rapide -->
+<section class="section" aria-labelledby="rejoindre-titre">
+    <div class="wrap">
+        <div class="bande">
+            <div class="grid items-center gap-6 md:grid-cols-2">
+
+                @if (Utilisateur.IsAuthenticated)
+                {
                     <div>
-                        <p class="eyebrow" style="color: var(--color-vert-300);">Rejoindre la communauté</p>
-                        <h2 id="rejoindre-titre" class="bande__title" style="margin-top: var(--spacing);">
+                        <p class="eyebrow text-vert-300">Voir les événements de la communauté</p>
+                        <h2 id="rejoindre-titre" class="bande__title mt-1">
                             La communauté vous attend
                         </h2>
                         <p class="bande__lead">
@@ -220,14 +223,35 @@ else
                         </p>
                     </div>
                     <div>
-                        <a class="btn btn--white btn--lg" href="/communaute">
-                            Rejoindre la communauté <DnIcon Name="arrow-right" Size="18" />
+                        <a class="btn btn--white btn--lg" href="/evenements">
+                            Voir tous les événements
+                            <DnIcon Name="arrow-right" Size="18" />
                         </a>
                     </div>
-                </div>
+                }
+                else
+                {
+                    <div>
+                        <p class="eyebrow text-vert-300">Rejoindre la communauté</p>
+                        <h2 id="rejoindre-titre" class="bande__title mt-1">
+                            La communauté vous attend
+                        </h2>
+                        <p class="bande__lead">
+                            Échangez avec des développeurs passionnés, découvrez des ressources
+                            et participez à la vie de DotnetNiger.
+                        </p>
+                    </div>
+                    <div>
+                        <a class="btn btn--white btn--lg" href="/compte/inscription">
+                            Rejoindre la communauté <DnIcon Name="arrow-right" Size="18" />
+                        </a>
+
+                    </div>
+                }
             </div>
         </div>
-    </section>
+    </div>
+</section>
 }
 
 @code {

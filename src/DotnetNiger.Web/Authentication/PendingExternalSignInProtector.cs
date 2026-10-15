@@ -14,12 +14,14 @@ namespace DotnetNiger.Web.Authentication;
 /// <param name="Email">Adresse transmise par le fournisseur.</param>
 /// <param name="EmailVerified">Vrai si le fournisseur a certifié l'adresse.</param>
 /// <param name="ReturnUrl">Destination interne demandée avant le départ.</param>
+/// <param name="PhotoUrl">Photo fournie par le fournisseur, si elle en transmet une.</param>
 public sealed record PendingExternalSignIn(
     string Provider,
     string ProviderKey,
     string? Email,
     bool EmailVerified,
-    string? ReturnUrl);
+    string? ReturnUrl,
+    string? PhotoUrl = null);
 
 /// <summary>
 /// Transport chiffré de l'identité externe entre le retour du fournisseur et la saisie du

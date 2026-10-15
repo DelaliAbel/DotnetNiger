@@ -1,3 +1,4 @@
+using System.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Infrastructure.Persistence;
@@ -30,7 +31,24 @@ internal static class DatabaseProviderConfiguration
 
         if (string.Equals(provider, DatabaseProviders.SqlServer, StringComparison.OrdinalIgnoreCase))
         {
-            options.UseSqlServer(connectionString, sql => sql.MigrationsAssembly(migrationsAssembly));
+            options.UseSqlServer(connectionString, sql =>
+            {
+                sql.MigrationsAssembly(migrationsAssembly);
+
+                // Sur une base distante, une connexion interrompue est une panne passagère :
+                // sans reprise, elle devient une erreur 500. Trois tentatives, espacées de
+                // dix secondes, couvrent le cas le plus courant — une connexion que le
+                // réseau ou le serveur a lâchée.
+                //
+                // Contrepartie : EF refuse alors une transaction ouverte à la main. Les
+                // deux transactions du site passent par IUnitOfWork.ExecuteInTransactionAsync,
+                // qui passe par la stratégie d'exécution.
+                sql.EnableRetryOnFailure(
+                    maxRetryCount: 3,
+                    maxRetryDelay: TimeSpan.FromSeconds(10),
+                    errorNumbersToAdd: null);
+            });
+
             return;
         }
 

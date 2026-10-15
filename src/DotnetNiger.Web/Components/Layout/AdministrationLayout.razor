@@ -1,35 +1,79 @@
 @inherits LayoutComponentBase
-@attribute [Microsoft.AspNetCore.Authorization.Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
 
-<div class="min-h-screen bg-ink-50">
-    <header class="bg-violet-800 text-white">
-        <div class="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-4 px-4 py-4 md:px-8">
-            <div>
-                <p class="text-micro text-violet-200">Administration</p>
-                <a class="text-lead font-semibold hover:underline" href="/">DotnetNiger</a>
+@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
+
+@*
+    Coque de l'administration : barre latérale à gauche, contenu à droite, barre du haut
+    au-dessus du contenu.
+
+    Elle ne rend aucun composant d'interface : tout est en HTML et CSS maison, comme le
+    site public, avec le même jeu de couleurs et le même mode sombre. La seule chose
+    chargée ici et pas ailleurs est l'éditeur riche, dont les pages de rédaction ont besoin
+    ; il est appelé par un bouton de la barre, jamais au premier affichage.
+*@
+
+<PageTitle>Administration — DotnetNiger</PageTitle>
+
+<div class="admin">
+    @* Voile du tiroir mobile : il n'existe qu'en dessous de 64 rem, où la barre sort du
+       flux. Au-dessus, la CSS le laisse invisible sans même le masquer. *@
+    <div class="admin-fond" data-admin-voile></div>
+
+    <aside class="admin__barre" id="admin-barre">
+        <AdministrationNavigation />
+    </aside>
+
+    <div class="admin__page">
+        <header class="admin-topbar">
+            <div class="admin-topbar__gauche">
+                @* Le bouton de repli ne sert qu'à la largeur large ; le hamburger ne sert
+                   qu'en dessous. Chacun disparaît quand l'autre est inutile. *@
+                <button class="admin-topbar__burger" type="button" data-admin-tiroir
+                        aria-label="Ouvrir la navigation" aria-controls="admin-barre" aria-expanded="false"
+                        onclick="DnAdminTiroir.bascule(); return false;">
+                    <DnIcon Name="menu" Size="18" />
+                </button>
+
+                <button class="admin-replie" type="button" data-admin-replie
+                        aria-label="Replier la navigation" aria-expanded="true"
+                        onclick="DnAdminReplie.bascule(); return false;">
+                    <DnIcon Name="chevron-right" Size="16" />
+                </button>
+
+                <p class="admin-topbar__titre">Administration</p>
             </div>
 
-            <nav class="flex flex-wrap items-center gap-2" aria-label="Navigation de l'administration">
-                <NavLink class="rounded-sm px-3 py-2 text-sm text-violet-100 hover:bg-violet-700" href="/administration/messages">
-                    Messages
-                </NavLink>
-                <NavLink class="rounded-sm px-3 py-2 text-sm text-violet-100 hover:bg-violet-700" href="/administration/abonnes">
-                    Abonnés
-                </NavLink>
-                <NavLink class="rounded-sm px-3 py-2 text-sm text-violet-100 hover:bg-violet-700" href="/administration/actualites">
-                    Actualités
-                </NavLink>
-                <form method="post" action="/compte/deconnexion" class="ml-2">
-                    <AntiforgeryToken />
-                    <button class="rounded-sm border border-violet-400 px-3 py-2 text-sm hover:bg-violet-700" type="submit">
-                        Déconnexion
-                    </button>
-                </form>
-            </nav>
-        </div>
-    </header>
+            <div class="admin-topbar__actions">
+                <a class="btn btn--ghost admin-topbar__lien" href="/">
+                    <DnIcon Name="external-link" Size="15" />
+                    Voir le site
+                </a>
 
-    <main id="contenu" class="mx-auto max-w-[1440px] px-4 py-8 md:px-8">
-        @Body
-    </main>
+                @* Le même bouton que le site public : même aspect, même mémoire, même
+                   classe sur <html>. *@
+                <button class="theme-toggle" type="button" data-theme-toggle
+                        aria-label="Activer le mode sombre" aria-pressed="false"
+                        onclick="DnTheme.toggle(); return false;">
+                    <span data-icone-soleil class="hidden"><DnIcon Name="sun" Size="16" /></span>
+                    <span data-icone-lune><DnIcon Name="moon" Size="16" /></span>
+                </button>
+            </div>
+        </header>
+
+        <main class="admin-contenu">
+            @Body
+        </main>
+    </div>
 </div>
+
+@* Thème (mémorisé et appliqué avant le premier rendu) et éditeur riche.
+
+   Les adresses commencent par une barre oblique : `@Assets` renvoie un chemin relatif,
+   qui ne résout qu'à la racine du site. Après une navigation enhanced, ces balises sont
+   remplacées sans être réexécutées — l'amorceur `DnAdminScripts` du document racine
+   recharge alors ce qui manque, et reconnaît ces balises grâce à leur attribut `data-dn`
+   pour ne pas le faire deux fois. *@
+<script src="/@Assets["js/site.js"]"></script>
+<script src="/@Assets["js/api-admin.js"]" data-dn="/js/api-admin.js"></script>
+<script src="/@Assets["tinymce/tinymce.min.js"]" data-dn="/tinymce/tinymce.min.js"></script>
+<script src="/@Assets["js/tinymce-admin.js"]" data-dn="/js/tinymce-admin.js"></script>

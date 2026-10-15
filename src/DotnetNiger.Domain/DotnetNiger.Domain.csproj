@@ -6,11 +6,4 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
-  <ItemGroup>
-    <!-- Conversion du corps d'article : Markdown en entrée, HTML contrôlé en sortie.
-         Le paquet est le seul qui touche au balisage, tout le reste du domaine reste
-         du C#. -->
-    <PackageReference Include="Markdig" />
-  </ItemGroup>
-
 </Project>

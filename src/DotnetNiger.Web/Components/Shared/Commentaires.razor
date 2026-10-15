@@ -1,0 +1,165 @@
+@using System.Globalization
+@using DotnetNiger.Application.Abstractions
+@using DotnetNiger.Application.Abstractions.Persistence
+@using DotnetNiger.Domain.Entities.Comments
+@using DotnetNiger.Domain.Enums
+@using DotnetNiger.Web.Services.Commentaires
+@using Microsoft.EntityFrameworkCore
+@inject ServiceCommentaires Service
+@inject ICurrentUserService UtilisateurCourant
+
+@*
+    Fil de commentaires d'un article ou d'un événement.
+
+    Le composant ne choisit pas sa cible : il reçoit un identifiant de chaque côté, dont
+    un seul est renseigné, exactement comme l'API l'attend. Un même rendu sert ainsi la
+    fiche article et la fiche événement, sans duplication à corriger deux fois.
+
+    Un visiteur anonyme voit les commentaires mais pas le formulaire : lui en proposer un
+    qu'il ne pourrait pas déposer l'obligerait à s'inscrire avant même de savoir s'il a
+    quelque chose à dire.
+*@
+
+<section class="commentaires" aria-labelledby="@_TitreId">
+    <h2 class="section__title text-lead" id="@_TitreId">
+        @(Modele.Count == 0 ? "Soyez le premier à commenter" : $"{Modele.Count} commentaire(s)")
+    </h2>
+
+    @if (UtilisateurCourant.IsAuthenticated)
+    {
+        <form method="post" action="/commentaires" class="commentaires__form mt-4">
+            <AntiforgeryToken />
+            <input type="hidden" name="ArticleId" value="@(ArticleId?.ToString())" />
+            <input type="hidden" name="EventId" value="@(EventId?.ToString())" />
+            <input type="hidden" name="Retour" value="@CheminRetour" />
+
+            @* Aucun message ici : le dépôt est un formulaire classique, et son résultat
+               revient dans l'adresse de la fiche (?confirmation= ou ?erreur=), où la page
+               l'affiche. Un bandeau dans ce composant afficherait un cadre vide à chaque
+               visite, puisque rien ne le renseignait. *@
+
+            <label class="field__label" for="commentaire-corps">Votre commentaire</label>
+            <textarea id="commentaire-corps"
+                      class="input"
+                      name="Body"
+                      rows="4"
+                      maxlength="4000"
+                      required
+                      placeholder="Partagez un retour, une question, une idée…"></textarea>
+
+            <button class="btn btn--primary mt-2 justify-self-start" type="submit">
+                Publier
+                <DnIcon Name="send" Size="16" />
+            </button>
+        </form>
+    }
+    else
+    {
+        <p class="commentaires__invitation mt-3">
+            <a class="link" href="@($"/compte/connexion?retour={Uri.EscapeDataString(CheminRetour)}")">Connectez-vous</a>
+            pour participer à la discussion.
+        </p>
+    }
+
+    @if (Modele.Count == 0)
+    {
+        <p class="vide mt-4">
+            Aucun commentaire pour l'instant. La première parole vous revient.
+        </p>
+    }
+    else
+    {
+        <ul class="commentaires__liste">
+            @foreach (var commentaire in Modele)
+            {
+                var reponses = Reponses(commentaire);
+                <li class="commentaire">
+                    <div class="commentaire__entete">
+                        <DnAvatar Nom="@commentaire.AuteurName" Sm />
+                        <div>
+                            <p class="commentaire__auteur">@commentaire.AuteurName</p>
+                            <p class="commentaire__date">
+                                <time datetime="@commentaire.CreatedAtUtc.ToString("o", CultureInfo.InvariantCulture)">
+                                    @commentaire.CreatedAtUtc.ToString("d MMMM yyyy à HH:mm", Culture)
+                                </time>
+                            </p>
+                        </div>
+                    </div>
+
+                    <p class="commentaire__texte">@commentaire.Body</p>
+
+                    @if (EstMoi(commentaire))
+                    {
+                        <form method="post" action="/commentaires/suppression" class="mt-1">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="Id" value="@commentaire.Id" />
+                            <input type="hidden" name="Retour" value="@CheminRetour" />
+                            <button class="btn btn--ghost btn--sm" type="submit">Supprimer</button>
+                        </form>
+                    }
+
+                    @if (reponses.Count > 0)
+                    {
+                        <ul class="commentaires__reponses">
+                            @foreach (var reponse in reponses)
+                            {
+                                <li class="commentaire commentaire--reponse">
+                                    <div class="commentaire__entete">
+                                        <DnAvatar Nom="@reponse.AuteurName" Sm />
+                                        <div>
+                                            <p class="commentaire__auteur">@reponse.AuteurName</p>
+                                            <p class="commentaire__date">
+                                                <time datetime="@reponse.CreatedAtUtc.ToString("o", CultureInfo.InvariantCulture)">
+                                                    @reponse.CreatedAtUtc.ToString("d MMMM yyyy à HH:mm", Culture)
+                                                </time>
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <p class="commentaire__texte">@reponse.Body</p>
+
+                                    @if (EstMoi(reponse))
+                                    {
+                                        <form method="post" action="/commentaires/suppression" class="mt-1">
+                                            <AntiforgeryToken />
+                                            <input type="hidden" name="Id" value="@reponse.Id" />
+                                            <input type="hidden" name="Retour" value="@CheminRetour" />
+                                            <button class="btn btn--ghost btn--sm" type="submit">Supprimer</button>
+                                        </form>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                </li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
+
+    /// <summary>Identifiant de l'article commenté, si la fiche porte sur un article.</summary>
+    [Parameter] public Guid? ArticleId { get; set; }
+
+    /// <summary>Identifiant de l'événement commenté, si la fiche porte sur un événement.</summary>
+    [Parameter] public Guid? EventId { get; set; }
+
+    /// <summary>Chemin de la fiche, vers lequel le formulaire renvoie après dépôt.</summary>
+    [Parameter] public string CheminRetour { get; set; } = "/";
+
+    private IReadOnlyList<CommentaireVue> Modele { get; set; } = [];
+
+    private string _TitreId => ArticleId is not null ? "titre-commentaires" : "titre-commentaires-evenement";
+
+    protected override async Task OnParametersSetAsync()
+        => Modele = await Service.ListerAsync(ArticleId, EventId);
+
+    /// <summary>Réponses rattachées à un commentaire, dans l'ordre de publication.</summary>
+    private IReadOnlyList<CommentaireVue> Reponses(CommentaireVue commentaire)
+        => [.. Modele.Where(reponse => reponse.ParentCommentId == commentaire.Id)];
+
+    private bool EstMoi(CommentaireVue commentaire)
+        => UtilisateurCourant.UserId == commentaire.AuteurId;
+}

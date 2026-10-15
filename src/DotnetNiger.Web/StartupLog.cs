@@ -33,4 +33,26 @@ internal static partial class StartupLog
         Level = LogLevel.Information,
         Message = "Envoi des courriels opérationnel")]
     internal static partial void CourrielsActifs(ILogger logger);
+
+    /// <summary>
+    /// Signale une réglage de production incomplet sans en interdire le démarrage.
+    /// </summary>
+    /// <param name="logger">Journal.</param>
+    /// <param name="point">Description du réglage à revoir.</param>
+    [LoggerMessage(
+        EventId = 92,
+        Level = LogLevel.Warning,
+        Message = "Point de vigilance : {Point}")]
+    internal static partial void PointDeVigilance(ILogger logger, string point);
+
+    /// <summary>
+    /// Signale une configuration de production qui interdit le démarrage.
+    /// </summary>
+    /// <param name="logger">Journal.</param>
+    /// <param name="problemes">Liste des réglages bloquants.</param>
+    [LoggerMessage(
+        EventId = 93,
+        Level = LogLevel.Critical,
+        Message = "Configuration de production inexploitable : {Problemes}")]
+    internal static partial void ConfigurationBloquante(ILogger logger, string problemes);
 }

@@ -57,4 +57,15 @@ public interface IRepository<T>
     /// </summary>
     /// <param name="entity">Entité à mettre à jour.</param>
     void Update(T entity);
+
+    /// <summary>
+    /// Supprime définitivement une entité.
+    /// </summary>
+    /// <remarks>
+    /// Exception à la suppression logique du reste du site : réservé aux données dont on
+    /// ne garde pas d'historique et dont la conservation coûte cher — une photo de profil
+    /// remplace la précédente, elle ne s'empile pas.
+    /// </remarks>
+    /// <param name="entity">Entité à supprimer.</param>
+    void Remove(T entity);
 }

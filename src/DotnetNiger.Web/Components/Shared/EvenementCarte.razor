@@ -1,6 +1,14 @@
 @using System.Globalization
+@using DotnetNiger.Domain.Enums
 
-@* Carte de présentation d'un événement, utilisée par l'accueil, la communauté et la page événements. *@
+@*
+    Carte de présentation d'un événement, utilisée par l'accueil, la communauté et l'agenda.
+
+    Elle reprend volontairement la carte d'article — même gabarit, même image, mêmes
+    dimensions : une grille quiAlterne deux formats de carte se lit mal, et l'œil
+    attend la même chose d'une vignette à l'autre. Ce qui distingue un rendez-vous d'un
+    article tient en deux badges : le type de rencontre et sa modalité.
+*@
 
 <article class="card card--hover">
     @* « Terminé » est posé sur l'image : dans la ligne de métadonnées, il passait
@@ -10,21 +18,26 @@
                 Etiquette="@(EstPasse ? "Terminé" : null)"
                 EtiquetteVariante="ink" />
     <div class="card__body">
-        <p class="card__meta">
+        <p>
             <span class="badge badge--@CouleurType">@Evenement.Type</span>
-            <span class="evenement__lieu">
-                <DnIcon Name="map-pin" Size="14" /> @Evenement.Lieu
-            </span>
+            <span class="badge @CouleurFormat">@Format</span>
         </p>
         <h3 class="card__title card__title--compact">
             <a href="@Lien" class="link">@Evenement.Titre</a>
         </h3>
-        <p class="card__text">@Evenement.Description</p>
+        @* Le résumé, jamais la description : celle-ci est du HTML, dont les balises
+           s'afficheraient telles quelles dans la carte. *@
+        <p class="card__text">@Evenement.Resume</p>
         <p class="card__meta">
             <DnIcon Name="calendar" Size="14" />
             <time datetime="@Evenement.DateDebut.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)">
                 @DateLisible
             </time>
+            <span aria-hidden="true">·</span>
+            <span class="evenement__lieu">
+                <DnIcon Name="@(EstEnLigne ? "globe" : "map-pin")" Size="14" />
+                @(EstEnLigne ? "En ligne" : Lieu)
+            </span>
         </p>
     </div>
 </article>
@@ -45,9 +58,38 @@
     /// <summary>Un événement dont la date de début est dépassée est conservé, mais signalé comme terminé.</summary>
     private bool EstPasse => Evenement.DateDebut < DateOnly.FromDateTime(DateTime.Today);
 
-    private string DateLisible => Evenement.DateFin is { } fin
-        ? $"du {Evenement.DateDebut.ToString("d MMMM", Culture)} au {fin.ToString("d MMMM yyyy", Culture)}"
-        : Evenement.DateDebut.ToString("d MMMM yyyy", Culture);
+    /// <summary>
+    /// Une rencontre en ligne n'a pas de lieu : elle se désigne par sa modalité, et le
+    /// lieu affiché serait une information fausse.
+    /// </summary>
+    private bool EstEnLigne => Evenement.Format != CommunityEventFormat.InPerson;
+
+    /// <summary>Lieu affiché ; à défaut, la mention qui reste vraie.</summary>
+    private string Lieu => string.IsNullOrWhiteSpace(Evenement.Lieu) ? "lieu à préciser" : Evenement.Lieu;
+
+    /// <summary>
+    /// Date d'un rendez-vous. Un événement qui commence et finit le même jour n'affiche
+    /// pas « du X au X » : la répétition se lit comme une erreur de saisie.
+    /// </summary>
+    private string DateLisible =>
+        Evenement.DateFin is { } fin && fin != Evenement.DateDebut
+            ? $"du {Evenement.DateDebut.ToString("d MMMM", Culture)} au {fin.ToString("d MMMM yyyy", Culture)}"
+            : Evenement.DateDebut.ToString("d MMMM yyyy", Culture);
+
+    private string Format => Evenement.Format switch
+    {
+        CommunityEventFormat.Online => "En ligne",
+        CommunityEventFormat.Hybrid => "Hybride",
+        _ => "Présentiel",
+    };
+
+    /// <summary>La modalité en ligne se signale par le vert : c'est l'information qui décide si l'on vient.</summary>
+    private string CouleurFormat => Evenement.Format switch
+    {
+        CommunityEventFormat.Online => "badge--vert",
+        CommunityEventFormat.Hybrid => "badge--orange",
+        _ => "badge--outline",
+    };
 
     /// <summary>
     /// Couleur du badge de type, prise dans le référentiel. Un switch local

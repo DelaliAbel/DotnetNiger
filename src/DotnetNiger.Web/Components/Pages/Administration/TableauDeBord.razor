@@ -1,59 +1,149 @@
-@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
-
 @page "/administration"
 @layout DotnetNiger.Web.Components.Layout.AdministrationLayout
-@using Microsoft.EntityFrameworkCore
-@using DotnetNiger.Application.Abstractions.Persistence
-@using DotnetNiger.Domain.Entities.Community
-@using DotnetNiger.Domain.Entities.Content
+
+@using System.Globalization
 @using DotnetNiger.Domain.Enums
-@inject IUnitOfWork UniteDeTravail
+@using DotnetNiger.Web.Services.Administration
 
-<PageTitle>Administration</PageTitle>
+@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
+@inject ServiceTableauDeBord Tableau
 
-<header class="mb-8">
-    <h1 class="text-section font-semibold">Administration</h1>
-    <p class="text-sm text-ink-600">Les trois écrans du site qui demandent une décision humaine.</p>
-</header>
+@*
+    Premier écran de l'administration : ce qui est en ligne, ce qui attend une décision, et
+    les derniers contenus déposés.
 
-<section class="grid gap-4 md:grid-cols-3">
-    @foreach (var carte in _cartes)
-    {
-        <a class="rounded-md border border-ink-200 bg-white p-6 hover:border-violet-300"
-           href="@carte.Lien">
-            <p class="text-caption uppercase text-ink-500">@carte.Titre</p>
-            <p class="text-display font-semibold">@carte.Valeur</p>
-            <p class="text-sm text-ink-600">@carte.Precision</p>
-        </a>
-    }
-</section>
+    Il ne rend aucun contrôle interactif — tout vient de la base et n'a rien à changer sur
+    l'écran — donc il reste du rendu serveur. Les écrans qui rédigent, eux, seront des îlots
+    interactifs Blazor : c'est là que l'état doit survivre entre deux clics.
+*@
+
+<PageTitle>Tableau de bord — Administration</PageTitle>
+
+@if (_vue is null)
+{
+    <Chargement />
+}
+else
+{
+    <header class="admin-entete">
+        <div>
+            <h1 class="admin-entete__titre">Tableau de bord</h1>
+            <p class="admin-entete__intro">Ce qui est en ligne, et ce qui attend une décision.</p>
+        </div>
+        <p class="admin-entete__intro">@DateTime.Now.ToString("d MMMM yyyy", Culture)</p>
+    </header>
+
+    <section class="admin-section" aria-labelledby="titre-en-ligne">
+        <h2 class="admin-section__titre" id="titre-en-ligne">Ce qui est en ligne</h2>
+
+        <div class="admin-grille">
+            <div class="admin-carte">
+                <span class="admin-carte__libelle">Membres actifs</span>
+                <span class="admin-carte__valeur">@_vue.Membres</span>
+            </div>
+
+            <div class="admin-carte">
+                <span class="admin-carte__libelle">Abonnés confirmés</span>
+                <span class="admin-carte__valeur">@_vue.Abonnes</span>
+            </div>
+
+            <div class="admin-carte">
+                <span class="admin-carte__libelle">Articles publiés</span>
+                <span class="admin-carte__valeur">@_vue.ArticlesPublies</span>
+                @if (_vue.Brouillons > 0)
+                {
+                    <a class="admin-carte__lien" href="/administration/actualites">
+                        @_vue.Brouillons brouillon(s) en attente
+                    </a>
+                }
+            </div>
+
+            <div class="admin-carte">
+                <span class="admin-carte__libelle">Ressources</span>
+                <span class="admin-carte__valeur">@_vue.Ressources</span>
+            </div>
+
+            <div class="admin-carte">
+                <span class="admin-carte__libelle">Événements</span>
+                <span class="admin-carte__valeur">@_vue.Evenements</span>
+                @if (_vue.EvenementsAVenir > 0)
+                {
+                    <span class="admin-carte__note">@_vue.EvenementsAVenir à venir</span>
+                }
+            </div>
+
+            <div class="admin-carte">
+                <span class="admin-carte__libelle">Projets</span>
+                <span class="admin-carte__valeur">@_vue.Projets</span>
+            </div>
+
+            <div class="admin-carte">
+                <span class="admin-carte__libelle">Partenaires</span>
+                <span class="admin-carte__valeur">@_vue.Partenaires</span>
+            </div>
+        </div>
+    </section>
+
+    <section class="admin-section" aria-labelledby="titre-a-traiter">
+        <h2 class="admin-section__titre" id="titre-a-traiter">À traiter</h2>
+    </section>
+
+    <div class="admin-grille admin-grille--large">
+        <div class="admin-carte">
+            <span class="admin-carte__libelle">Commentaires à examiner</span>
+            <span class="admin-carte__valeur">@_vue.Commentaires</span>
+            @if (_vue.Commentaires > 0)
+            {
+                <a class="admin-carte__lien" href="/administration/commentaires">Ouvrir la modération</a>
+            }
+        </div>
+
+        <div class="admin-carte">
+            <span class="admin-carte__libelle">Signalements ouverts</span>
+            <span class="admin-carte__valeur">@_vue.Signalements</span>
+            @if (_vue.Signalements > 0)
+            {
+                <a class="admin-carte__lien" href="/administration/signalements">Examiner</a>
+            }
+        </div>
+
+        <div class="admin-carte">
+            <span class="admin-carte__libelle">Messages sans réponse</span>
+            <span class="admin-carte__valeur">@_vue.Messages</span>
+            @if (_vue.Messages > 0)
+            {
+                <a class="admin-carte__lien" href="/administration/messages">Répondre</a>
+            }
+        </div>
+    </div>
+
+    <section class="admin-section" aria-labelledby="titre-derniers">
+        <h2 class="admin-section__titre" id="titre-derniers">Derniers contenus</h2>
+    </section>
+
+    <div class="admin-grille admin-grille--large">
+        <div>
+            <h3 class="admin-entete__intro">Articles récents</h3>
+            <ListeContenus Contenus="_vue.DerniersArticles" />
+        </div>
+
+        <div>
+            <h3 class="admin-entete__intro">Événements à venir</h3>
+            <ListeContenus Contenus="_vue.DerniersEvenements" />
+        </div>
+
+        <div>
+            <h3 class="admin-entete__intro">Ressources récentes</h3>
+            <ListeContenus Contenus="_vue.DernieresRessources" />
+        </div>
+    </div>
+}
 
 @code {
-    private IReadOnlyList<(string Titre, int Valeur, string Precision, string Lien)> _cartes = [];
+    /// <summary>Culture des dates affichées : le site parle français, quelle que soit la machine.</summary>
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
 
-    protected override async Task OnParametersSetAsync()
-    {
-        var messages = UniteDeTravail.ReadRepository<ContactMessage>().Query;
-        var abonnements = UniteDeTravail.ReadRepository<NewsletterSubscription>().Query;
-        var articles = UniteDeTravail.ReadRepository<Article>().Query;
+    private TableauDeBordVue? _vue;
 
-        _cartes =
-        [
-            (
-                "Sans réponse",
-                await messages.CountAsync(message => message.HandledAtUtc == null),
-                "messages de contact attendent une réponse",
-                "/administration/messages?enAttente=1"),
-            (
-                "Abonnés confirmés",
-                await abonnements.CountAsync(abonnement => abonnement.Status == NewsletterStatus.Confirmed),
-                "reçoivent la lettre d'information",
-                "/administration/abonnes?statut=Confirmed"),
-            (
-                "Brouillons",
-                await articles.CountAsync(article => article.Status == PublicationStatus.Draft),
-                "actualités rédigées et non publiées",
-                "/administration/actualites?statut=Draft"),
-        ];
-    }
+    protected override async Task OnInitializedAsync() => _vue = await Tableau.LireAsync();
 }

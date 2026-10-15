@@ -53,8 +53,14 @@ public sealed partial class OutboxProcessor
     /// <summary>
     /// Expéédie tous les messages dont l'heure de tentative est atteinte.
     /// </summary>
+    /// <remarks>
+    /// Le nombre renvoyé est celui des messages réellement expédiés, pas celui des
+    /// messages rencontrés. Un message qui échoue est repoussé à une échéance future ou
+    /// abandonné : le compter comme traité ferait croire au relais qu'il reste du travail
+    /// immédiat, et il enchaînerait les tours sans attendre.
+    /// </remarks>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
-    /// <returns>Nombre de messages traités.</returns>
+    /// <returns>Nombre de messages expédiés.</returns>
     public async Task<int> DrainAsync(CancellationToken cancellationToken = default)
     {
         var nowUtc = _clock.GetUtcNow().UtcDateTime;
@@ -68,15 +74,20 @@ public sealed partial class OutboxProcessor
             .Take(_options.BatchSize)
             .ToListAsync(cancellationToken);
 
+        var expedes = 0;
+
         foreach (var message in due)
         {
-            await TrySendAsync(message, cancellationToken);
+            if (await TrySendAsync(message, cancellationToken))
+            {
+                expedes++;
+            }
         }
 
-        return due.Count;
+        return expedes;
     }
 
-    private async Task TrySendAsync(OutboxMessage message, CancellationToken cancellationToken)
+    private async Task<bool> TrySendAsync(OutboxMessage message, CancellationToken cancellationToken)
     {
         try
         {
@@ -116,9 +127,17 @@ public sealed partial class OutboxProcessor
                     message.Kind,
                     message.Attempts);
             }
+
+            // L'échec est écrit comme le succès : la date de reprise, ou l'abandon, doit
+            // être persistée, sinon le message recommencerait à chaque tour.
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return false;
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return true;
     }
 
     [LoggerMessage(

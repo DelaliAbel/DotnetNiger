@@ -1,0 +1,680 @@
+@page "/administration/projets"
+@layout DotnetNiger.Web.Components.Layout.AdministrationLayout
+@rendermode InteractiveServer
+
+@using System.Globalization
+@using System.Text.Json
+@using DotnetNiger.Domain.Enums
+@using DotnetNiger.Web.Services.Administration
+@using DotnetNiger.Web.Services.Ui
+
+@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
+
+@inject ServiceProjets Service
+@inject IJSRuntime JS
+
+@*
+    Rédaction des projets open source portés par la communauté.
+
+    Un projet se décrit par ce qu'il est — son nom, son dépôt, ses technologies — et par ce
+    qu'il apporte : la description, rédigée ici, dont la phrase d'accroche des listes est
+    reprise. Le dépôt est obligatoire : un projet sans adresse n'a rien à montrer.
+*@
+
+<PageTitle>Projets — Administration</PageTitle>
+
+<header class="admin-entete">
+    <div>
+        <h1 class="admin-entete__titre">Projets</h1>
+        <p class="admin-entete__intro">Les projets open source portés par la communauté.</p>
+    </div>
+
+    <button type="button" class="btn btn--primary" @onclick="OuvrirCreation" disabled="@_envoi">
+        <DnIcon Name="plus" Size="16" />
+        Nouveau projet
+    </button>
+</header>
+
+@if (_donnees is null)
+{
+    <Chargement />
+}
+else
+{
+    <div class="admin-bandeau">
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="projet-recherche">Recherche</label>
+            <input id="projet-recherche" class="input" type="search" placeholder="Nom, résumé ou technologie…"
+                   @bind="_recherche" @bind:event="oninput" />
+        </div>
+
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="projet-etat">État</label>
+            <div class="select">
+                <select id="projet-etat" @bind="_filtreEtat">
+                    <option value="">Tous les états</option>
+                    <option value="@nameof(PublicationStatus.Published)">Publiés</option>
+                    <option value="@nameof(PublicationStatus.Draft)">Brouillons</option>
+                    <option value="@nameof(PublicationStatus.Archived)">Archivés</option>
+                </select>
+                <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+            </div>
+        </div>
+
+        <span class="admin-bandeau__compte">@Liste.Count projet(s)</span>
+    </div>
+
+    @if (Liste.Count is 0)
+    {
+        <p class="admin-formulaire__aide">Aucun projet ne correspond à ces filtres.</p>
+    }
+    else
+    {
+        <table class="admin-tableau admin-tableau--defilant">
+            <thead>
+                <tr>
+                    <th scope="col">Projet</th>
+                    <th scope="col">Technologies</th>
+                    <th scope="col">État</th>
+                    <th scope="col">Auteur</th>
+                    <th scope="col">Modifié le</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ligne in Liste)
+                {
+                    <tr>
+                        <td class="admin-tableau__titre">@ligne.Nom</td>
+                        <td>
+                            @if (Technologies(ligne) is { Length: > 0 } liste)
+                            {
+                                <span class="admin-tableau__technologies">
+                                    @foreach (var technologie in liste)
+                                    {
+                                        <span class="badge badge--outline">@technologie</span>
+                                    }
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="admin-tableau__note">—</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge @Etiquette(ligne.Statut)">@Etat(ligne.Statut)</span>
+                        </td>
+                        <td>@(string.IsNullOrWhiteSpace(ligne.Auteur) ? "—" : ligne.Auteur)</td>
+                        <td>@Date(ligne)</td>
+                        <td>
+                            <div class="admin-tableau__actions">
+                                <button type="button" class="btn btn--ghost btn--sm"
+                                        @onclick="() => OuvrirEdition(ligne)">
+                                    <DnIcon Name="edit" Size="14" />
+                                    Éditer
+                                </button>
+
+                                <a class="btn btn--ghost btn--sm" href="@ligne.Depot"
+                                   target="_blank" rel="noopener">
+                                    <DnIcon Name="github" Size="14" />
+                                    Dépôt
+                                </a>
+
+                                @if (ligne.Statut == PublicationStatus.Published)
+                                {
+                                    <button type="button" class="btn btn--sm"
+                                            @onclick="() => ChangerEtat(ligne, Transition.Brouillon)">
+                                        Brouillon
+                                    </button>
+
+                                    <button type="button" class="btn btn--sm"
+                                            @onclick="() => ChangerEtat(ligne, Transition.Archiver)">
+                                        Archiver
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn--primary btn--sm"
+                                            @onclick="() => ChangerEtat(ligne, Transition.Publier)">
+                                        Publier
+                                    </button>
+                                }
+
+                                @if (_aSupprimer == ligne.Id)
+                                {
+                                    <span class="admin-confirmation">
+                                        Supprimer ?
+                                        <button type="button" class="btn btn--rouge btn--sm"
+                                                @onclick="() => Supprimer(ligne)">Oui</button>
+                                        <button type="button" class="btn btn--ghost btn--sm"
+                                                @onclick="() => _aSupprimer = null">Non</button>
+                                    </span>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn--rouge btn--sm"
+                                            @onclick="() => _aSupprimer = ligne.Id">
+                                        Supprimer
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+<div class="admin-toasts" role="status" aria-live="polite">
+    @foreach (var message in _messages)
+    {
+        <div class="admin-toast admin-toast--@(message.Reussi ? "succes" : "erreur")">
+            <DnIcon Name="@(message.Reussi ? "check" : "alert")" Size="16" />
+            <span>@message.Texte</span>
+        </div>
+    }
+</div>
+
+@if (_formulaireOuvert)
+{
+    <div class="admin-voile" @onclick="FermerFormulaire">
+        <div class="admin-tiroir" role="dialog" aria-modal="true"
+             aria-label="@(_edition is null ? "Nouveau projet" : "Modifier le projet")"
+             @onclick:stopPropagation="true">
+
+            <div class="admin-tiroir__entete">
+                <h2 class="admin-tiroir__titre">
+                    @(_edition is null ? "Nouveau projet" : "Modifier le projet")
+                </h2>
+
+                <button type="button" class="admin-replie" aria-label="Fermer"
+                        @onclick="FermerFormulaire">
+                    <DnIcon Name="check" Size="16" />
+                </button>
+            </div>
+
+            <div class="admin-formulaire">
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="projet-nom">Nom du projet</label>
+                    <input id="projet-nom" class="input" type="text" maxlength="160"
+                           placeholder="Nom du projet" @bind="_formeNom" @bind:event="oninput" />
+                </div>
+
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="projet-depot">
+                        Adresse du dépôt
+                        <span class="admin-formulaire__obligatoire">obligatoire</span>
+                    </label>
+                    <input id="projet-depot" class="input" type="url" placeholder="https://github.com/…"
+                           @bind="_formeDepot" @bind:event="oninput" />
+                    <p class="admin-formulaire__aide">C'est vers le dépôt que les cartes renvoient le visiteur.</p>
+                </div>
+
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="projet-demo">Démonstration en ligne</label>
+                    <input id="projet-demo" class="input" type="url" placeholder="https://… — facultatif"
+                           @bind="_formeDemo" @bind:event="oninput" />
+                </div>
+
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="projet-technologies">Technologies</label>
+                    <input id="projet-technologies" class="input" type="text" maxlength="500"
+                           placeholder="Blazor, PostgreSQL, Docker…" @bind="_formeTechnologies"
+                           @bind:event="oninput" />
+                    <p class="admin-formulaire__aide">Séparées par des virgules : elles apparaissent en étiquettes sur la carte.</p>
+                </div>
+
+                <div class="admin-formulaire__champ">
+                    <span class="admin-formulaire__intitule">Description</span>
+                    <textarea id="corps-projet" class="input"></textarea>
+                    <p class="admin-formulaire__aide">La phrase d'accroche des listes sera reprise automatiquement au début de ce texte.</p>
+                </div>
+
+                <div class="admin-formulaire__champ">
+                    <span class="admin-formulaire__intitule">Logo du projet</span>
+
+                    @if (!string.IsNullOrWhiteSpace(_formeImage))
+                    {
+                        <div class="admin-apercu">
+                            <img src="@_formeImage" alt="Logo du projet" />
+                            <button type="button" class="btn btn--ghost btn--sm" @onclick="RetirerImage">
+                                Retirer le logo
+                            </button>
+                        </div>
+                    }
+
+                    <label class="admin-fichier-bouton">
+                        <input class="admin-fichier" type="file" @ref="_champImage"
+                               accept="image/jpeg,image/png,image/webp" @onchange="TeleverserImage" />
+                        <span class="btn btn--secondary">
+                            <DnIcon Name="upload" Size="15" />
+                            Choisir une image
+                        </span>
+                    </label>
+
+                    @* Un projet n'a pas d'image obligatoire : c'est le code et les
+                       technologies qui l'identifient. Le logo reste un plus. *@
+                    <p class="admin-formulaire__aide">Facultatif. JPEG, PNG ou WebP, 5 Mo au plus. L'image est conservée par le site.</p>
+                </div>
+
+                @* Un projet déclaré par l'administration est publié tout de suite : il n'y a
+                   pas de file de relecture, et une case qui baisse les yeux ne ferait rien. *@
+                <p class="admin-formulaire__aide">
+                    Un projet créé est publié immédiatement et annoncé dans la lettre d'information.
+                </p>
+
+                @if (_erreur is not null)
+                {
+                    <div class="alerte alerte--rouge" role="alert">
+                        <span class="alerte__icone"><DnIcon Name="alert" Size="16" /></span>
+                        <span>@_erreur</span>
+                    </div>
+                }
+
+                <div class="admin-formulaire__actions">
+                    <button type="button" class="btn btn--ghost" @onclick="FermerFormulaire" disabled="@_envoi">
+                        Annuler
+                    </button>
+
+                    <button type="button" class="btn btn--primary" @onclick="Enregistrer" disabled="@(_envoi || _depotEnCours)">
+                        @(_envoi ? "Enregistrement…" : "Enregistrer")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
+
+    private const string IdentifiantCorps = "corps-projet";
+
+    private ProjetsVue? _donnees;
+
+    private string _recherche = string.Empty;
+
+    private string _filtreEtat = string.Empty;
+
+    private bool _formulaireOuvert;
+
+    private bool _envoi;
+
+    private bool _depotEnCours;
+
+    private bool _editeurDemande;
+
+    private Guid? _aSupprimer;
+
+    private ProjetAdminDetail? _edition;
+
+    private string _formeNom = string.Empty;
+
+    private string _formeDepot = string.Empty;
+
+    private string _formeDemo = string.Empty;
+
+    private string _formeTechnologies = string.Empty;
+
+    private string _formeImage = string.Empty;
+
+    private string _formeCorps = string.Empty;
+
+    private string? _erreur;
+
+    private ElementReference _champImage;
+
+    private readonly List<Annonce> _messages = [];
+
+    /// <summary>Projets qui passent les filtres de la barre.</summary>
+    private List<LigneProjetAdmin> Liste =>
+        [.. (_donnees?.Projets ?? [])
+            .Where(ligne => string.IsNullOrWhiteSpace(_filtreEtat)
+                || string.Equals(ligne.Statut.ToString(), _filtreEtat, StringComparison.Ordinal))
+            .Where(ligne => string.IsNullOrWhiteSpace(_recherche)
+                || ligne.Nom.Contains(_recherche, StringComparison.OrdinalIgnoreCase)
+                || ligne.Resume.Contains(_recherche, StringComparison.OrdinalIgnoreCase)
+                || (ligne.Technologies ?? string.Empty).Contains(_recherche, StringComparison.OrdinalIgnoreCase))];
+
+    protected override async Task OnInitializedAsync() => _donnees = await Service.LireAsync();
+
+    /// <summary>Installe l'éditeur une fois le tiroir visible.</summary>
+    /// <param name="premierRendu">Vrai au premier rendu de la page.</param>
+    protected override async Task OnAfterRenderAsync(bool premierRendu)
+    {
+        if (_formulaireOuvert && _editeurDemande)
+        {
+            _editeurDemande = false;
+
+            await JS.InvokeVoidAsync("DnAdminScripts.assure", true);
+
+            if (!await JS.InvokeAsync<bool>("DnAdminScripts.present", "DnTinymce"))
+            {
+                _erreur = "L'éditeur n'a pas pu être chargé. Rechargez la page pour réessayer.";
+                return;
+            }
+
+            await JS.InvokeAsync<bool>("DnTinymce.initialiser", IdentifiantCorps, _formeCorps, null);
+        }
+    }
+
+    private void OuvrirCreation()
+    {
+        _edition = null;
+        _formeNom = string.Empty;
+        _formeDepot = string.Empty;
+        _formeDemo = string.Empty;
+        _formeTechnologies = string.Empty;
+        _formeImage = string.Empty;
+        _formeCorps = string.Empty;
+        _erreur = null;
+        _formulaireOuvert = true;
+        _editeurDemande = true;
+    }
+
+    private async Task OuvrirEdition(LigneProjetAdmin ligne)
+    {
+        var detail = await Service.LireDetailAsync(ligne.Id);
+
+        if (detail is null)
+        {
+            await Previent("Ce projet n'existe plus.", false);
+            return;
+        }
+
+        _edition = detail;
+        _formeNom = detail.Nom;
+        _formeDepot = detail.Depot;
+        _formeDemo = detail.Demonstration ?? string.Empty;
+        _formeTechnologies = detail.Technologies ?? string.Empty;
+        _formeImage = detail.ImageUrl ?? string.Empty;
+        _formeCorps = detail.Description;
+        _erreur = null;
+        _formulaireOuvert = true;
+        _editeurDemande = true;
+    }
+
+    private async Task FermerFormulaire()
+    {
+        await JS.InvokeVoidAsync("DnTinymce.detruire", IdentifiantCorps);
+        _formulaireOuvert = false;
+        _editeurDemande = false;
+        _erreur = null;
+    }
+
+    /// <summary>Dépose le logo choisi et garde l'adresse renvoyée par le serveur.</summary>
+    private async Task TeleverserImage()
+    {
+        _depotEnCours = true;
+
+        try
+        {
+            await JS.InvokeVoidAsync("DnAdminScripts.assure", true);
+
+            var reponse = await JS.InvokeAsync<ReponseApi>(
+                "DnApi.televerseFichier", "/api/images", "file", _champImage);
+
+            if (reponse.Ok && reponse.Url is { Length: > 0 })
+            {
+                _formeImage = reponse.Url;
+            }
+            else
+            {
+                _erreur = Raison(reponse);
+            }
+        }
+        finally
+        {
+            _depotEnCours = false;
+        }
+    }
+
+    private void RetirerImage() => _formeImage = string.Empty;
+
+    private async Task Enregistrer()
+    {
+        _erreur = null;
+
+        if (string.IsNullOrWhiteSpace(_formeNom))
+        {
+            _erreur = "Donnez un nom au projet.";
+            return;
+        }
+
+        var depot = Adresse(_formeDepot);
+
+        if (depot is null)
+        {
+            _erreur = "Un projet a besoin de l'adresse de son dépôt.";
+            return;
+        }
+
+        _envoi = true;
+
+        try
+        {
+            _formeCorps = await JS.InvokeAsync<string>("DnTinymce.obtenir", IdentifiantCorps);
+
+            // L'accroche des listes est reprise du début de la description, comme pour
+            // les articles, les événements et les ressources.
+            var resume = ResumeDepuisContenu.De(_formeCorps);
+
+            if (string.IsNullOrWhiteSpace(resume))
+            {
+                _erreur = "La description est vide : un projet commence par quelques lignes.";
+                return;
+            }
+
+            var technologies = string.IsNullOrWhiteSpace(_formeTechnologies)
+                ? null
+                : _formeTechnologies.Trim();
+
+            var reponse = _edition is null
+                ? await Ecrire("POST", "/api/projects", new
+                {
+                    name = _formeNom,
+                    summary = resume,
+                    description = _formeCorps,
+                    repositoryUrl = depot,
+                    demoUrl = Adresse(_formeDemo),
+                    technologies = technologies,
+                    imageUrl = string.IsNullOrWhiteSpace(_formeImage) ? null : _formeImage
+                })
+                : await Ecrire("PUT", $"/api/projects/{_edition.Id}", new
+                {
+                    name = _formeNom,
+                    summary = resume,
+                    description = _formeCorps,
+                    repositoryUrl = depot,
+                    demoUrl = Adresse(_formeDemo),
+                    technologies = technologies,
+                    imageUrl = string.IsNullOrWhiteSpace(_formeImage) ? null : _formeImage
+                });
+
+            if (!reponse.Ok)
+            {
+                _erreur = Raison(reponse);
+                return;
+            }
+
+            await FermerFormulaire();
+
+            Service.Oublie();
+            _donnees = await Service.LireAsync();
+
+            await Previent(_edition is null ? "Projet créé et publié." : "Projet enregistré.", true);
+        }
+        finally
+        {
+            _envoi = false;
+        }
+    }
+
+    private async Task ChangerEtat(LigneProjetAdmin ligne, Transition transition)
+    {
+        var reponse = await Ecrire("POST", $"/api/projects/{ligne.Id}/{Segment(transition)}", null);
+
+        if (!reponse.Ok)
+        {
+            await Previent(Raison(reponse), false);
+            return;
+        }
+
+        Service.Oublie();
+        _donnees = await Service.LireAsync();
+
+        await Previent(transition switch
+        {
+            Transition.Publier => "Projet publié.",
+            Transition.Brouillon => "Projet repassé en brouillon.",
+            _ => "Projet archivé.",
+        }, true);
+    }
+
+    private async Task Supprimer(LigneProjetAdmin ligne)
+    {
+        _aSupprimer = null;
+
+        var reponse = await Ecrire("DELETE", $"/api/projects/{ligne.Id}", null);
+
+        if (!reponse.Ok)
+        {
+            await Previent(Raison(reponse), false);
+            return;
+        }
+
+        Service.Oublie();
+        _donnees = await Service.LireAsync();
+
+        await Previent("Projet supprimé.", true);
+    }
+
+    /// <summary>
+    /// Écrit par l'API, après avoir vérifié que le script d'appel est présent.
+    /// </summary>
+    /// <param name="methode">Verbe de la requête.</param>
+    /// <param name="chemin">Adresse de l'API.</param>
+    /// <param name="corps">Charge utile, ou <see langword="null"/>.</param>
+    /// <returns>La réponse normalisée de l'appel.</returns>
+    private async Task<ReponseApi> Ecrire(string methode, string chemin, object? corps)
+    {
+        await JS.InvokeVoidAsync("DnAdminScripts.assure", true);
+
+        return await JS.InvokeAsync<ReponseApi>("DnApi.envoyer", methode, chemin, corps);
+    }
+
+    /// <summary>Affiche un message, puis l'efface.</summary>
+    /// <param name="texte">Message à afficher.</param>
+    /// <param name="reussi">Vrai pour un succès, faux pour une erreur.</param>
+    private async Task Previent(string texte, bool reussi)
+    {
+        var annonce = new Annonce(texte, reussi);
+        _messages.Add(annonce);
+
+        await InvokeAsync(StateHasChanged);
+
+        await Task.Delay(4000);
+        _messages.Remove(annonce);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Complète une adresse à laquelle il manque le schéma.</summary>
+    /// <param name="lien">Adresse saisie, éventuellement sans schéma.</param>
+    /// <returns>L'adresse complète, ou <see langword="null"/> si rien n'a été saisi.</returns>
+    private static string? Adresse(string? lien)
+    {
+        if (string.IsNullOrWhiteSpace(lien))
+        {
+            return null;
+        }
+
+        var adresse = lien.Trim();
+
+        return adresse.Contains("://", StringComparison.Ordinal) ? adresse : $"https://{adresse}";
+    }
+
+    /// <summary>Technologies d'un projet, séparées par des virgules.</summary>
+    /// <param name="ligne">Projet de la liste.</param>
+    /// <returns>Les technologies, sans vides.</returns>
+    private static string[] Technologies(LigneProjetAdmin ligne) =>
+        (ligne.Technologies ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+    /// <summary>Segment d'URL du cycle de vie, tel que l'API le nomme.</summary>
+    /// <param name="transition">Transition demandée.</param>
+    /// <returns>Le segment correspondant.</returns>
+    private static string Segment(Transition transition) => transition switch
+    {
+        Transition.Publier => "publish",
+        Transition.Brouillon => "draft",
+        _ => "archive",
+    };
+
+    private static string Date(LigneProjetAdmin ligne)
+        => (ligne.ModifieLe ?? ligne.PublieLe)?.ToString("d MMM yyyy", Culture) ?? "jamais";
+
+    private static string Etat(PublicationStatus statut) => statut switch
+    {
+        PublicationStatus.Published => "Publié",
+        PublicationStatus.Draft => "Brouillon",
+        _ => "Archivé",
+    };
+
+    private static string Etiquette(PublicationStatus statut) => statut switch
+    {
+        PublicationStatus.Published => "badge--vert",
+        PublicationStatus.Draft => "badge--orange",
+        _ => "badge--ink",
+    };
+
+    /// <summary>Message d'erreur d'une réponse refusée, tel que le serveur l'a formulé.</summary>
+    /// <param name="reponse">Réponse de l'appel.</param>
+    /// <returns>Un texte compréhensible, jamais un code.</returns>
+    private static string Raison(ReponseApi reponse)
+        => reponse.Detail
+            ?? reponse.Titre
+            ?? (reponse.Statut == 0
+                ? "Le serveur n'a pas répondu."
+                : $"Le serveur a répondu {reponse.Statut}.");
+
+    /// <summary>Changement d'état demandé depuis la liste.</summary>
+    private enum Transition
+    {
+        /// <summary>Met le projet en ligne.</summary>
+        Publier,
+
+        /// <summary>Retire le projet du site sans l'effacer.</summary>
+        Archiver,
+
+        /// <summary>Repasse un projet en ligne dans son état de brouillon.</summary>
+        Brouillon,
+    }
+
+    /// <summary>Un message affiché à l'écran, le temps qu'il soit effacé.</summary>
+    /// <param name="Texte">Contenu du message.</param>
+    /// <param name="Reussi">Vrai pour un succès, faux pour une erreur.</param>
+    private sealed record Annonce(string Texte, bool Reussi);
+
+    /// <summary>Réponse normalisée d'un appel fait par le script d'administration.</summary>
+    /// <param name="Ok">Vrai si le serveur a accepté.</param>
+    /// <param name="Statut">Code de la réponse.</param>
+    /// <param name="Corps">Corps décodé, ou texte brut si la réponse n'était pas du JSON.</param>
+    private sealed record ReponseApi(bool Ok, int Statut, object? Corps)
+    {
+        /// <summary>Message d'erreur, au format problem details.</summary>
+        public string? Titre => (Corps as JsonElement?)?.TryGetProperty("title", out var titre) == true
+            ? titre.GetString()
+            : null;
+
+        /// <summary>Précision de l'erreur, quand le serveur en a produit une.</summary>
+        public string? Detail => (Corps as JsonElement?)?.TryGetProperty("detail", out var detail) == true
+            ? detail.GetString()
+            : null;
+
+        /// <summary>Adresse de l'image déposée, pour le dépôt d'un fichier.</summary>
+        public string? Url => (Corps as JsonElement?)?.TryGetProperty("url", out var url) == true
+            ? url.GetString()
+            : null;
+    }
+}

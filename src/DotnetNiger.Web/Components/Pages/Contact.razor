@@ -1,5 +1,4 @@
 @page "/contact"
-@attribute [StreamRendering]
 
 @inject ISiteContentService Contenu
 
@@ -16,10 +15,10 @@
         <p class="hero__eyebrow">
             <DnIcon Name="send" Size="14" /> Nous écrire
         </p>
-        <h1 class="hero__title" style="margin-top: var(--spacing);">
+        <h1 class="hero__title mt-1">
             Une question, une <strong> proposition</strong>
         </h1>
-        <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
+        <p class="hero__lead mt-3">
             Partenariat, formation, intervention, ou simple question sur un article : lisez
             la suite, le formulaire vient après.
         </p>
@@ -28,7 +27,7 @@
 
 <section class="section" aria-label="Formulaire de contact">
     <div class="wrap">
-        <div class="grid gap-4 lg:grid-cols-5" style="align-items: start;">
+        <div class="grid items-start gap-4 lg:grid-cols-5">
 
             <!-- 2. Formulaire -->
             <div class="lg:col-span-3">
@@ -99,10 +98,10 @@
 
             <!-- 3. Pourquoi et vers qui -->
             <aside class="lg:col-span-2" aria-label="Informations complémentaires">
-                <div class="bande" style="margin-bottom: calc(var(--spacing) * 3);">
-                    <p class="eyebrow" style="color: var(--color-vert-300);">Avant d'écrire</p>
-                    <h2 class="bande__title" style="margin-top: var(--spacing);">Ce qui obtient une réponse</h2>
-                    <ul class="compte__liste" style="margin-top: calc(var(--spacing) * 2);">
+                <div class="bande mb-3">
+                    <p class="eyebrow text-vert-300">Avant d'écrire</p>
+                    <h2 class="bande__title mt-1">Ce qui obtient une réponse</h2>
+                    <ul class="compte__liste mt-2">
                         <li><DnIcon Name="check" Size="16" /><span>Un sujet précis : « bug sur l'inscription à un meetup » plutôt que « bonjour ».</span></li>
                         <li><DnIcon Name="check" Size="16" /><span>Une adresse que vous consultez, pour ne pas perdre la réponse.</span></li>
                         <li><DnIcon Name="check" Size="16" /><span>Pour un article, le lien de la page concernée.</span></li>

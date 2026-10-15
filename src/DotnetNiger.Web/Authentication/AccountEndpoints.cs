@@ -51,7 +51,7 @@ public static class AccountEndpoints
                     ? context.Request.Query["retour"].ToString()
                     : input.Retour;
 
-                return Results.Redirect(SafeRedirect(retour));
+                return Results.Redirect(DestinationConnexion.Pour(retour, await EstAdministrateurAsync(input.Email, signInManager, cancellationToken)));
             }
 
             var motif = result.IsNotAllowed
@@ -76,8 +76,7 @@ public static class AccountEndpoints
             {
                 AccountLog.InscriptionRefusee(logger, erreur);
 
-                return Results.Redirect(
-                    $"/compte/inscription?erreur={Uri.EscapeDataString(erreur)}");
+                return Results.Redirect(InscriptionRefusee(input, erreur));
             }
 
             var user = new ApplicationUser(input.Email.Trim());
@@ -93,8 +92,7 @@ public static class AccountEndpoints
 
                 AccountLog.InscriptionRefusee(logger, motif);
 
-                return Results.Redirect(
-                    $"/compte/inscription?erreur={Uri.EscapeDataString(motif)}");
+                return Results.Redirect(InscriptionRefusee(input, motif));
             }
 
             await userManager.AddToRoleAsync(user, RoleNames.Member);
@@ -133,6 +131,50 @@ public static class AccountEndpoints
         return app;
     }
 
-    private static string SafeRedirect(string? url) =>
-        ExternalSignInNavigation.IsLocal(url) ? url! : "/";
+    /// <summary>
+    /// Renvoie vers le formulaire d'inscription en conservant ce qui a été saisi.
+    /// </summary>
+    /// <param name="input">Saisie du formulaire.</param>
+    /// <param name="message">Motif du refus.</param>
+    /// <returns>L'adresse de retour, motif et nom compris.</returns>
+    /// <remarks>
+    /// Revenir sur une page vide obligerait à retaper le prénom, le nom et l'adresse
+    /// alors qu'une seule valeur est en cause. Le mot de passe n'est jamais renvoyé :
+    /// le faire circuler dans l'adresse serait l'exposer à l'historique du navigateur.
+    /// </remarks>
+    private static string InscriptionRefusee(RegisterInput input, string message)
+    {
+        var retour =
+            $"/compte/inscription?erreur={Uri.EscapeDataString(message)}"
+            + $"&prenom={Uri.EscapeDataString(input.FirstName ?? string.Empty)}"
+            + $"&nom={Uri.EscapeDataString(input.LastName ?? string.Empty)}"
+            + $"&courrielSaisi={Uri.EscapeDataString(input.Email ?? string.Empty)}";
+
+        return retour;
+    }
+
+    /// <summary>
+    /// Indique si le compte qui vient de se connecter porte le rôle administrateur.
+    /// </summary>
+    /// <remarks>
+    /// Le compte est relu après le succès de la connexion : le cookie vient d'être émis,
+    /// mais <c>HttpContext.User</c> décrit encore le visiteur d'avant la connexion
+    /// jusqu'à la requête suivante. Sans cette relecture, un administrateur partirait vers
+    /// le tableau de bord membre.
+    /// </remarks>
+    /// <param name="email">Adresse saisie dans le formulaire.</param>
+    /// <param name="signInManager">Gestionnaire d'identité de la requête.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns><see langword="true"/> si le compte est administrateur.</returns>
+    private static async Task<bool> EstAdministrateurAsync(
+        string? email,
+        SignInManager<ApplicationUser> signInManager,
+        CancellationToken cancellationToken)
+    {
+        var compte = await signInManager.UserManager
+            .FindByEmailAsync(email?.Trim() ?? string.Empty);
+
+        return compte is not null
+            && await signInManager.UserManager.IsInRoleAsync(compte, RoleNames.Admin);
+    }
 }

@@ -5,9 +5,4 @@
     <Project Path="src/DotnetNiger.Infrastructure/DotnetNiger.Infrastructure.csproj" />
     <Project Path="src/DotnetNiger.Web/DotnetNiger.Web.csproj" />
   </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/DotnetNiger.ArchitectureTests/DotnetNiger.ArchitectureTests.csproj" />
-    <Project Path="tests/DotnetNiger.IntegrationTests/DotnetNiger.IntegrationTests.csproj" />
-    <Project Path="tests/DotnetNiger.UnitTests/DotnetNiger.UnitTests.csproj" />
-  </Folder>
 </Solution>

@@ -1,19 +1,21 @@
 ﻿@page "/"
-@attribute [StreamRendering]
 
 @inject ISiteContentService Contenu
+@inject DotnetNiger.Application.Abstractions.ICurrentUserService Utilisateur
 
 <PageTitle>DotnetNiger — la communauté des développeurs .NET au Niger</PageTitle>
 <HeadContent>
-    <meta name="description" content="Rejoignez la communauté des développeurs .NET au Niger : événements, meetups, ressources techniques et projets open source." />
+    <meta name="description"
+        content="Rejoignez la communauté des développeurs .NET au Niger : événements, meetups, ressources techniques et projets open source." />
     <meta property="og:title" content="DotnetNiger — la communauté des développeurs .NET au Niger" />
-    <meta property="og:description" content="Rejoignez la communauté des développeurs .NET au Niger : événements, meetups, ressources techniques et projets open source." />
+    <meta property="og:description"
+        content="Rejoignez la communauté des développeurs .NET au Niger : événements, meetups, ressources techniques et projets open source." />
 </HeadContent>
 
 @if (_Accueil is null)
 {
-    <div class="wrap" style="padding-block: calc(var(--spacing) * 12);">
-        <p class="text-caption" style="color: var(--site-fg-muted);">Chargement…</p>
+    <div class="wrap py-12">
+        <p class="text-caption text-[var(--site-fg-muted)]">Chargement…</p>
     </div>
 }
 else
@@ -25,38 +27,51 @@ else
                 <p class="hero__eyebrow">
                     <DnIcon Name="code" Size="14" /> Communauté .NET au Niger
                 </p>
-                <h1 class="hero__title" style="margin-top: var(--spacing);">
+                <h1 class="hero__title mt-1">
                     La communauté des développeurs <strong>.NET au Niger</strong>
                 </h1>
-                <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
+                <p class="hero__lead mt-3">
                     DotnetNiger connecte les développeurs .NET du Niger et d'Afrique de l'Ouest :
                     événements et meetups, ressources techniques et projets open source, partagés
                     par la communauté et pour la communauté.
                 </p>
-                <div class="hero__actions" style="margin-top: calc(var(--spacing) * 4);">
-                    <a class="btn btn--white btn--lg" href="/communaute">
-                        Rejoindre la communauté <DnIcon Name="arrow-right" Size="18" />
-                    </a>
+                <div class="hero__actions mt-4">
+
+                    @if (Utilisateur.IsAuthenticated)
+                    {
+                        <a class="btn btn--white btn--lg" href="/evenements">
+                            Voir tous les événements
+                            <DnIcon Name="arrow-right" Size="18" />
+                        </a>
+                    }
+                    else
+                    {
+                        <a class="btn btn--white btn--lg" href="/compte/inscription">
+                            Rejoindre la communauté
+                            <DnIcon Name="arrow-right" Size="18" />
+                        </a>
+                    }
                     <a class="btn btn--accent btn--lg" href="/ressources">
-                        Explorer les ressources <DnIcon Name="book-open" Size="18" />
+                        Explorer les ressources
+                        <DnIcon Name="book-open" Size="18" />
                     </a>
                 </div>
             </div>
 
             <div class="hero__panel">
                 <div class="hero__panel__bar" aria-hidden="true">
-                    <span class="hero__panel__dot" style="background: #f17b26;"></span>
-                    <span class="hero__panel__dot" style="background: #03ad69;"></span>
-                    <span class="hero__panel__dot" style="background: #ad9be8;"></span>
+                    <span class="hero__panel__dot bg-orange-400"></span>
+                    <span class="hero__panel__dot bg-vert-400"></span>
+                    <span class="hero__panel__dot bg-violet-300"></span>
                 </div>
                 <img class="hero__panel__image" src="/images/img4.jpeg" loading="lazy"
-                     alt="Rencontre de la communauté DotnetNiger : des développeurs .NET réunis autour d'un atelier" />
+                    alt="Rencontre de la communauté DotnetNiger : des développeurs .NET réunis autour d'un atelier" />
             </div>
         </div>
     </section>
 
     <!-- Chiffres clés -->
-    <section class="section" style="padding-block: calc(var(--spacing) * 8) 0;">
+    <section class="section pt-8 pb-0">
         <div class="wrap">
             <div class="numeros">
                 <div>
@@ -98,7 +113,9 @@ else
             <div class="grid gap-2 md:grid-cols-3">
                 <article class="card card--hover">
                     <div class="card__body">
-                        <span class="badge badge--violet"><DnIcon Name="users" Size="14" /> Se connecter</span>
+                        <span class="badge badge--violet">
+                            <DnIcon Name="users" Size="14" /> Se connecter
+                        </span>
                         <h3 class="card__title">Une communauté bienveillante</h3>
                         <p class="card__text">
                             Du débutant à l'architecte, chacun y trouve une oreille attentive, un
@@ -108,7 +125,9 @@ else
                 </article>
                 <article class="card card--hover">
                     <div class="card__body">
-                        <span class="badge badge--vert"><DnIcon Name="book-open" Size="14" /> Apprendre</span>
+                        <span class="badge badge--vert">
+                            <DnIcon Name="book-open" Size="14" /> Apprendre
+                        </span>
                         <h3 class="card__title">Des ressources de qualité</h3>
                         <p class="card__text">
                             Formations, tutoriels et guides sélectionnés et créés par des membres,
@@ -118,7 +137,9 @@ else
                 </article>
                 <article class="card card--hover">
                     <div class="card__body">
-                        <span class="badge badge--orange"><DnIcon Name="code" Size="14" /> Bâtir</span>
+                        <span class="badge badge--orange">
+                            <DnIcon Name="code" Size="14" /> Bâtir
+                        </span>
                         <h3 class="card__title">Des projets concrets</h3>
                         <p class="card__text">
                             Meetups, hackathons et projets open source : la communauté transforme ses
@@ -143,17 +164,18 @@ else
                     </p>
                 </div>
                 <a class="btn btn--ghost" href="/evenements">
-                    Tous les événements <DnIcon Name="arrow-right" Size="16" />
+                    Tous les événements
+                    <DnIcon Name="arrow-right" Size="16" />
                 </a>
             </div>
 
             @if (_Accueil.EvenementsAVenir.Count == 0)
             {
-                <EmptyState Icone="calendar"
-                            Titre="Aucun événement programmé"
-                            Message="La prochaine date de meetup sera annoncée ici et sur nos réseaux sociaux.">
+                <EmptyState Icone="calendar" Titre="Aucun événement programmé"
+                    Message="La prochaine date de meetup sera annoncée ici et sur nos réseaux sociaux.">
                     <a class="btn btn--ghost" href="/evenements">
-                        Tous les événements <DnIcon Name="arrow-right" Size="16" />
+                        Tous les événements
+                        <DnIcon Name="arrow-right" Size="16" />
                     </a>
                 </EmptyState>
             }
@@ -182,17 +204,18 @@ else
                     </p>
                 </div>
                 <a class="btn btn--ghost" href="/ressources">
-                    Toutes les ressources <DnIcon Name="arrow-right" Size="16" />
+                    Toutes les ressources
+                    <DnIcon Name="arrow-right" Size="16" />
                 </a>
             </div>
 
             @if (_Accueil.RessourcesPopulaires.Count == 0)
             {
-                <EmptyState Icone="book-open"
-                            Titre="Aucune ressource publiée"
-                            Message="La bibliothèque de la communauté se remplit : revenez vite ou proposez votre première ressource.">
+                <EmptyState Icone="book-open" Titre="Aucune ressource publiée"
+                    Message="La bibliothèque de la communauté se remplit : revenez vite ou proposez votre première ressource.">
                     <a class="btn btn--ghost" href="/ressources">
-                        Toutes les ressources <DnIcon Name="arrow-right" Size="16" />
+                        Toutes les ressources
+                        <DnIcon Name="arrow-right" Size="16" />
                     </a>
                 </EmptyState>
             }
@@ -207,8 +230,8 @@ else
                                 <h3 class="card__title">@ressource.Titre</h3>
                                 <p class="card__text">@ressource.Description</p>
                                 <p class="card__meta">Proposée par @ressource.Auteur</p>
-                                <a class="link" href="@ressource.Lien"
-                                   target="@(ressource.Externe ? "_blank" : null)" rel="@(ressource.Externe ? "noopener" : null)">
+                                <a class="link" href="@ressource.Lien" target="@(ressource.Externe ? "_blank" : null)"
+                                    rel="@(ressource.Externe ? "noopener" : null)">
                                     @(ressource.Externe ? "Ouvrir la ressource" : "Lire la ressource")
                                     <DnIcon Name="@(ressource.Externe ? "external-link" : "arrow-right")" Size="14" />
                                 </a>
@@ -232,17 +255,18 @@ else
                     </p>
                 </div>
                 <a class="btn btn--ghost" href="/blog">
-                    Tout le blog <DnIcon Name="arrow-right" Size="16" />
+                    Tout le blog
+                    <DnIcon Name="arrow-right" Size="16" />
                 </a>
             </div>
 
             @if (_Accueil.ArticlesRecents.Count == 0)
             {
-                <EmptyState Icone="sparkles"
-                            Titre="Aucun article publié"
-                            Message="Le blog de la communauté n'a pas encore d'article : les membres peuvent proposer le premier.">
+                <EmptyState Icone="sparkles" Titre="Aucun article publié"
+                    Message="Le blog de la communauté n'a pas encore d'article : les membres peuvent proposer le premier.">
                     <a class="btn btn--ghost" href="/blog">
-                        Tout le blog <DnIcon Name="arrow-right" Size="16" />
+                        Tout le blog
+                        <DnIcon Name="arrow-right" Size="16" />
                     </a>
                 </EmptyState>
             }
@@ -258,25 +282,46 @@ else
         </div>
     </section>
 
-    <!-- 6. Zone de connexion rapide -->
+    <!-- 6. Rejoindre la communauté -->
     <section class="section" aria-labelledby="rejoindre-titre">
         <div class="wrap">
             <div class="bande">
-                <div class="grid gap-6 md:grid-cols-2" style="align-items: center;">
-                    <div>
-                        <p class="eyebrow" style="color: var(--color-vert-300);">Zone de connexion rapide</p>
-                        <h2 id="rejoindre-titre" class="bande__title" style="margin-top: var(--spacing);">
-                            Ne manquez plus rien de la communauté
-                        </h2>
-                        <p class="bande__lead">
-                            Inscrivez-vous à la newsletter pour recevoir les actualités, les nouveaux
-                            événements et les ressources du moment directement dans votre boîte mail.
-                        </p>
-                    </div>
-                    <div>
-                        <NewsletterForm @rendermode="InteractiveServer" />
-                    </div>
+                <div class="section__head mb-5">
+                    <p class="eyebrow text-vert-300">Rejoindre la communauté</p>
+                    <h2 id="rejoindre-titre" class="bande__title mt-1">
+                        Échanger, apprendre, contribuer
+                    </h2>
+                    <p class="bande__lead">
+                        La communauté vit sur ses canaux. Posez une question, montrez
+                        un projet, ou venez simplement écouter : tout le monde a commencé par
+                        lire avant d'écrire.
+                    </p>
                 </div>
+
+                <div class="canaux">
+                    @foreach (var canal in CanauxTries)
+                    {
+                        <a class="canal" href="@canal.Url" target="_blank" rel="noopener noreferrer">
+                            <span class="canal__icone">
+                                <DnIcon Name="@canal.Icône" Size="18" />
+                            </span>
+                            <span class="canal__texte">
+                                <span class="canal__nom">@canal.Nom</span>
+                                <span class="canal__hint">@Accroche(canal.Nom)</span>
+                            </span>
+                            <DnIcon Name="arrow-up-right" Size="16" />
+                        </a>
+                    }
+                </div>
+
+                @if (!Utilisateur.IsAuthenticated)
+                {
+                    <p class="contribuer__note mt-5">
+                        Vous préférez un compte sur le site ? <a class="link" href="/compte/inscription">Créez-le en deux
+                            minutes</a>,
+                        et vous pourrez vous inscrire aux événements et suivre vos inscriptions.
+                    </p>
+                }
             </div>
         </div>
     </section>
@@ -285,9 +330,38 @@ else
 @code {
     private AccueilVue? _Accueil;
 
+    /// <summary>Canaux mis en avant, dans l'ordre où un nouvel arrivant en a besoin.</summary>
+    private static readonly string[] CanauxPrioritaires = ["Discord", "GitHub", "LinkedIn"];
+
+    /// <summary>
+    /// Les trois canaux principaux, plutôt que les six. Sur l'accueil, l'internaute
+    /// cherche un endroit où poser une question puis où montrer un projet : lui
+    /// présenter six liens le renvoie à la page communautaire sans l'aider. Les autres
+    /// canaux restent listés là-bas.
+    /// </summary>
+    private CanalVue[] CanauxTries => _Accueil is null
+    ? []
+    : [.. _Accueil.Canaux.OrderBy(canal => Rang(canal.Nom)).Take(3)];
+
+    private static int Rang(string nom)
+    {
+        var position = Array.IndexOf(CanauxPrioritaires, nom);
+        return position < 0 ? int.MaxValue : position;
+    }
+
+    /// <summary>Phrase d'accroche de chaque canal, absente du modèle partagé.</summary>
+    private static string Accroche(string nom) => nom switch
+    {
+        "Discord" => "Poser une question, répondre à une autre",
+        "GitHub" => "Contribuer aux projets de la communauté",
+        "LinkedIn" => "Suivre l'activité professionnelle",
+        "X (Twitter)" => "Les annonces, en direct",
+        "YouTube" => "Les sessions filmées",
+        _ => "Rejoindre la conversation",
+    };
+
     protected override async Task OnInitializedAsync()
     {
         _Accueil = await Contenu.ChargerAccueilAsync();
     }
-
 }

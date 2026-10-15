@@ -1,19 +1,19 @@
 using DotnetNiger.Domain.Common;
-using DotnetNiger.Domain.Content;
 using DotnetNiger.Domain.Enums;
 using DotnetNiger.Domain.Exceptions;
 
 namespace DotnetNiger.Domain.Entities.Content;
 
 /// <summary>
-/// Article de blog : annonce de version de .NET, mise à jour de projet local ou interview.
-/// </summary>
-/// <remarks>
-/// Réservée à la rédaction par les administrateurs. Le contenu est produit par l'éditeur
-/// TinyMCE et doit être assaini avant affichage : le HTML est stocké tel quel, ce qui
-/// impose de l'échapper ou de l'assainir à la présentation.
-/// </remarks>
-public sealed class Article : SoftDeletableEntity
+    /// Article de blog : annonce de version de .NET, mise à jour de projet local ou interview.
+    /// </summary>
+    /// <remarks>
+    /// Réservée à la rédaction par les administrateurs. Le contenu est produit par l'éditeur
+    /// TinyMCE, stocké en HTML, et assaini avant affichage par <c>ContenuHtml.Nettoyer</c> :
+    /// la neutralité ne dépend pas d'un dossier de conversion, mais d'un retrait explicite
+    /// des éléments d'exécution à la lecture.
+    /// </remarks>
+    public sealed class Article : SoftDeletableEntity
 {
     /// <summary>
     /// Constructeur sans paramètre réservé à Entity Framework Core.
@@ -28,18 +28,18 @@ public sealed class Article : SoftDeletableEntity
     /// <param name="authorId">Identifiant du membre auteur, obligatoirement un administrateur.</param>
     /// <param name="title">Titre de l'article.</param>
     /// <param name="excerpt">Chapo affiché dans les listes.</param>
-    /// <param name="markdown">Corps de l'article, en Markdown.</param>
+    /// <param name="html">Corps de l'article, produit par l'éditeur HTML.</param>
     /// <param name="rubrique">Rubrique éditoriale.</param>
     /// <param name="slug">
     /// Slug d'URL, à fournir lorsque le titre ne se prête pas à une dérivation
     /// automatique ; absent, il est déduit du titre.
     /// </param>
-    public Article(Guid authorId, string title, string excerpt, string markdown, Rubrique rubrique, string? slug = null)
+    public Article(Guid authorId, string title, string excerpt, string html, Rubrique rubrique, string? slug = null)
     {
         AuthorId = DomainGuard.AgainstEmpty(authorId, nameof(authorId));
         Title = Required(title, FieldLimits.Title, nameof(title));
         Excerpt = Required(excerpt, FieldLimits.Excerpt, nameof(excerpt));
-        Content = Required(ArticleContent.VersHtml(markdown), FieldLimits.Content, nameof(markdown));
+        Content = Required(ArticleContent.DepuisEditeur(html), FieldLimits.Content, nameof(html));
         Rubrique = DomainGuard.AgainstNull(rubrique, nameof(rubrique));
         RubriqueId = rubrique.Id;
         Slug = string.IsNullOrWhiteSpace(slug)
@@ -63,12 +63,12 @@ public sealed class Article : SoftDeletableEntity
     public string Excerpt { get; private set; } = string.Empty;
 
     /// <summary>
-    /// Obtient le corps de l'article au format HTML, produit par le convertisseur.
+    /// Obtient le corps de l'article au format HTML, produit par l'éditeur.
     /// </summary>
     /// <remarks>
-    /// Propriété en lecture seule : seul le constructeur et la mise à jour l'alimentent,
-    /// et tous deux passent par <see cref="ArticleContent.VersHtml"/>. Un corps ne peut
-    /// donc pas être écrit en HTML arbitraire, même par un administrateur.
+    /// Propriété en lecture seule : seuls le constructeur et la mise à jour l'alimentent,
+    /// et tous deux passent par <see cref="ArticleContent.DepuisEditeur"/>. Un corps ne
+    /// peut donc pas être écrit en balisage arbitraire sans passer par la même précaution.
     /// </remarks>
     public string Content { get; private set; } = string.Empty;
 
@@ -107,9 +107,9 @@ public sealed class Article : SoftDeletableEntity
     /// </summary>
     /// <param name="title">Nouveau titre.</param>
     /// <param name="excerpt">Nouveau chapo.</param>
-    /// <param name="markdown">Nouveau corps, en Markdown.</param>
+    /// <param name="html">Nouveau corps, produit par l'éditeur HTML.</param>
     /// <param name="rubrique">Nouvelle rubrique.</param>
-    public void UpdateDetails(string title, string excerpt, string markdown, Rubrique rubrique)
+    public void UpdateDetails(string title, string excerpt, string html, Rubrique rubrique)
     {
         var newTitle = Required(title, FieldLimits.Title, nameof(title));
 
@@ -120,7 +120,7 @@ public sealed class Article : SoftDeletableEntity
         }
 
         Excerpt = Required(excerpt, FieldLimits.Excerpt, nameof(excerpt));
-        Content = Required(ArticleContent.VersHtml(markdown), FieldLimits.Content, nameof(markdown));
+        Content = Required(ArticleContent.DepuisEditeur(html), FieldLimits.Content, nameof(html));
         Rubrique = DomainGuard.AgainstNull(rubrique, nameof(rubrique));
         RubriqueId = rubrique.Id;
     }
@@ -128,9 +128,9 @@ public sealed class Article : SoftDeletableEntity
     /// <summary>
     /// Remplace l'image de couverture.
     /// </summary>
-    /// <param name="coverImageUrl">URL absolue, ou <see langword="null"/> pour retirer l'image.</param>
+    /// <param name="coverImageUrl">Adresse de l’image : URL absolue ou chemin du site, ou <see langword="null"/> pour la retirer.</param>
     public void SetCoverImage(string? coverImageUrl)
-        => CoverImageUrl = DomainGuard.OptionalAgainstHttpUrl(coverImageUrl, nameof(coverImageUrl));
+        => CoverImageUrl = DomainGuard.OptionalAgainstImageSource(coverImageUrl, nameof(coverImageUrl));
 
     /// <summary>
     /// Publie l'article. La date de publication n'est pas écrasée lors d'une republication.

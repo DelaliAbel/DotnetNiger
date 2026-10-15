@@ -1,0 +1,153 @@
+@page "/administration/abonnes"
+@layout DotnetNiger.Web.Components.Layout.AdministrationLayout
+@rendermode InteractiveServer
+
+@using System.Globalization
+@using DotnetNiger.Domain.Enums
+@using DotnetNiger.Web.Services.Administration
+
+@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
+
+@inject ServiceAbonnees Service
+
+@*
+    Les abonnements à la lettre d'information.
+
+    Cette page ne comporte aucun bouton d'écriture, et ce n'est pas un oubli. L'API n'expose
+    aucun moyen de désabonner quelqu'un à la place d'un autre : un désabonnement passe
+    toujours par le lien de la lettre, avec sa clé. C'est ce qui garantit qu'un abonné retiré
+    l'a demandé lui-même.
+
+    Les demandes en attente de confirmation sont la seule information qui demande une
+    attention : une adresse dont la confirmation n'arrive jamais n'abonnera personne.
+*@
+
+<PageTitle>Abonnés — Administration</PageTitle>
+
+<header class="admin-entete">
+    <div>
+        <h1 class="admin-entete__titre">Abonnés</h1>
+        <p class="admin-entete__intro">
+            Les abonnements à la lettre d'information. Un désabonnement se fait depuis la
+            lettre elle-même, avec le lien qui la contient.
+        </p>
+    </div>
+</header>
+
+@if (_donnees is null)
+{
+    <Chargement />
+}
+else
+{
+    <div class="admin-bandeau">
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="abonne-recherche">Recherche</label>
+            <input id="abonne-recherche" class="input" type="search" placeholder="Adresse…"
+                   @bind="_recherche" @bind:event="oninput" />
+        </div>
+
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="abonne-statut">État</label>
+            <div class="select">
+                <select id="abonne-statut" @bind="_filtreStatut">
+                    <option value="">Tous</option>
+                    <option value="@nameof(NewsletterStatus.Confirmed)">Confirmés</option>
+                    <option value="@nameof(NewsletterStatus.Pending)">En attente de confirmation</option>
+                    <option value="@nameof(NewsletterStatus.Unsubscribed)">Désabonnés</option>
+                </select>
+                <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+            </div>
+        </div>
+
+        <span class="admin-bandeau__compte">
+            @Liste.Count abonnement(s) — @Confirmes.Count confirmés
+        </span>
+    </div>
+
+    @if (Liste.Count is 0)
+    {
+        <p class="admin-formulaire__aide">Aucun abonnement ne correspond à ces filtres.</p>
+    }
+    else
+    {
+        <table class="admin-tableau admin-tableau--defilant">
+            <thead>
+                <tr>
+                    <th scope="col">Adresse</th>
+                    <th scope="col">État</th>
+                    <th scope="col">Demandé le</th>
+                    <th scope="col">Confirmé le</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ligne in Liste)
+                {
+                    <tr>
+                        <td class="admin-tableau__titre">@ligne.Courriel</td>
+                        <td>
+                            <span class="badge @Etiquette(ligne.Statut)">@Etat(ligne.Statut)</span>
+                        </td>
+                        <td>@ligne.DemandeLe.ToString("d MMM yyyy", Culture)</td>
+                        <td>
+                            @if (ligne.ConfirmeLe is { } confirme)
+                            {
+                                @confirme.ToString("d MMM yyyy", Culture)
+                            }
+                            else if (ligne.DesabonneLe is { } desabonne)
+                            {
+                                <span class="admin-tableau__note">
+                                    désabonné le @desabonne.ToString("d MMM yyyy", Culture)
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="admin-tableau__note">—</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
+
+    private AbonneesVue? _donnees;
+
+    private string _recherche = string.Empty;
+
+    private string _filtreStatut = string.Empty;
+
+    /// <summary>Abonnements qui passent les filtres de la barre.</summary>
+    private List<LigneAbonneAdmin> Liste =>
+    [
+        .. (_donnees?.Abonnes ?? [])
+            .Where(ligne => string.IsNullOrWhiteSpace(_filtreStatut)
+                || string.Equals(ligne.Statut.ToString(), _filtreStatut, StringComparison.Ordinal))
+            .Where(ligne => string.IsNullOrWhiteSpace(_recherche)
+                || ligne.Courriel.Contains(_recherche, StringComparison.OrdinalIgnoreCase))
+    ];
+
+    /// <summary>Ce qui reçoit réellement la lettre.</summary>
+    private List<LigneAbonneAdmin> Confirmes =>
+        [.. (_donnees?.Abonnes ?? []).Where(ligne => ligne.Statut == NewsletterStatus.Confirmed)];
+
+    protected override async Task OnInitializedAsync() => _donnees = await Service.LireAsync();
+
+    private static string Etat(NewsletterStatus statut) => statut switch
+    {
+        NewsletterStatus.Confirmed => "Confirmé",
+        NewsletterStatus.Pending => "En attente",
+        _ => "Désabonné",
+    };
+
+    private static string Etiquette(NewsletterStatus statut) => statut switch
+    {
+        NewsletterStatus.Confirmed => "badge--vert",
+        NewsletterStatus.Pending => "badge--orange",
+        _ => "badge--ink",
+    };
+}

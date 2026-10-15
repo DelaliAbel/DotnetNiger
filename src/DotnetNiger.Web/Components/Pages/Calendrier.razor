@@ -1,0 +1,204 @@
+@page "/evenements/calendrier"
+
+@inject ISiteContentService Contenu
+@inject NavigationManager Navigation
+
+<PageTitle>Calendrier des événements — DotnetNiger</PageTitle>
+<HeadContent>
+    <meta name="description" content="Tous les rendez-vous de la communauté DotnetNiger au calendrier : meetups, conférences en ligne, ateliers pratiques et hackathons." />
+    <meta property="og:title" content="Calendrier des événements — DotnetNiger" />
+    <meta property="og:description" content="Le calendrier de la communauté des développeurs .NET du Niger." />
+</HeadContent>
+
+@if (_Evenements is null)
+{
+    <div class="wrap py-12">
+        <p class="text-caption text-[var(--site-fg-muted)]">Chargement…</p>
+    </div>
+}
+else
+{
+    <section class="hero hero--centre">
+        <div class="wrap">
+            <p class="hero__eyebrow">
+                <DnIcon Name="calendar" Size="14" /> Calendrier
+            </p>
+            <h1 class="hero__title mt-1">
+                Tous les rendez-vous, <strong>mois par mois</strong>
+            </h1>
+            <p class="hero__lead mt-3">
+                Une vue d'ensemble pour repérer d'un coup d'œil quand la communauté se
+                retrouve, et choisir une date qui vous convient.
+            </p>
+        </div>
+    </section>
+
+    <section class="section py-5">
+        <div class="wrap">
+            <nav class="calendrier__navigation" aria-label="Changer de mois">
+                <a class="btn btn--ghost" href="@UrlMois(MoisPrecedent)">
+                    <DnIcon Name="arrow-left" Size="16" />
+                    <span>Mois précédent</span>
+                </a>
+                <p class="calendrier__mois" aria-live="polite">@LibelleMois</p>
+                <a class="btn btn--ghost" href="@UrlMois(MoisSuivant)">
+                    <span>Mois suivant</span>
+                    <DnIcon Name="arrow-right" Size="16" />
+                </a>
+            </nav>
+
+            <div class="calendrier">
+                <div class="calendrier__entetes" aria-hidden="true">
+                    @foreach (var jour in JoursSemaine)
+                    {
+                        <p class="calendrier__entete">@jour</p>
+                    }
+                </div>
+
+                <div class="calendrier__grille">
+                    @foreach (var case_ in CasesDuMois)
+                    {
+                        if (case_ is null)
+                        {
+                            <div class="calendrier__case calendrier__case--vide"></div>
+                            continue;
+                        }
+
+                        <div class="calendrier__case @(case_.EstAujourdhui ? "calendrier__case--aujourdhui" : null)">
+                            <p class="calendrier__jour">@case_.Jour</p>
+                            @if (case_.Evenements.Count > 0)
+                            {
+                                <ul class="calendrier__rdv">
+                                    @foreach (var evenement in case_.Evenements)
+                                    {
+                                        <li>
+                                            <a class="calendrier__lien"
+                                               href="@($"/evenements/{evenement.Slug}")"
+                                               title="@evenement.Titre">@evenement.Titre</a>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <p class="calendrier__legende">
+                <DnIcon Name="calendar" Size="14" />
+                Les rendez-vous passés restent visibles : le calendrier montre l'histoire de
+                la communauté, pas seulement ce qui reste à venir.
+            </p>
+
+            <p class="mt-4">
+                <a class="btn btn--ghost" href="/evenements">
+                    <DnIcon Name="calendar" Size="16" />
+                    <span>Voir la liste complète</span>
+                </a>
+            </p>
+        </div>
+    </section>
+}
+
+@code {
+    private static readonly string[] JoursSemaine = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
+
+    private static readonly string[] MoisNoms =
+    [
+        "janvier", "février", "mars", "avril", "mai", "juin",
+        "juillet", "août", "septembre", "octobre", "novembre", "décembre",
+    ];
+
+    private IReadOnlyList<EvenementVue>? _Evenements;
+
+    [SupplyParameterFromQuery(Name = "mois")]
+    public string? _Mois { get; set; }
+
+    private DateOnly _PremierJour;
+
+    private string LibelleMois =>
+        $"{MoisNoms[_PremierJour.Month - 1]} {_PremierJour.Year}";
+
+    private DateOnly MoisPrecedent => _PremierJour.AddMonths(-1);
+
+    private DateOnly MoisSuivant => _PremierJour.AddMonths(1);
+
+    private IEnumerable<CaseCalendrier?> CasesDuMois
+    {
+        get
+        {
+            if (_Evenements is null)
+            {
+                yield break;
+            }
+
+            // La semaine commence le lundi : GetDayOfWeek rend dimanche 0, on décale de
+            // six pour que le lundi vaille 0. Les cases vides de tête alignent la
+            // premiere date sur sa colonne.
+            var decalage = (int)_PremierJour.DayOfWeek - 1;
+            for (var index = 0; index < decalage; index++)
+            {
+                yield return null;
+            }
+
+            var jour = _PremierJour;
+            var fin = _PremierJour.AddMonths(1);
+            var aujourdhui = DateOnly.FromDateTime(DateTime.Today);
+
+            while (jour < fin)
+            {
+                var duJour = _Evenements
+                    .Where(e => e.DateDebut <= jour && (e.DateFin ?? e.DateDebut) >= jour)
+                    .OrderBy(e => e.DateDebut)
+                    .ToArray();
+
+                yield return new CaseCalendrier(jour, duJour, jour == aujourdhui);
+                jour = jour.AddDays(1);
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _Evenements = await Contenu.ChargerEvenementsAsync();
+        _PremierJour = MoisDemandé();
+
+        // Un événement qui s'étale sur plusieurs jours apparaît dans chaque case
+        // occupée, la connexion à la fiche se fait par le titre du premier jour.
+    }
+
+    /// <summary>
+    /// Mois affiché, déduit du paramètre d'URL, sinon du mois courant.
+    /// </summary>
+    /// <remarks>
+    /// Un mois aberrant — trop lointain, ou absent — ramène à aujourd'hui plutôt que de
+    /// laisser une page vide : un lien mal recopié doit rester lisible.
+    /// </remarks>
+    private DateOnly MoisDemandé()
+    {
+        // « 2026-10 » se découpe en année et mois : analyser la chaîne entière aurait
+        // toujours échoué, et la page serait revenue au mois courant sans le dire.
+        var morceaux = _Mois?.Split('-', StringSplitOptions.RemoveEmptyEntries) ?? [];
+
+        if (morceaux.Length == 2
+            && int.TryParse(morceaux[0], out var annee)
+            && int.TryParse(morceaux[1], out var mois)
+            && mois is >= 1 and <= 12
+            && annee is >= 2000 and <= 2100)
+        {
+            return new DateOnly(annee, mois, 1);
+        }
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        return new DateOnly(today.Year, today.Month, 1);
+    }
+
+    private static string UrlMois(DateOnly premierJour)
+        => $"/evenements/calendrier?mois={premierJour:yyyy-MM}";
+
+    /// <summary>Une case du mois : son numéro, les rendez-vous qui la traversent.</summary>
+    private sealed record CaseCalendrier(DateOnly Jour, IReadOnlyList<EvenementVue> Evenements, bool EstAujourdhui)
+    {
+        public int Numero => Jour.Day;
+    }
+}

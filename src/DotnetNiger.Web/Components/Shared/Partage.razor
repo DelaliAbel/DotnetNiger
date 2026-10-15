@@ -1,0 +1,70 @@
+@*
+    Partage d'une fiche vers les réseaux de la communauté.
+
+    Les adresses sont construites ici plutôt que confondues à un script de partage : pas
+    de dépendance externe à charger, pas de pistage tiers, et le lien fonctionne même
+    si le visiteur bloque les scripts. Le bouton de copie, lui, a besoin du presse-papiers
+    du navigateur — d'où le petit script qui ne s'exécute qu'au clic.
+*@
+
+<div class="partage" role="group" aria-label="Partager cette page">
+    <span class="partage__intitule">
+        <DnIcon Name="send" Size="14" />
+        Partager
+    </span>
+
+    <a class="partage__reseau" href="@Facebook" target="_blank" rel="noopener noreferrer"
+       aria-label="Partager sur Facebook" title="Partager sur Facebook">
+        <DnIcon Name="facebook" Size="16" />
+    </a>
+
+    <a class="partage__reseau" href="@LinkedIn" target="_blank" rel="noopener noreferrer"
+       aria-label="Partager sur LinkedIn" title="Partager sur LinkedIn">
+        <DnIcon Name="linkedin" Size="16" />
+    </a>
+
+    <a class="partage__reseau" href="@X" target="_blank" rel="noopener noreferrer"
+       aria-label="Partager sur X" title="Partager sur X">
+        <DnIcon Name="x" Size="16" />
+    </a>
+
+    <a class="partage__reseau" href="@WhatsApp" target="_blank" rel="noopener noreferrer"
+       aria-label="Partager sur WhatsApp" title="Partager sur WhatsApp">
+        <DnIcon Name="whatsapp" Size="16" />
+    </a>
+
+    <button class="partage__reseau" type="button"
+            data-partage-copie
+            aria-label="Copier le lien"
+            title="Copier le lien">
+        <DnIcon Name="external-link" Size="16" />
+    </button>
+</div>
+
+@code {
+    /// <summary>
+    /// Titre partagé, utilisé comme texte des publications. Vide tant que la fiche
+    /// n'a pas fini de charger : le bouton de partage apparaît alors sans intention,
+    /// mais la page ne peut pas encore dire de quoi elle parle.
+    /// </summary>
+    [Parameter] public string Titre { get; set; } = string.Empty;
+
+    private string Adresse => Uri.EscapeDataString(Navigation.Uri);
+
+    private string Facebook =>
+        $"https://www.facebook.com/sharer/sharer.php?u={Adresse}";
+
+    private string LinkedIn =>
+        $"https://www.linkedin.com/sharing/share-offsite/?url={Adresse}";
+
+    private string X =>
+        $"https://x.com/intent/post?url={Adresse}&text={Uri.EscapeDataString(Titre)}";
+
+    // WhatsApp n'a pas d'URL de partage à lui seul : le texte du message porte le lien.
+    // Le titre peut être vide, d'où la jointure explicite plutôt qu'une interpolation
+    // qui laisserait un espace en tête.
+    private string WhatsApp =>
+        $"https://wa.me/?text={Uri.EscapeDataString($"{Titre} {Navigation.Uri}".Trim())}";
+
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+}

@@ -1,8 +1,12 @@
 @page "/blog/{Slug}"
 @using System.Globalization
-@attribute [StreamRendering]
+
+@using DotnetNiger.Application.Abstractions.Persistence
+@using DotnetNiger.Domain.Entities.Content
+@using Microsoft.EntityFrameworkCore
 
 @inject ISiteContentService Contenu
+@inject IUnitOfWork UniteDeTravail
 
 @if (_Article is null)
 {
@@ -22,9 +26,7 @@
     }
     else
     {
-        <div class="wrap" style="padding-block: calc(var(--spacing) * 12);">
-            <p class="text-caption" style="color: var(--site-fg-muted);">Chargement…</p>
-        </div>
+        <Chargement />
     }
 }
 else
@@ -43,8 +45,10 @@ else
                 <a class="link" href="/blog">Blog</a>
                 <span aria-hidden="true">·</span>
                 <a class="link" href="@UrlRubrique">@_Article.Categorie</a>
-            </p>            <h1 class="hero__title" style="margin-top: var(--spacing);">@_Article.Titre</h1>
-            <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
+            </p>
+
+            <h1 class="hero__title fiche__titre">@_Article.Titre</h1>
+            <p class="hero__lead fiche__accentuation">
                 <time datetime="@_Article.DatePublication.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)">
                     @_Article.DatePublication.ToString("d MMMM yyyy", Culture)
                 </time>
@@ -61,22 +65,40 @@ else
         </div>
     </section>
 
-    <!-- 2. Corps de l'article -->
-    <section class="section" aria-label="Contenu de l'article">
+<!-- 2. Corps de l'article -->
+<section class="section" aria-label="Contenu de l'article">
         <div class="wrap">
-            <div class="grid gap-2 md:grid-cols-3" style="align-items: start;">
+            @* Le formulaire de commentaire dépose une publication classique : son résultat
+               revient dans l'adresse, et c'est ici qu'il se lit. Sans cela, un commentaire
+               refusé disparaissait sans que le visiteur sache pourquoi. *@
+            @if (_Erreur is not null)
+            {
+                <p class="alerte alerte--rouge mb-2" role="alert">
+                    <span class="alerte__icone"><DnIcon Name="alert" Size="16" /></span>
+                    @_Erreur
+                </p>
+            }
+
+            @if (_Confirmation is not null)
+            {
+                <p class="alerte alerte--vert mb-2" role="status">
+                    <span class="alerte__icone"><DnIcon Name="check" Size="16" /></span>
+                    @_Confirmation
+                </p>
+            }
+
+            <div class="grid gap-2 md:grid-cols-3 fiche__grille">
                 <div class="md:col-span-2">
                     @if (!string.IsNullOrWhiteSpace(_Article.ImageUrl))
                     {
                         <DnCardMedia ImageUrl="@_Article.ImageUrl" Alt="" />
                     }
 
-                    <div style="display: grid; gap: calc(var(--spacing) * 2); margin-top: calc(var(--spacing) * 2);">
+                    <div class="article__corps fiche__corps">
                         <p class="text-lead">@_Article.Extrait</p>
-                        @foreach (var paragraphe in Paragraphes)
-                        {
-                            <p class="card__text">@paragraphe</p>
-                        }
+                        @* Le corps est stocké en HTML, assaini à l'écriture par le domaine :
+                           l'échapper afficherait les balises au lecteur. *@
+                        @((MarkupString)ContenuHtml.Nettoyer(_Article.Contenu))
                     </div>
 
                     <!-- Retour au blog en fin de lecture, là où l'on cherche après avoir terminé. -->
@@ -88,12 +110,13 @@ else
                             Plus d'articles en @_Article.Categorie
                             <DnIcon Name="arrow-right" Size="16" />
                         </a>
+                        <Partage Titre="@_Article.Titre" />
                     </div>
                 </div>
 
                 <aside class="bande" aria-label="À propos de l'auteur">
-                    <p class="eyebrow" style="color: var(--color-vert-300);">Rédigé par</p>
-                    <p class="bande__title" style="margin-top: var(--spacing);">@_Article.Auteur</p>
+                    <p class="eyebrow">Rédigé par</p>
+                    <p class="bande__title fiche__auteur">@_Article.Auteur</p>
                     @if (!string.IsNullOrWhiteSpace(_Article.FonctionAuteur))
                     {
                         <p class="bande__lead">@_Article.FonctionAuteur</p>
@@ -106,15 +129,32 @@ else
         </div>
     </section>
 
-    <!-- 3. Articles suggérés -->
+    @if (EstEnBase)
+    {
+        <!-- 3. Commentaires -->
+        <section class="section" aria-label="Commentaires">
+            <div class="wrap">
+                <Commentaires ArticleId="@_ArticleId" CheminRetour="@($"/blog/{Slug}")" />
+            </div>
+        </section>
+    }
+
+    <!-- 4. Articles suggérés -->
     @if (Suggestions.Length > 0)
     {
         <section class="section section--alt" aria-labelledby="suggestions-titre">
             <div class="wrap">
-                <div class="section__head">
-                    <p class="eyebrow">À lire aussi</p>
-                    <h2 id="suggestions-titre" class="section__title">Suggestions</h2>
-                    <p class="section__lead">D'autres articles de la communauté, sur des sujets voisins.</p>
+                <div class="section__head section__head--split">
+                    <div>
+                        <p class="eyebrow">À lire aussi</p>
+                        <h2 id="suggestions-titre" class="section__title">Suggestions</h2>
+                        <p class="section__lead">D'autres articles de la communauté, sur des sujets voisins.</p>
+                    </div>
+                    @* Trois articles voisins ne font pas le tour du blog : le lien donne le
+                       reste de la bibliothèque, là où le lecteur est déjà en train de lire. *@
+                    <a class="btn btn--ghost" href="/blog">
+                        Voir tous les articles <DnIcon Name="arrow-right" Size="16" />
+                    </a>
                 </div>
 
                 <div class="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
@@ -138,13 +178,27 @@ else
 
     private ArticleVue? _Article;
 
+    /// <summary>Message d'erreur renvoyé par le formulaire de commentaire, s'il a échoué.</summary>
+    private string? _Erreur;
+
+    /// <summary>Confirmation renvoyée par le formulaire, s'il a abouti.</summary>
+    private string? _Confirmation;
+
+    [SupplyParameterFromQuery(Name = "erreur")]
+    public string? _ErreurUrl { get; set; }
+
+    [SupplyParameterFromQuery(Name = "confirmation")]
+    public string? _ConfirmationUrl { get; set; }
+
+    /// <summary>Identifiant de l'article en base, vide s'il n'y a pas de ligne.</summary>
+    private Guid _ArticleId;
+
+    /// <summary>Vrai si l'article existe en base et peut donc recevoir des commentaires.</summary>
+    private bool EstEnBase => _ArticleId != Guid.Empty;
+
     private bool _Introuvable;
 
     private ArticleVue[] Suggestions { get; set; } = [];
-
-    private string[] Paragraphes => _Article is null
-        ? []
-        : _Article.Contenu.Split("\n\n", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
     /// <summary>
     /// Filtre la liste sur la rubrique de l'article. Le slug vient du référentiel :
@@ -157,6 +211,9 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
+        _Erreur = _ErreurUrl;
+        _Confirmation = _ConfirmationUrl;
+
         if (!string.IsNullOrWhiteSpace(Slug))
         {
             var articles = await Contenu.ChargerArticlesAsync();
@@ -164,6 +221,19 @@ else
             _Article = trouve;
             _Introuvable = trouve is null;
             Suggestions = trouve is null ? [] : ChoisirSuggestions(articles, trouve);
+
+            if (trouve is not null)
+            {
+                // Le commentaire se rattache à l'identifiant en base, pas au slug : un
+                // article de démonstration jamais transféré n'a donc pas de fil.
+                var enBase = await UniteDeTravail.ReadRepository<DotnetNiger.Domain.Entities.Content.Article>().Query
+                    .AsNoTracking()
+                    .Where(article => article.Slug == Slug)
+                    .Select(article => (Guid?)article.Id)
+                    .FirstOrDefaultAsync();
+
+                _ArticleId = enBase ?? Guid.Empty;
+            }
 
             return;
         }

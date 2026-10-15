@@ -1,5 +1,4 @@
 @page "/partenaires"
-@attribute [StreamRendering]
 
 @inject ISiteContentService Contenu
 
@@ -12,8 +11,8 @@
 
 @if (_Partenaires is null)
 {
-    <div class="wrap" style="padding-block: calc(var(--spacing) * 12);">
-        <p class="text-caption" style="color: var(--site-fg-muted);">Chargement…</p>
+    <div class="wrap py-12">
+        <p class="text-caption text-[var(--site-fg-muted)]">Chargement…</p>
     </div>
 }
 else
@@ -24,10 +23,10 @@ else
             <p class="hero__eyebrow">
                 <DnIcon Name="users" Size="14" /> Soutenir la communauté
             </p>
-            <h1 class="hero__title" style="margin-top: var(--spacing);">
+            <h1 class="hero__title mt-1">
                 Ce qui rend nos <strong>rencontres possibles</strong>
             </h1>
-            <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
+            <p class="hero__lead mt-3">
                 Salles, connexions, captation vidéo, crédits cloud, orateurs : les événements
                 gratuits de la communauté n'existent que grâce à ceux qui y investissent.
             </p>
@@ -115,10 +114,10 @@ else
     <section class="section" aria-labelledby="devenir-titre">
         <div class="wrap">
             <div class="bande">
-                <div class="grid gap-6 md:grid-cols-2" style="align-items: center;">
+                <div class="grid items-center gap-6 md:grid-cols-2">
                     <div>
-                        <p class="eyebrow" style="color: var(--color-vert-300);">Contribuer</p>
-                        <h2 id="devenir-titre" class="bande__title" style="margin-top: var(--spacing);">
+                        <p class="eyebrow text-vert-300">Contribuer</p>
+                        <h2 id="devenir-titre" class="bande__title mt-1">
                             Devenir partenaire
                         </h2>
                         <p class="bande__lead">

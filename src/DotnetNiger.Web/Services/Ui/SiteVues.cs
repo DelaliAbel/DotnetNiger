@@ -1,3 +1,5 @@
+using DotnetNiger.Domain.Enums;
+
 namespace DotnetNiger.Web.Services.Ui;
 
 /// <summary>Modèle de présentation d'un article de blog.</summary>
@@ -47,7 +49,37 @@ public sealed class EvenementVue
 
     public required string Lieu { get; init; }
 
+    /// <summary>
+    /// Adresse de participation d'un événement en ligne ou hybride.
+    /// </summary>
+    /// <remarks>
+    /// Exigée par le domaine dès que le format est en ligne ou hybride, et indispensable
+    /// à l'inscription : c'est elle que reçoit le membre qui réserve sa place. Un événement
+    /// en présentiel seul n'en a pas besoin.
+    /// </remarks>
+    public string? LienParticipation { get; init; }
+
     public required string Description { get; init; }
+
+    /// <summary>
+    /// Accroche courte de la rencontre, une ou deux phrases.
+    /// </summary>
+    /// <remarks>
+    /// Le résumé et la description ne disent pas la même chose : le premier donne envie
+    /// de venir, la seconde raconte ce qui s'est passé. Confondre les deux ferait
+    /// perdre la moitié du compte rendu d'un meetup.
+    /// </remarks>
+    public string Resume { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Corps complet de la rencontre, en HTML.
+    /// </summary>
+    /// <remarks>
+    /// Le domaine stocke le corps en HTML, assaini à l'écriture. Résumé et description
+    /// n'en sont que des extraits : afficher la description comme si elle était le corps
+    /// ferait perdre la moitié du compte rendu d'un meetup.
+    /// </remarks>
+    public string Contenu { get; init; } = string.Empty;
 
     public string? ImageUrl { get; init; }
 
@@ -56,6 +88,16 @@ public sealed class EvenementVue
 
     /// <summary>Dernier jour, pour un événement qui dure plus d'un jour ; nul pour une soirée ou un atelier.</summary>
     public DateOnly? DateFin { get; init; }
+
+    /// <summary>
+    /// Modalité de la rencontre : présentiel, en ligne ou hybride.
+    /// </summary>
+    /// <remarks>
+    /// Affichée sur les cartes, où elle répond à la première question de qui lit : peut-on
+    /// venir, et depuis où ? Le lieu seul ne le dit pas — une rencontre en ligne n'a pas
+    /// de lieu, et une hybride en a un sans que ce soit l'essentiel.
+    /// </remarks>
+    public CommunityEventFormat Format { get; init; }
 }
 
 /// <summary>Modèle de présentation d'une ressource (formation, tutoriel, guide, outil).</summary>
@@ -82,13 +124,17 @@ public sealed class ProjetVue
 {
     public required string Nom { get; init; }
 
+    /// <summary>
+    /// Phrase d'accroche du projet, en texte brut.
+    /// </summary>
+    /// <remarks>
+    /// La description détaillée du projet est du HTML et n'est pas portée ici : les cartes
+    /// renvoient au dépôt, où le projet se lit. Ce champ reçoit le résumé, pas la
+    /// description — le nom est trompeur, mais il est partagé avec l'API publique.
+    /// </remarks>
     public required string Description { get; init; }
 
     public required string[] Technologies { get; init; }
-
-    public required int Etoiles { get; init; }
-
-    public required int Contributeurs { get; init; }
 
     public required string Lien { get; init; }
 }

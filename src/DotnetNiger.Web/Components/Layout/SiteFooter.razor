@@ -1,4 +1,3 @@
-@inject ISiteContentService Contenu
 @inject NavigationManager Navigation
 
 <footer class="site-footer">
@@ -64,7 +63,7 @@
                 </h2>
                 <p class="infolettre__lead">
                     Un courriel par mois : les nouveaux articles, les prochains rendez-vous et
-                    les projets值得 soutenir. Désabonnement en un clic, dans chaque envoi.
+                    les projets a soutenir. Désabonnement en un clic, dans chaque envoi.
                 </p>
             </div>
 
@@ -105,7 +104,10 @@
 </footer>
 
 @code {
-    private IReadOnlyList<CanalVue> _Canaux = Array.Empty<CanalVue>();
+    // Les canaux viennent des textes du site, pas de la base : le pied de page est
+    // rendu sur toutes les pages, et interroger la base ici ferait courir une seconde
+    // lecture sur le même contexte que celle de la page, en parallèle.
+    private IReadOnlyList<CanalVue> _Canaux = TextesDuSite.Canaux;
 
     /// <summary>
     /// Adresse confirmée, transmise par la redirection après soumission. Le message
@@ -135,11 +137,5 @@
             var chemin = Navigation.ToBaseRelativePath(Navigation.Uri);
             return string.IsNullOrWhiteSpace(chemin) ? "/" : "/" + chemin;
         }
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        var accueil = await Contenu.ChargerAccueilAsync();
-        _Canaux = accueil.Canaux;
     }
 }

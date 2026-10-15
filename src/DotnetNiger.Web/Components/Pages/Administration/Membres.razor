@@ -1,0 +1,667 @@
+@page "/administration/membres"
+@layout DotnetNiger.Web.Components.Layout.AdministrationLayout
+@rendermode InteractiveServer
+
+@using System.Globalization
+@using System.Text.Json
+@using DotnetNiger.Application.Abstractions
+@using DotnetNiger.Application.Common
+@using DotnetNiger.Web.Services.Administration
+
+@attribute [Authorize(Roles = RoleNames.Admin)]
+
+@inject ServiceMembres Service
+@inject ICurrentUserService UtilisateurCourant
+@inject IJSRuntime JS
+
+@*
+    Les comptes de la communauté.
+
+    Un compte n'est pas supprimé, il est désactivé : ses articles, ses commentaires et ses
+    inscriptions aux événements gardent un auteur. La liste affiche donc aussi les comptes
+    désactivés — c'est la seule façon de les réactiver, et de savoir qui a écrit quoi.
+
+    Le tiroir ne propose que ce que l'administration sait changer : le rôle et l'appartenance
+    à l'équipe. Le nom et l'adresse d'un membre appartiennent à son profil, que le membre
+    modifie lui-même — les réécrire d'ici les désynchroniserait de ce qu'il a choisi de montrer.
+*@
+
+<PageTitle>Membres — Administration</PageTitle>
+
+<header class="admin-entete">
+    <div>
+        <h1 class="admin-entete__titre">Membres</h1>
+        <p class="admin-entete__intro">
+            Les comptes de la communauté. Un compte se désactive, il ne se supprime pas :
+            ses contributions gardent un auteur.
+        </p>
+    </div>
+
+    <button type="button" class="btn btn--primary" @onclick="OuvrirCreation" disabled="@_envoi">
+        <DnIcon Name="plus" Size="16" />
+        Nouveau compte
+    </button>
+</header>
+
+@if (_donnees is null)
+{
+    <Chargement />
+}
+else
+{
+    <div class="admin-bandeau">
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="membre-recherche">Recherche</label>
+            <input id="membre-recherche" class="input" type="search" placeholder="Nom ou courriel…"
+                   @bind="_recherche" @bind:event="oninput" />
+        </div>
+
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="membre-etat">État</label>
+            <div class="select">
+                <select id="membre-etat" @bind="_filtreEtat">
+                    <option value="">Tous les comptes</option>
+                    <option value="@(Actifs)">Actifs</option>
+                    <option value="@(Inactifs)">Désactivés</option>
+                    <option value="@(Equipe)">Équipe organisatrice</option>
+                    <option value="@(Bloques)">Verrouillés</option>
+                </select>
+                <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+            </div>
+        </div>
+
+        <span class="admin-bandeau__compte">@Liste.Count compte(s)</span>
+    </div>
+
+    @if (Liste.Count is 0)
+    {
+        <p class="admin-formulaire__aide">Aucun compte ne correspond à ces filtres.</p>
+    }
+    else
+    {
+        <table class="admin-tableau admin-tableau--defilant">
+            <thead>
+                <tr>
+                    <th scope="col">Membre</th>
+                    <th scope="col">Rôles</th>
+                    <th scope="col">État</th>
+                    <th scope="col">Inscrit le</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ligne in Liste)
+                {
+                    <tr>
+                        <td>
+                            <div class="admin-partenaire">
+                                <DnAvatar Nom="@ligne.NomComplet" ImageUrl="@ligne.PhotoUrl" Profil />
+
+                                <div class="admin-partenaire__nom">
+                                    <span class="admin-tableau__titre">
+                                        @ligne.NomComplet
+                                        @if (ligne.Id == UtilisateurCourant.UserId)
+                                        {
+                                            <span class="admin-tableau__note">vous</span>
+                                        }
+                                    </span>
+                                    <span class="admin-tableau__note">@ligne.Courriel</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="admin-tableau__technologies">
+                                @foreach (var role in ligne.Roles)
+                                {
+                                    <span class="badge @EtiquetteRole(role)">@role</span>
+                                }
+
+                                @if (ligne.EstEquipe)
+                                {
+                                    <span class="badge badge--violet">Équipe</span>
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            <div class="admin-tableau__technologies">
+                                <span class="badge @(ligne.EstActif ? "badge--vert" : "badge--ink")">
+                                    @(ligne.EstActif ? "Actif" : "Désactivé")
+                                </span>
+
+                                @if (!ligne.EmailConfirme)
+                                {
+                                    <span class="badge badge--orange">Adresse non confirmée</span>
+                                }
+
+                                @if (EstVerrouille(ligne))
+                                {
+                                    <span class="badge badge--rouge">Verrouillé</span>
+                                }
+                            </div>
+                        </td>
+                        <td>@ligne.InscritLe.ToString("d MMM yyyy", Culture)</td>
+                        <td>
+                            <div class="admin-tableau__actions">
+                                <button type="button" class="btn btn--ghost btn--sm"
+                                        @onclick="() => OuvrirEdition(ligne)">
+                                    <DnIcon Name="edit" Size="14" />
+                                    Éditer
+                                </button>
+
+                                @if (EstVerrouille(ligne))
+                                {
+                                    <button type="button" class="btn btn--sm" @onclick="() => Debloquer(ligne)">
+                                        <DnIcon Name="lock" Size="14" />
+                                        Débloquer
+                                    </button>
+                                }
+
+                                @if (!ligne.EmailConfirme)
+                                {
+                                    <button type="button" class="btn btn--sm" @onclick="() => ConfirmerEmail(ligne)">
+                                        Confirmer l'adresse
+                                    </button>
+                                }
+
+                                @* Le serveur refuse qu'un administrateur se désactive lui-même :
+                                   il se couperait de cette page avant d'avoir fini. *@
+                                @if (ligne.Id != UtilisateurCourant.UserId)
+                                {
+                                    <button type="button" class="btn btn--sm"
+                                            @onclick="() => Activer(ligne, !ligne.EstActif)">
+                                        @(ligne.EstActif ? "Désactiver" : "Réactiver")
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+<div class="admin-toasts" role="status" aria-live="polite">
+    @foreach (var message in _messages)
+    {
+        <div class="admin-toast admin-toast--@(message.Reussi ? "succes" : "erreur")">
+            <DnIcon Name="@(message.Reussi ? "check" : "alert")" Size="16" />
+            <span>@message.Texte</span>
+        </div>
+    }
+</div>
+
+@if (_formulaireOuvert)
+{
+    <div class="admin-voile" @onclick="FermerFormulaire">
+        <div class="admin-tiroir admin-tiroir--etroit" role="dialog" aria-modal="true"
+             aria-label="@(_edition is null ? "Nouveau compte" : "Modifier le compte")"
+             @onclick:stopPropagation="true">
+
+            <div class="admin-tiroir__entete">
+                <h2 class="admin-tiroir__titre">
+                    @(_edition is null ? "Nouveau compte" : "Modifier le compte")
+                </h2>
+
+                <button type="button" class="admin-replie" aria-label="Fermer"
+                        @onclick="FermerFormulaire">
+                    <DnIcon Name="check" Size="16" />
+                </button>
+            </div>
+
+            <div class="admin-formulaire">
+                @if (_edition is null)
+                {
+                    <div class="admin-formulaire__champ">
+                        <label class="admin-formulaire__intitule" for="membre-nom">
+                            Nom complet
+                            <span class="admin-formulaire__obligatoire">obligatoire</span>
+                        </label>
+                        <input id="membre-nom" class="input" type="text" maxlength="200"
+                               placeholder="Awa Traoré" @bind="_formeNom" @bind:event="oninput" />
+
+                        <p class="admin-formulaire__aide">
+                            Le premier mot devient le prénom, le reste le nom.
+                        </p>
+                    </div>
+
+                    <div class="admin-formulaire__champ">
+                        <label class="admin-formulaire__intitule" for="membre-courriel">
+                            Adresse de connexion
+                            <span class="admin-formulaire__obligatoire">obligatoire</span>
+                        </label>
+                        <input id="membre-courriel" class="input" type="email" maxlength="256"
+                               placeholder="awa@example.com" @bind="_formeCourriel" @bind:event="oninput" />
+
+                        <p class="admin-formulaire__aide">
+                            L'adresse de connexion ne se change pas ensuite : elle identifie le
+                            compte et figure dans ses contributions.
+                        </p>
+                    </div>
+
+                    <div class="admin-formulaire__champ">
+                        <label class="admin-formulaire__intitule" for="membre-motdepasse">
+                            Mot de passe initial
+                            <span class="admin-formulaire__obligatoire">obligatoire</span>
+                        </label>
+                        <input id="membre-motdepasse" class="input" type="password" maxlength="128"
+                               @bind="_formeMotDePasse" @bind:event="oninput" />
+
+                        <p class="admin-formulaire__aide">
+                            Communiquez-le au membre : il pourra le changer depuis son espace.
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    <div class="admin-partenaire">
+                        <DnAvatar Nom="@_edition.NomComplet" ImageUrl="@_edition.PhotoUrl" Profil />
+
+                        <div class="admin-partenaire__nom">
+                            <span class="admin-tableau__titre">@_edition.NomComplet</span>
+                            <span class="admin-tableau__note">
+                                @_edition.Courriel — inscrit le
+                                @_edition.InscritLe.ToString("d MMM yyyy", Culture)
+                            </span>
+                        </div>
+                    </div>
+
+                    <p class="admin-formulaire__aide">
+                        Le nom et l'adresse appartiennent au profil du membre : il les modifie
+                        depuis son espace, et ils restent ce qu'il a choisi de montrer.
+                    </p>
+                }
+
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="membre-role">Rôle</label>
+                    <div class="select">
+                        <select id="membre-role" @bind="_formeRole">
+                            @foreach (var role in _donnees?.RolesDisponibles ?? [])
+                            {
+                                <option value="@role">@role</option>
+                            }
+                        </select>
+                        <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+                    </div>
+
+                    <p class="admin-formulaire__aide">
+                        Seuls les administrateurs accèdent à cette page. Le rôle d'un
+                        administrateur ne peut pas lui être retiré : le serveur l'empêche, pour
+                        que l'application ne se retrouve jamais sans administrateur.
+                    </p>
+                </div>
+
+                <label class="admin-case">
+                    <input type="checkbox" @bind="_formeEquipe" />
+                    Membre de l'équipe organisatrice
+                </label>
+
+                @if (_edition is null)
+                {
+                    <label class="admin-case">
+                        <input type="checkbox" @bind="_formeConfirme" />
+                        L'adresse a été contrôlée par un autre canal
+                    </label>
+
+                    <p class="admin-formulaire__aide">
+                        Sans cette case, le membre devra confirmer son adresse avant de pouvoir
+                        se connecter.
+                    </p>
+                }
+
+                @if (_erreur is not null)
+                {
+                    <div class="alerte alerte--rouge" role="alert">
+                        <span class="alerte__icone"><DnIcon Name="alert" Size="16" /></span>
+                        <span>@_erreur</span>
+                    </div>
+                }
+
+                <div class="admin-formulaire__actions">
+                    <button type="button" class="btn btn--ghost" @onclick="FermerFormulaire" disabled="@_envoi">
+                        Annuler
+                    </button>
+
+                    <button type="button" class="btn btn--primary" @onclick="Enregistrer" disabled="@_envoi">
+                        @(_envoi ? "Enregistrement…" : "Enregistrer")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
+
+    private const string Actifs = "actifs";
+
+    private const string Inactifs = "inactifs";
+
+    private const string Equipe = "equipe";
+
+    private const string Bloques = "bloques";
+
+    private MembresVue? _donnees;
+
+    private string _recherche = string.Empty;
+
+    private string _filtreEtat = string.Empty;
+
+    private bool _formulaireOuvert;
+
+    private bool _envoi;
+
+    private LigneMembreAdmin? _edition;
+
+    private string _formeNom = string.Empty;
+
+    private string _formeCourriel = string.Empty;
+
+    private string _formeMotDePasse = string.Empty;
+
+    private string _formeRole = RoleNames.Member;
+
+    private bool _formeEquipe;
+
+    private bool _formeConfirme;
+
+    private string? _erreur;
+
+    private readonly List<Annonce> _messages = [];
+
+    /// <summary>Comptes qui passent les filtres de la barre.</summary>
+    private List<LigneMembreAdmin> Liste =>
+    [
+        .. (_donnees?.Membres ?? [])
+            .Where(ligne => string.IsNullOrWhiteSpace(_filtreEtat)
+                || _filtreEtat switch
+                {
+                    Actifs => ligne.EstActif,
+                    Inactifs => !ligne.EstActif,
+                    Equipe => ligne.EstEquipe,
+                    Bloques => EstVerrouille(ligne),
+                    _ => true,
+                })
+            .Where(ligne => string.IsNullOrWhiteSpace(_recherche)
+                || ligne.NomComplet.Contains(_recherche, StringComparison.OrdinalIgnoreCase)
+                || (ligne.Courriel?.Contains(_recherche, StringComparison.OrdinalIgnoreCase) ?? false))
+    ];
+
+    protected override async Task OnInitializedAsync() => _donnees = await Service.LireAsync();
+
+    /// <summary>Un compte verrouillé ne peut plus se connecter jusqu'à la fin du verrouillage.</summary>
+    /// <param name="ligne">Compte concerné.</param>
+    /// <returns><see langword="true"/> si le compte est verrouillé.</returns>
+    private static bool EstVerrouille(LigneMembreAdmin ligne)
+        => ligne.BloqueJusquAu is { } fin && fin > DateTimeOffset.UtcNow;
+
+    private void OuvrirCreation()
+    {
+        _edition = null;
+        _formeNom = string.Empty;
+        _formeCourriel = string.Empty;
+        _formeMotDePasse = string.Empty;
+        _formeRole = RoleNames.Member;
+        _formeEquipe = false;
+        _formeConfirme = false;
+        _erreur = null;
+        _formulaireOuvert = true;
+    }
+
+    private void OuvrirEdition(LigneMembreAdmin ligne)
+    {
+        _edition = ligne;
+        _formeNom = ligne.NomComplet;
+        _formeCourriel = ligne.Courriel ?? string.Empty;
+        _formeRole = ligne.Roles.FirstOrDefault() ?? RoleNames.Member;
+        _formeEquipe = ligne.EstEquipe;
+        _formeConfirme = ligne.EmailConfirme;
+        _erreur = null;
+        _formulaireOuvert = true;
+    }
+
+    private void FermerFormulaire()
+    {
+        _formulaireOuvert = false;
+        _erreur = null;
+    }
+
+    private async Task Enregistrer()
+    {
+        _erreur = null;
+
+        if (_edition is null && string.IsNullOrWhiteSpace(_formeNom))
+        {
+            _erreur = "Donnez un nom au compte : il est affiché sur toutes ses contributions.";
+            return;
+        }
+
+        if (_edition is null && string.IsNullOrWhiteSpace(_formeCourriel))
+        {
+            _erreur = "Donnez une adresse de connexion au compte.";
+            return;
+        }
+
+        if (_edition is null && string.IsNullOrWhiteSpace(_formeMotDePasse))
+        {
+            _erreur = "Donnez un mot de passe initial au compte.";
+            return;
+        }
+
+        _envoi = true;
+
+        try
+        {
+            var message = _edition is null ? await CreerAsync() : await MettreAJourAsync(_edition);
+
+            if (message is not null)
+            {
+                _erreur = message;
+                return;
+            }
+
+            var annonce = _edition is null ? "Compte créé." : "Compte enregistré.";
+
+            FermerFormulaire();
+
+            Service.Oublie();
+            _donnees = await Service.LireAsync();
+
+            await Previent(annonce, true);
+        }
+        finally
+        {
+            _envoi = false;
+        }
+    }
+
+    /// <summary>Crée un compte, le nom saisi étant réparti entre prénom et nom.</summary>
+    /// <returns>Le message d'erreur du serveur, ou <see langword="null"/> si tout s'est bien passé.</returns>
+    private async Task<string?> CreerAsync()
+    {
+        var (prenom, nom) = Partager(_formeNom);
+
+        var reponse = await Ecrire("POST", "/api/admin/accounts", new
+        {
+            email = _formeCourriel.Trim(),
+            password = _formeMotDePasse,
+            firstName = prenom,
+            lastName = nom,
+            isTeam = _formeEquipe,
+            confirmEmail = _formeConfirme,
+            roles = new[] { _formeRole },
+        });
+
+        return reponse.Ok ? null : Raison(reponse);
+    }
+
+    /// <summary>Enregistre le rôle et l'appartenance à l'équipe d'un compte existant.</summary>
+    /// <param name="ligne">Compte modifié.</param>
+    /// <returns>Le message d'erreur du serveur, ou <see langword="null"/> si tout s'est bien passé.</returns>
+    /// <remarks>
+    /// Les deux écritures sont séparées parce que l'API les sépare : le rôle a son propre
+    /// point de terminaison, qui refuse de retirer le dernier administrateur. Les Fusionner
+    /// en une seule laisserait un rôle modifié quand l'appartenance à l'équipe a échoué.
+    /// </remarks>
+    private async Task<string?> MettreAJourAsync(LigneMembreAdmin ligne)
+    {
+        var reponse = await Ecrire("PUT", $"/api/admin/accounts/{ligne.Id}", new
+        {
+            isActive = ligne.EstActif,
+            isTeam = _formeEquipe,
+        });
+
+        if (!reponse.Ok)
+        {
+            return Raison(reponse);
+        }
+
+        var changement = await Ecrire("PUT", $"/api/admin/accounts/{ligne.Id}/roles", new
+        {
+            roles = new[] { _formeRole },
+        });
+
+        return changement.Ok ? null : Raison(changement);
+    }
+
+    /// <summary>Répartit un nom affiché entre prénom et nom.</summary>
+    /// <param name="nomComplet">Nom tel que saisi.</param>
+    /// <returns>Le prénom et le nom.</returns>
+    private static (string Prenom, string Nom) Partager(string nomComplet)
+    {
+        var morceaux = nomComplet.Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+
+        return morceaux.Length switch
+        {
+            0 => (string.Empty, string.Empty),
+            1 => (string.Empty, morceaux[0]),
+            _ => (morceaux[0], morceaux[1]),
+        };
+    }
+
+    private async Task Activer(LigneMembreAdmin ligne, bool actif)
+    {
+        var reponse = await Ecrire("PUT", $"/api/admin/accounts/{ligne.Id}", new
+        {
+            isActive = actif,
+            isTeam = ligne.EstEquipe,
+        });
+
+        if (!reponse.Ok)
+        {
+            await Previent(Raison(reponse), false);
+            return;
+        }
+
+        Service.Oublie();
+        _donnees = await Service.LireAsync();
+
+        await Previent(actif ? "Compte réactivé." : "Compte désactivé.", true);
+    }
+
+    private async Task Debloquer(LigneMembreAdmin ligne)
+    {
+        var reponse = await Ecrire("POST", $"/api/admin/accounts/{ligne.Id}/unlock", null);
+
+        if (!reponse.Ok)
+        {
+            await Previent(Raison(reponse), false);
+            return;
+        }
+
+        Service.Oublie();
+        _donnees = await Service.LireAsync();
+
+        await Previent("Compte déverrouillé.", true);
+    }
+
+    private async Task ConfirmerEmail(LigneMembreAdmin ligne)
+    {
+        var reponse = await Ecrire("POST", $"/api/admin/accounts/{ligne.Id}/confirm-email", null);
+
+        if (!reponse.Ok)
+        {
+            await Previent(Raison(reponse), false);
+            return;
+        }
+
+        Service.Oublie();
+        _donnees = await Service.LireAsync();
+
+        await Previent("Adresse confirmée.", true);
+    }
+
+    /// <summary>
+    /// Écrit par l'API, après avoir vérifié que le script d'appel est présent.
+    /// </summary>
+    /// <param name="methode">Verbe de la requête.</param>
+    /// <param name="chemin">Adresse de l'API.</param>
+    /// <param name="corps">Charge utile, ou <see langword="null"/>.</param>
+    /// <returns>La réponse normalisée de l'appel.</returns>
+    private async Task<ReponseApi> Ecrire(string methode, string chemin, object? corps)
+    {
+        await JS.InvokeVoidAsync("DnAdminScripts.assure", true);
+
+        return await JS.InvokeAsync<ReponseApi>("DnApi.envoyer", methode, chemin, corps);
+    }
+
+    /// <summary>Affiche un message, puis l'efface.</summary>
+    /// <param name="texte">Message à afficher.</param>
+    /// <param name="reussi">Vrai pour un succès, faux pour une erreur.</param>
+    private async Task Previent(string texte, bool reussi)
+    {
+        var annonce = new Annonce(texte, reussi);
+        _messages.Add(annonce);
+
+        await InvokeAsync(StateHasChanged);
+
+        await Task.Delay(4000);
+        _messages.Remove(annonce);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static string EtiquetteRole(string role) => role == RoleNames.Admin ? "badge--violet" : "badge--ink";
+
+    /// <summary>Message d'erreur d'une réponse refusée, tel que le serveur l'a formulé.</summary>
+    /// <param name="reponse">Réponse de l'appel.</param>
+    /// <returns>Un texte compréhensible, jamais un code.</returns>
+    private static string Raison(ReponseApi reponse)
+        => reponse.Erreurs
+            ?? reponse.Detail
+            ?? reponse.Titre
+            ?? (reponse.Statut == 0
+                ? "Le serveur n'a pas répondu."
+                : $"Le serveur a répondu {reponse.Statut}.");
+
+    /// <summary>Un message affiché à l'écran, le temps qu'il soit effacé.</summary>
+    /// <param name="Texte">Contenu du message.</param>
+    /// <param name="Reussi">Vrai pour un succès, faux pour une erreur.</param>
+    private sealed record Annonce(string Texte, bool Reussi);
+
+    /// <summary>Réponse normalisée d'un appel fait par le script d'administration.</summary>
+    /// <param name="Ok">Vrai si le serveur a accepté.</param>
+    /// <param name="Statut">Code de la réponse.</param>
+    /// <param name="Corps">Corps décodé de la réponse.</param>
+    private sealed record ReponseApi(bool Ok, int Statut, object? Corps)
+    {
+        /// <summary>Message d'erreur, au format problem details.</summary>
+        public string? Titre => (Corps as JsonElement?)?.TryGetProperty("title", out var titre) == true
+            ? titre.GetString()
+            : null;
+
+        /// <summary>Précision de l'erreur, quand le serveur en a produit une.</summary>
+        public string? Detail => (Corps as JsonElement?)?.TryGetProperty("detail", out var detail) == true
+            ? detail.GetString()
+            : null;
+
+        /// <summary>Précisions de validation, quand le serveur en a produit.</summary>
+        public string? Erreurs => (Corps as JsonElement?)?.TryGetProperty("errors", out var erreurs) == true
+            ? string.Join(
+                " ",
+                erreurs.EnumerateObject().SelectMany(entree => entree.Value.EnumerateArray())
+                    .Select(erreur => erreur.GetString())
+                    .Where(texte => !string.IsNullOrWhiteSpace(texte)))
+            : null;
+    }
+}

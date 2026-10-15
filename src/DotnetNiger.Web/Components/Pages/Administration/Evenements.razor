@@ -1,0 +1,986 @@
+@page "/administration/evenements"
+@layout DotnetNiger.Web.Components.Layout.AdministrationLayout
+@rendermode InteractiveServer
+
+@using System.Globalization
+@using System.Text.Json
+@using DotnetNiger.Domain.Enums
+@using DotnetNiger.Web.Services.Administration
+@using DotnetNiger.Web.Services.Ui
+
+@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
+
+@inject ServiceEvenements Service
+@inject IJSRuntime JS
+
+@*
+    Rédaction des événements : la liste, ses filtres, et le tiroir d'édition.
+
+    Tout suit le modèle du blog — lecture par service, écriture par l'API, chapô déduit du
+    début de la description, description éditée dans TinyMCE, couverture téléversée — à une
+    différence près : un événement ne se lit pas dans le temps comme un article. Il a une
+    date de début et de fin, un lieu, une modalité et un nombre de places ; c'est ce qui
+    décide de son affichage dans les listes, bien avant son contenu.
+*@
+
+<PageTitle>Événements — Administration</PageTitle>
+
+<header class="admin-entete">
+    <div>
+        <h1 class="admin-entete__titre">Événements</h1>
+        <p class="admin-entete__intro">Planifier les rendez-vous de la communauté et les ouvrir aux inscriptions.</p>
+    </div>
+
+    <button type="button" class="btn btn--primary" @onclick="OuvrirCreation" disabled="@_envoi">
+        <DnIcon Name="plus" Size="16" />
+        Nouvel événement
+    </button>
+</header>
+
+@if (_donnees is null)
+{
+    <Chargement />
+}
+else
+{
+    <div class="admin-bandeau">
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="evenement-recherche">Recherche</label>
+            <input id="evenement-recherche" class="input" type="search" placeholder="Titre, résumé ou lieu…"
+                   @bind="_recherche" @bind:event="oninput" />
+        </div>
+
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="evenement-etat">État</label>
+            <div class="select">
+                <select id="evenement-etat" @bind="_filtreEtat">
+                    <option value="">Tous les états</option>
+                    <option value="@nameof(PublicationStatus.Published)">Publiés</option>
+                    <option value="@nameof(PublicationStatus.Draft)">Brouillons</option>
+                </select>
+                <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+            </div>
+        </div>
+
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="evenement-filtre-format">Modalité</label>
+            <div class="select">
+                <select id="evenement-filtre-format" @bind="_filtreFormat">
+                    <option value="">Toutes</option>
+                    <option value="@nameof(CommunityEventFormat.InPerson)">Présentiel</option>
+                    <option value="@nameof(CommunityEventFormat.Online)">En ligne</option>
+                    <option value="@nameof(CommunityEventFormat.Hybrid)">Hybride</option>
+                </select>
+                <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+            </div>
+        </div>
+
+        <span class="admin-bandeau__compte">@EvenementsLignes.Count événement(s)</span>
+    </div>
+
+    @if (EvenementsLignes.Count is 0)
+    {
+        <p class="admin-formulaire__aide">Aucun événement ne correspond à ces filtres.</p>
+    }
+    else
+    {
+        <table class="admin-tableau admin-tableau--defilant">
+            <thead>
+                <tr>
+                    <th scope="col">Titre</th>
+                    <th scope="col">Quand</th>
+                    <th scope="col">Modalité</th>
+                    <th scope="col">État</th>
+                    <th scope="col">Inscriptions</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ligne in EvenementsLignes)
+                {
+                    <tr>
+                        <td class="admin-tableau__titre">
+                            @ligne.Titre
+                            @if (!string.IsNullOrWhiteSpace(ligne.Lieu))
+                            {
+                                <span class="admin-tableau__note">· @ligne.Lieu</span>
+                            }
+                        </td>
+                        <td>@Quand(ligne)</td>
+                        <td>@Format(ligne.Format)</td>
+                        <td>
+                            <span class="badge @Etiquette(ligne.Statut)">@Etat(ligne.Statut)</span>
+                        </td>
+                        <td>
+                            @if (ligne.Capacite is { } capacite)
+                            {
+                                @($"{ligne.Confirmes} / {capacite}")
+                            }
+                            else
+                            {
+                                @($"{ligne.Confirmes} / ∞")
+                            }
+                        </td>
+                        <td>
+                            <div class="admin-tableau__actions">
+                                <button type="button" class="btn btn--ghost btn--sm"
+                                        @onclick="() => OuvrirInscriptions(ligne)">
+                                    <DnIcon Name="users" Size="14" />
+                                    Inscrits (@ligne.Confirmes)
+                                </button>
+
+                                <button type="button" class="btn btn--ghost btn--sm"
+                                        @onclick="() => OuvrirEdition(ligne)">
+                                    <DnIcon Name="edit" Size="14" />
+                                    Éditer
+                                </button>
+
+                                <a class="btn btn--ghost btn--sm" href="/evenements/@ligne.Slug"
+                                   target="_blank" rel="noopener">
+                                    <DnIcon Name="external-link" Size="14" />
+                                    Fiche
+                                </a>
+
+                                @if (ligne.Statut == PublicationStatus.Published)
+                                {
+                                    <button type="button" class="btn btn--sm"
+                                            @onclick="() => ChangerEtat(ligne, Transition.Brouillon)">
+                                        Brouillon
+                                    </button>
+
+                                    <button type="button" class="btn btn--sm"
+                                            @onclick="() => ChangerEtat(ligne, Transition.Archiver)">
+                                        Archiver
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn--primary btn--sm"
+                                            @onclick="() => ChangerEtat(ligne, Transition.Publier)">
+                                        Publier
+                                    </button>
+                                }
+
+                                @if (_aSupprimer == ligne.Id)
+                                {
+                                    <span class="admin-confirmation">
+                                        Supprimer ?
+                                        <button type="button" class="btn btn--rouge btn--sm"
+                                                @onclick="() => Supprimer(ligne)">Oui</button>
+                                        <button type="button" class="btn btn--ghost btn--sm"
+                                                @onclick="() => _aSupprimer = null">Non</button>
+                                    </span>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn--rouge btn--sm"
+                                            @onclick="() => _aSupprimer = ligne.Id">
+                                        Supprimer
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+<div class="admin-toasts" role="status" aria-live="polite">
+    @foreach (var message in _messages)
+    {
+        <div class="admin-toast admin-toast--@(message.Reussi ? "succes" : "erreur")">
+            <DnIcon Name="@(message.Reussi ? "check" : "alert")" Size="16" />
+            <span>@message.Texte</span>
+        </div>
+    }
+</div>
+
+@if (_inscriptionsOuvertes)
+{
+    @* Le panneau des inscrits est distinct du tiroir d'édition : on regarde qui vient,
+       ou on modifie la rencontre — jamais les deux à la fois. *@
+    <div class="admin-voile" @onclick="FermerInscriptions">
+        <div class="admin-tiroir admin-tiroir--etroit" role="dialog" aria-modal="true"
+             aria-label="Personnes inscrites" @onclick:stopPropagation="true">
+
+            <div class="admin-tiroir__entete">
+                <h2 class="admin-tiroir__titre">Inscrits — @_inscriptionsEvenement?.Titre</h2>
+
+                <button type="button" class="admin-replie" aria-label="Fermer"
+                        @onclick="FermerInscriptions">
+                    <DnIcon Name="check" Size="16" />
+                </button>
+            </div>
+
+            @if (_inscriptions is null)
+            {
+                <Chargement />
+            }
+            else if (_inscriptions.Count is 0)
+            {
+                <p class="admin-formulaire__aide">Personne n'est inscrit pour l'instant.</p>
+            }
+            else
+            {
+                <table class="admin-tableau admin-tableau--defilant">
+                    <thead>
+                        <tr>
+                            <th scope="col">Membre</th>
+                            <th scope="col">État</th>
+                            <th scope="col">Inscrit le</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var inscription in _inscriptions)
+                        {
+                            <tr>
+                                <td class="admin-tableau__titre">@inscription.Membre</td>
+                                <td>
+                                    <span class="badge @EtiquetteInscription(inscription.Etat)">
+                                        @EtatInscription(inscription.Etat)
+                                    </span>
+                                </td>
+                                <td>@inscription.InscritLe.ToString("d MMM yyyy à HH:mm", Culture)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+}
+
+@if (_formulaireOuvert)
+{
+    <div class="admin-voile" @onclick="FermerFormulaire">
+        <div class="admin-tiroir" role="dialog" aria-modal="true"
+             aria-label="@(_edition is null ? "Nouvel événement" : "Modifier l'événement")"
+             @onclick:stopPropagation="true">
+
+            <div class="admin-tiroir__entete">
+                <h2 class="admin-tiroir__titre">
+                    @(_edition is null ? "Nouvel événement" : "Modifier l'événement")
+                </h2>
+
+                <button type="button" class="admin-replie" aria-label="Fermer"
+                        @onclick="FermerFormulaire">
+                    <DnIcon Name="check" Size="16" />
+                </button>
+            </div>
+
+            <div class="admin-formulaire">
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="evenement-titre">Titre</label>
+                    <input id="evenement-titre" class="input" type="text" maxlength="200"
+                           placeholder="Titre de l'événement" @bind="_formeTitre" />
+                </div>
+
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="evenement-type">Type</label>
+                    <div class="select">
+                        <select id="evenement-type" @bind="_formeType">
+                            @foreach (var type in Referentiel.TypesEvenement)
+                            {
+                                <option value="@type.Nom">@type.Nom</option>
+                            }
+                        </select>
+                        <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+                    </div>
+                </div>
+
+                @* Le chapô n'est plus saisi : il est repris du début de la description, à
+                   l'enregistrement, comme pour le blog. *@
+
+                @* Un champ par date et par heure, comme le navigateur les affiche : la date d'un côté,
+                   l'heure — avec AM/PM si c'est la locale de la machine — de l'autre. Deux
+                   champs de date et d'heure côte à côte, qui passent sur une colonne quand
+                   le tiroir est étroit. *@
+                <div class="admin-grille admin-grille--compacte">
+                    <div class="admin-formulaire__champ">
+                        <label class="admin-formulaire__intitule" for="evenement-debut">Date et heure de début</label>
+                        <input id="evenement-debut" class="input" type="datetime-local"
+                               @bind="_formeDebut" />
+                    </div>
+
+                    <div class="admin-formulaire__champ">
+                        <label class="admin-formulaire__intitule" for="evenement-fin">Date et heure de fin</label>
+                        <input id="evenement-fin" class="input" type="datetime-local"
+                               @bind="_formeFin" />
+                    </div>
+                </div>
+
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="evenement-modalite">Modalité</label>
+                    <div class="select">
+                        <select id="evenement-modalite" @bind="_formeFormat">
+                            <option value="@nameof(CommunityEventFormat.InPerson)">Présentiel</option>
+                            <option value="@nameof(CommunityEventFormat.Online)">En ligne</option>
+                            <option value="@nameof(CommunityEventFormat.Hybrid)">Hybride</option>
+                        </select>
+                        <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+                    </div>
+                </div>
+
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="evenement-lieu">Lieu</label>
+                    <input id="evenement-lieu" class="input" type="text" maxlength="150"
+                           placeholder="Salle, quartier, ville — facultatif." @bind="_formeLieu" />
+                </div>
+
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="evenement-lien">
+                        Lien de participation
+                        @if (EstEnLigne)
+                        {
+                            <span class="admin-formulaire__obligatoire">obligatoire</span>
+                        }
+                    </label>
+
+                    @* `oninput` : la valeur part à la frappe. Avec le `change` par défaut,
+                       un clic sur « Enregistrer » pouvait être traité avant que le champ
+                       n'ait signalé son contenu — et le lien sembrait alors absent. *@
+                    <input id="evenement-lien" class="input" type="url"
+                           placeholder="https://…"
+                           @bind="_formeLien" @bind:event="oninput" />
+
+                    <p class="admin-formulaire__aide">
+                        Adresse complète, en http ou https : c'est elle que reçoit le membre qui réserve sa place.
+                    </p>
+                </div>
+
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="evenement-places">Nombre de places</label>
+                    <input id="evenement-places" class="input" type="number" min="1"
+                           placeholder="Illimité si vide" @bind="_formeCapacite" />
+                </div>
+
+                <div class="admin-formulaire__champ">
+                    <span class="admin-formulaire__intitule">
+                        Image de couverture
+                        <span class="admin-formulaire__obligatoire">obligatoire</span>
+                    </span>
+
+                    @if (!string.IsNullOrWhiteSpace(_formeImage))
+                    {
+                        @* Une couverture se remplace, elle ne s'efface pas : la carte d'un
+                           événement est la même que celle d'un article, image comprise. *@
+                        <div class="admin-apercu">
+                            <img src="@_formeImage" alt="Aperçu de la couverture choisie" />
+                        </div>
+                    }
+
+                    <label class="admin-fichier-bouton">
+                        <input class="admin-fichier" type="file" @ref="_champImage"
+                               accept="image/jpeg,image/png,image/webp" @onchange="TeleverserImage" />
+                        <span class="btn btn--secondary">
+                            <DnIcon Name="upload" Size="15" />
+                            @(string.IsNullOrWhiteSpace(_formeImage) ? "Choisir une image" : "Remplacer l'image")
+                        </span>
+                    </label>
+
+                    <p class="admin-formulaire__aide">JPEG, PNG ou WebP, 5 Mo au plus. L'image est conservée par le site : aucune adresse n'est saisie.</p>
+                </div>
+
+                @if (_edition is null)
+                {
+                    <label class="admin-case">
+                        <input type="checkbox" @bind="_formePublier" />
+                        Publier immédiatement
+                    </label>
+                }
+
+                <div class="admin-formulaire__champ">
+                    <span class="admin-formulaire__intitule">Description</span>
+                    @* TinyMCE remplace ce textarea au premier affichage du tiroir ; c'est
+                       la graine qui reçoit le texte chargé depuis la base. *@
+                    <textarea id="corps-evenement" class="input"></textarea>
+                    <p class="admin-formulaire__aide">Le chapô des listes sera repris automatiquement au début de ce texte.</p>
+                </div>
+
+                @if (_erreur is not null)
+                {
+                    <div class="alerte alerte--rouge" role="alert">
+                        <span class="alerte__icone"><DnIcon Name="alert" Size="16" /></span>
+                        <span>@_erreur</span>
+                    </div>
+                }
+
+                <div class="admin-formulaire__actions">
+                    <button type="button" class="btn btn--ghost" @onclick="FermerFormulaire" disabled="@_envoi">
+                        Annuler
+                    </button>
+
+                    <button type="button" class="btn btn--primary" @onclick="Enregistrer" disabled="@(_envoi || _depotEnCours)">
+                        @(_envoi ? "Enregistrement…" : "Enregistrer")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
+
+    private const string IdentifiantCorps = "corps-evenement";
+
+    private EvenementsVue? _donnees;
+
+    private string _recherche = string.Empty;
+
+    private string _filtreEtat = string.Empty;
+
+    private string _filtreFormat = string.Empty;
+
+    private bool _formulaireOuvert;
+
+    private bool _envoi;
+
+    private bool _depotEnCours;
+
+    private bool _editeurDemande;
+
+    private Guid? _aSupprimer;
+
+    /// <summary>Vrai quand le panneau des inscrits est ouvert.</summary>
+    private bool _inscriptionsOuvertes;
+
+    private LigneEvenementAdmin? _inscriptionsEvenement;
+
+    private List<InscriptionVue>? _inscriptions;
+
+    private EvenementAdminDetail? _edition;
+
+    private string _formeTitre = string.Empty;
+
+    private string _formeType = string.Empty;
+
+    private CommunityEventFormat _formeFormat = CommunityEventFormat.InPerson;
+
+    private DateTime _formeDebut = DateTime.Now.AddDays(7).AddHours(18);
+
+    private DateTime _formeFin = DateTime.Now.AddDays(7).AddHours(20);
+
+    private string _formeLieu = string.Empty;
+
+    private string _formeLien = string.Empty;
+
+    private int? _formeCapacite;
+
+    private string _formeImage = string.Empty;
+
+    private bool _formePublier = true;
+
+    private string _formeCorps = string.Empty;
+
+    private string? _erreur;
+
+    private ElementReference _champImage;
+
+    /// <summary>Vrai dès que la rencontre n'est pas en présentiel : le lien devient alors obligatoire.</summary>
+    private bool EstEnLigne => _formeFormat != CommunityEventFormat.InPerson;
+
+    private readonly List<Annonce> _messages = [];
+
+    /// <summary>Événements qui passent les filtres de la barre.</summary>
+    private List<LigneEvenementAdmin> EvenementsLignes =>
+        [.. (_donnees?.Evenements ?? [])
+            .Where(ligne => string.IsNullOrWhiteSpace(_filtreEtat)
+                || string.Equals(ligne.Statut.ToString(), _filtreEtat, StringComparison.Ordinal))
+            .Where(ligne => string.IsNullOrWhiteSpace(_filtreFormat)
+                || string.Equals(ligne.Format.ToString(), _filtreFormat, StringComparison.Ordinal))
+            .Where(ligne => string.IsNullOrWhiteSpace(_recherche)
+                || ligne.Titre.Contains(_recherche, StringComparison.OrdinalIgnoreCase)
+                || ligne.Resume.Contains(_recherche, StringComparison.OrdinalIgnoreCase)
+                || (ligne.Lieu ?? string.Empty).Contains(_recherche, StringComparison.OrdinalIgnoreCase))];
+
+    protected override async Task OnInitializedAsync() => _donnees = await Service.LireAsync();
+
+    /// <summary>
+    /// Installe l'éditeur une fois le tiroir visible : TinyMCE ne peut pas s'accrocher à
+    /// un <c>textarea</c> caché.
+    /// </summary>
+    /// <param name="premierRendu">Vrai au premier rendu de la page.</param>
+    protected override async Task OnAfterRenderAsync(bool premierRendu)
+    {
+        if (_formulaireOuvert && _editeurDemande)
+        {
+            _editeurDemande = false;
+
+            // Le script de l'éditeur peut manquer : le layout est remplacé à chaque
+            // navigation enhanced sans que ses balises soient réexécutées. On le réclame
+            // donc explicitement, et l'absence est signalée dans le formulaire au lieu de
+            // faire tomber le circuit.
+            await JS.InvokeVoidAsync("DnAdminScripts.assure", true);
+
+            if (!await JS.InvokeAsync<bool>("DnAdminScripts.present", "DnTinymce"))
+            {
+                _erreur = "L'éditeur n'a pas pu être chargé. Rechargez la page pour réessayer.";
+                return;
+            }
+
+            await JS.InvokeAsync<bool>("DnTinymce.initialiser", IdentifiantCorps, _formeCorps, null);
+        }
+    }
+
+    /// <summary>
+    /// Ouvre le panneau des personnes inscrites.
+    /// </summary>
+    /// <remarks>
+    /// La liste est demandée à l'API, qui filtre les inscriptions par événement et ne
+    /// rend que celles qui le concernent : la charger ici éviterait d'appel réseau, mais
+    /// la base contient alors toutes les inscriptions du site en mémoire pour un écran
+    /// qui en affiche unellasque.
+    /// </remarks>
+    /// <param name="ligne">Événement de la liste.</param>
+    private async Task OuvrirInscriptions(LigneEvenementAdmin ligne)
+    {
+        _inscriptionsEvenement = ligne;
+        _inscriptions = null;
+        _inscriptionsOuvertes = true;
+
+        var reponse = await Ecrire("GET", $"/api/events/{ligne.Id}/registrations", null);
+
+        if (!reponse.Ok)
+        {
+            _inscriptions = [];
+            await Previent(Raison(reponse), false);
+            return;
+        }
+
+        _inscriptions = LireInscriptions(reponse.Corps);
+    }
+
+    private void FermerInscriptions()
+    {
+        _inscriptionsOuvertes = false;
+        _inscriptions = null;
+        _inscriptionsEvenement = null;
+    }
+
+    /// <summary>Convertit la réponse JSON de l'API en lignes affichables.</summary>
+    /// <param name="corps">Corps décodé de la réponse.</param>
+    /// <returns>Les inscriptions, vides si la réponse n'était pas la attendue.</returns>
+    private static List<InscriptionVue> LireInscriptions(object? corps)
+    {
+        if (corps is not JsonElement tableau || tableau.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
+
+        var lignes = new List<InscriptionVue>(tableau.GetArrayLength());
+
+        foreach (var element in tableau.EnumerateArray())
+        {
+            lignes.Add(new InscriptionVue(
+                element.TryGetProperty("memberName", out var membre) ? membre.GetString() ?? string.Empty : string.Empty,
+                element.TryGetProperty("status", out var etat) && etat.TryGetInt32(out var valeur)
+                    ? valeur
+                    : 0,
+                element.TryGetProperty("registeredAtUtc", out var date) && date.TryGetDateTime(out var instant)
+                    ? instant
+                    : DateTime.MinValue));
+        }
+
+        return lignes;
+    }
+
+    /// <summary>
+    /// Complète une adresse de lien à laquelle il manque le schéma.
+    /// </summary>
+    /// <remarks>
+    /// Le domaine n'accepte qu'une URL absolue : « meet.google.com/abc » serait refusé,
+    /// alors que c'est exactement ce que l'on tape d'instinct. Retrouver l'adresse est
+    /// plus utile que de renvoyer une règle métier que personne ne devine.
+    /// </remarks>
+    /// <param name="lien">Adresse saisie, éventuellement sans schéma.</param>
+    /// <returns>L'adresse complète, ou <see langword="null"/> si rien n'a été saisi.</returns>
+    private static string? Adresse(string? lien)
+    {
+        if (string.IsNullOrWhiteSpace(lien))
+        {
+            return null;
+        }
+
+        var adresse = lien.Trim();
+
+        return adresse.Contains("://", StringComparison.Ordinal) ? adresse : $"https://{adresse}";
+    }
+
+    /// <summary>Libellé de l'état d'une inscription.</summary>
+    private static string EtatInscription(int etat) => etat switch
+    {
+        0 => "Confirmée",
+        2 => "Liste d'attente",
+        _ => "Annulée",
+    };
+
+    /// <summary>Couleur de l'état d'une inscription.</summary>
+    private static string EtiquetteInscription(int etat) => etat switch
+    {
+        0 => "badge--vert",
+        2 => "badge--orange",
+        _ => "badge--ink",
+    };
+
+    private void OuvrirCreation()    {
+        _edition = null;
+        _formeTitre = string.Empty;
+        _formeType = Referentiel.TypesEvenement.FirstOrDefault()?.Nom ?? string.Empty;
+        _formeFormat = CommunityEventFormat.InPerson;
+        _formeDebut = DateTime.Now.AddDays(7).AddHours(18);
+        _formeFin = DateTime.Now.AddDays(7).AddHours(20);
+        _formeLieu = string.Empty;
+        _formeLien = string.Empty;
+        _formeCapacite = null;
+        _formeImage = string.Empty;
+        _formePublier = true;
+        _formeCorps = string.Empty;
+        _erreur = null;
+        _formulaireOuvert = true;
+        _editeurDemande = true;
+    }
+
+    private async Task OuvrirEdition(LigneEvenementAdmin ligne)
+    {
+        var detail = await Service.LireDetailAsync(ligne.Id);
+
+        if (detail is null)
+        {
+            // L'événement a disparu entre la liste et le clic : on le dit plutôt que d'ouvrir
+            // un formulaire vide qui échouerait à l'enregistrement.
+            await Previent("Cet événement n'existe plus.", false);
+            return;
+        }
+
+        _edition = detail;
+        _formeTitre = detail.Titre;
+        _formeType = detail.Type;
+        _formeFormat = detail.Format;
+        _formeDebut = detail.DebutUtc;
+        _formeFin = detail.FinUtc;
+        _formeLieu = detail.Lieu ?? string.Empty;
+        _formeLien = detail.LienParticipation ?? string.Empty;
+        _formeCapacite = detail.Capacite;
+        _formeImage = detail.ImageUrl ?? string.Empty;
+        _formePublier = false;
+        _formeCorps = detail.Description;
+        _erreur = null;
+        _formulaireOuvert = true;
+        _editeurDemande = true;
+    }
+
+    private async Task FermerFormulaire()
+    {
+        await JS.InvokeVoidAsync("DnTinymce.detruire", IdentifiantCorps);
+        _formulaireOuvert = false;
+        _editeurDemande = false;
+        _erreur = null;
+    }
+
+    /// <summary>Dépose la couverture choisie et garde l'adresse renvoyée par le serveur.</summary>
+    private async Task TeleverserImage()
+    {
+        _depotEnCours = true;
+
+        try
+        {
+            await JS.InvokeVoidAsync("DnAdminScripts.assure", true);
+
+            var reponse = await JS.InvokeAsync<ReponseApi>(
+                "DnApi.televerseFichier", "/api/images", "file", _champImage);
+
+            if (reponse.Ok && reponse.Url is { Length: > 0 })
+            {
+                _formeImage = reponse.Url;
+            }
+            else
+            {
+                _erreur = Raison(reponse);
+            }
+        }
+        finally
+        {
+            _depotEnCours = false;
+        }
+    }
+
+    private async Task Enregistrer()
+    {
+        _erreur = null;
+
+        if (string.IsNullOrWhiteSpace(_formeTitre))
+        {
+            _erreur = "Donnez un titre à l'événement.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_formeImage))
+        {
+            _erreur = "Choisissez une image de couverture : la carte d'un événement est faite comme celle d'un article.";
+            return;
+        }
+
+        if (_formeFin < _formeDebut)
+        {
+            _erreur = "La fin ne peut pas précéder le début.";
+            return;
+        }
+
+        // Le domaine exige une adresse dès que la rencontre n'est pas en présentiel : sans
+        // elle, le membre qui réserve sa place n'a aucun moyen d'y assister. Le dire ici
+        // évite un refus opaque du serveur, au milieu d'un formulaire déjà rempli.
+        if (_formeFormat != CommunityEventFormat.InPerson && string.IsNullOrWhiteSpace(_formeLien))
+        {
+            _erreur = "Un événement en ligne ou hybride a besoin de son lien de participation.";
+            return;
+        }
+
+        _envoi = true;
+
+        try
+        {
+            _formeCorps = await JS.InvokeAsync<string>("DnTinymce.obtenir", IdentifiantCorps);
+
+            // Le chapô est déduit du début de la description, comme pour le blog : il ne
+            // peut donc pas dire autre chose que le texte de l'événement.
+            var resume = ResumeDepuisContenu.De(_formeCorps);
+
+            if (string.IsNullOrWhiteSpace(resume))
+            {
+                _erreur = "La description est vide : un événement commence par quelques lignes.";
+                return;
+            }
+
+            // Le type d'événement n'existe pas dans le contrat de l'API : ce sont le lieu
+            // et le lien qui décrivent la rencontre. Le champ reste dans le formulaire
+            // parce qu'il aide à choisir, mais il n'est pas envoyé.
+            var reponse = _edition is null
+                ? await Ecrire("POST", "/api/events", new
+                {
+                    title = _formeTitre,
+                    summary = resume,
+                    description = _formeCorps,
+                    format = _formeFormat,
+                    startsAtUtc = _formeDebut,
+                    endsAtUtc = _formeFin,
+                    location = string.IsNullOrWhiteSpace(_formeLieu) ? null : _formeLieu,
+                    onlineUrl = Adresse(_formeLien),
+                    capacity = _formeCapacite,
+                    registrationClosesAtUtc = (DateTime?)null,
+                    coverImageUrl = string.IsNullOrWhiteSpace(_formeImage) ? null : _formeImage,
+                    publish = _formePublier,
+                    kind = string.IsNullOrWhiteSpace(_formeType) ? null : _formeType
+                })
+                : await Ecrire("PUT", $"/api/events/{_edition.Id}", new
+                {
+                    title = _formeTitre,
+                    summary = resume,
+                    description = _formeCorps,
+                    format = _formeFormat,
+                    startsAtUtc = _formeDebut,
+                    endsAtUtc = _formeFin,
+                    location = string.IsNullOrWhiteSpace(_formeLieu) ? null : _formeLieu,
+                    onlineUrl = Adresse(_formeLien),
+                    capacity = _formeCapacite,
+                    registrationClosesAtUtc = (DateTime?)null,
+                    coverImageUrl = string.IsNullOrWhiteSpace(_formeImage) ? null : _formeImage,
+                    kind = string.IsNullOrWhiteSpace(_formeType) ? null : _formeType
+                });
+
+            if (!reponse.Ok)
+            {
+                _erreur = Raison(reponse);
+                return;
+            }
+
+            await FermerFormulaire();
+
+            Service.Oublie();
+            _donnees = await Service.LireAsync();
+
+            await Previent(_edition is null ? "Événement créé." : "Événement enregistré.", true);
+        }
+        finally
+        {
+            _envoi = false;
+        }
+    }
+
+    private async Task ChangerEtat(LigneEvenementAdmin ligne, Transition transition)
+    {
+        var reponse = await Ecrire("POST", $"/api/events/{ligne.Id}/{Segment(transition)}", null);
+
+        if (!reponse.Ok)
+        {
+            await Previent(Raison(reponse), false);
+            return;
+        }
+
+        Service.Oublie();
+        _donnees = await Service.LireAsync();
+
+        await Previent(transition switch
+        {
+            Transition.Publier => "Événement publié.",
+            Transition.Brouillon => "Événement repassé en brouillon.",
+            _ => "Événement archivé.",
+        }, true);
+    }
+
+    private async Task Supprimer(LigneEvenementAdmin ligne)
+    {
+        _aSupprimer = null;
+
+        var reponse = await Ecrire("DELETE", $"/api/events/{ligne.Id}", null);
+
+        if (!reponse.Ok)
+        {
+            await Previent(Raison(reponse), false);
+            return;
+        }
+
+        Service.Oublie();
+        _donnees = await Service.LireAsync();
+
+        await Previent("Événement supprimé.", true);
+    }
+
+    /// <summary>
+    /// Écrit par l'API, après avoir vérifié que le script d'appel est présent.
+    /// </summary>
+    /// <remarks>
+    /// Sans cette vérification, un appel après une navigation enhanced échoue sur
+    /// <c>DnApi is undefined</c> : l'exception tombe dans le circuit, qui est alors
+    /// abandonné, et le clic ne donne aucun signe — ni message, ni changement d'écran.
+    /// </remarks>
+    /// <param name="methode">Verbe de la requête.</param>
+    /// <param name="chemin">Adresse de l'API.</param>
+    /// <param name="corps">Charge utile, ou <see langword="null"/>.</param>
+    /// <returns>La réponse normalisée de l'appel.</returns>
+    private async Task<ReponseApi> Ecrire(string methode, string chemin, object? corps)
+    {
+        await JS.InvokeVoidAsync("DnAdminScripts.assure", true);
+
+        return await JS.InvokeAsync<ReponseApi>("DnApi.envoyer", methode, chemin, corps);
+    }
+
+    /// <summary>
+    /// Affiche un message, puis l'efface : rien ne doit rester à l'écran pour toujours.
+    /// </summary>
+    /// <param name="texte">Message à afficher.</param>
+    /// <param name="reussi">Vrai pour un succès, faux pour une erreur.</param>
+    private async Task Previent(string texte, bool reussi)
+    {
+        var annonce = new Annonce(texte, reussi);
+        _messages.Add(annonce);
+
+        await InvokeAsync(StateHasChanged);
+
+        await Task.Delay(4000);
+        _messages.Remove(annonce);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Segment d'URL du cycle de vie, tel que l'API le nomme.</summary>
+    /// <param name="transition">Transition demandée.</param>
+    /// <returns>Le segment correspondant.</returns>
+    private static string Segment(Transition transition) => transition switch
+    {
+        Transition.Publier => "publish",
+        Transition.Brouillon => "draft",
+        _ => "archive",
+    };
+
+    /// <summary>Date affichée : le jour suffit, l'heure n'intéresse que la fiche.</summary>
+    private static string Quand(LigneEvenementAdmin ligne)
+    {
+        var jour = ligne.DebutUtc.ToString("d MMM yyyy", Culture);
+        var memeJour = ligne.FinUtc.Date == ligne.DebutUtc.Date;
+
+        return memeJour
+            ? $"{jour} · {ligne.DebutUtc.ToString("HH:mm", Culture)}–{ligne.FinUtc.ToString("HH:mm", Culture)}"
+            : $"{jour} → {ligne.FinUtc.ToString("d MMM yyyy", Culture)}";
+    }
+
+    private static string Format(CommunityEventFormat format) => format switch
+    {
+        CommunityEventFormat.Online => "En ligne",
+        CommunityEventFormat.Hybrid => "Hybride",
+        _ => "Présentiel",
+    };
+
+    private static string Etat(PublicationStatus statut) => statut switch
+    {
+        PublicationStatus.Published => "Publié",
+        PublicationStatus.Draft => "Brouillon",
+        _ => "Archivé",
+    };
+
+    private static string Etiquette(PublicationStatus statut) => statut switch
+    {
+        PublicationStatus.Published => "badge--vert",
+        PublicationStatus.Draft => "badge--orange",
+        _ => "badge--ink",
+    };
+
+    /// <summary>Message d'erreur d'une réponse refusée, tel que le serveur l'a formulé.</summary>
+    /// <param name="reponse">Réponse de l'appel.</param>
+    /// <returns>Un texte compréhensible, jamais un code.</returns>
+    private static string Raison(ReponseApi reponse)
+        => reponse.Detail
+            ?? reponse.Titre
+            ?? (reponse.Statut == 0
+                ? "Le serveur n'a pas répondu."
+                : $"Le serveur a répondu {reponse.Statut}.");
+
+    /// <summary>Changement d'état demandé depuis la liste.</summary>
+    private enum Transition
+    {
+        /// <summary>Met l'événement en ligne.</summary>
+        Publier,
+
+        /// <summary>Retire l'événement du site sans l'effacer.</summary>
+        Archiver,
+
+        /// <summary>Repasse un événement en ligne dans son état de brouillon.</summary>
+        Brouillon,
+    }
+
+    /// <summary>Une inscription, telle que l'API la renvoie.</summary>
+    /// <param name="Membre">Nom du membre inscrit.</param>
+    /// <param name="Etat">État de l'inscription.</param>
+    /// <param name="InscritLe">Date d'inscription.</param>
+    private sealed record InscriptionVue(string Membre, int Etat, DateTime InscritLe);
+
+    /// <summary>Un message affiché à l'écran, le temps qu'il soit effacé.</summary>
+    /// <param name="Texte">Contenu du message.</param>
+    /// <param name="Reussi">Vrai pour un succès, faux pour une erreur.</param>
+    private sealed record Annonce(string Texte, bool Reussi);
+
+    /// <summary>
+    /// Réponse normalisée d'un appel fait par le script d'administration.
+    /// </summary>
+    /// <param name="Ok">Vrai si le serveur a accepté.</param>
+    /// <param name="Statut">Code de la réponse.</param>
+    /// <param name="Corps">Corps décodé, ou texte brut si la réponse n'était pas du JSON.</param>
+    private sealed record ReponseApi(bool Ok, int Statut, object? Corps)
+    {
+        /// <summary>Message d'erreur, au format problem details.</summary>
+        public string? Titre => (Corps as JsonElement?)?.TryGetProperty("title", out var titre) == true
+            ? titre.GetString()
+            : null;
+
+        /// <summary>Précision de l'erreur, quand le serveur en a produit une.</summary>
+        public string? Detail => (Corps as JsonElement?)?.TryGetProperty("detail", out var detail) == true
+            ? detail.GetString()
+            : null;
+
+        /// <summary>Adresse de l'image déposée, pour le dépôt d'un fichier.</summary>
+        public string? Url => (Corps as JsonElement?)?.TryGetProperty("url", out var url) == true
+            ? url.GetString()
+            : null;
+    }
+}

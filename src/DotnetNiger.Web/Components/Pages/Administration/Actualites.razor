@@ -1,242 +1,673 @@
-@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
-
 @page "/administration/actualites"
 @layout DotnetNiger.Web.Components.Layout.AdministrationLayout
+@rendermode InteractiveServer
+
 @using System.Globalization
-@using Microsoft.EntityFrameworkCore
-@using DotnetNiger.Application.Abstractions.Persistence
-@using DotnetNiger.Application.Common
+@using System.Text.Json
 @using DotnetNiger.Domain.Entities.Content
 @using DotnetNiger.Domain.Enums
-@using DotnetNiger.Infrastructure.Identity
-@using DotnetNiger.Web.Controller.Contracts
-@inject IUnitOfWork UniteDeTravail
+@using DotnetNiger.Web.Services.Administration
 
-<PageTitle>Actualités - Administration</PageTitle>
+@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
 
-<header class="mb-6 flex flex-wrap items-end justify-between gap-4">
+@inject ServiceBlog Blog
+@inject IJSRuntime JS
+
+@*
+    Rédaction du blog : la liste des articles, leurs filtres, et le tiroir d'édition.
+
+    Les lectures viennent d'un service qui lit la base ; les écritures passent par les
+    points d'extrémité de l'API, comme le ferait n'importe quel client du site. Cette page
+    est le premier îlot interactif de l'administration : le filtre se tape, le tiroir s'ouvre
+    et l'éditeur se recharge, autant d'états qui n'existent que dans le circuit.
+
+    Le RichText de l'ancien composant de tableau est remplacé ici par du HTML : une table,
+    des boutons, un tiroir, tous écrits à la main comme le reste du site.
+*@
+
+<PageTitle>Blog — Administration</PageTitle>
+
+<header class="admin-entete">
     <div>
-        <h1 class="text-section font-semibold">Actualités</h1>
-        <p class="text-sm text-ink-600">
-            Ce que l'administration voit, tous états confondus, de la dernière modification à la
-            plus ancienne. Publier envoie la lettre d'information aux abonnés confirmés.
-        </p>
+        <h1 class="admin-entete__titre">Blog</h1>
+        <p class="admin-entete__intro">Rédiger, relire et mettre en ligne les actualités.</p>
     </div>
 
-    <a class="rounded-sm bg-violet-500 px-4 py-2 text-sm text-white hover:bg-violet-600"
-       href="/administration/actualites/nouvelle">Rédiger une actualité</a>
+    <button type="button" class="btn btn--primary" @onclick="OuvrirCreation" disabled="@_envoi">
+        <DnIcon Name="plus" Size="16" />
+        Nouvel article
+    </button>
 </header>
 
-@if (_confirmation is not null)
+@if (_donnees is null)
 {
-    <p class="mb-4 rounded-sm bg-vert-100 px-4 py-3 text-sm text-vert-700">@_confirmation</p>
-}
-else if (_erreur is not null)
-{
-    <p class="mb-4 rounded-sm bg-orange-100 px-4 py-3 text-sm text-orange-700">@_erreur</p>
-}
-
-<nav class="mb-6 flex flex-wrap gap-2" aria-label="Filtrer les actualités">
-    <a class="rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm hover:bg-ink-50"
-       href="/administration/actualites">Toutes</a>
-    <a class="rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm hover:bg-ink-50"
-       href="/administration/actualites?statut=Draft">Brouillons</a>
-    <a class="rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm hover:bg-ink-50"
-       href="/administration/actualites?statut=Published">Publiées</a>
-    <a class="rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm hover:bg-ink-50"
-       href="/administration/actualites?statut=Archived">Archivées</a>
-</nav>
-
-@if (_page.TotalCount == 0)
-{
-    <p class="rounded-md border border-ink-200 bg-white px-4 py-8 text-center text-ink-500">
-        Aucune actualité à afficher.
-    </p>
+    <Chargement />
 }
 else
 {
-    <ul class="flex flex-col gap-3">
-        @foreach (var article in _page.Items)
-        {
-            <li class="rounded-md border border-ink-200 bg-white p-4">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                    <div class="min-w-0">
-                        <h2 class="text-lead font-semibold">@article.Title</h2>
-                        <p class="text-caption text-ink-500">
-                            @article.Category — @article.Author
-                            @if (article.PublishedAtUtc is { } publie)
+    <div class="admin-bandeau">
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="blog-recherche">Recherche</label>
+            <input id="blog-recherche" class="input" type="search" placeholder="Titre ou chapô…"
+                   @bind="_recherche" @bind:event="oninput" />
+        </div>
+
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="blog-etat">État</label>
+            <div class="select">
+                <select id="blog-etat" @bind="_filtreEtat">
+                    <option value="">Tous les états</option>
+                    <option value="@nameof(PublicationStatus.Published)">Publiés</option>
+                    <option value="@nameof(PublicationStatus.Draft)">Brouillons</option>
+                    <option value="@nameof(PublicationStatus.Archived)">Archivés</option>
+                </select>
+                <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+            </div>
+        </div>
+
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="blog-rubrique">Rubrique</label>
+            <div class="select">
+                <select id="blog-rubrique" @bind="_filtreRubrique">
+                    <option value="">Toutes les rubriques</option>
+                    @foreach (var rubrique in _donnees.Rubriques)
+                    {
+                        <option value="@rubrique.Id">@rubrique.Nom</option>
+                    }
+                </select>
+                <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+            </div>
+        </div>
+
+        <span class="admin-bandeau__compte">@Articles.Count article(s)</span>
+    </div>
+
+    @if (Articles.Count is 0)
+    {
+        <p class="admin-formulaire__aide">Aucun article ne correspond à ces filtres.</p>
+    }
+    else
+    {
+        <table class="admin-tableau admin-tableau--defilant">
+            <thead>
+                <tr>
+                    <th scope="col">Titre</th>
+                    <th scope="col">Rubrique</th>
+                    <th scope="col">État</th>
+                    <th scope="col">Modifié le</th>
+                    <th scope="col">Auteur</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ligne in Articles)
+                {
+                    <tr>
+                        <td class="admin-tableau__titre">@ligne.Titre</td>
+                        <td>@ligne.Rubrique</td>
+                        <td>
+                            <span class="badge @Etiquette(ligne.Statut)">@Etat(ligne.Statut)</span>
+                        </td>
+                        <td>@Date(ligne)</td>
+                        <td>@(string.IsNullOrWhiteSpace(ligne.Auteur) ? "—" : ligne.Auteur)</td>
+                        <td>
+                            <div class="admin-tableau__actions">
+                                <button type="button" class="btn btn--ghost btn--sm"
+                                        @onclick="() => OuvrirEdition(ligne)">
+                                    <DnIcon Name="edit" Size="14" />
+                                    Éditer
+                                </button>
+
+                                <a class="btn btn--ghost btn--sm" href="/blog/@ligne.Slug"
+                                   target="_blank" rel="noopener">
+                                    <DnIcon Name="external-link" Size="14" />
+                                    Fiche
+                                </a>
+
+                                @if (ligne.Statut == PublicationStatus.Published)
+                                {
+                                    <button type="button" class="btn btn--sm"
+                                            @onclick="() => ChangerEtat(ligne, Transition.Brouillon)">
+                                        Brouillon
+                                    </button>
+
+                                    <button type="button" class="btn btn--sm"
+                                            @onclick="() => ChangerEtat(ligne, Transition.Archiver)">
+                                        Archiver
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn--primary btn--sm"
+                                            @onclick="() => ChangerEtat(ligne, Transition.Publier)">
+                                        Publier
+                                    </button>
+                                }
+
+                                @if (_aSupprimer == ligne.Id)
+                                {
+                                    <span class="admin-confirmation">
+                                        Supprimer ?
+                                        <button type="button" class="btn btn--rouge btn--sm"
+                                                @onclick="() => Supprimer(ligne)">Oui</button>
+                                        <button type="button" class="btn btn--ghost btn--sm"
+                                                @onclick="() => _aSupprimer = null">Non</button>
+                                    </span>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn--rouge btn--sm"
+                                            @onclick="() => _aSupprimer = ligne.Id">
+                                        Supprimer
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+@* Les messages sont rendus par Blazor, sans bibliothèque : une liste en mémoire que la
+   page vide d'elle-même après quelques secondes. *@
+<div class="admin-toasts" role="status" aria-live="polite">
+    @foreach (var message in _messages)
+    {
+        <div class="admin-toast admin-toast--@(message.Reussi ? "succes" : "erreur")">
+            <DnIcon Name="@(message.Reussi ? "check" : "alert")" Size="16" />
+            <span>@message.Texte</span>
+        </div>
+    }
+</div>
+
+@if (_formulaireOuvert)
+{
+    @* Le fond ferme le tiroir au clic : c'est le geste attendu de toute fenêtre qui
+       sort du cadre. *@
+    <div class="admin-voile" @onclick="FermerFormulaire">
+        <div class="admin-tiroir" role="dialog" aria-modal="true"
+             aria-label="@(_edition is null ? "Nouvel article" : "Modifier l'article")"
+             @onclick:stopPropagation="true">
+
+            <div class="admin-tiroir__entete">
+                <h2 class="admin-tiroir__titre">
+                    @(_edition is null ? "Nouvel article" : "Modifier l'article")
+                </h2>
+
+                <button type="button" class="admin-replie" aria-label="Fermer"
+                        @onclick="FermerFormulaire">
+                    <DnIcon Name="check" Size="16" />
+                </button>
+            </div>
+
+            <div class="admin-formulaire">
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="article-titre">Titre</label>
+                    <input id="article-titre" class="input" type="text" maxlength="200"
+                           placeholder="Titre de l'article" @bind="_formeTitre" />
+                </div>
+
+                @* Le chapô n'est plus saisi : il est repris du début du contenu, à l'enregistrement.
+   C'est ce qui garantit qu'une liste et une fiche ne peuvent pas se contredire. *@
+
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="article-rubrique">Rubrique</label>
+                    <div class="select">
+                        <select id="article-rubrique" @bind="_formeRubrique">
+                            <option value="">Choisir une rubrique</option>
+                            @foreach (var rubrique in _donnees?.Rubriques ?? [])
                             {
-                                <text> — publié le @publie.ToString("d MMMM yyyy", Culture)</text>
+                                <option value="@rubrique.Id">@rubrique.Nom</option>
                             }
-                        </p>
+                        </select>
+                        <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
                     </div>
+                </div>
 
-                    <span class="rounded-full px-3 py-1 text-caption @EtatClasse(article.Status)">
-                        @Etat(article.Status)
+                <div class="admin-formulaire__champ">
+                    <span class="admin-formulaire__intitule">
+                        Image de couverture
+                        <span class="admin-formulaire__obligatoire">obligatoire</span>
                     </span>
-                </div>
 
-                <p class="mt-2 text-sm text-ink-600">@article.Excerpt</p>
-
-                <div class="mt-4 flex flex-wrap items-center gap-2">
-                    @if (article.Status != PublicationStatus.Published)
+                    @if (!string.IsNullOrWhiteSpace(_formeImage))
                     {
-                        <a class="rounded-sm border border-ink-300 px-3 py-1 text-sm hover:bg-ink-50"
-                           href="/administration/actualites/@article.Id">Modifier</a>
-
-                        <form method="post" action="/administration/actualites/@article.Id/publier">
-                            <AntiforgeryToken />
-                            <button class="rounded-sm border border-vert-500 px-3 py-1 text-sm text-vert-600 hover:bg-vert-50"
-                                    type="submit">
-                                Publier
-                            </button>
-                        </form>
+                        @* Une couverture se remplace, elle ne s'efface pas : l'article en a
+                           besoin pour exister sur le site, et une carte sans image
+                           disparaît dans le fil du blog. *@
+                        <div class="admin-apercu">
+                            <img src="@_formeImage" alt="Aperçu de la couverture choisie" />
+                        </div>
                     }
-                    else
-                    {
-                        <span class="text-caption text-ink-400">
-                            Un article publié se modifie sur le site public, pas ici.
+
+                    @* Le champ natif est masqué : c'est le libellé du bouton qui ouvre le
+                       sélecteur. Le fichier est ensuite déposé par le script d'appel. *@
+                    <label class="admin-fichier-bouton">
+                        <input class="admin-fichier" type="file" @ref="_champImage"
+                               accept="image/jpeg,image/png,image/webp" @onchange="TeleverserImage" />
+                        <span class="btn btn--secondary">
+                            <DnIcon Name="upload" Size="15" />
+                            @(string.IsNullOrWhiteSpace(_formeImage) ? "Choisir une image" : "Remplacer l'image")
                         </span>
-                    }
+                    </label>
 
-                    @if (article.Status == PublicationStatus.Published)
-                    {
-                        <form method="post" action="/administration/actualites/@article.Id/archiver">
-                            <AntiforgeryToken />
-                            <button class="rounded-sm border border-ink-300 px-3 py-1 text-sm hover:bg-ink-50"
-                                    type="submit">
-                                Archiver
-                            </button>
-                        </form>
-                    }
-
-                    @if (article.Status == PublicationStatus.Archived)
-                    {
-                        <form method="post" action="/administration/actualites/@article.Id/brouillon">
-                            <AntiforgeryToken />
-                            <button class="rounded-sm border border-ink-300 px-3 py-1 text-sm hover:bg-ink-50"
-                                    type="submit">
-                                Remettre en brouillon
-                            </button>
-                        </form>
-                    }
-
-                    <form method="post" action="/administration/actualites/@article.Id/retirer">
-                        <AntiforgeryToken />
-                        <button class="rounded-sm border border-ink-300 px-3 py-1 text-sm hover:bg-ink-50"
-                                type="submit">
-                            Retirer
-                        </button>
-                    </form>
+                    <p class="admin-formulaire__aide">JPEG, PNG ou WebP, 5 Mo au plus. L'image est conservée par le site : aucune adresse n'est saisie.</p>
                 </div>
-            </li>
-        }
-    </ul>
 
-    <Pager PageNumber="_page.Page" TotalPages="_page.TotalPages" TotalCount="_page.TotalCount"
-           Base="/administration/actualites" Query="@_query" />
+                @if (_edition is null)
+                {
+                    <label class="admin-case">
+                        <input type="checkbox" @bind="_formePublier" />
+                        Publier immédiatement
+                    </label>
+                }
+
+                <div class="admin-formulaire__champ">
+                    <span class="admin-formulaire__intitule">Contenu</span>
+                    @* TinyMCE remplace ce textarea au premier affichage du tiroir ; c'est
+                       la graine qui reçoit le texte chargé depuis la base. *@
+                    <textarea id="corps-article" class="input"></textarea>
+                    <p class="admin-formulaire__aide">Titres, listes, tableaux, liens et images : le bouton image de la barre dépose le fichier avant de l'insérer.</p>
+                </div>
+
+                @if (_erreur is not null)
+                {
+                    <div class="alerte alerte--rouge" role="alert">
+                        <span class="alerte__icone"><DnIcon Name="alert" Size="16" /></span>
+                        <span>@_erreur</span>
+                    </div>
+                }
+
+                <div class="admin-formulaire__actions">
+                    <button type="button" class="btn btn--ghost" @onclick="FermerFormulaire" disabled="@_envoi">
+                        Annuler
+                    </button>
+
+                    <button type="button" class="btn btn--primary" @onclick="Enregistrer" disabled="@(_envoi || _depotEnCours)">
+                        @(_envoi ? "Enregistrement…" : "Enregistrer")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 }
 
 @code {
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
 
-    private PageResponse<AdminArticleSummaryResponse> _page = new([], 1, 20, 0, 0, false);
-    private string? _query;
-    private string? _confirmation;
+    private const string IdentifiantCorps = "corps-article";
+
+    private BlogVue? _donnees;
+
+    private string _recherche = string.Empty;
+
+    private string _filtreEtat = string.Empty;
+
+    private string _filtreRubrique = string.Empty;
+
+    private bool _formulaireOuvert;
+
+    private bool _envoi;
+
+    private bool _depotEnCours;
+
+    private Guid? _aSupprimer;
+
+    private ArticleAdminDetail? _edition;
+
+    private string _formeTitre = string.Empty;
+
+
+    private string _formeRubrique = string.Empty;
+
+    private string _formeImage = string.Empty;
+
+    private bool _formePublier = true;
+
+    private string _formeCorps = string.Empty;
+
     private string? _erreur;
 
-    /// <summary>État à filtrer, ou <see langword="null"/> pour tous.</summary>
-    [SupplyParameterFromQuery(Name = "statut")]
-    public string? Statut { get; set; }
+    private ElementReference _champImage;
 
-    [SupplyParameterFromQuery(Name = "page")]
-    public int? Page { get; set; }
+    private readonly List<Annonce> _messages = [];
 
-    [SupplyParameterFromQuery(Name = "publie")]
-    public int Publie { get; set; }
+    /// <summary>Articles qui passent les filtres de la barre.</summary>
+    private List<LigneArticleAdmin> Articles =>
+        [.. (_donnees?.Articles ?? [])
+            .Where(ligne => string.IsNullOrWhiteSpace(_filtreEtat)
+                || string.Equals(ligne.Statut.ToString(), _filtreEtat, StringComparison.Ordinal))
+            .Where(ligne => string.IsNullOrWhiteSpace(_filtreRubrique)
+                || string.Equals(ligne.RubriqueId.ToString(), _filtreRubrique, StringComparison.OrdinalIgnoreCase))
+            .Where(ligne => string.IsNullOrWhiteSpace(_recherche)
+                || ligne.Titre.Contains(_recherche, StringComparison.OrdinalIgnoreCase)
+                || ligne.Chapo.Contains(_recherche, StringComparison.OrdinalIgnoreCase))];
 
-    [SupplyParameterFromQuery(Name = "archive")]
-    public bool Archive { get; set; }
+    protected override async Task OnInitializedAsync() => _donnees = await Blog.LireAsync();
 
-    [SupplyParameterFromQuery(Name = "brouillon")]
-    public bool Brouillon { get; set; }
-
-    [SupplyParameterFromQuery(Name = "retire")]
-    public bool Retire { get; set; }
-
-    [SupplyParameterFromQuery(Name = "erreur")]
-    public string? Erreur { get; set; }
-
-    protected override async Task OnParametersSetAsync()
+    /// <summary>
+    /// Installe l'éditeur une fois le tiroir visible.
+    /// </summary>
+    /// <remarks>
+    /// TinyMCE ne peut pas s'accrocher à un <c>textarea</c> caché : il faut donc qu'il soit
+    /// affiché, et le travail attend le premier rendu où c'est le cas.
+    /// </remarks>
+    /// <param name="premierRendu">Vrai au premier rendu de la page.</param>
+    protected override async Task OnAfterRenderAsync(bool premierRendu)
     {
-        var filtre = Enum.TryParse<PublicationStatus>(Statut, ignoreCase: true, out var etat) ? etat : (PublicationStatus?)null;
-
-        _query = filtre is null ? null : $"statut={filtre.Value}";
-
-        _confirmation = (Publie, Archive, Brouillon, Retire) switch
+        if (_formulaireOuvert && _editeurDemande)
         {
-            (1, _, _, _) => "Actualité publiée : la lettre d'information part vers les abonnés confirmés.",
-            (_, true, _, _) => "Actualité archivée : elle a disparu du site.",
-            (_, _, true, _) => "Actualité remise en brouillon.",
-            (_, _, _, true) => "Actualité retirée.",
-            _ => null,
-        };
+            _editeurDemande = false;
 
-        _erreur = Erreur switch
+            // Le script de l'éditeur peut manquer : le layout est remplacé à chaque
+            // navigation enhanced sans que ses balises soient réexécutées.
+            await JS.InvokeVoidAsync("DnAdminScripts.assure", true);
+
+            if (!await JS.InvokeAsync<bool>("DnAdminScripts.present", "DnTinymce"))
+            {
+                _erreur = "L'éditeur n'a pas pu être chargé. Rechargez la page pour réessayer.";
+                return;
+            }
+
+            await JS.InvokeAsync<bool>("DnTinymce.initialiser", IdentifiantCorps, _formeCorps, null);
+        }
+    }
+
+    private bool _editeurDemande;
+
+    private void OuvrirCreation()
+    {
+        _edition = null;
+        _formeTitre = string.Empty;
+        _formeRubrique = string.Empty;
+        _formeImage = string.Empty;
+        _formePublier = true;
+        _formeCorps = string.Empty;
+        _erreur = null;
+        _formulaireOuvert = true;
+        _editeurDemande = true;
+    }
+
+    private async Task OuvrirEdition(LigneArticleAdmin ligne)
+    {
+        var detail = await Blog.LireDetailAsync(ligne.Id);
+
+        if (detail is null)
         {
-            "actualite-introuvable" => "Cette actualité n'existe plus.",
-            "deja-publie" => "Elle est déjà publiée. Republicer enverrait la lettre une seconde fois.",
-            _ => null,
-        };
-
-        // La liste affiche le libellé de la rubrique : elle doit être chargée.
-        IQueryable<Article> requete = UniteDeTravail.ReadRepository<Article>().Query
-            .Include(article => article.Rubrique);
-
-        if (filtre is { } valeur)
-        {
-            requete = requete.Where(article => article.Status == valeur);
+        // L'article a disparu entre la liste et le clic : on le dit plutôt que d'ouvrir
+        // un formulaire vide qui échouerait à l'enregistrement.
+            await Previent("Cet article n'existe plus.", false);
+            return;
         }
 
-        requete = requete
-            .OrderByDescending(article => article.UpdatedAtUtc ?? article.CreatedAtUtc)
-            .ThenBy(article => article.Title);
-
-        var demande = new PageRequest(Page ?? 1, PageRequest.DefaultPageSize);
-        var total = await requete.CountAsync();
-
-        var items = await requete
-            .Skip(demande.Skip)
-            .Take(demande.PageSize)
-            .ToListAsync();
-
-        var ids = items.Select(article => article.AuthorId).Distinct().ToArray();
-
-        var noms = ids.Length == 0
-            ? []
-            : await UniteDeTravail.ReadRepository<ApplicationUser>().Query
-                .Where(user => ids.Contains(user.Id))
-                .ToDictionaryAsync(user => user.Id, user => user.FullName);
-
-        _page = ApiProjections.ToPage(
-            new PagedResult<Article>(items, demande.PageNumber, demande.PageSize, total),
-            article => ApiProjections.ToAdminSummary(
-                article,
-                noms.GetValueOrDefault(article.AuthorId, string.Empty)));
+        _edition = detail;
+        _formeTitre = detail.Titre;
+        _formeRubrique = detail.RubriqueId.ToString();
+        _formeImage = detail.ImageUrl ?? string.Empty;
+        _formePublier = false;
+        _formeCorps = detail.Contenu;
+        _erreur = null;
+        _formulaireOuvert = true;
+        _editeurDemande = true;
     }
+
+    private async Task FermerFormulaire()
+    {
+        await JS.InvokeVoidAsync("DnTinymce.detruire", IdentifiantCorps);
+        _formulaireOuvert = false;
+        _editeurDemande = false;
+        _erreur = null;
+    }
+
+    /// <summary>
+    /// Dépose la couverture choisie et garde l'adresse renvoyée par le serveur.
+    /// </summary>
+    private async Task TeleverserImage()
+    {
+        _depotEnCours = true;
+
+        try
+        {
+            await JS.InvokeVoidAsync("DnAdminScripts.assure", true);
+
+            var reponse = await JS.InvokeAsync<ReponseApi>(
+                "DnApi.televerseFichier", "/api/images", "file", _champImage);
+
+            if (reponse.Ok && reponse.Url is { Length: > 0 })
+            {
+                _formeImage = reponse.Url;
+            }
+            else
+            {
+                _erreur = Raison(reponse);
+            }
+        }
+        finally
+        {
+            _depotEnCours = false;
+        }
+    }
+
+    private async Task Enregistrer()
+    {
+        _erreur = null;
+
+        if (!Guid.TryParse(_formeRubrique, out var rubrique))
+        {
+            _erreur = "Choisissez la rubrique de l'article.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_formeImage))
+        {
+            _erreur = "Choisissez une image de couverture : un article s'affiche avec elle dans le fil du blog.";
+            return;
+        }
+
+        _envoi = true;
+
+        try
+        {
+            _formeCorps = await JS.InvokeAsync<string>("DnTinymce.obtenir", IdentifiantCorps);
+
+            // Le chapô est déduit du contenu, jamais saisi à côté : il ne peut donc pas
+            // dire autre chose que le début de l'article.
+            var chapo = ResumeDepuisContenu.De(_formeCorps);
+
+            if (string.IsNullOrWhiteSpace(chapo))
+            {
+                _erreur = "Le contenu est vide : un article commence par un paragraphe.";
+                return;
+            }
+
+            var reponse = _edition is null
+                ? await Ecrire("POST", "/api/articles", new
+                {
+                    title = _formeTitre,
+                    excerpt = chapo,
+                    content = _formeCorps,
+                    categoryId = rubrique,
+                    publish = _formePublier,
+                    coverImageUrl = string.IsNullOrWhiteSpace(_formeImage) ? null : _formeImage
+                })
+                : await Ecrire("PUT", $"/api/articles/{_edition.Id}", new
+                {
+                    title = _formeTitre,
+                    excerpt = chapo,
+                    content = _formeCorps,
+                    categoryId = rubrique,
+                    coverImageUrl = string.IsNullOrWhiteSpace(_formeImage) ? null : _formeImage
+                });
+
+            if (!reponse.Ok)
+            {
+                _erreur = Raison(reponse);
+                return;
+            }
+
+            await FermerFormulaire();
+
+            Blog.Oublie();
+            _donnees = await Blog.LireAsync();
+
+            await Previent(_edition is null ? "Article créé." : "Article enregistré.", true);
+        }
+        finally
+        {
+            _envoi = false;
+        }
+    }
+
+    private async Task ChangerEtat(LigneArticleAdmin ligne, Transition transition)
+    {
+        var reponse = await Ecrire("POST", $"/api/articles/{ligne.Id}/{Segment(transition)}", null);
+
+        if (!reponse.Ok)
+        {
+            await Previent(Raison(reponse), false);
+            return;
+        }
+
+        Blog.Oublie();
+        _donnees = await Blog.LireAsync();
+
+        await Previent(transition switch
+        {
+            Transition.Publier => "Article publié.",
+            Transition.Brouillon => "Article repassé en brouillon.",
+            _ => "Article archivé.",
+        }, true);
+    }
+
+    /// <summary>Segment d'URL du cycle de vie, tel que l'API le nomme.</summary>
+    /// <param name="transition">Transition demandée.</param>
+    /// <returns>Le segment correspondant.</returns>
+    private static string Segment(Transition transition) => transition switch
+    {
+        Transition.Publier => "publish",
+        Transition.Brouillon => "draft",
+        _ => "archive",
+    };
+
+    private async Task Supprimer(LigneArticleAdmin ligne)
+    {
+        _aSupprimer = null;
+
+        var reponse = await Ecrire("DELETE", $"/api/articles/{ligne.Id}", null);
+
+        if (!reponse.Ok)
+        {
+            await Previent(Raison(reponse), false);
+            return;
+        }
+
+        Blog.Oublie();
+        _donnees = await Blog.LireAsync();
+
+        await Previent("Article supprimé.", true);
+    }
+
+    private async Task<ReponseApi> Ecrire(string methode, string chemin, object? corps)
+    {
+        await JS.InvokeVoidAsync("DnAdminScripts.assure", true);
+
+        return await JS.InvokeAsync<ReponseApi>("DnApi.envoyer", methode, chemin, corps);
+    }
+
+    /// <summary>
+    /// Affiche un message, puis l'efface : rien ne doit rester à l'écran pour toujours.
+    /// </summary>
+    /// <param name="texte">Message à afficher.</param>
+    /// <param name="reussi">Vrai pour un succès, faux pour une erreur.</param>
+    private async Task Previent(string texte, bool reussi)
+    {
+        var annonce = new Annonce(texte, reussi);
+        _messages.Add(annonce);
+
+        await InvokeAsync(StateHasChanged);
+
+        await Task.Delay(4000);
+        _messages.Remove(annonce);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Date affichée dans la liste : la dernière modification, sinon la publication.</summary>
+    private static string Date(LigneArticleAdmin ligne)
+        => (ligne.ModifieLe ?? ligne.PublieLe)?.ToString("d MMM yyyy", Culture) ?? "jamais";
 
     private static string Etat(PublicationStatus statut) => statut switch
     {
-        PublicationStatus.Published => "Publiée",
+        PublicationStatus.Published => "Publié",
         PublicationStatus.Draft => "Brouillon",
-        _ => "Archivée",
+        _ => "Archivé",
     };
 
-    private static string EtatClasse(PublicationStatus statut) => statut switch
+    private static string Etiquette(PublicationStatus statut) => statut switch
     {
-        PublicationStatus.Published => "bg-vert-100 text-vert-700",
-        PublicationStatus.Draft => "bg-orange-100 text-orange-700",
-        _ => "bg-ink-100 text-ink-600",
+        PublicationStatus.Published => "badge--vert",
+        PublicationStatus.Draft => "badge--orange",
+        _ => "badge--ink",
     };
 
+    /// <summary>Changement d'état demandé depuis la liste.</summary>
+    /// <remarks>
+    /// Une énumération plutôt qu'un texte libre : le nom de la transition est vérifié par le
+    /// compilateur, et l'URL est reconstruite à un seul endroit.
+    /// </remarks>
+    private enum Transition
+    {
+        /// <summary>Met l'article en ligne.</summary>
+        Publier,
+
+        /// <summary>Retire l'article du site sans l'effacer.</summary>
+        Archiver,
+
+        /// <summary>Repasse un article en ligne dans son état de brouillon.</summary>
+        Brouillon,
+    }
+
+    /// <summary>Un message affiché à l'écran, le temps qu'il soit effacé.</summary>
+    /// <param name="Texte">Contenu du message.</param>
+    /// <param name="Reussi">Vrai pour un succès, faux pour une erreur.</param>
+    private sealed record Annonce(string Texte, bool Reussi);
+
+    /// <summary>
+    /// Message d'erreur d'une réponse refusée, tel que le serveur l'a formulé.
+    /// </summary>
+    /// <param name="reponse">Réponse de l'appel.</param>
+    /// <returns>Un texte compréhensible, jamais un code.</returns>
+    private static string Raison(ReponseApi reponse)
+        => reponse.Detail
+            ?? reponse.Titre
+            ?? (reponse.Statut == 0
+                ? "Le serveur n'a pas répondu."
+                : $"Le serveur a répondu {reponse.Statut}.");
+
+    /// <summary>Un message affiché à l'écran, le temps qu'il soit effacé.</summary>
+
+    /// <summary>
+    /// Réponse normalisée d'un appel fait par le script d'administration.
+    /// </summary>
+    /// <param name="Ok">Vrai si le serveur a accepté.</param>
+    /// <param name="Statut">Code de la réponse.</param>
+    /// <param name="Corps">Corps décodé, ou texte brut si la réponse n'était pas du JSON.</param>
+    private sealed record ReponseApi(bool Ok, int Statut, object? Corps)
+    {
+        /// <summary>Message d'erreur, au format problem details.</summary>
+        public string? Titre => (Corps as JsonElement?)?.TryGetProperty("title", out var titre) == true
+            ? titre.GetString()
+            : null;
+
+        /// <summary>Précision de l'erreur, quand le serveur en a produit une.</summary>
+        public string? Detail => (Corps as JsonElement?)?.TryGetProperty("detail", out var detail) == true
+            ? detail.GetString()
+            : null;
+
+        /// <summary>Adresse de l'image déposée, pour le dépôt d'un fichier.</summary>
+        public string? Url => (Corps as JsonElement?)?.TryGetProperty("url", out var url) == true
+            ? url.GetString()
+            : null;
+    }
 }

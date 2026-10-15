@@ -5,7 +5,9 @@ using DotnetNiger.Infrastructure.Persistence;
 using DotnetNiger.Infrastructure;
 using DotnetNiger.Web;
 using DotnetNiger.Web.Authentication;
-using DotnetNiger.Web.Administration;
+using DotnetNiger.Web.Services.Commentaires;
+using DotnetNiger.Web.Services.Membres;
+using DotnetNiger.Web.Services.Inscriptions;
 using DotnetNiger.Web.Components;
 using DotnetNiger.Web.Controller.Common;
 using DotnetNiger.Web.Controller;
@@ -28,6 +30,23 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 builder.Services.AddScoped<ExternalCallbackHandler>();
 builder.Services.AddScoped<AccountOperations>();
+builder.Services.AddScoped<ServiceInscriptionEvenement>();
+builder.Services.AddScoped<ServiceCommentaires>();
+builder.Services.AddScoped<ServiceMembres>();
+builder.Services.AddScoped<DotnetNiger.Web.Services.EspaceMembre.ServiceEspaceMembre>();
+builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceTableauDeBord>();
+builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceBlog>();
+builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceEvenements>();
+builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceRessources>();
+builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceProjets>();
+builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServicePartenaires>();
+builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceCommentaires>();
+builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceSignalements>();
+builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceMessages>();
+builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceMembres>();
+builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceAbonnees>();
+builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceParametres>();
+builder.Services.AddScoped<ServiceInscriptionsMembre>();
 builder.Services.AddSingleton<PendingExternalSignInProtector>();
 
 // ---------- Comptes, rôles, mots de passe et cookies ----------
@@ -49,16 +68,21 @@ builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
 // ---------- Contenus du site public ----------
-// Phase 1 : données de garniture pour valider le rendu. Phase 2 : implémentation branchée
-// sur l'API, sans modifier les pages.
-builder.Services.AddScoped<ISiteContentService, PlaceholderSiteContentService>();
+// Les pages lisent la base par les mêmes services que l'API : un contenu retiré côté
+// écriture disparaît des deux côtés, et aucun écran ne peut annoncer un article que
+// l'API ne renvoie pas.
+builder.Services.AddScoped<ISiteContentService, ContenuSiteService>();
 
 // ---------- API : documentation native .NET ----------
 builder.Services.AddOpenApi();
 
 // Les contrôleurs de l'API sont découverts par le conteneur : les routes sont portées par
 // les attributs [Route]/[HttpGet] de chaque contrôleur, sans préfixe de versionnement.
-builder.Services.AddControllers();
+// WithViews, et non AddControllers seul : le filtre de validation antifalsification
+// utilisé par [ValidateAntiForgeryToken] appartient à MVC ViewFeatures, que AddControllers
+// n'enregistre pas. Sans lui, chaque POST protégé échoue à l'exécution en disant que le
+// filtre n'est pas dans le conteneur — l'écran affiche bien, l'enregistrement non.
+builder.Services.AddControllersWithViews();
 
 // ---------- API : réponses d'erreur normalisées ----------
 // RFC 9457 : le format d'erreur natif d'ASP.NET Core, plutôt qu'une enveloppe maison.
@@ -125,6 +149,34 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
+// ---------- Configuration de production ----------
+// Le refus est délibéré. Une configuration incomplète ne produit aucune erreur visible : le
+// site répond, puis la panne n'apparaît qu'au moment où un membre tente de s'inscrire. Mieux
+// vaut un démarrage avorté avec la liste de ce qui manque, qu'un site en ligne qui n'envoie
+// plus rien. En développement, la même configuration reste permise : un poste local n'a pas
+// de serveur de courriel, et c'est un choix, pas une faute.
+if (!app.Environment.IsDevelopment())
+{
+    foreach (var point in ProductionConfiguration.DescribeWarnings(app.Configuration))
+    {
+        StartupLog.PointDeVigilance(app.Logger, point);
+    }
+
+    var problemes = ProductionConfiguration.DescribeBlockingProblems(app.Configuration);
+
+    if (problemes.Count > 0)
+    {
+        var liste = string.Join(
+            Environment.NewLine,
+            problemes.Select(probleme => $" - {probleme}"));
+
+        StartupLog.ConfigurationBloquante(app.Logger, liste);
+
+        throw new InvalidOperationException(
+            "Configuration de production inexploitable :" + Environment.NewLine + liste);
+    }
+}
+
 // ---------- Courriels : signaler une configuration incomplète ----------
 // Un serveur SMTP renseigné sans expéditeur ni adresse du site laisse l'application
 // démarrer en silence alors que plus aucun courriel ne part. Le membre ne le verrait qu'au
@@ -158,11 +210,16 @@ await app.Services.GetRequiredService<IdentityBootstrapper>().InitializeAsync();
 await app.Services.GetRequiredService<RubriqueBootstrapper>().InitializeAsync();
 
 // ---------- Pipeline ----------
-// Doit précéder la redirection HTTPS et l'authentification pour qu'une règle métier
-// refusée par l'API soit traduite, quel que soit le mode d'exécution.
-app.UseExceptionHandler();
-
-if (!app.Environment.IsDevelopment())
+// Une seule inscription au middleware d'exception : le premier intercepte toutes les
+// exceptions, si bien qu'un second appel resterait sans effet. Les deux branches ci-dessous
+// ne sont donc pas cumulables.
+// En développement, la réponse ProblemDetails porte la pile d'appels, ce qui aide à diagnostiquer.
+// En production, la page « /Error » est Friendly et n'expose aucun détail technique.
+if (app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler();
+}
+else
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
     app.UseHsts();
@@ -227,9 +284,6 @@ app.MapNewsletterEndpoints();
 
 app.MapContactEndpoints();
 
-// ---------- Back-office ----------
-app.MapAdministrationEndpoints();
-
 // ---------- API ----------
 // Préfixe unique, sans versionnement : le contrat n'a pas encore été publié à des clients
 // qu'il serait coûteux de rompre.
@@ -239,12 +293,19 @@ app.MapControllers();
 app.MapHealthChecks("/health").AllowAnonymous();
 
 // ---------- Documentation ----------
-app.MapOpenApi();
-app.UseSwaggerUI(options =>
+// Restreint au développement : la description OpenAPI énumère l'intégralité des points de
+// terminaison, y compris les routes d'administration. Publier cette carte sur un site ouvert
+// revient à offrir un annuaire de ce qui existe. Le secreto reste côté serveur ; la surface
+// exposée, elle, n'a pas à l'être.
+if (app.Environment.IsDevelopment())
 {
-    options.SwaggerEndpoint("/openapi/v1.json", "DotnetNiger API");
-    options.DocumentTitle = "DotnetNiger API";
-});
+    app.MapOpenApi();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "DotnetNiger API");
+        options.DocumentTitle = "DotnetNiger API";
+    });
+}
 
 // ---------- Front ----------
 app.MapRazorComponents<App>()
@@ -260,8 +321,4 @@ app.Run();
 static bool EstAppelApi(HttpRequest requete) =>
     requete.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase);
 
-/// <summary>
-/// Point d'entrée exposé pour les tests d'intégration, qui utilisent
-/// <c>WebApplicationFactory&lt;Program&gt;</c>.
-/// </summary>
-public partial class Program;
+

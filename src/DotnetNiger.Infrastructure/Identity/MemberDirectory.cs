@@ -30,6 +30,61 @@ public sealed class MemberDirectory(IUnitOfWork unitOfWork) : IMemberDirectory
             : contact with { FullName = NomLisible(contact) };
     }
 
+    /// <inheritdoc />
+    public async Task<IReadOnlyDictionary<Guid, MemberProfile>> ObtenirPlusieursAsync(
+        IReadOnlyCollection<Guid> memberIds,
+        CancellationToken cancellationToken)
+    {
+        if (memberIds.Count == 0)
+        {
+            return new Dictionary<Guid, MemberProfile>();
+        }
+
+        var membres = await unitOfWork.ReadRepository<ApplicationUser>().Query
+            .AsNoTracking()
+            .Where(utilisateur => memberIds.Contains(utilisateur.Id))
+            .Select(utilisateur => new
+            {
+                utilisateur.Id,
+                utilisateur.Email,
+                utilisateur.FirstName,
+                utilisateur.LastName,
+                utilisateur.Profession,
+            })
+            .ToListAsync(cancellationToken);
+
+        return membres.ToDictionary(
+            membre => membre.Id,
+            membre => new MemberProfile(
+                NomLisible(new MemberContact(membre.Email ?? string.Empty, $"{membre.FirstName} {membre.LastName}")),
+                membre.Profession));
+    }
+
+    /// <inheritdoc />
+    public Task<int> CompterMembresAsync(CancellationToken cancellationToken) =>
+        unitOfWork.ReadRepository<ApplicationUser>().Query
+            .AsNoTracking()
+            .CountAsync(utilisateur => utilisateur.IsActive, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task<IReadOnlyList<TeamMember>> ListerEquipeAsync(CancellationToken cancellationToken)
+    {
+        var membres = await unitOfWork.ReadRepository<ApplicationUser>().Query
+            .AsNoTracking()
+            .Where(utilisateur => utilisateur.IsActive && utilisateur.IsTeam)
+            .OrderBy(utilisateur => utilisateur.LastName)
+            .ThenBy(utilisateur => utilisateur.FirstName)
+            .Select(utilisateur => new TeamMember(
+                NomLisible(new MemberContact(
+                    utilisateur.Email ?? string.Empty,
+                    $"{utilisateur.FirstName} {utilisateur.LastName}")),
+                utilisateur.Profession,
+                utilisateur.PhotoUrl))
+            .ToListAsync(cancellationToken);
+
+        return membres;
+    }
+
     /// <summary>
     /// Choisit le nom à adopter : les prénoms et noms s'ils sont connus, l'adresse sinon.
     /// </summary>

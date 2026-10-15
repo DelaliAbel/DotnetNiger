@@ -1,0 +1,52 @@
+@using DotnetNiger.Domain.Enums
+@using DotnetNiger.Web.Services.Administration
+
+@*
+    Liste des derniers contenus d'une catégorie, utilisée par le tableau de bord.
+
+    Chaque ligne ouvre la fiche publique : c'est le moyen le plus direct de juger d'un
+    contenu ce qu'un visiteur verra. L'état et la date restent affichés, parce qu'un
+    contenu non publié n'a pas de fiche à ouvrir — le lien mène alors à la liste.
+*@
+
+@if (Contenus.Count is 0)
+{
+    <p class="admin-formulaire__aide">Rien de déposé pour l'instant.</p>
+}
+else
+{
+    <ul class="admin-liste">
+        @foreach (var contenu in Contenus)
+        {
+            <li class="admin-liste__ligne">
+                <a class="admin-liste__lien" href="@contenu.Adresse">
+                    <span class="admin-liste__titre">@contenu.Titre</span>
+                    <span class="admin-liste__meta">@contenu.Meta</span>
+                </a>
+                <span class="badge @Etiquette(contenu.Etat)">@Etat(contenu.Etat)</span>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    /// <summary>Contenus à lister.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<ContenuRecent> Contenus { get; set; } = [];
+
+    /// <summary>Libellé de l'état de publication.</summary>
+    private static string Etat(PublicationStatus statut) => statut switch
+    {
+        PublicationStatus.Published => "Publié",
+        PublicationStatus.Draft => "Brouillon",
+        _ => "Archivé",
+    };
+
+    /// <summary>Couleur de l'étiquette qui porte l'état.</summary>
+    private static string Etiquette(PublicationStatus statut) => statut switch
+    {
+        PublicationStatus.Published => "badge--vert",
+        PublicationStatus.Draft => "badge--orange",
+        _ => "badge--ink",
+    };
+}

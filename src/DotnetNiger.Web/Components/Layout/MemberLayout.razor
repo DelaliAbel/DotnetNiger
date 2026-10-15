@@ -1,0 +1,72 @@
+@layout DotnetNiger.Web.Components.Layout.MainLayout
+@inherits LayoutComponentBase
+@using DotnetNiger.Web.Services.EspaceMembre
+@inject ServiceEspaceMembre Espace
+
+@*
+    Mise en page de l'espace membre : un bandeau d'identité, puis des onglets.
+
+    Ce layout s'ajoute à MainLayout au lieu de le remplacer : sans le @layout parent,
+    l'en-tête du site, le pied de page et le menu du topbar disparaissent des pages membre —
+    c'est exactement ce que le premier essai produisait.
+
+    Le bandeau répond à « qui suis-je » d'un coup d'œil, et les onglets remplacent les
+    colonnes du premier essai : sur un écran étroit, une colonne de gauche et une colonne de
+    droite coûtent plus de largeur au contenu qu'elles n'apportent de contexte. Les onglets
+    gardent la même information sans coûter de place.
+*@
+
+<div class="wrap">
+    @if (_espace is not null)
+    {
+        <header class="bandeau">
+            <div class="bandeau__identite">
+                <DnAvatar Nom="@_espace.Profil.FullName" ImageUrl="@_espace.Profil.PhotoUrl" Profil />
+
+                <div>
+                    <h1 class="bandeau__nom">@_espace.Profil.FullName</h1>
+                    <p class="bandeau__ville">
+                        @(_espace.Profil.City ?? "Ville non renseignée")
+                        @if (!string.IsNullOrWhiteSpace(_espace.Profil.Technologies))
+                        {
+                            <text> · @_espace.Profil.Technologies</text>
+                        }
+                    </p>
+                </div>
+            </div>
+
+            <dl class="bandeau__faits">
+                <div class="bandeau__fait">
+                    <dt>Ressources</dt>
+                    <dd>@_espace.Ressources.Count</dd>
+                </div>
+                <div class="bandeau__fait">
+                    <dt>Rencontres</dt>
+                    <dd>@_espace.Rencontres.Count</dd>
+                </div>
+            </dl>
+        </header>
+
+        <nav class="onglets" aria-label="Navigation de l'espace membre">
+            <NavLink class="onglets__onglet" href="/compte/tableau-de-bord">Publications</NavLink>
+            <NavLink class="onglets__onglet" href="/compte/mes-rencontres">Rencontres</NavLink>
+            <NavLink class="onglets__onglet" href="/compte/profil">Profil</NavLink>
+        </nav>
+    }
+
+    <div class="mb-10">
+        @Body
+    </div>
+</div>
+
+@code {
+    private EspaceMembreVue? _espace;
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        // Même tâche que celle des pages : la mise en page et la page ne posent qu'une
+        // seule lecture, jamais deux sur le même contexte.
+        _espace = await Espace.LireAsync();
+    }
+}

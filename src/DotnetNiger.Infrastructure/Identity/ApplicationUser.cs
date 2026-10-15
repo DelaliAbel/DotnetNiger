@@ -70,6 +70,16 @@ public sealed class ApplicationUser : IdentityUser<Guid>, IEntity, ITimestamped
     public string? City { get; private set; }
 
     /// <summary>
+    /// Obtient la fonction professionnelle déclarée par le membre.
+    /// </summary>
+    /// <remarks>
+    /// Texte libre et non liste : les professions de la communauté ne se laissent pas
+    /// énumérer. Le rôle technique — administrateur ou membre — reste un rôle ASP.NET,
+    /// distinct de ce que le membre exerce dans la vie professionnelle.
+    /// </remarks>
+    public string? Profession { get; private set; }
+
+    /// <summary>
     /// Obtient l'identifiant GitHub, utilisé pour le rapprochement automatique des contributeurs.
     /// </summary>
     public string? GitHubUsername { get; private set; }
@@ -130,6 +140,7 @@ public sealed class ApplicationUser : IdentityUser<Guid>, IEntity, ITimestamped
     /// <param name="linkedInUrl">URL LinkedIn, facultative.</param>
     /// <param name="xUrl">URL X, facultative.</param>
     /// <param name="technologies">Compétences, facultatives.</param>
+    /// <param name="profession">Fonction professionnelle, facultative.</param>
     public void UpdateProfile(
         string firstName,
         string lastName,
@@ -139,12 +150,14 @@ public sealed class ApplicationUser : IdentityUser<Guid>, IEntity, ITimestamped
         string? gitHubUsername = null,
         string? linkedInUrl = null,
         string? xUrl = null,
-        string? technologies = null)
+        string? technologies = null,
+        string? profession = null)
     {
         FirstName = Required(firstName, FieldLimits.Name, nameof(firstName));
         LastName = Required(lastName, FieldLimits.Name, nameof(lastName));
         Bio = DomainGuard.OptionalAgainstTooLong(bio, FieldLimits.Bio, nameof(bio));
         City = DomainGuard.OptionalAgainstTooLong(city, FieldLimits.Location, nameof(city));
+        Profession = DomainGuard.OptionalAgainstTooLong(profession, FieldLimits.Label, nameof(profession));
         PhotoUrl = DomainGuard.OptionalAgainstHttpUrl(photoUrl, nameof(photoUrl));
         GitHubUsername = NormalizeHandle(gitHubUsername, nameof(gitHubUsername));
         LinkedInUrl = DomainGuard.OptionalAgainstHttpUrl(linkedInUrl, nameof(linkedInUrl));
@@ -164,6 +177,19 @@ public sealed class ApplicationUser : IdentityUser<Guid>, IEntity, ITimestamped
     /// </summary>
     /// <param name="isActive"><see langword="true"/> pour réactiver le compte.</param>
     public void SetActive(bool isActive) => IsActive = isActive;
+
+    /// <summary>
+    /// Définit la photo de profil, sans toucher aux autres champs.
+    /// </summary>
+    /// <remarks>
+    /// Une méthode dédiée plutôt que <see cref="UpdateProfile"/> : à l'inscription par
+    /// fournisseur externe, le prénom et le nom sont encore vides, et les revalider à cet
+    /// endroit ferait échouer la photo sur un compte parfaitement valide.
+    /// </remarks>
+    /// <param name="photoUrl">Adresse de la photo, ou <see langword="null"/> pour la retirer.</param>
+    /// <exception cref="DotnetNiger.Domain.Exceptions.DomainException">L'adresse n'est pas une URL HTTP ou HTTPS.</exception>
+    public void SetProfilePhoto(string? photoUrl) =>
+        PhotoUrl = DomainGuard.OptionalAgainstHttpUrl(photoUrl, nameof(photoUrl));
 
     private static string? NormalizeHandle(string? value, string field)
     {

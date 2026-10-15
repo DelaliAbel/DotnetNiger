@@ -1,8 +1,13 @@
-@* Carte de présentation d'une ressource (formation, outil, guide). *@
+
+@* Carte de présentation d'une ressource (formation, outil, guide).
+
+   Une ressource n'a pas d'image : c'est sa catégorie qui l'identifie, et c'est donc elle
+   qui dicte l'icône. Un guide et une bibliothèque n'appellent pas le même geste — l'un
+   se lit, l'autre se consulte. *@
 
 <article class="card card--hover">
     <div class="card__media card__media--defaut" aria-hidden="true">
-        <span class="ressource__icone"><DnIcon Name="@Icone" Size="22" /></span>
+        <span class="ressource__icone"><DnIcon Name="@IconeEffective" Size="22" /></span>
     </div>
     <div class="card__body">
         <p class="card__meta">
@@ -22,5 +27,32 @@
 @code {
     [Parameter, EditorRequired] public RessourceVue Ressource { get; set; } = default!;
 
-    [Parameter] public string Icone { get; set; } = "book-open";
+    /// <summary>Icône imposée par la page qui affiche la carte.</summary>
+    /// <remarks>
+    /// Laissée vide — sa valeur par défaut — elle est déduite de la catégorie. Une page
+    /// qui sait ce qu'elle montre passe ainsi devant, sans avoir à reproduire la règle.
+    /// </remarks>
+    [Parameter] public string Icone { get; set; } = string.Empty;
+
+    /// <summary>Icône réellement affichée.</summary>
+    private string IconeEffective => string.IsNullOrWhiteSpace(Icone) ? IconeDe(Ressource.Categorie) : Icone;
+
+    /// <summary>
+    /// Icône qui décrit le mieux la catégorie d'une ressource.
+    /// </summary>
+    /// <remarks>
+    /// La catégorie arrive sous forme de libellé — « Bibliothèque », « Tutoriel » — et
+    /// non d'énumération : la comparaison se fait donc sur le mot, en ignorant la casse.
+    /// Une catégorie inconnue retombe sur le livre ouvert, qui ne veut rien dire de faux.
+    /// </remarks>
+    /// <param name="categorie">Libellé de la catégorie.</param>
+    /// <returns>Le nom de l'icône.</returns>
+    private static string IconeDe(string categorie) => categorie switch
+    {
+        "Formation" => "sparkles",
+        "Tutoriel" => "play",
+        "Bibliothèque" => "layers",
+        "Outil" => "code",
+        _ => "book-open",
+    };
 }

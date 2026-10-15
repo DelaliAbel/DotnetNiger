@@ -1,170 +1,333 @@
-@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
-
 @page "/administration/messages"
 @layout DotnetNiger.Web.Components.Layout.AdministrationLayout
+@rendermode InteractiveServer
+
 @using System.Globalization
-@using Microsoft.EntityFrameworkCore
-@using DotnetNiger.Application.Abstractions.Persistence
-@using DotnetNiger.Application.Common
-@using DotnetNiger.Domain.Entities.Community
-@using DotnetNiger.Web.Controller.Contracts
-@inject IUnitOfWork UniteDeTravail
+@using System.Text.Json
+@using DotnetNiger.Web.Services.Administration
 
-<PageTitle>Messages - Administration</PageTitle>
+@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
 
-<header class="mb-6 flex flex-wrap items-end justify-between gap-4">
+@inject ServiceMessages Service
+@inject IJSRuntime JS
+
+@*
+    Boîte de réception des messages du formulaire de contact.
+
+    Un message n'est pas envoyé depuis le site : il est écrit à l'attention de
+    l'administration, qui y répond avec son propre outil de courriel. Le bouton « Répondre »
+    ouvre donc le logiciel de messagerie du poste, pré-rempli avec l'adresse et l'objet —
+    plutôt que d'annoncer un envoi que le site ne ferait pas.
+
+    Un message est marqué comme traité après réponse : c'est le seul suivi que le site
+    connaît, et il en a besoin pour savoir ce qui attend encore une réponse.
+*@
+
+<PageTitle>Messages — Administration</PageTitle>
+
+<header class="admin-entete">
     <div>
-        <h1 class="text-section font-semibold">Messages reçus</h1>
-        <p class="text-sm text-ink-600">
-            @if (EnAttente)
-            {
-                <text>Messages sans réponse.</text>
-            }
-            else
-            {
-                <text>Tous les messages, du plus récent au plus ancien.</text>
-            }
+        <h1 class="admin-entete__titre">Messages</h1>
+        <p class="admin-entete__intro">
+            Les messages reçus par le formulaire de contact. Répondez depuis votre messagerie,
+            puis marquez le message comme traité.
         </p>
     </div>
-
-    <nav class="flex gap-2" aria-label="Filtrer les messages">
-        <a class="rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm hover:bg-ink-50"
-           href="/administration/messages">Tous</a>
-        <a class="rounded-sm border border-ink-300 bg-white px-3 py-2 text-sm hover:bg-ink-50"
-           href="/administration/messages?enAttente=1">Sans réponse</a>
-    </nav>
 </header>
 
-@if (_confirmation is not null)
+@if (_donnees is null)
 {
-    <p class="mb-4 rounded-sm bg-vert-100 px-4 py-3 text-sm text-vert-700">@_confirmation</p>
-}
-
-@if (_page.TotalCount == 0)
-{
-    <p class="rounded-md border border-ink-200 bg-white px-4 py-8 text-center text-ink-500">
-        Aucun message à afficher.
-    </p>
+    <Chargement />
 }
 else
 {
-    <ol class="flex flex-col gap-4">
-        @foreach (var message in _page.Items)
-        {
-            <li class="rounded-md border border-ink-200 bg-white p-4">
-                <div class="flex flex-wrap items-baseline justify-between gap-2">
-                    <h2 class="text-lead font-semibold">@message.Subject</h2>
-                    <span class="text-caption text-ink-500">
-                        @message.ReceivedAtUtc.ToString("d MMMM yyyy 'à' HH:mm", Culture)
-                    </span>
-                </div>
+    <div class="admin-bandeau">
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="message-recherche">Recherche</label>
+            <input id="message-recherche" class="input" type="search" placeholder="Nom, objet ou texte…"
+                   @bind="_recherche" @bind:event="oninput" />
+        </div>
 
-                <p class="text-sm text-ink-600">
-                    De <span class="font-medium text-ink-800">@message.Name</span>
-                    &lt;<a class="text-violet-600 underline" href="mailto:@message.Email">@message.Email</a>&gt;
-                </p>
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="message-etat">État</label>
+            <div class="select">
+                <select id="message-etat" @bind="_filtreEtat">
+                    <option value="">Tous</option>
+                    <option value="@(Attente)">Sans réponse</option>
+                    <option value="@(Traite)">Ayant reçu une réponse</option>
+                </select>
+                <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+            </div>
+        </div>
 
-                <p class="mt-3 whitespace-pre-line text-base">@message.Message</p>
+        <span class="admin-bandeau__compte">
+            @Liste.Count message(s) — @EnAttente.Count sans réponse
+        </span>
+    </div>
 
-                <div class="mt-4 flex flex-wrap items-center gap-2">
-                    @if (message.HandledAtUtc is { } traite)
-                    {
-                        <span class="rounded-full bg-vert-100 px-3 py-1 text-caption text-vert-700">
-                            Répondu le @traite.ToString("d MMM yyyy", Culture)
+    @if (Liste.Count is 0)
+    {
+        <p class="admin-formulaire__aide">Aucun message ne correspond à ces filtres.</p>
+    }
+    else
+    {
+        <div class="admin-moderation">
+            @foreach (var ligne in Liste)
+            {
+                var traite = ligne.TraiteLe is not null;
+
+                <article class="admin-moderation__ligne @(traite ? string.Empty : "admin-moderation__ligne--attente")">
+                    <div class="admin-moderation__entete">
+                        <div>
+                            <strong class="admin-moderation__auteur">@ligne.Nom</strong>
+                            <a class="admin-tableau__note" href="mailto:@ligne.Courriel">@ligne.Courriel</a>
+                            <span class="admin-tableau__note">il y a @Delai(ligne.RecuLe)</span>
+                        </div>
+
+                        <span class="badge @(traite ? "badge--vert" : "badge--orange")">
+                            @(traite ? "Répondu" : "Sans réponse")
                         </span>
-                    }
-                    else
-                    {
-                        <span class="rounded-full bg-orange-100 px-3 py-1 text-caption text-orange-700">Sans réponse</span>
-                    }
+                    </div>
 
-                    @if (message.HandledAtUtc is null)
-                    {
-                        <form method="post" action="/administration/messages/@message.Id/traiter">
-                            <AntiforgeryToken />
-                            <button class="rounded-sm border border-ink-300 px-3 py-1 text-sm hover:bg-ink-50"
-                                    type="submit">
-                                Marquer comme lu
+                    <p class="admin-moderation__objet">@ligne.Sujet</p>
+
+                    <blockquote class="admin-moderation__texte">@ligne.Corps</blockquote>
+
+                    <div class="admin-moderation__actions">
+                        <a class="btn btn--primary btn--sm" href="@Reponse(ligne)">
+                            <DnIcon Name="mail" Size="14" />
+                            Répondre
+                        </a>
+
+                        @if (traite)
+                        {
+                            <span class="admin-formulaire__aide">
+                                Répondu @Delai(ligne.TraiteLe!.Value)
+                            </span>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn--sm"
+                                    @onclick="() => MarquerTraite(ligne)">
+                                <DnIcon Name="check" Size="14" />
+                                Marquer comme traité
                             </button>
-                        </form>
-                    }
+                        }
 
-                    <form method="post" action="/administration/messages/@message.Id/retirer">
-                        <AntiforgeryToken />
-                        <button class="rounded-sm border border-ink-300 px-3 py-1 text-sm hover:bg-ink-50"
-                                type="submit">
-                            Retirer
-                        </button>
-                    </form>
-                </div>
-            </li>
-        }
-    </ol>
-
-    <Pager PageNumber="_page.Page" TotalPages="_page.TotalPages" TotalCount="_page.TotalCount"
-           Base="/administration/messages" Query="@_query" />
+                        @if (_aSupprimer == ligne.Id)
+                        {
+                            <span class="admin-confirmation">
+                                Retirer de la boîte ?
+                                <button type="button" class="btn btn--rouge btn--sm"
+                                        @onclick="() => Supprimer(ligne)">Oui</button>
+                                <button type="button" class="btn btn--ghost btn--sm"
+                                        @onclick="() => _aSupprimer = null">Non</button>
+                            </span>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn--rouge btn--sm"
+                                    @onclick="() => _aSupprimer = ligne.Id">
+                                Retirer
+                            </button>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    }
 }
+
+<div class="admin-toasts" role="status" aria-live="polite">
+    @foreach (var message in _messages)
+    {
+        <div class="admin-toast admin-toast--@(message.Reussi ? "succes" : "erreur")">
+            <DnIcon Name="@(message.Reussi ? "check" : "alert")" Size="16" />
+            <span>@message.Texte</span>
+        </div>
+    }
+</div>
 
 @code {
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
 
-    private PageResponse<ContactMessageResponse> _page = new([], 1, 20, 0, 0, false);
-    private string? _confirmation;
+    private const string Attente = "attente";
 
-    /// <summary>Ne montrer que les messages qui n'ont pas encore reçu de réponse.</summary>
-    [SupplyParameterFromQuery(Name = "enAttente")]
-    public bool EnAttente { get; set; }
+    private const string Traite = "traite";
 
-    [SupplyParameterFromQuery(Name = "page")]
-    public int? Page { get; set; }
+    private MessagesVue? _donnees;
 
-    [SupplyParameterFromQuery(Name = "traite")]
-    public bool Traite { get; set; }
+    private string _recherche = string.Empty;
 
-    [SupplyParameterFromQuery(Name = "retire")]
-    public bool Retire { get; set; }
+    private string _filtreEtat = string.Empty;
 
-    private string? _query;
+    private Guid? _aSupprimer;
 
-    protected override async Task OnParametersSetAsync()
+    private readonly List<Annonce> _messages = [];
+
+    /// <summary>Messages qui passent les filtres de la barre.</summary>
+    private List<LigneMessageAdmin> Liste =>
+    [
+        .. (_donnees?.Messages ?? [])
+            .Where(ligne => string.IsNullOrWhiteSpace(_filtreEtat)
+                || (_filtreEtat == Attente) == (ligne.TraiteLe is null))
+            .Where(ligne => string.IsNullOrWhiteSpace(_recherche)
+                || ligne.Nom.Contains(_recherche, StringComparison.OrdinalIgnoreCase)
+                || ligne.Sujet.Contains(_recherche, StringComparison.OrdinalIgnoreCase)
+                || ligne.Corps.Contains(_recherche, StringComparison.OrdinalIgnoreCase))
+    ];
+
+    /// <summary>Ce qui attend une réponse de l'administration.</summary>
+    private List<LigneMessageAdmin> EnAttente =>
+        [.. (_donnees?.Messages ?? []).Where(ligne => ligne.TraiteLe is null)];
+
+    protected override async Task OnInitializedAsync() => _donnees = await Service.LireAsync();
+
+    private async Task MarquerTraite(LigneMessageAdmin ligne)
     {
-        _query = EnAttente ? "enAttente=1" : null;
+        var reponse = await Ecrire("POST", $"/api/admin/contact/messages/{ligne.Id}/handled", null);
 
-        _confirmation = (Traite, Retire) switch
+        if (!reponse.Ok)
         {
-            (true, _) => "Message marqué comme ayant reçu une réponse.",
-            (_, true) => "Message retiré de la boîte de réception.",
-            _ => null,
-        };
-
-        var requete = UniteDeTravail.ReadRepository<ContactMessage>().Query.AsQueryable();
-
-        if (EnAttente)
-        {
-            requete = requete.Where(message => message.HandledAtUtc == null);
+            await Previent(Raison(reponse), false);
+            return;
         }
 
-        var demande = new PageRequest(Page ?? 1, PageRequest.DefaultPageSize);
-        var total = await requete.CountAsync();
+        Service.Oublie();
+        _donnees = await Service.LireAsync();
 
-        var items = await requete
-            .OrderByDescending(message => message.ReceivedAtUtc)
-            .Skip(demande.Skip)
-            .Take(demande.PageSize)
-            .ToListAsync();
-
-        _page = ApiProjections.ToPage(
-            new PagedResult<ContactMessage>(items, demande.PageNumber, demande.PageSize, total),
-            ToResponse);
+        await Previent("Message marqué comme traité.", true);
     }
 
-    private static ContactMessageResponse ToResponse(ContactMessage message) =>
-        new(
-            message.Id,
-            message.Name,
-            message.Email,
-            message.Subject,
-            message.Body,
-            message.ReceivedAtUtc,
-            message.HandledAtUtc);
+    private async Task Supprimer(LigneMessageAdmin ligne)
+    {
+        _aSupprimer = null;
+
+        var reponse = await Ecrire("DELETE", $"/api/admin/contact/messages/{ligne.Id}", null);
+
+        if (!reponse.Ok)
+        {
+            await Previent(Raison(reponse), false);
+            return;
+        }
+
+        Service.Oublie();
+        _donnees = await Service.LireAsync();
+
+        await Previent("Message retiré de la boîte de réception.", true);
+    }
+
+    /// <summary>
+    /// Écrit par l'API, après avoir vérifié que le script d'appel est présent.
+    /// </summary>
+    /// <param name="methode">Verbe de la requête.</param>
+    /// <param name="chemin">Adresse de l'API.</param>
+    /// <param name="corps">Charge utile, ou <see langword="null"/>.</param>
+    /// <returns>La réponse normalisée de l'appel.</returns>
+    private async Task<ReponseApi> Ecrire(string methode, string chemin, object? corps)
+    {
+        await JS.InvokeVoidAsync("DnAdminScripts.assure", true);
+
+        return await JS.InvokeAsync<ReponseApi>("DnApi.envoyer", methode, chemin, corps);
+    }
+
+    /// <summary>Affiche un message, puis l'efface.</summary>
+    /// <param name="texte">Message à afficher.</param>
+    /// <param name="reussi">Vrai pour un succès, faux pour une erreur.</param>
+    private async Task Previent(string texte, bool reussi)
+    {
+        var annonce = new Annonce(texte, reussi);
+        _messages.Add(annonce);
+
+        await InvokeAsync(StateHasChanged);
+
+        await Task.Delay(4000);
+        _messages.Remove(annonce);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// Compose l'adresse d'un message de réponse, pré-rempli avec l'objet d'origine.
+    /// </summary>
+    /// <param name="ligne">Message auquel répondre.</param>
+    /// <returns>Une adresse <c>mailto:</c> complète.</returns>
+    /// <remarks>
+    /// L'objet et le corps sont encodés : un sujet contenant une esperluette ou un point-virgule
+    /// couperait l'adresse et ouvrirait une messagerie avec un message vide.
+    /// </remarks>
+    private static string Reponse(LigneMessageAdmin ligne)
+    {
+        var objet = Uri.EscapeDataString(ligne.Sujet.StartsWith("Re:", StringComparison.OrdinalIgnoreCase)
+            ? ligne.Sujet
+            : $"Re: {ligne.Sujet}");
+
+        var corps = Uri.EscapeDataString($"\n\n—\nEnvoyé depuis l'administration de DotnetNiger");
+
+        return $"mailto:{ligne.Courriel}?subject={objet}&body={corps}";
+    }
+
+    /// <summary>
+    /// Énonce le temps écoulé, en français, sans dépendre du fuseau de la machine.
+    /// </summary>
+    /// <param name="instant">Date à compter.</param>
+    /// <returns>Une expression comme « 3 h ».</returns>
+    private static string Delai(DateTime instant)
+    {
+        var ecoule = DateTime.UtcNow - instant;
+
+        if (ecoule.TotalMinutes < 1)
+        {
+            return "quelques instants";
+        }
+
+        if (ecoule.TotalHours < 1)
+        {
+            var minutes = (int)ecoule.TotalMinutes;
+
+            return minutes == 1 ? "1 minute" : $"{minutes} minutes";
+        }
+
+        if (ecoule.TotalDays < 1)
+        {
+            var heures = (int)ecoule.TotalHours;
+
+            return heures == 1 ? "1 heure" : $"{heures} heures";
+        }
+
+        var jours = (int)ecoule.TotalDays;
+
+        return jours == 1 ? "1 jour" : $"{jours} jours";
+    }
+
+    /// <summary>Message d'erreur d'une réponse refusée, tel que le serveur l'a formulé.</summary>
+    /// <param name="reponse">Réponse de l'appel.</param>
+    /// <returns>Un texte compréhensible, jamais un code.</returns>
+    private static string Raison(ReponseApi reponse)
+        => reponse.Detail
+            ?? reponse.Titre
+            ?? (reponse.Statut == 0
+                ? "Le serveur n'a pas répondu."
+                : $"Le serveur a répondu {reponse.Statut}.");
+
+    /// <summary>Un message affiché à l'écran, le temps qu'il soit effacé.</summary>
+    /// <param name="Texte">Contenu du message.</param>
+    /// <param name="Reussi">Vrai pour un succès, faux pour une erreur.</param>
+    private sealed record Annonce(string Texte, bool Reussi);
+
+    /// <summary>Réponse normalisée d'un appel fait par le script d'administration.</summary>
+    /// <param name="Ok">Vrai si le serveur a accepté.</param>
+    /// <param name="Statut">Code de la réponse.</param>
+    /// <param name="Corps">Corps décodé de la réponse.</param>
+    private sealed record ReponseApi(bool Ok, int Statut, object? Corps)
+    {
+        /// <summary>Message d'erreur, au format problem details.</summary>
+        public string? Titre => (Corps as JsonElement?)?.TryGetProperty("title", out var titre) == true
+            ? titre.GetString()
+            : null;
+
+        /// <summary>Précision de l'erreur, quand le serveur en a produit une.</summary>
+        public string? Detail => (Corps as JsonElement?)?.TryGetProperty("detail", out var detail) == true
+            ? detail.GetString()
+            : null;
+    }
 }

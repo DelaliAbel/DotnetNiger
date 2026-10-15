@@ -7,10 +7,14 @@
   "scripts": {
     "css": "tailwindcss -i src/DotnetNiger.Web/wwwroot/css/design/theme.css -o src/DotnetNiger.Web/wwwroot/css/app.css",
     "css:watch": "tailwindcss -i src/DotnetNiger.Web/wwwroot/css/design/theme.css -o src/DotnetNiger.Web/wwwroot/css/app.css --watch",
-    "css:minify": "tailwindcss -i src/DotnetNiger.Web/wwwroot/css/design/theme.css -o src/DotnetNiger.Web/wwwroot/css/app.css --minify"
+    "css:minify": "tailwindcss -i src/DotnetNiger.Web/wwwroot/css/design/theme.css -o src/DotnetNiger.Web/wwwroot/css/app.css --minify",
+    "tinymce:copy": "mkdir -p src/DotnetNiger.Web/wwwroot/tinymce/plugins src/DotnetNiger.Web/wwwroot/tinymce/skins src/DotnetNiger.Web/wwwroot/tinymce/themes src/DotnetNiger.Web/wwwroot/tinymce/models src/DotnetNiger.Web/wwwroot/tinymce/icons && cp node_modules/tinymce/tinymce.min.js src/DotnetNiger.Web/wwwroot/tinymce/ && cp -R node_modules/tinymce/icons/default src/DotnetNiger.Web/wwwroot/tinymce/icons/ && cp -R node_modules/tinymce/models/dom src/DotnetNiger.Web/wwwroot/tinymce/models/ && cp -R node_modules/tinymce/themes/silver src/DotnetNiger.Web/wwwroot/tinymce/themes/ && cp -R node_modules/tinymce/skins/ui src/DotnetNiger.Web/wwwroot/tinymce/skins/ && cp -R node_modules/tinymce/skins/content src/DotnetNiger.Web/wwwroot/tinymce/skins/ && cp -R node_modules/tinymce/plugins/code src/DotnetNiger.Web/wwwroot/tinymce/plugins/ && cp -R node_modules/tinymce/plugins/link src/DotnetNiger.Web/wwwroot/tinymce/plugins/ && cp -R node_modules/tinymce/plugins/lists src/DotnetNiger.Web/wwwroot/tinymce/plugins/ && cp -R node_modules/tinymce/plugins/table src/DotnetNiger.Web/wwwroot/tinymce/plugins/"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.0",
     "tailwindcss": "^4.1.0"
+  },
+  "dependencies": {
+    "tinymce": "8.9.2"
   }
 }

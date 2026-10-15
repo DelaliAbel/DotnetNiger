@@ -2,6 +2,7 @@ using DotnetNiger.Domain.Entities.Community;
 using DotnetNiger.Domain.Entities.Comments;
 using DotnetNiger.Domain.Entities.Content;
 using DotnetNiger.Domain.Entities.Moderation;
+using DotnetNiger.Domain.Entities.Identity;
 using DotnetNiger.Domain.Entities.Notifications;
 using DotnetNiger.Domain.Entities.Partners;
 using DotnetNiger.Domain.Entities.Projects;
@@ -76,6 +77,17 @@ public sealed class DotnetNigerDbContext
     public DbSet<ContactMessage> ContactMessages => Set<ContactMessage>();
     public DbSet<NewsletterSubscription> NewsletterSubscriptions => Set<NewsletterSubscription>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+
+    /// <summary>
+    /// Obtient les photos de profil déposées par les membres.
+    /// </summary>
+    public DbSet<ProfilePhoto> ProfilePhotos => Set<ProfilePhoto>();
+
+    /// <summary>Images déposées pour le contenu du site (couvertures, illustrations).</summary>
+    public DbSet<ContentImage> ContentImages => Set<ContentImage>();
+
+    /// <summary>Liens externes affichés sur les profils des membres.</summary>
+    public DbSet<MemberLink> MemberLinks => Set<MemberLink>();
 
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder builder)

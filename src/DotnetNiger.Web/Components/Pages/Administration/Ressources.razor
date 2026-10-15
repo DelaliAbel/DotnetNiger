@@ -1,0 +1,614 @@
+@page "/administration/ressources"
+@layout DotnetNiger.Web.Components.Layout.AdministrationLayout
+@rendermode InteractiveServer
+
+@using System.Globalization
+@using System.Text.Json
+@using DotnetNiger.Domain.Enums
+@using DotnetNiger.Web.Services.Administration
+
+@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
+
+@inject ServiceRessources Service
+@inject IJSRuntime JS
+
+@*
+    Rédaction des ressources : la liste, ses filtres, et le tiroir d'édition.
+
+    Une ressource est un lien, rien de plus. Le public n'en montre qu'une carte — titre,
+    icône de la catégorie, présentation, source — et la carte mène directement à la
+    ressource. Il n'y a donc ni image, ni corps rédigé : ce qui n'est pas lu depuis la
+    carte n'a pas sa place dans le formulaire.
+*@
+
+<PageTitle>Ressources — Administration</PageTitle>
+
+<header class="admin-entete">
+    <div>
+        <h1 class="admin-entete__titre">Ressources</h1>
+        <p class="admin-entete__intro">Formations, tutoriels, guides, bibliothèques et outils de la communauté.</p>
+    </div>
+
+    <button type="button" class="btn btn--primary" @onclick="OuvrirCreation" disabled="@_envoi">
+        <DnIcon Name="plus" Size="16" />
+        Nouvelle ressource
+    </button>
+</header>
+
+@if (_donnees is null)
+{
+    <Chargement />
+}
+else
+{
+    <div class="admin-bandeau">
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="ressource-recherche">Recherche</label>
+            <input id="ressource-recherche" class="input" type="search" placeholder="Titre ou description…"
+                   @bind="_recherche" @bind:event="oninput" />
+        </div>
+
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="ressource-categorie">Catégorie</label>
+            <div class="select">
+                <select id="ressource-categorie" @bind="_filtreCategorie">
+                    <option value="">Toutes</option>
+                    @foreach (var categorie in Categories)
+                    {
+                        <option value="@categorie.ToString()">@LibelleCategorie(categorie)</option>
+                    }
+                </select>
+                <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+            </div>
+        </div>
+
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="ressource-etat">État</label>
+            <div class="select">
+                <select id="ressource-etat" @bind="_filtreEtat">
+                    <option value="">Tous les états</option>
+                    <option value="@nameof(PublicationStatus.Published)">Publiées</option>
+                    <option value="@nameof(PublicationStatus.Draft)">Brouillons</option>
+                    <option value="@nameof(PublicationStatus.Archived)">Archivées</option>
+                </select>
+                <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+            </div>
+        </div>
+
+        <span class="admin-bandeau__compte">@Liste.Count ressource(s)</span>
+    </div>
+
+    @if (Liste.Count is 0)
+    {
+        <p class="admin-formulaire__aide">Aucune ressource ne correspond à ces filtres.</p>
+    }
+    else
+    {
+        <table class="admin-tableau admin-tableau--defilant">
+            <thead>
+                <tr>
+                    <th scope="col">Titre</th>
+                    <th scope="col">Catégorie</th>
+                    <th scope="col">Partagée par</th>
+                    <th scope="col">État</th>
+                    <th scope="col">Modifié le</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ligne in Liste)
+                {
+                    <tr>
+                        <td class="admin-tableau__titre">@ligne.Titre</td>
+                        <td>@LibelleCategorie(ligne.Categorie)</td>
+                        <td>
+                            @if (!string.IsNullOrWhiteSpace(ligne.Fournisseur))
+                            {
+                                @ligne.Fournisseur
+                            }
+                            else
+                            {
+                                <span class="admin-tableau__note">—</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge @Etiquette(ligne.Statut)">@Etat(ligne.Statut)</span>
+                        </td>
+                        <td>@Date(ligne)</td>
+                        <td>
+                            <div class="admin-tableau__actions">
+                                <button type="button" class="btn btn--ghost btn--sm"
+                                        @onclick="() => OuvrirEdition(ligne)">
+                                    <DnIcon Name="edit" Size="14" />
+                                    Éditer
+                                </button>
+
+                                @if (!string.IsNullOrWhiteSpace(ligne.LienExterne))
+                                {
+                                    <a class="btn btn--ghost btn--sm" href="@ligne.LienExterne"
+                                       target="_blank" rel="noopener">
+                                        <DnIcon Name="external-link" Size="14" />
+                                        Ouvrir
+                                    </a>
+                                }
+
+                                @if (ligne.Statut == PublicationStatus.Published)
+                                {
+                                    <button type="button" class="btn btn--sm"
+                                            @onclick="() => ChangerEtat(ligne, Transition.Brouillon)">
+                                        Brouillon
+                                    </button>
+
+                                    <button type="button" class="btn btn--sm"
+                                            @onclick="() => ChangerEtat(ligne, Transition.Archiver)">
+                                        Archiver
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn--primary btn--sm"
+                                            @onclick="() => ChangerEtat(ligne, Transition.Publier)">
+                                        Publier
+                                    </button>
+                                }
+
+                                @if (_aSupprimer == ligne.Id)
+                                {
+                                    <span class="admin-confirmation">
+                                        Supprimer ?
+                                        <button type="button" class="btn btn--rouge btn--sm"
+                                                @onclick="() => Supprimer(ligne)">Oui</button>
+                                        <button type="button" class="btn btn--ghost btn--sm"
+                                                @onclick="() => _aSupprimer = null">Non</button>
+                                    </span>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn--rouge btn--sm"
+                                            @onclick="() => _aSupprimer = ligne.Id">
+                                        Supprimer
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+<div class="admin-toasts" role="status" aria-live="polite">
+    @foreach (var message in _messages)
+    {
+        <div class="admin-toast admin-toast--@(message.Reussi ? "succes" : "erreur")">
+            <DnIcon Name="@(message.Reussi ? "check" : "alert")" Size="16" />
+            <span>@message.Texte</span>
+        </div>
+    }
+</div>
+
+@if (_formulaireOuvert)
+{
+    <div class="admin-voile" @onclick="FermerFormulaire">
+        <div class="admin-tiroir" role="dialog" aria-modal="true"
+             aria-label="@(_edition is null ? "Nouvelle ressource" : "Modifier la ressource")"
+             @onclick:stopPropagation="true">
+
+            <div class="admin-tiroir__entete">
+                <h2 class="admin-tiroir__titre">
+                    @(_edition is null ? "Nouvelle ressource" : "Modifier la ressource")
+                </h2>
+
+                <button type="button" class="admin-replie" aria-label="Fermer"
+                        @onclick="FermerFormulaire">
+                    <DnIcon Name="check" Size="16" />
+                </button>
+            </div>
+
+            <div class="admin-formulaire">
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="ressource-titre">Titre</label>
+                    <input id="ressource-titre" class="input" type="text" maxlength="200"
+                           placeholder="Titre de la ressource" @bind="_formeTitre" @bind:event="oninput" />
+                </div>
+
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="ressource-categorie-form">Catégorie</label>
+                    <div class="select">
+                        <select id="ressource-categorie-form" @bind="_formeCategorie">
+                            @foreach (var categorie in Categories)
+                            {
+                                <option value="@categorie.ToString()">@LibelleCategorie(categorie)</option>
+                            }
+                        </select>
+                        <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+                    </div>
+                </div>
+
+                @* Une ressource est un lien. Le public n'en montre qu'une carte, et la
+                   carte mène directement à la ressource : le corps n'a donc nulle part
+                   où être lu, et le demander ici ne servirait à rien. *@
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="ressource-lien">
+                        Adresse de la ressource
+                        <span class="admin-formulaire__obligatoire">obligatoire</span>
+                    </label>
+                    <input id="ressource-lien" class="input" type="url" placeholder="https://…"
+                           @bind="_formeLien" @bind:event="oninput" />
+
+                    <p class="admin-formulaire__aide">
+                        C'est l'adresse que le visiteur ouvrira depuis la carte.
+                    </p>
+                </div>
+
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="ressource-description">
+                        Présentation
+                        <span class="admin-formulaire__obligatoire">obligatoire</span>
+                    </label>
+                    <textarea id="ressource-description" class="input" rows="3" maxlength="500"
+                              placeholder="Ce que cette ressource apporte au développeur."
+                              @bind="_formeDescription" @bind:event="oninput"></textarea>
+
+                    <p class="admin-formulaire__aide">
+                        Une ou deux phrases : c'est tout ce que la carte montre sous le titre.
+                    </p>
+                </div>
+
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="ressource-source">Éditeur ou source</label>
+                    <input id="ressource-source" class="input" type="text" maxlength="120"
+                           placeholder="Microsoft, JetBrains, la communauté…" @bind="_formeSource"
+                           @bind:event="oninput" />
+                </div>
+
+                @if (_erreur is not null)
+                {
+                    <div class="alerte alerte--rouge" role="alert">
+                        <span class="alerte__icone"><DnIcon Name="alert" Size="16" /></span>
+                        <span>@_erreur</span>
+                    </div>
+                }
+
+                <div class="admin-formulaire__actions">
+                    <button type="button" class="btn btn--ghost" @onclick="FermerFormulaire" disabled="@_envoi">
+                        Annuler
+                    </button>
+
+                    <button type="button" class="btn btn--primary" @onclick="Enregistrer" disabled="@_envoi">
+                        @(_envoi ? "Enregistrement…" : "Enregistrer")
+                    </button>
+                </div>
+
+                @* Une ressource déposée est publiée immédiatement : le dépôt par un membre
+                   n'a pas d'étape de relecture. Le dire vaut mieux qu'un interrupteur
+                   qui ne ferait rien. *@
+                <p class="admin-formulaire__aide">
+                    Une ressource enregistrée est publiée tout de suite et annoncée dans la lettre d'information.
+                </p>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
+
+    private static readonly ResourceCategory[] Categories = Enum.GetValues<ResourceCategory>();
+
+    private RessourcesVue? _donnees;
+
+    private string _recherche = string.Empty;
+
+    private string _filtreCategorie = string.Empty;
+
+    private string _filtreEtat = string.Empty;
+
+    private bool _formulaireOuvert;
+
+    private bool _envoi;
+
+    private Guid? _aSupprimer;
+
+    private RessourceAdminDetail? _edition;
+
+    private string _formeTitre = string.Empty;
+
+    private ResourceCategory _formeCategorie = ResourceCategory.Guide;
+
+    private string _formeLien = string.Empty;
+
+    private string _formeDescription = string.Empty;
+
+    private string _formeSource = string.Empty;
+
+    private string? _erreur;
+
+    private readonly List<Annonce> _messages = [];
+
+    /// <summary>Ressources qui passent les filtres de la barre.</summary>
+    private List<LigneRessourceAdmin> Liste =>
+        [.. (_donnees?.Ressources ?? [])
+            .Where(ligne => string.IsNullOrWhiteSpace(_filtreCategorie)
+                || string.Equals(ligne.Categorie.ToString(), _filtreCategorie, StringComparison.Ordinal))
+            .Where(ligne => string.IsNullOrWhiteSpace(_filtreEtat)
+                || string.Equals(ligne.Statut.ToString(), _filtreEtat, StringComparison.Ordinal))
+            .Where(ligne => string.IsNullOrWhiteSpace(_recherche)
+                || ligne.Titre.Contains(_recherche, StringComparison.OrdinalIgnoreCase)
+                || ligne.Description.Contains(_recherche, StringComparison.OrdinalIgnoreCase))];
+
+    protected override async Task OnInitializedAsync() => _donnees = await Service.LireAsync();
+
+    private void OuvrirCreation()
+    {
+        _edition = null;
+        _formeTitre = string.Empty;
+        _formeCategorie = ResourceCategory.Guide;
+        _formeLien = string.Empty;
+        _formeDescription = string.Empty;
+        _formeSource = string.Empty;
+        _erreur = null;
+        _formulaireOuvert = true;
+    }
+
+    private async Task OuvrirEdition(LigneRessourceAdmin ligne)
+    {
+        var detail = await Service.LireDetailAsync(ligne.Id);
+
+        if (detail is null)
+        {
+            await Previent("Cette ressource n'existe plus.", false);
+            return;
+        }
+
+        _edition = detail;
+        _formeTitre = detail.Titre;
+        _formeCategorie = detail.Categorie;
+        _formeLien = detail.LienExterne ?? string.Empty;
+        _formeDescription = detail.Description;
+        _formeSource = detail.Fournisseur ?? string.Empty;
+        _erreur = null;
+        _formulaireOuvert = true;
+    }
+
+    private void FermerFormulaire()
+    {
+        _formulaireOuvert = false;
+        _erreur = null;
+    }
+
+    private async Task Enregistrer()
+    {
+        _erreur = null;
+
+        if (string.IsNullOrWhiteSpace(_formeTitre))
+        {
+            _erreur = "Donnez un titre à la ressource.";
+            return;
+        }
+
+        var lien = Adresse(_formeLien);
+
+        if (lien is null)
+        {
+            _erreur = "Une ressource a besoin de son adresse : c'est elle que le visiteur ouvrira.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_formeDescription))
+        {
+            _erreur = "Décrivez en une phrase ce que cette ressource apporte.";
+            return;
+        }
+
+        var champs = new
+        {
+            title = _formeTitre,
+            description = _formeDescription,
+            category = _formeCategorie,
+            externalUrl = lien,
+            provider = string.IsNullOrWhiteSpace(_formeSource) ? null : _formeSource
+        };
+
+        _envoi = true;
+
+        try
+        {
+            var reponse = _edition is null
+                ? await Ecrire("POST", "/api/resources", champs)
+                : await Ecrire("PUT", $"/api/resources/{_edition.Id}", champs);
+
+            if (!reponse.Ok)
+            {
+                _erreur = Raison(reponse);
+                return;
+            }
+
+            var message = _edition is null ? "Ressource créée." : "Ressource enregistrée.";
+
+            FermerFormulaire();
+
+            Service.Oublie();
+            _donnees = await Service.LireAsync();
+
+            await Previent(message, true);
+        }
+        finally
+        {
+            _envoi = false;
+        }
+    }
+
+    private async Task ChangerEtat(LigneRessourceAdmin ligne, Transition transition)
+    {
+        var reponse = await Ecrire("POST", $"/api/resources/{ligne.Id}/{Segment(transition)}", null);
+
+        if (!reponse.Ok)
+        {
+            await Previent(Raison(reponse), false);
+            return;
+        }
+
+        Service.Oublie();
+        _donnees = await Service.LireAsync();
+
+        await Previent(transition switch
+        {
+            Transition.Publier => "Ressource publiée.",
+            Transition.Brouillon => "Ressource repassée en brouillon.",
+            _ => "Ressource archivée.",
+        }, true);
+    }
+
+    private async Task Supprimer(LigneRessourceAdmin ligne)
+    {
+        _aSupprimer = null;
+
+        var reponse = await Ecrire("DELETE", $"/api/resources/{ligne.Id}", null);
+
+        if (!reponse.Ok)
+        {
+            await Previent(Raison(reponse), false);
+            return;
+        }
+
+        Service.Oublie();
+        _donnees = await Service.LireAsync();
+
+        await Previent("Ressource supprimée.", true);
+    }
+
+    /// <summary>
+    /// Écrit par l'API, après avoir vérifié que le script d'appel est présent.
+    /// </summary>
+    /// <param name="methode">Verbe de la requête.</param>
+    /// <param name="chemin">Adresse de l'API.</param>
+    /// <param name="corps">Charge utile, ou <see langword="null"/>.</param>
+    /// <returns>La réponse normalisée de l'appel.</returns>
+    private async Task<ReponseApi> Ecrire(string methode, string chemin, object? corps)
+    {
+        await JS.InvokeVoidAsync("DnAdminScripts.assure", true);
+
+        return await JS.InvokeAsync<ReponseApi>("DnApi.envoyer", methode, chemin, corps);
+    }
+
+    /// <summary>Affiche un message, puis l'efface.</summary>
+    /// <param name="texte">Message à afficher.</param>
+    /// <param name="reussi">Vrai pour un succès, faux pour une erreur.</param>
+    private async Task Previent(string texte, bool reussi)
+    {
+        var annonce = new Annonce(texte, reussi);
+        _messages.Add(annonce);
+
+        await InvokeAsync(StateHasChanged);
+
+        await Task.Delay(4000);
+        _messages.Remove(annonce);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Complète une adresse à laquelle il manque le schéma.</summary>
+    /// <param name="lien">Adresse saisie, éventuellement sans schéma.</param>
+    /// <returns>L'adresse complète, ou <see langword="null"/> si rien n'a été saisi.</returns>
+    private static string? Adresse(string? lien)
+    {
+        if (string.IsNullOrWhiteSpace(lien))
+        {
+            return null;
+        }
+
+        var adresse = lien.Trim();
+
+        return adresse.Contains("://", StringComparison.Ordinal) ? adresse : $"https://{adresse}";
+    }
+
+    /// <summary>Segment d'URL du cycle de vie, tel que l'API le nomme.</summary>
+    /// <param name="transition">Transition demandée.</param>
+    /// <returns>Le segment correspondant.</returns>
+    private static string Segment(Transition transition) => transition switch
+    {
+        Transition.Publier => "publish",
+        Transition.Brouillon => "draft",
+        _ => "archive",
+    };
+
+    private static string Date(LigneRessourceAdmin ligne)
+        => (ligne.ModifieLe ?? ligne.PublieLe)?.ToString("d MMM yyyy", Culture) ?? "jamais";
+
+    /// <summary>Libellé d'une catégorie, en français.</summary>
+    /// <param name="categorie">Catégorie de la ressource.</param>
+    /// <returns>Le libellé affiché.</returns>
+    private static string LibelleCategorie(ResourceCategory categorie) => categorie switch
+    {
+        ResourceCategory.Training => "Formation",
+        ResourceCategory.Tutorial => "Tutoriel",
+        ResourceCategory.Guide => "Guide",
+        ResourceCategory.Library => "Bibliothèque",
+        _ => "Outil",
+    };
+
+    private static string Etat(PublicationStatus statut) => statut switch
+    {
+        PublicationStatus.Published => "Publiée",
+        PublicationStatus.Draft => "Brouillon",
+        _ => "Archivée",
+    };
+
+    private static string Etiquette(PublicationStatus statut) => statut switch
+    {
+        PublicationStatus.Published => "badge--vert",
+        PublicationStatus.Draft => "badge--orange",
+        _ => "badge--ink",
+    };
+
+    /// <summary>Message d'erreur d'une réponse refusée, tel que le serveur l'a formulé.</summary>
+    /// <param name="reponse">Réponse de l'appel.</param>
+    /// <returns>Un texte compréhensible, jamais un code.</returns>
+    private static string Raison(ReponseApi reponse)
+        => reponse.Detail
+            ?? reponse.Titre
+            ?? (reponse.Statut == 0
+                ? "Le serveur n'a pas répondu."
+                : $"Le serveur a répondu {reponse.Statut}.");
+
+    /// <summary>Changement d'état demandé depuis la liste.</summary>
+    private enum Transition
+    {
+        /// <summary>Met la ressource en ligne.</summary>
+        Publier,
+
+        /// <summary>Retire la ressource du site sans l'effacer.</summary>
+        Archiver,
+
+        /// <summary>Repasse une ressource en ligne dans son état de brouillon.</summary>
+        Brouillon,
+    }
+
+    /// <summary>Un message affiché à l'écran, le temps qu'il soit effacé.</summary>
+    /// <param name="Texte">Contenu du message.</param>
+    /// <param name="Reussi">Vrai pour un succès, faux pour une erreur.</param>
+    private sealed record Annonce(string Texte, bool Reussi);
+
+    /// <summary>Réponse normalisée d'un appel fait par le script d'administration.</summary>
+    /// <param name="Ok">Vrai si le serveur a accepté.</param>
+    /// <param name="Statut">Code de la réponse.</param>
+    /// <param name="Corps">Corps décodé, ou texte brut si la réponse n'était pas du JSON.</param>
+    private sealed record ReponseApi(bool Ok, int Statut, object? Corps)
+    {
+        /// <summary>Message d'erreur, au format problem details.</summary>
+        public string? Titre => (Corps as JsonElement?)?.TryGetProperty("title", out var titre) == true
+            ? titre.GetString()
+            : null;
+
+        /// <summary>Précision de l'erreur, quand le serveur en a produit une.</summary>
+        public string? Detail => (Corps as JsonElement?)?.TryGetProperty("detail", out var detail) == true
+            ? detail.GetString()
+            : null;
+
+        /// <summary>Adresse de l'image déposée, pour le dépôt d'un fichier.</summary>
+        public string? Url => (Corps as JsonElement?)?.TryGetProperty("url", out var url) == true
+            ? url.GetString()
+            : null;
+    }
+}

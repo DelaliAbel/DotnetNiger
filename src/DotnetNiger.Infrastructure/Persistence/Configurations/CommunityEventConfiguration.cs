@@ -42,6 +42,10 @@ internal sealed class CommunityEventConfiguration : IEntityTypeConfiguration<Com
         builder.Property(x => x.OnlineUrl)
             .HasMaxLength(FieldLimits.Url);
 
+        builder.Property(x => x.Kind)
+            .IsRequired()
+            .HasMaxLength(FieldLimits.Label);
+
         builder.Property(x => x.Status)
             .IsRequired()
             .AsEnumText();

@@ -35,11 +35,22 @@ public static class ExternalSignInNavigation
         {
             RedirectUri = callbackPath,
 
-            // Une destination qui ne reste pas dans le site est ramenée à l'accueil, plutôt
-            // que d'être transmise au fournisseur puis restituée telle quelle.
-            Items = { [ReturnUrlItem] = IsLocal(returnUrl) ? returnUrl! : "/" },
+            // Une destination qui ne reste pas dans le site est ramenée à l'espace du
+            // membre, plutôt que d'être transmise au fournisseur puis restituée telle
+            // quelle : se connecter avec un compte externe doit mener au même endroit
+            // qu'une connexion par mot de passe.
+            Items = { [ReturnUrlItem] = IsLocal(returnUrl) ? returnUrl! : EspaceMembre },
         };
     }
+
+    /// <summary>
+    /// Destination retenue quand la connexion n'en précise aucune : l'espace du membre.
+    /// </summary>
+    /// <remarks>
+    /// Partagée par la connexion locale et la connexion par fournisseur, pour que les deux
+    /// parcours ne proposeront jamais deux destinations différentes.
+    /// </remarks>
+    public const string EspaceMembre = "/compte/tableau-de-bord";
 
     /// <summary>
     /// Relit la destination demandée dans les propriétés d'authentification.

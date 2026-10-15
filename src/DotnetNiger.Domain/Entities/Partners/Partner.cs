@@ -99,9 +99,9 @@ public sealed class Partner : SoftDeletableEntity
     /// <summary>
     /// Définit le logo du partenaire.
     /// </summary>
-    /// <param name="logoUrl">URL absolue, ou <see langword="null"/> pour retirer le logo.</param>
+    /// <param name="logoUrl">Adresse du logo : URL absolue ou chemin du site, ou <see langword="null"/> pour le retirer.</param>
     public void SetLogoUrl(string? logoUrl)
-        => LogoUrl = DomainGuard.OptionalAgainstHttpUrl(logoUrl, nameof(logoUrl));
+        => LogoUrl = DomainGuard.OptionalAgainstImageSource(logoUrl, nameof(logoUrl));
 
     /// <summary>
     /// Change le niveau de partenariat.

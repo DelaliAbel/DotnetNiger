@@ -160,6 +160,17 @@ public sealed class Comment : SoftDeletableEntity
     /// </summary>
     public void MarkDeleted() => Status = CommentStatus.Deleted;
 
+    /// <summary>
+    /// Rétablit un commentaire masqué ou mis de côté, après examen.
+    /// </summary>
+    /// <remarks>
+    /// Sans cette issue, une sanction était définitive alors que la modération a le
+    /// droit de se tromper : un commentaire masqué à tort ne pouvait plus revenir.
+    /// Le commentaire supprimé, lui, ne se rétablit pas — seul un signalement levé
+    /// rend le contenu à la discussion.
+    /// </remarks>
+    public void MarkApproved() => Status = CommentStatus.Published;
+
     private static Comment Create(string body, Guid authorId, Guid? parentCommentId)
     {
         DomainGuard.AgainstEmpty(authorId, nameof(authorId));

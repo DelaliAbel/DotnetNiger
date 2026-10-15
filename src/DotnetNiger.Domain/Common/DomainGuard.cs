@@ -166,4 +166,70 @@ public static class DomainGuard
     /// <exception cref="DomainException">L'URL est renseignée mais invalide.</exception>
     public static string? OptionalAgainstHttpUrl(string? value, string field)
         => string.IsNullOrWhiteSpace(value) ? null : AgainstHttpUrl(value, field);
+
+    /// <summary>
+    /// Vérifie qu'une image est référencée soit par une URL absolue HTTP ou HTTPS,
+    /// soit par un chemin du site.
+    /// </summary>
+    /// <param name="value">Valeur à contrôler.</param>
+    /// <param name="field">Nom du champ, utilisé dans le code d'erreur.</param>
+    /// <returns>Adresse validée.</returns>
+    /// <exception cref="DomainException">
+    /// L'adresse est absente, trop longue, ou n'est ni une URL HTTP(S) ni un chemin du site.
+    /// </exception>
+    /// <remarks>
+    /// Les images déposées par l'administration sont servies par le site lui-même, à
+    /// une adresse de la forme <c>/api/images/…</c>. Les accepter évite d'écrire le nom
+    /// du domaine dans chaque enregistrement : un changement d'adresse ne casserait pas
+    /// les images déjà en ligne.
+    /// <para>
+    /// La protection reste entière. Un chemin ne peut pas porter de schéma, donc il ne
+    /// peut pas être un <c>javascript:</c> ; le risque que la garde cherche à écarter —
+    /// une adresse stockée puis rendue dans un attribut — disparaît donc avec l'exigence
+    /// d'absolu.
+    /// </para>
+    /// </remarks>
+    public static string AgainstImageSource(string? value, string field)
+    {
+        var source = AgainstNullOrWhiteSpace(value, field);
+        AgainstTooLong(source, FieldLimits.Url, field);
+
+        if (EstCheminDuSite(source))
+        {
+            return source;
+        }
+
+        if (!Uri.TryCreate(source, UriKind.Absolute, out var uri)
+            || (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            throw new DomainException(
+                "field_invalid_url",
+                $"Le champ « {field} » doit être une URL absolue http(s) ou un chemin du site.");
+        }
+
+        return source;
+    }
+
+    /// <summary>
+    /// Indique si une adresse est un chemin servi par le site lui-même.
+    /// </summary>
+    /// <remarks>
+    /// Le chemin commence par une barre oblique et ne contient aucun deux-points : un
+    /// chemin n'a jamais besoin d'un, et son absence écarte « javascript:… » comme
+    /// « data:… », qui sont précisément ce que la garde cherche à refusée.
+    /// </remarks>
+    /// <param name="source">Adresse à examiner.</param>
+    /// <returns><see langword="true"/> si l'adresse est un chemin du site.</returns>
+    private static bool EstCheminDuSite(string source)
+        => source.StartsWith('/') && !source.Contains(':', StringComparison.Ordinal);
+
+    /// <summary>
+    /// Vérifie qu'une image est correctement référencée si elle l'est.
+    /// </summary>
+    /// <param name="value">Valeur à contrôler, éventuellement <see langword="null"/>.</param>
+    /// <param name="field">Nom du champ, utilisé dans le code d'erreur.</param>
+    /// <returns>Adresse validée, ou <see langword="null"/>.</returns>
+    /// <exception cref="DomainException">L'adresse est renseignée mais invalide.</exception>
+    public static string? OptionalAgainstImageSource(string? value, string field)
+        => string.IsNullOrWhiteSpace(value) ? null : AgainstImageSource(value, field);
 }

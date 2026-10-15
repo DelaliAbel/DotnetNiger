@@ -34,6 +34,60 @@
                 document.documentElement.setAttribute("data-theme", theme);
             } catch (e) { }
         })();
+
+        // Chargement des scripts propres à l'administration.
+        //
+        // Ils vivent dans le layout d'administration, qui est remplacé à chaque navigation
+        // enhanced : le document reçu alors ne réexécute pas les scripts, et l'éditeur
+        // comme les appels d'API se retrouvent absents. Ce minuscule amorceur vit dans le
+        // document racine, qui n'est jamais remplacé, et réinjecte ce qui manque. Chaque
+        // fichier n'est chargé qu'une fois.
+        window.DnAdminScripts = (function () {
+            var fichiers = [
+                "/js/api-admin.js",
+                "/tinymce/tinymce.min.js",
+                "/js/tinymce-admin.js"
+            ];
+
+            var charger = [];
+
+            for (var i = 0; i < fichiers.length; i++) {
+                (function (chemin) {
+                    charger.push(new Promise(function (resoudre) {
+                        if (document.querySelector('script[data-dn="' + chemin + '"]')) {
+                            resoudre();
+                            return;
+                        }
+
+                        var balise = document.createElement("script");
+                        balise.src = chemin;
+                        balise.dataset.dn = chemin;
+                        balise.addEventListener("load", resoudre);
+                        balise.addEventListener("error", resoudre);
+                        document.head.appendChild(balise);
+                    }));
+                })(fichiers[i]);
+            }
+
+            return {
+                // Attend que les scripts soient présents. Sans argument, n'attend rien : la
+                // simple présence suffit quand la page n'a pas encore à les utiliser.
+                assure: function (attendre) {
+                    if (!attendre) {
+                        return null;
+                    }
+
+                    return Promise.all(charger);
+                },
+
+                // Indique si un objet global existe. Blazor n'évalue pas une expression :
+                // le nom qu'on lui donne doit désigner une fonction. Cette sonde évite
+                // d'écrire `typeof window.x !== "undefined"` côté C#, qui planterait.
+                present: function (nom) {
+                    return typeof window[nom] !== "undefined";
+                }
+            };
+        })();
     </script>
     <HeadOutlet />
 </head>

@@ -1,8 +1,16 @@
 @page "/evenements/{Slug}"
 @using System.Globalization
-@attribute [StreamRendering]
+@using DotnetNiger.Application.Abstractions
+@using DotnetNiger.Application.Abstractions.Persistence
+@using DotnetNiger.Domain.Entities.Community
+@using DotnetNiger.Domain.Enums
+@using DotnetNiger.Web.Services.Inscriptions
+@using Microsoft.EntityFrameworkCore
 
 @inject ISiteContentService Contenu
+@inject IUnitOfWork UniteDeTravail
+@inject ICurrentUserService UtilisateurCourant
+@inject ServiceInscriptionEvenement Inscriptions
 
 @if (_Evenement is null)
 {
@@ -22,18 +30,18 @@
     }
     else
     {
-        <div class="wrap" style="padding-block: calc(var(--spacing) * 12);">
-            <p class="text-caption" style="color: var(--site-fg-muted);">Chargement…</p>
-        </div>
+        <Chargement />
     }
 }
 else
 {
     <PageTitle>@_Evenement.Titre — événements DotnetNiger</PageTitle>
     <HeadContent>
-        <meta name="description" content="@_Evenement.Description" />
+        @* Le résumé sert de description : le corps est du HTML, illisible dans une balise
+           meta comme dans un aperçu de partage. *@
+        <meta name="description" content="@_Evenement.Resume" />
         <meta property="og:title" content="@_Evenement.Titre — DotnetNiger" />
-        <meta property="og:description" content="@_Evenement.Description" />
+        <meta property="og:description" content="@_Evenement.Resume" />
     </HeadContent>
 
     <!-- 1. En-tête de l'événement -->
@@ -44,14 +52,24 @@ else
                 <span aria-hidden="true">·</span>
                 <a class="link" href="@UrlType">@_Evenement.Type</a>
             </p>
-            <h1 class="hero__title" style="margin-top: var(--spacing);">@_Evenement.Titre</h1>
-            <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
+            <h1 class="hero__title fiche__titre">@_Evenement.Titre</h1>
+            <p class="hero__lead fiche__accentuation">
                 <DnIcon Name="calendar" Size="16" />
                 <time datetime="@_Evenement.DateDebut.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)">
                     @DateLisible
                 </time>
                 <span aria-hidden="true">·</span>
-                <DnIcon Name="map-pin" Size="16" /> @_Evenement.Lieu
+                <DnIcon Name="map-pin" Size="16" /> @LieuLisible
+                @if (!string.IsNullOrWhiteSpace(_Evenement.LienParticipation))
+                {
+                    <span aria-hidden="true">·</span>
+                    @* Le lien ouvre un autre site : `noopener` évite que la page d'arrivée
+                       puisse piloter la nôtre. *@
+                    <a class="link" href="@_Evenement.LienParticipation"
+                       target="_blank" rel="noopener">
+                        Rejoindre l'événement
+                    </a>
+                }
             </p>
         </div>
     </section>
@@ -59,7 +77,7 @@ else
     <!-- 2. Détail -->
     <section class="section" aria-label="Détail de l'événement">
         <div class="wrap">
-            <div class="grid gap-2 md:grid-cols-3" style="align-items: start;">
+            <div class="grid gap-2 md:grid-cols-3 fiche__grille">
                 <div class="md:col-span-2">
                     @if (!string.IsNullOrWhiteSpace(_Evenement.ImageUrl))
                     {
@@ -67,26 +85,100 @@ else
                                     Etiquette="@(EstPasse ? "Terminé" : null)" />
                     }
 
-                    <div style="display: grid; gap: calc(var(--spacing) * 2); margin-top: calc(var(--spacing) * 2);">
-                        <p class="text-lead">@_Evenement.Description</p>
+                    <div class="article__corps fiche__corps">
+                        @* Le chapô, et non la description : celle-ci est du HTML, et la
+                           printer ici afficherait ses balises au lecteur. *@
+                        <p class="text-lead">@_Evenement.Resume</p>
+                        @* Le corps de la rencontre est stocké en HTML, assaini à l'écriture
+                           par le domaine : l'échapper afficherait les balises au lecteur. *@
+                        @((MarkupString)ContenuHtml.Nettoyer(_Evenement.Contenu))
                     </div>
 
                     <div class="article__fin">
                         <a class="btn btn--ghost" href="/evenements">
                             <DnIcon Name="arrow-left" Size="16" /> Retour à l'agenda
                         </a>
-                        <a class="btn btn--primary" href="/compte/inscription">
-                            Participer à cet événement
-                            <DnIcon Name="arrow-right" Size="16" />
-                        </a>
+
+                        <Partage Titre="@_Evenement.Titre" />
+
+                        @if (EstPasse)
+                        {
+                            <p class="badge badge--ink">
+                                <DnIcon Name="users" Size="14" />
+                                @_NombreParticipants @(_NombreParticipants == 1 ? "participant" : "participants")
+                            </p>
+                        }
+                        else
+                        {
+                            <form method="post"
+                                  action="@(_Inscrit ? "/evenements/desinscription" : "/evenements/inscription")">
+                                <AntiforgeryToken />
+                                <input type="hidden" name="Slug" value="@Slug" />
+
+                                @if (_Erreur is not null)
+                                {
+                                    <p class="alerte alerte--rouge mb-1" role="alert">
+                                        <span class="alerte__icone"><DnIcon Name="alert" Size="14" /></span>
+                                        @_Erreur
+                                    </p>
+                                }
+
+                                @if (_Confirmation is not null)
+                                {
+                                    <p class="alerte alerte--vert mb-1" role="status">
+                                        <span class="alerte__icone"><DnIcon Name="check" Size="14" /></span>
+                                        @_Confirmation
+                                    </p>
+                                }
+
+                                <p class="card__meta fiche__compteur">
+                                    <DnIcon Name="users" Size="14" />
+                                    @if (CapaciteAtteinte)
+                                    {
+                                        <text>Complet — @_NombreInscrits sur @_Capacite places, liste d'attente ouverte</text>
+                                    }
+                                    else if (_Capacite is { } capacite)
+                                    {
+                                        <text>@_NombreInscrits inscrit(s) sur @capacite places</text>
+                                    }
+                                    else
+                                    {
+                                        <text>@_NombreInscrits inscrit(s)</text>
+                                    }
+                                </p>
+
+                                <button class="btn @(_Inscrit ? "btn--ghost" : "btn--primary")" type="submit">
+                                    @if (_Inscrit)
+                                    {
+                                        <text>Annuler ma participation</text>
+                                    }
+                                    else
+                                    {
+                                        <text>Participer à cet événement</text>
+                                    }
+                                    <DnIcon Name="arrow-right" Size="16" />
+                                </button>
+                            </form>
+                        }
                     </div>
                 </div>
 
-                <aside class="bande" aria-label="Informations pratiques">
-                    <p class="eyebrow" style="color: var(--color-vert-300);">En pratique</p>
-                    <p class="bande__title" style="margin-top: var(--spacing);">@_Evenement.Type</p>
+                <aside class="bande fiche__pratique" aria-label="Informations pratiques">
+                    <p class="eyebrow">En pratique</p>
+                    <p class="bande__title">@_Evenement.Type</p>
                     <p class="bande__lead">
-                        Le @_Evenement.DateDebut.ToString("d MMMM yyyy", Culture) à @_Evenement.Lieu.
+                        Le @_Evenement.DateDebut.ToString("d MMMM yyyy", Culture)@if (!string.IsNullOrWhiteSpace(_Evenement.Lieu))
+                        {
+                            <text> à @_Evenement.Lieu.</text>
+                        }
+                        else if (!string.IsNullOrWhiteSpace(_Evenement.LienParticipation))
+                        {
+                            <text> en ligne.</text>
+                        }
+                        else
+                        {
+                            <text>.</text>
+                        }
                         @if (EstPasse)
                         {
                             <text> Cette rencontre a déjà eu lieu.</text>
@@ -101,15 +193,32 @@ else
         </div>
     </section>
 
-    <!-- 3. Prochains rendez-vous -->
+    @if (EstEnBase)
+    {
+        <!-- 3. Commentaires de la rencontre -->
+        <section class="section" aria-label="Commentaires">
+            <div class="wrap">
+                <Commentaires EventId="@_EvenementId" CheminRetour="@($"/evenements/{Slug}")" />
+            </div>
+        </section>
+    }
+
+    <!-- 4. Prochains rendez-vous -->
     @if (Suggestions.Length > 0)
     {
         <section class="section section--alt" aria-labelledby="prochains-titre">
             <div class="wrap">
-                <div class="section__head">
-                    <p class="eyebrow">À suivre</p>
-                    <h2 id="prochains-titre" class="section__title">Les prochains rendez-vous</h2>
-                    <p class="section__lead">Les autres rencontres annoncées par la communauté.</p>
+                <div class="section__head section__head--split">
+                    <div>
+                        <p class="eyebrow">À suivre</p>
+                        <h2 id="prochains-titre" class="section__title">Les prochains rendez-vous</h2>
+                        <p class="section__lead">Les autres rencontres annoncées par la communauté.</p>
+                    </div>
+                    @* Trois rencontres ne couvrent pas l'agenda : le lien ouvre la liste
+                       complète, pour que le membre puisse choisir sa prochaine date. *@
+                    <a class="btn btn--ghost" href="/evenements">
+                        Voir tous les événements <DnIcon Name="arrow-right" Size="16" />
+                    </a>
                 </div>
 
                 <div class="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
@@ -137,12 +246,96 @@ else
 
     private EvenementVue[] Suggestions { get; set; } = [];
 
+    /// <summary>Identifiant de l'événement en base, nécessaire pour compter les inscrits.</summary>
+    private Guid _EvenementId;
+
+    /// <summary>
+    /// Places offertes, ou <see langword="null"/> si l'événement n'en limite pas le
+    /// nombre. Lue en base et non dans le contenu de démonstration : la capacité est
+    /// une règle de l'organisation, pas une description éditoriale.
+    /// </summary>
+    private int? _Capacite;
+
+    /// <summary>Nombre de personnes ayant une place confirmée, ou en attente si l'événement est complet.</summary>
+    private int _NombreInscrits;
+
+    /// <summary>Nombre de participants, pour un événement déjà terminé.</summary>
+    private int _NombreParticipants;
+
+    /// <summary>Vrai si le membre connecté occupe une place sur cet événement.</summary>
+    private bool _Inscrit;
+
+    private string? _Erreur;
+
+    private string? _Confirmation;
+
+    [SupplyParameterFromQuery(Name = "erreur")]
+    public string? _ErreurUrl { get; set; }
+
+    [SupplyParameterFromQuery(Name = "confirmation")]
+    public string? _ConfirmationUrl { get; set; }
+
+    /// <summary>
+    /// Vrai quand toutes les places sont prises. La liste d'attente reste ouverte, et
+    /// l'indiquer évite qu'un membre renonce pour rien.
+    /// </summary>
+    private bool CapaciteAtteinte => _Capacite is { } capacite && _NombreInscrits >= capacite;
+
+    /// <summary>
+    /// Vrai si l'événement a une ligne en base. Un article de démonstration qui n'a jamais
+    /// été transféré n'a ni identifiant ni commentaires : mieux vaut alors ne pas montrer
+    /// un fil vide qui promet une discussion impossible.
+    /// </summary>
+    private bool EstEnBase => _EvenementId != Guid.Empty;
+
     /// <summary>Un rendez-vous dépassé est conservé, mais signalé comme terminé.</summary>
     private bool EstPasse => _Evenement?.DateDebut < DateOnly.FromDateTime(DateTime.Today);
 
-    private string DateLisible => _Evenement?.DateFin is { } fin
-        ? $"du {_Evenement.DateDebut.ToString("d MMMM", Culture)} au {fin.ToString("d MMMM yyyy", Culture)}"
-        : _Evenement?.DateDebut.ToString("d MMMM yyyy", Culture) ?? string.Empty;
+    private string DateLisible
+    {
+        get
+        {
+            if (_Evenement is null)
+            {
+                return string.Empty;
+            }
+
+            // Un événement qui commence et finit le même jour n'est pas « du X au X » :
+            // la répétition fatigue et laisse croire à un défaut de saisie. Une rencontre
+            // sans date de fin affiche la seule date de début.
+            return _Evenement.DateFin is not { } fin || fin == _Evenement.DateDebut
+                ? _Evenement.DateDebut.ToString("d MMMM yyyy", Culture)
+                : $"du {_Evenement.DateDebut.ToString("d MMMM", Culture)} au {fin.ToString("d MMMM yyyy", Culture)}";
+        }
+    }
+
+    /// <summary>
+    /// Phrase d'en-tête : quand l'événement a lieu, et comment y assister.
+    /// </summary>
+    /// <remarks>
+    /// Un événement sans lieu n'est pas un oubli à signaler, c'est un rendez-vous en ligne :
+    /// le lieu devient alors l'adresse de participation, sinon la phrase n'aurait rien à
+    /// dire après la date.
+    /// </remarks>
+    private string LieuLisible
+    {
+        get
+        {
+            if (_Evenement is null)
+            {
+                return string.Empty;
+            }
+
+            if (!string.IsNullOrWhiteSpace(_Evenement.Lieu))
+            {
+                return _Evenement.Lieu;
+            }
+
+            return string.IsNullOrWhiteSpace(_Evenement.LienParticipation)
+                ? "lieu à préciser"
+                : "en ligne";
+        }
+    }
 
     /// <summary>Filtre l'agenda sur le type de l'événement, via le slug du référentiel.</summary>
     private string UrlType => Referentiel.TypeEvenementParSlug(TypeSlug) is { Slug: var slug }
@@ -155,6 +348,9 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
+        _Erreur = _ErreurUrl;
+        _Confirmation = _ConfirmationUrl;
+
         if (string.IsNullOrWhiteSpace(Slug))
         {
             _Evenement = null;
@@ -168,6 +364,52 @@ else
         _Evenement = trouve;
         _Introuvable = trouve is null;
         Suggestions = trouve is null ? [] : ChoisirSuggestions(evenements, trouve);
+
+        if (trouve is not null)
+        {
+            await ChargerInscriptionsAsync();
+        }
+    }
+
+    /// <summary>
+    /// Compte les personnes inscrites et reconnaît la place du membre connecté.
+    /// </summary>
+    /// <returns>Tâche complète une fois les compteurs connus.</returns>
+    /// <remarks>
+    /// Le nombre d'inscrits se lit en base et non dans le contenu de démonstration : seul
+    /// l'événement a créé des inscriptions. L'absence de la ligne en base — cas d'un
+    /// article de démonstration qui n'a jamais été transféré — laisse la page se contenter
+    /// du contenu éditorial, sans erreur visible pour le visiteur.
+    /// </remarks>
+    private async Task ChargerInscriptionsAsync()
+    {
+        var evenement = await UniteDeTravail.ReadRepository<CommunityEvent>().Query
+            .AsNoTracking()
+            .FirstOrDefaultAsync(candidat => candidat.Slug == Slug);
+
+        if (evenement is null)
+        {
+            return;
+        }
+
+        _EvenementId = evenement.Id;
+        _Capacite = evenement.Capacity;
+
+        var inscriptions = UniteDeTravail.ReadRepository<EventRegistration>().Query
+            .AsNoTracking()
+            .Where(inscription => inscription.CommunityEventId == evenement.Id);
+
+        // Les personnes en liste d'attente occupent aussi une intention de venir : les
+        // compter toutes rend le compteur honnête sur ce que la communauté a décidé.
+        _NombreInscrits = await inscriptions.CountAsync();
+        _NombreParticipants = await inscriptions.CountAsync(
+            inscription => inscription.Status != EventRegistrationStatus.Cancelled);
+
+        if (UtilisateurCourant.IsAuthenticated && UtilisateurCourant.UserId is { } membre
+            && membre != Guid.Empty)
+        {
+            _Inscrit = await Inscriptions.EstInscritAsync(evenement.Id, membre);
+        }
     }
 
     /// <summary>

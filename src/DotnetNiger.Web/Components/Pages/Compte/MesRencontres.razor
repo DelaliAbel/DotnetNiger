@@ -1,0 +1,98 @@
+@page "/compte/mes-rencontres"
+@layout DotnetNiger.Web.Components.Layout.MemberLayout
+@using System.Globalization
+@using DotnetNiger.Application.Abstractions
+@using DotnetNiger.Domain.Enums
+@using DotnetNiger.Web.Services.EspaceMembre
+@attribute [Authorize]
+
+@inject ServiceEspaceMembre Espace
+
+<PageTitle>Mes rencontres — DotnetNiger</PageTitle>
+
+<HeadContent>
+    <meta name="robots" content="noindex" />
+</HeadContent>
+
+<header class="mb-6">
+    <h1 class="section__title">Mes rencontres</h1>
+    <p class="section__lead">
+        Les rencontres auxquelles vous êtes inscrit. Se désinscrire reste possible tant que la
+        rencontre n'a pas commencé.
+    </p>
+</header>
+
+@if (_espace is null)
+{
+    <Chargement />
+}
+else if (_espace.Rencontres.Count == 0)
+{
+    <EmptyState Icone="calendar"
+                Titre="Aucune rencontre réservée"
+                Message="Les rencontres de la communauté sont gratuites et ouvertes à tous les membres.">
+        <a class="btn btn--primary" href="/evenements">Découvrir l'agenda</a>
+    </EmptyState>
+}
+else
+{
+    <ul class="inscriptions">
+        @foreach (var inscription in _espace.Rencontres)
+        {
+            var passee = inscription.DebutUtc < DateTime.UtcNow;
+            var annulee = inscription.Statut == EventRegistrationStatus.Cancelled;
+
+            <li class="inscription @(annulee ? "inscription--annulee" : null)">
+                <div class="inscription__date">
+                    <span class="inscription__jour">@inscription.DebutUtc.Day</span>
+                    <span class="inscription__mois">@inscription.DebutUtc.ToString("MMM", Culture)</span>
+                </div>
+
+                <div class="inscription__texte">
+                    <a class="inscription__titre" href="@($"/evenements/{inscription.Slug}")">
+                        @inscription.Titre
+                    </a>
+                    <p class="inscription__quand">
+                        <time datetime="@inscription.DebutUtc.ToString("o", CultureInfo.InvariantCulture)">
+                            @inscription.DebutUtc.ToString("dddd d MMMM yyyy à HH:mm", Culture)
+                        </time>
+                    </p>
+                </div>
+
+                <div class="inscription__etat">
+                    @if (annulee)
+                    {
+                        <span class="badge badge--ink">Annulée</span>
+                    }
+                    else if (passee)
+                    {
+                        <span class="badge badge--vert">Terminée</span>
+                    }
+                    else
+                    {
+                       
+                        <form method="post" action="/evenements/desinscription"
+                              onsubmit="return confirm('Annuler votre inscription à « @inscription.Titre » ?');">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="Slug" value="@inscription.Slug" />
+                            <input type="hidden" name="Retour" value="/compte/mes-rencontres" />
+                            <button class="btn btn--ghost btn--sm" type="submit">Se désinscrire</button>
+                        </form>
+                    }
+                </div>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
+
+    private EspaceMembreVue? _espace;
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        _espace = await Espace.LireAsync();
+    }
+}

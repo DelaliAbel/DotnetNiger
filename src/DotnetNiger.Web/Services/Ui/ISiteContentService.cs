@@ -4,9 +4,15 @@ namespace DotnetNiger.Web.Services.Ui;
 /// Point d'accès aux contenus affichés par le site public.
 /// </summary>
 /// <remarks>
-/// Phase 1 : <see cref="PlaceholderSiteContentService"/> renvoie des données de
-/// garniture pour valider le rendu. Phase 2 : une implémentation branchée sur l'API
-/// prendra le relais via le conteneur d'injection de dépendances, sans changer les pages.
+/// Une seule source de vérité : la base, via <c>ContenuSiteService</c>. Les contenus
+/// publiés au back-office apparaissent donc immédiatement, et une page ne peut pas afficher
+/// autre chose que ce que l'API renvoie.
+/// <para>
+/// Le contenu se saisit depuis l'administration. Une base fraîche démarre donc vide, et les
+/// pages doivent savoir dire « rien de published pour l'instant » plutôt que proposer une
+/// garniture : un article factice en production est pire qu'une page vide, parce qu'elle
+/// passe pour un vrai contenu.
+/// </para>
 /// </remarks>
 public interface ISiteContentService
 {

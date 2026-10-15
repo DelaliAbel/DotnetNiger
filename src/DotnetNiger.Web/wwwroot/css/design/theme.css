@@ -431,25 +431,67 @@
     align-content: start;
   }
 
+  /* Titre d'une carte de contenu.
+     La taille suit la largeur de la colonne, pas celle de l'écran : à trois colonnes
+     sur un grand écran, un titre de 1,25rem occupe deux fois plus de lignes qu'à une
+     colonne, et les cartes se mettent à.heighty différent. `clamp` donne la même
+     hauteur relative partout.
+     Le nombre de lignes est borné pour que les cartes d'une même grille restent
+     alignées : sans cela, un titre long pousse le texte de la carte vers le bas et
+     décale toute la rangée. */
   .card__title {
-    font-size: var(--text-lead);
+    font-size: clamp(1rem, 0.92rem + 0.35vw, 1.125rem);
     font-weight: 700;
-    line-height: 1.35;
+    line-height: 1.3;
     letter-spacing: -0.01em;
     color: var(--site-fg);
+    text-wrap: balance;
+    overflow-wrap: anywhere;
+    /* `word-break` en doublure : tous les moteurs ne coupent pas un mot sans espace
+       au sein d'une boîte `-webkit-box`, et un mot long non coupé déborde la carte. */
+    word-break: break-word;
+    /* Indispensable au rognage : sans `overflow`, `-webkit-line-clamp` ne borne rien
+       et le texte peint en dehors de son cadre au lieu de finir par trois points. */
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
 
-  /* Titre d'article en carte : `--text-lead` est calibré pour une carte de
-     deux colonnes sur l'accueil, pas pour la grille à trois colonnes du
-     blog, où il force des retours de ligne et des hauteurs inégales. */
+  /* Sur une grille à trois colonnes, le titre d'article se borne à deux lignes : il
+     n'y a pas la place d'en garder trois sans creuser la carte. */
   .card__title--compact {
-    font-size: var(--text-base);
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
+  /* Les cartes d'une même rangée partagent leur hauteur, pour que les liens et les
+     badges restent alignés d'une carte à l'autre. */
+  .card {
+    height: 100%;
+    /* Une carte est un enfant de grille : sans `min-width: 0`, sa largeur minimale vaut
+       le mot le plus long du contenu. Sur téléphone, où la grille n'a pas de colonnes
+       déclarées, c'est cette largeur qui élargit la page entière. */
+    min-width: 0;
+  }
+
+  /* L'extrait d'une carte est borné à trois lignes, comme le titre : une carte plus
+     haute que ses voisines décale toute la rangée, et le CSS termine le texte par
+     trois points. `overflow-wrap: anywhere` couvre le cas inverse — un mot sans espace
+     (adresse, identifiant, suite de caractères collés) qui, non coupé, déborderait
+     la carte et avec elle toute la page. */
   .card__text {
     color: var(--site-fg-muted);
     font-size: var(--text-sm);
     line-height: 1.55;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
 
   .card__meta {
@@ -459,6 +501,7 @@
     gap: calc(var(--spacing) * 1);
     color: var(--site-fg-muted);
     font-size: var(--text-caption);
+    overflow-wrap: anywhere;
   }
 
   /* Lieu d'un événement : l'icône doit rester alignée avec le texte quand la
@@ -600,6 +643,24 @@
     background: rgb(173 155 232 / 0.12);
   }
 
+  /* Le seul bouton rouge du site : la suppression définitive d'un compte. Il n'a pas
+     d'équivalent dans une autre teinte, pour qu'un clic sur un formulaire ordinaire
+     ne puisse pas ressembler à une suppression. */
+  .btn--rouge {
+    background: var(--color-danger);
+    color: #fff;
+    border-color: var(--color-danger);
+  }
+
+  .btn--rouge:hover {
+    background: #b32f2f;
+    border-color: #b32f2f;
+  }
+
+  .dark .btn--rouge {
+    color: #fff;
+  }
+
   .btn--ghost {
     background: transparent;
     color: var(--site-fg-muted);
@@ -633,6 +694,14 @@
     font-size: var(--text-sm);
     font-weight: 600;
     color: var(--site-fg);
+  }
+
+  /* Précision sous un champ : ce que la saisie doit contenir, pas ce qu'elle
+     signifie. Sert notamment à la double confirmation de suppression de compte. */
+  .field__aide {
+    margin: 0;
+    font-size: var(--text-caption);
+    color: var(--site-fg-muted);
   }
 
   .input {
@@ -694,6 +763,27 @@
 
   .avatar--img {
     object-fit: cover;
+  }
+
+  /* Photo de profil dans l'espace membre : un carré de 40 px ne montre qu'un bout de
+     visage. La version large agrandit la photo et l'arrondit moins, pour qu'on
+     reconnaisse la personne sans casser l'alignement des blocs. */
+  .avatar--profil {
+    width: calc(var(--spacing) * 9);
+    height: calc(var(--spacing) * 9);
+    border-radius: calc(var(--radius-lg));
+    font-size: var(--text-lead);
+  }
+
+  @media (min-width: 48rem) {
+    .avatar--profil {
+      width: calc(var(--spacing) * 11);
+      height: calc(var(--spacing) * 11);
+    }
+  }
+
+  .avatar--profil.avatar--img {
+    border-radius: calc(var(--radius-lg));
   }
 
   /* --- Héros --- */
@@ -778,6 +868,12 @@
     font-weight: 800;
     letter-spacing: -0.02em;
     text-wrap: balance;
+    /* Un titre sans espace — un mot composé, une adresse, une suite de caractères collés —
+       ne peut pas se replier et sort de l'écran. `overflow-wrap` laisse le texte se
+       couper n'importe où ; `word-break` couvre les moteurs qui l'ignorent dans une boîte
+       de ce type. C'est ce qui manquait au titre d'un article lu sur téléphone. */
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .hero__title strong {
@@ -792,6 +888,9 @@
     line-height: 1.65;
     color: rgb(255 255 255 / 0.85);
     max-width: 48ch;
+    /* La ligne d'en-tête porte le nom de l'auteur, qui est parfois une adresse de
+       courriel : sans espace, elle déborderait au lieu de se replier. */
+    overflow-wrap: anywhere;
   }
 
   .hero__actions {
@@ -914,6 +1013,122 @@
     justify-content: flex-end;
     flex-wrap: nowrap;
     gap: calc(var(--spacing) * 1.5);
+  }
+
+  /* --- Menu de profil ---
+     La barre ne montre qu'un avatar ; le tableau de bord et la déconnexion vivent
+     dans le menu qui s'ouvre dessous. `details` fait l'ouverture tout seul, donc
+     rien ici ne dépend de JavaScript : le menu fonctionne même si le script est
+     absent, et se referme dès qu'une entrée est choisie. */
+  .profil {
+    position: relative;
+  }
+
+  /* `summary` porte une puce et un triangle dans tous les navigateurs ; on les retire
+     pour que le marqueur de liste ne double pas la flèche du composant. */
+  .profil__declencheur {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 0.75);
+    padding: calc(var(--spacing) * 0.375);
+    border: 1px solid transparent;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    list-style: none;
+    color: var(--site-fg-muted);
+    transition: background-color 120ms ease, border-color 120ms ease;
+  }
+
+  .profil__declencheur::-webkit-details-marker {
+    display: none;
+  }
+
+  .profil__declencheur:hover {
+    background: var(--site-surface-strong);
+    border-color: var(--site-border);
+  }
+
+  /* Le clavier doit voir où il se trouve : sans cette bordure, le focus disparaît
+     sur fond clair et le site devient inutilisable sans souris. */
+  .profil__declencheur:focus-visible {
+    outline: 2px solid var(--color-violet-500);
+    outline-offset: 2px;
+  }
+
+  .profil[open] .profil__declencheur {
+    background: var(--site-surface-strong);
+    border-color: var(--site-border);
+  }
+
+  .profil__menu {
+    position: absolute;
+    top: calc(100% + var(--spacing) * 1);
+    right: 0;
+    z-index: 40;
+    min-width: 15rem;
+    display: flex;
+    flex-direction: column;
+    padding: calc(var(--spacing) * 1);
+    gap: calc(var(--spacing) * 0.25);
+    background: var(--site-surface);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .profil__identite {
+    margin: 0 0 calc(var(--spacing) * 0.5);
+    padding: 0 calc(var(--spacing) * 0.75) calc(var(--spacing) * 0.75);
+    border-bottom: 1px solid var(--site-border);
+  }
+
+  .profil__nom {
+    display: block;
+    font-weight: 600;
+    font-size: var(--text-sm);
+    color: var(--site-fg);
+    /* Un nom composé peut être long ; le menu garde sa largeur au lieu de s'étirer. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .profil__entree {
+    display: block;
+    width: 100%;
+    padding: calc(var(--spacing) * 0.625) calc(var(--spacing) * 0.75);
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    font: inherit;
+    font-size: var(--text-sm);
+    text-align: left;
+    text-decoration: none;
+    color: var(--site-fg);
+    cursor: pointer;
+    transition: background-color 120ms ease;
+  }
+
+  .profil__entree:hover {
+    background: var(--site-surface-strong);
+  }
+
+  .profil__entree:focus-visible {
+    outline: 2px solid var(--color-violet-500);
+    outline-offset: -2px;
+  }
+
+  /* La déconnexion quitte le compte : elle se distingue des entrées de navigation,
+     sans être pour autant un bouton rouge qui tirerait l'œil à chaque ouverture. */
+  .profil__entree--deconnexion {
+    margin-top: calc(var(--spacing) * 0.5);
+    border-top: 1px solid var(--site-border);
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+    color: var(--site-fg-muted);
+  }
+
+  .profil__entree--deconnexion:hover {
+    color: var(--color-danger);
   }
 
   /* --- Marque --- */
@@ -1485,6 +1700,9 @@
     font-weight: 800;
     letter-spacing: -0.015em;
     max-width: 26ch;
+    /* Le nom de l'auteur peut être une adresse de courriel, sans espace où couper :
+       le texte se coupe alors n'importe où plutôt que de sortir de l'encadré. */
+    overflow-wrap: anywhere;
   }
 
   .bande__lead {
@@ -2461,11 +2679,668 @@
     line-height: 1.5;
   }
 
+  /* --- Déconnexion dans l'en-tête ---
+     Un lien de déconnexion se reconnaît d'un coup à son poids : il est moins
+     appuyé que « Mon profil », parce qu'on le clique moins souvent et qu'il ne
+     doit pas attirer l'œil plus que la navigation elle-même. */
+  /* La déconnexion a quitté l'en-tête : elle est entrée du menu de profil, où elle
+     n'a plus besoin d'être masquée sur mobile puisque le menu ne s'ouvre qu'au clic. */
+
+  /* --- Partage ---
+     Les réseaux sont des boutons carrés, tous de la même taille : l'œil doit
+     parcourir la rangée sans se demander lequel est plus important qu'un autre. */
+  .partage {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 1);
+    flex-wrap: wrap;
+  }
+
+  .partage__intitule {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 0.75);
+    margin-right: var(--spacing);
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+    font-weight: 600;
+  }
+
+  .partage__reseau {
+    display: inline-grid;
+    place-items: center;
+    width: calc(var(--spacing) * 5);
+    height: calc(var(--spacing) * 5);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--site-border);
+    background: var(--site-surface);
+    color: var(--site-fg-muted);
+    cursor: pointer;
+    text-decoration: none;
+    transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+  }
+
+  .partage__reseau:hover {
+    color: var(--color-violet-600);
+    border-color: var(--color-violet-400);
+    background: var(--color-violet-50);
+  }
+
+  .dark .partage__reseau:hover {
+    color: var(--color-violet-200);
+    background: #512bd42e;
+    border-color: var(--color-violet-500);
+  }
+
+  /* --- Commentaires ---
+     Un fil de discussion se lit d'un trait, pas en cercles. L'auteur et la date
+     forment une ligne discrete, le texte suit en dessous ; une réponse se distingue
+     par un retrait et un filet, jamais par une couleur différente — la couleur
+     appartient au statut d'un contenu, pas à son niveau dans la conversation. */
+  .commentaires {
+    max-width: 46rem;
+  }
+
+  .commentaires__form {
+    display: grid;
+  }
+
+  .commentaires__invitation {
+    color: var(--site-fg-muted);
+    font-size: var(--text-sm);
+    padding: calc(var(--spacing) * 2) calc(var(--spacing) * 2.5);
+    background: var(--site-surface-strong);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+  }
+
+  .commentaires__liste {
+    display: grid;
+    gap: calc(var(--spacing) * 3);
+    margin: calc(var(--spacing) * 6) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .commentaires__reponses {
+    display: grid;
+    gap: calc(var(--spacing) * 2.5);
+    margin: calc(var(--spacing) * 3) 0 0;
+    padding: 0 0 0 calc(var(--spacing) * 4);
+    border-left: 2px solid var(--site-border);
+    list-style: none;
+  }
+
+  .commentaire__entete {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 1.5);
+    margin-bottom: calc(var(--spacing) * 1.5);
+  }
+
+  .commentaire__auteur {
+    font-weight: 700;
+    font-size: var(--text-sm);
+    color: var(--site-fg);
+    line-height: 1.3;
+  }
+
+  .commentaire__date {
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+  }
+
+  .commentaire__texte {
+    color: var(--site-fg);
+    font-size: var(--text-sm);
+    line-height: 1.7;
+    white-space: pre-line;
+  }
+
+  /* --- Calendrier des événements ---
+     Le calendrier sert d'abord à repérer une date, ensuite à ouvrir la fiche. La
+     grille reste donc lisible sans zoom : sept colonnes serrées, des cases de hauteur
+     égale, et le titre de l'événement tronqué sur une ligne. Sur téléphone, sept
+     colonnes deviennent illisibles — on les fait défiler horizontalement plutôt que
+     de réduire la police jusqu'à la rendre illisible. */
+  .calendrier__invitation {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 2);
+    padding: calc(var(--spacing) * 2.5) calc(var(--spacing) * 3);
+    background: var(--site-surface);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+    color: var(--site-fg);
+    text-decoration: none;
+    transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
+  }
+
+  .calendrier__invitation:hover {
+    box-shadow: var(--shadow-md);
+    border-color: #512bd466;
+    transform: translateY(-2px);
+  }
+
+  .dark .calendrier__invitation:hover {
+    border-color: #ad9be873;
+  }
+
+  .calendrier__invitation-icone {
+    display: inline-grid;
+    place-items: center;
+    width: calc(var(--spacing) * 11);
+    height: calc(var(--spacing) * 11);
+    border-radius: var(--radius-md);
+    background: var(--color-violet-100);
+    color: var(--color-violet-700);
+    flex-shrink: 0;
+  }
+
+  .dark .calendrier__invitation-icone {
+    background: #512bd440;
+    color: var(--color-violet-200);
+  }
+
+  .calendrier__invitation-texte {
+    display: grid;
+    gap: 2px;
+    margin-right: auto;
+  }
+
+  .calendrier__invitation-texte strong {
+    font-weight: 700;
+    font-size: var(--text-lead);
+    letter-spacing: -0.01em;
+  }
+
+  .calendrier__invitation-texte span {
+    color: var(--site-fg-muted);
+    font-size: var(--text-sm);
+  }
+
+  /* Le titre du mois est flexible et les deux boutons ne rétrécissent jamais : sur un
+     téléphone, un titre long pousse « Mois suivant » hors de l'écran, et le bouton
+     devient la cible impossible à toucher. Le titre passe donc à la ligne quand il
+     n'y a plus la place. */
+  .calendrier__navigation {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(var(--spacing) * 1.5);
+    margin-bottom: calc(var(--spacing) * 4);
+  }
+
+  .calendrier__navigation .btn {
+    flex: 0 0 auto;
+  }
+
+  .calendrier__mois {
+    flex: 1 1 100%;
+    margin: 0;
+    text-align: center;
+    font-size: var(--text-section);
+    font-weight: 800;
+    letter-spacing: -0.015em;
+    text-transform: capitalize;
+  }
+
+  @media (min-width: 48rem) {
+    .calendrier__mois {
+      flex: 1 1 auto;
+    }
+  }
+
+  .calendrier {
+    background: var(--site-surface);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+
+  .calendrier__entetes,
+  .calendrier__grille {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+  }
+
+  .calendrier__entetes {
+    border-bottom: 1px solid var(--site-border);
+    background: var(--site-surface-strong);
+  }
+
+  .calendrier__entete {
+    padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 1);
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    text-align: center;
+  }
+
+  .calendrier__case {
+    display: grid;
+    gap: calc(var(--spacing) * 0.75);
+    align-content: start;
+    min-height: 7.5rem;
+    padding: calc(var(--spacing) * 1.25);
+    border-right: 1px solid var(--site-border);
+    border-bottom: 1px solid var(--site-border);
+  }
+
+  .calendrier__case:nth-child(7n) {
+    border-right: none;
+  }
+
+  .calendrier__case--vide {
+    background: var(--site-surface-soft);
+  }
+
+  .calendrier__case--aujourdhui {
+    background: var(--color-violet-50);
+  }
+
+  .dark .calendrier__case--aujourdhui {
+    background: #512bd41f;
+  }
+
+  .calendrier__jour {
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .calendrier__case--aujourdhui .calendrier__jour {
+    color: var(--color-violet-600);
+  }
+
+  .dark .calendrier__case--aujourdhui .calendrier__jour {
+    color: var(--color-violet-300);
+  }
+
+  .calendrier__rdv {
+    display: grid;
+    gap: calc(var(--spacing) * 0.5);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .calendrier__lien {
+    display: block;
+    padding: calc(var(--spacing) * 0.5) calc(var(--spacing) * 0.75);
+    border-radius: var(--radius-sm);
+    background: var(--color-vert-100);
+    color: var(--color-vert-700);
+    font-size: var(--text-micro);
+    font-weight: 600;
+    line-height: 1.35;
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: background-color 0.15s, color 0.15s;
+  }
+
+  .calendrier__lien:hover {
+    background: var(--color-vert-500);
+    color: #fff;
+  }
+
+  .dark .calendrier__lien {
+    background: #00875140;
+    color: var(--color-vert-300);
+  }
+
+  .dark .calendrier__lien:hover {
+    background: var(--color-vert-500);
+    color: #fff;
+  }
+
+  .calendrier__legende {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 1);
+    margin-top: calc(var(--spacing) * 3);
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+  }
+
+  @media (max-width: 47.999rem) {
+    .calendrier {
+      overflow-x: auto;
+    }
+
+    .calendrier__entetes,
+    .calendrier__grille {
+      grid-template-columns: repeat(7, minmax(5.5rem, 1fr));
+      min-width: 38.5rem;
+    }
+  }
+
   /* --- Fiche article et fiche événement ---
      Le retour à la liste n'apparaît qu'en fin de lecture, là où l'on le cherche une
      fois le texte terminé. Le mettre aussi en tête le rendait illisible sur les deux
      pages : à l'arrivée on n'en a pas besoin, et sur un article long il finit
      hors de l'écran au moment précis où l'on le cherche. */
+  /* Corps d'un article lu.
+     Un article se lit contrairement à une fiche : le texte y est le contenu, pas une
+     description. Il gagne donc un point de taille, une interligne plus aérée et une
+     largeur de lecture limitée — au-delà de quatre-vingts caractères, l'œil perd la
+     ligne en revenant à gauche. */
+  .article__corps {
+    display: grid;
+    gap: calc(var(--spacing) * 2.5);
+    max-width: 68ch;
+    /* Un mot sans espace — une adresse, un identifiant, une suite de caractères
+       collés — déborde sinon la colonne et avec elle la page entière, sur mobile
+       comme sur grand écran. */
+    overflow-wrap: anywhere;
+  }
+
+  /* Images du contenu : jamais plus larges que la colonne.
+     Une image téléversée puis insérée depuis l'éditeur arrive dans le HTML à sa
+     résolution d'origine. Sans cette règle, elle écarte la mise en page et crée un
+     défilement horizontal sur tout le site. */
+  .article__corps img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-md);
+  }
+
+  /* Tableaux et blocs de code défilent dans leur propre sens : les contraindre à la
+     largeur de la colonne les rendrait illisibles, les laisser déborder casserait la
+     page. */
+  .article__corps table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    border-collapse: collapse;
+  }
+
+  .article__corps th,
+  .article__corps td {
+    padding: calc(var(--spacing) * 1);
+    border: 1px solid var(--site-border);
+  }
+
+  .article__corps pre {
+    max-width: 100%;
+    overflow-x: auto;
+    padding: calc(var(--spacing) * 1.5);
+    border-radius: var(--radius-md);
+    background: var(--site-surface-strong);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+  }
+
+  .article__corps pre code {
+    background: none;
+    padding: 0;
+  }
+
+  .article__corps > p {
+    font-size: clamp(1rem, 0.95rem + 0.25vw, 1.0625rem);
+    line-height: 1.75;
+    color: var(--site-fg);
+  }
+
+  .article__corps > p.text-lead {
+    font-size: clamp(1.125rem, 1.05rem + 0.4vw, 1.25rem);
+    line-height: 1.6;
+    color: var(--site-fg-muted);
+  }
+
+  .article__corps > h2,
+  .article__corps > h3 {
+    margin-top: var(--spacing);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--site-fg);
+  }
+
+  .article__corps > h2 {
+    font-size: var(--text-lead);
+  }
+
+  .article__corps > h3 {
+    font-size: var(--text-base);
+  }
+
+  .article__corps > ul,
+  .article__corps > ol {
+    display: grid;
+    gap: calc(var(--spacing) * 1.25);
+    padding-left: calc(var(--spacing) * 3);
+    color: var(--site-fg);
+  }
+
+  .article__corps > ul {
+    list-style: disc;
+  }
+
+  .article__corps > ol {
+    list-style: decimal;
+  }
+
+  .article__corps > blockquote {
+    padding-left: calc(var(--spacing) * 2.5);
+    border-left: 3px solid var(--color-violet-400);
+    color: var(--site-fg-muted);
+    font-style: italic;
+  }
+
+  .article__corps > a {
+    color: var(--color-violet-600);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .dark .article__corps > a {
+    color: var(--color-violet-300);
+  }
+
+  .article__corps > code {
+    padding: 0.1em 0.35em;
+    border-radius: var(--radius-sm);
+    background: var(--site-surface-strong);
+    font-size: 0.9em;
+  }
+
+  .tableau__titre {
+    margin-top: var(--spacing);
+  }
+
+  .tableau__accentuation {
+    margin-top: calc(var(--spacing) * 2);
+  }
+
+  /* --- Tableau de bord du membre ---
+     Les rencontres s'annoncent d'un bloc, comme un agenda : la date à gauche sert de
+     repère immédiat, et le titre reste lisible en entier plutôt que tronqué. */
+  .inscriptions {
+    display: grid;
+    gap: calc(var(--spacing) * 2);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .inscription {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: calc(var(--spacing) * 3);
+    padding: calc(var(--spacing) * 2.5) calc(var(--spacing) * 3);
+    background: var(--site-surface);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-lg);
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+
+  .inscription:hover {
+    border-color: #512bd466;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .dark .inscription:hover {
+    border-color: #ad9be873;
+  }
+
+  .inscription--annulee {
+    opacity: 0.65;
+  }
+
+  .inscription__date {
+    display: grid;
+    place-items: center;
+    gap: 0;
+    width: calc(var(--spacing) * 11);
+    padding: calc(var(--spacing) * 1.25) 0;
+    border-radius: var(--radius-md);
+    background: var(--color-violet-100);
+    color: var(--color-violet-700);
+  }
+
+  .dark .inscription__date {
+    background: #512bd440;
+    color: var(--color-violet-200);
+  }
+
+  .inscription__jour {
+    font-size: var(--text-lead);
+    font-weight: 800;
+    line-height: 1;
+  }
+
+  .inscription__mois {
+    font-size: var(--text-micro);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .inscription__texte {
+    display: grid;
+    gap: 2px;
+  }
+
+  .inscription__titre {
+    color: var(--site-fg);
+    font-weight: 700;
+    font-size: var(--text-base);
+    text-decoration: none;
+  }
+
+  .inscription__titre:hover {
+    color: var(--color-violet-600);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .dark .inscription__titre:hover {
+    color: var(--color-violet-300);
+  }
+
+  .inscription__quand {
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+  }
+
+  .inscription__etat {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing);
+  }
+
+  @media (max-width: 39.999rem) {
+    .inscription {
+      grid-template-columns: auto 1fr;
+      gap: calc(var(--spacing) * 2);
+    }
+
+    .inscription__etat {
+      grid-column: 1 / -1;
+      justify-content: flex-end;
+    }
+  }
+
+  /* Un fait sur le profil : libellé discret, valeur qui compte. */
+  .carte-fait {
+    display: grid;
+    gap: var(--spacing);
+    padding: calc(var(--spacing) * 2.5);
+    background: var(--site-surface);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+  }
+
+  .carte-fait__libelle {
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+
+  .carte-fait__valeur {
+    color: var(--site-fg);
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  /* --- Fiches de contenu (article et événement) ---
+     Les deux fiches partagent leur mise en page. Le style passe par des classes plutôt
+     que par des attributs inline : ces derniers ne se corrigent qu'en editant chaque
+     balise, alors qu'une règle ici se change une fois pour les deux pages. */
+  .fiche__titre {
+    margin-top: var(--spacing);
+  }
+
+  .fiche__accentuation {
+    margin-top: calc(var(--spacing) * 2);
+  }
+
+  /* Les colonnes s'alignent en haut : une fiche courte et une longue ne doivent pas
+     laisser le bandeau suspendun au milieu de la page. */
+  .fiche__grille {
+    align-items: start;
+  }
+
+  .fiche__corps {
+    margin-top: calc(var(--spacing) * 3);
+  }
+
+  .fiche__compteur {
+    margin-bottom: calc(var(--spacing) * 1.5);
+  }
+
+  .fiche__pratique .eyebrow {
+    color: var(--color-vert-300);
+  }
+
+  .fiche__pratique .bande__title {
+    margin-top: var(--spacing);
+  }
+
+  /* Même bandeau, côté auteur de l'article. */
+  .fiche__auteur {
+    margin-top: var(--spacing);
+  }
+
+  .chargement {
+    padding-block: calc(var(--spacing) * 12);
+    text-align: center;
+  }
+
+  .chargement .text-caption {
+    color: var(--site-fg-muted);
+  }
+
   .article__fin {
     display: flex;
     flex-wrap: wrap;
@@ -2535,5 +3410,1443 @@
     .introuvable__liens {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+  }
+}
+
+/* --- Espace membre : disposition en fil ---
+   Trois colonnes comme un fil social : la fiche du membre à gauche sert d'ancrage,
+   le fil au centre porte ce qu'il produit, la colonne de droite ce qui arrive.
+   Les largeurs sont en rem et non en fr : `1fr` se partage l'espace restant, et
+   la colonne centrale se ferait écraser dès que la fiche gagne un mot dans le nom. */
+@layer components {
+  .fil {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: calc(var(--spacing) * 4);
+    padding-block: calc(var(--spacing) * 4) calc(var(--spacing) * 8);
+    align-items: start;
+  }
+
+  @media (min-width: 64rem) {
+    .fil {
+      grid-template-columns: 18rem minmax(0, 1fr);
+    }
+
+    /* La colonne de droite n'apparaît que lorsqu'il reste de la place pour elle :
+       sous 90 rem, elle coûterait plus de largeur au fil qu'elle n'apporte de
+       contexte. */
+    .fil__colonne.droite {
+      display: none;
+    }
+  }
+
+  @media (min-width: 90rem) {
+    .fil {
+      grid-template-columns: 18rem minmax(0, 1fr) 20rem;
+    }
+
+    .fil__colonne.droite {
+      display: block;
+    }
+  }
+
+  .fil__cote,
+  .fil__colonne {
+    min-width: 0;
+  }
+
+  /* --- Fiche du membre --- */
+  .fiche {
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .carte__couverture {
+    height: calc(var(--spacing) * 7);
+    background: linear-gradient(
+      120deg,
+      var(--color-violet-500),
+      var(--color-violet-300)
+    );
+  }
+
+  .fiche__identite {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: calc(var(--spacing) * 0.5);
+    padding: 0 calc(var(--spacing) * 2) calc(var(--spacing) * 2);
+    margin-top: calc(var(--spacing) * -3);
+    text-align: center;
+  }
+
+  .fiche__nom {
+    margin: 0;
+    font-size: var(--text-lg);
+    color: var(--site-fg);
+  }
+
+  .fiche__ville,
+  .fiche__technologies {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--site-fg-muted);
+  }
+
+  .fiche__faits {
+    margin: 0;
+    padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 2);
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing) * 0.75);
+    border-top: 1px solid var(--site-border);
+  }
+
+  .fiche__fait {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: calc(var(--spacing) * 1);
+    font-size: var(--text-sm);
+  }
+
+  .fiche__fait dt {
+    color: var(--site-fg-muted);
+  }
+
+  .fiche__fait dd {
+    margin: 0;
+    font-weight: 600;
+    color: var(--site-fg);
+  }
+
+  .fiche .btn {
+    margin: 0 calc(var(--spacing) * 2) calc(var(--spacing) * 2);
+    width: calc(100% - var(--spacing) * 4);
+  }
+
+  /* --- Formulaire de dépôt --- */
+  .composer {
+    background: var(--site-surface);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    padding: calc(var(--spacing) * 2);
+  }
+
+  .composer__corps {
+    display: flex;
+    align-items: flex-start;
+    gap: calc(var(--spacing) * 1.5);
+  }
+
+  .composer__champs {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing) * 1.25);
+    flex: 1;
+    min-width: 0;
+  }
+
+  .composer__plus {
+    margin-top: calc(var(--spacing) * 1.5);
+  }
+
+  .composer__plus-titre {
+    cursor: pointer;
+    font-size: var(--text-sm);
+    color: var(--site-fg-muted);
+  }
+
+  .composer__pied {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(var(--spacing) * 1.5);
+    margin-top: calc(var(--spacing) * 1.5);
+    padding-top: calc(var(--spacing) * 1.5);
+    border-top: 1px solid var(--site-border);
+  }
+
+  .composer__avertissement {
+    margin: 0;
+    font-size: var(--text-caption);
+    color: var(--site-fg-muted);
+  }
+
+  /* --- Fil : cartes partagées --- */
+  .carte__titre {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(var(--spacing) * 1);
+    margin: 0 0 calc(var(--spacing) * 1.5);
+    font-size: var(--text-base);
+    color: var(--site-fg);
+  }
+
+  .carte__compteur {
+    padding: 0 calc(var(--spacing) * 0.75);
+    border-radius: var(--radius-full);
+    background: var(--site-surface-strong);
+    font-size: var(--text-caption);
+    font-weight: 600;
+    color: var(--site-fg-muted);
+  }
+
+  .partages {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .partage {
+    padding-block: calc(var(--spacing) * 1.5);
+    border-top: 1px solid var(--site-border);
+  }
+
+  .partage:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .partage__entete {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 1);
+  }
+
+  .partage__auteur {
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--site-fg);
+  }
+
+  .partage__quand {
+    margin: 0;
+    font-size: var(--text-caption);
+    color: var(--site-fg-muted);
+  }
+
+  .partage__titre {
+    margin: calc(var(--spacing) * 1) 0 0;
+    font-size: var(--text-base);
+    color: var(--site-fg);
+  }
+
+  .partage__texte {
+    margin: calc(var(--spacing) * 0.5) 0 0;
+    font-size: var(--text-sm);
+    color: var(--site-fg-muted);
+  }
+
+  .partage__pied {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 1.25);
+    margin: calc(var(--spacing) * 1) 0 0;
+    font-size: var(--text-sm);
+  }
+
+  /* --- Correction d'une ressource déposée ---
+     Le récapitulatif d'une publication reste court : ce que le membre peut corriger
+     se déplie, sinon chaque partage occupe une demi-page pour deux liens. */
+  .partage__actions {
+    margin-top: calc(var(--spacing) * 1.25);
+    border-top: 1px solid var(--site-border);
+    padding-top: calc(var(--spacing) * 1);
+  }
+
+  .partage__actions-titre {
+    cursor: pointer;
+    font-size: var(--text-caption);
+    color: var(--site-fg-muted);
+  }
+
+  .partage__actions-titre:hover {
+    color: var(--color-violet-500);
+  }
+
+  .partage__edition {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing) * 1.25);
+    margin-top: calc(var(--spacing) * 1.25);
+  }
+
+  .raccourcis {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing) * 0.5);
+    font-size: var(--text-sm);
+  }
+}
+
+/* --- Espace membre : bandeau et onglets ---
+   Le bandeau tient l'identité, les onglets la navigation. Les onglets remplacent les
+   colonnes du premier essai : sur un écran étroit, une colonne de chaque côté coûtait
+   plus de largeur au contenu qu'elle n'apportait de contexte. */
+@layer components {
+  .bandeau {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: calc(var(--spacing) * 2);
+    padding-block: calc(var(--spacing) * 5) calc(var(--spacing) * 3);
+  }
+
+  .bandeau__identite {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 1.5);
+    min-width: 0;
+  }
+
+  .bandeau__nom {
+    margin: 0;
+    font-size: var(--text-xl);
+    color: var(--site-fg);
+  }
+
+  .bandeau__ville {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--site-fg-muted);
+  }
+
+  .bandeau__faits {
+    display: flex;
+    gap: calc(var(--spacing) * 3);
+    margin: 0;
+  }
+
+  .bandeau__fait dt {
+    font-size: var(--text-caption);
+    color: var(--site-fg-muted);
+  }
+
+  .bandeau__fait dd {
+    margin: 0;
+    font-size: var(--text-xl);
+    font-weight: 600;
+    color: var(--site-fg);
+  }
+
+  /* Les onglets défilent horizontalement sur téléphone plutôt que de se réduire en
+     illisible : trois liens ne tiennent pas sur une ligne de 360 px. */
+  .onglets {
+    display: flex;
+    gap: calc(var(--spacing) * 0.5);
+    overflow-x: auto;
+    border-bottom: 1px solid var(--site-border);
+    margin-bottom: calc(var(--spacing) * 4);
+  }
+
+  .onglets__onglet {
+    padding: calc(var(--spacing) * 1) calc(var(--spacing) * 1.5);
+    white-space: nowrap;
+    font-size: var(--text-sm);
+    color: var(--site-fg-muted);
+    text-decoration: none;
+    border-bottom: 2px solid transparent;
+  }
+
+  .onglets__onglet:hover {
+    color: var(--site-fg);
+  }
+
+  .onglets__onglet.active {
+    color: var(--site-fg);
+    font-weight: 600;
+    border-bottom-color: var(--color-violet-500);
+  }
+
+  .profil-liens {
+    min-width: 0;
+    border: 0;
+    margin: calc(var(--spacing) * 3) 0;
+    padding: 0;
+  }
+
+  /* --- Suppression du compte ---
+     Séparée du formulaire de modifications par une bordure et un fond distinct, et
+     fermée par défaut : la suppression doit se décider, pas se rencontrer. */
+  .zone-danger {
+    margin-top: calc(var(--spacing) * 6);
+    border: 1px solid rgb(214 63 63 / 0.35);
+    border-radius: var(--radius-lg);
+    background: rgb(214 63 63 / 0.04);
+    padding: calc(var(--spacing) * 3);
+  }
+
+  .dark .zone-danger {
+    border-color: rgb(214 63 63 / 0.5);
+    background: rgb(214 63 63 / 0.1);
+  }
+
+  .zone-danger__ouvrir {
+    cursor: pointer;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-danger);
+  }
+
+  .zone-danger__form {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing) * 1.5);
+    margin-top: calc(var(--spacing) * 2);
+  }
+
+  .zone-danger__case {
+    display: flex;
+    align-items: flex-start;
+    gap: calc(var(--spacing) * 1);
+    font-size: var(--text-sm);
+    color: var(--site-fg);
+    cursor: pointer;
+  }
+
+  .zone-danger__case input {
+    margin-top: 0.2rem;
+    flex: 0 0 auto;
+  }
+
+  .profil-lien {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: end;
+    gap: calc(var(--spacing) * 1);
+    padding-block: calc(var(--spacing) * 1.25);
+    border-bottom: 1px solid var(--site-border);
+  }
+
+  @media (min-width: 48rem) {
+    .profil-lien {
+      grid-template-columns: minmax(10rem, 0.8fr) minmax(15rem, 1.5fr) auto;
+    }
+  }
+
+  .profil-lien .field {
+    min-width: 0;
+  }
+}
+
+/* --- Administration ---
+   L'administration est écrite dans le même langage que le site public : mêmes couleurs,
+   mêmes rayons, même mode sombre, aucun composant d'interface tiers. Les classes ci-dessous
+   ne sont que les pièces propres à l'étage — coque, barre latérale, barre du haut, cartes
+   d'indicateurs, tableaux et formulaires de gestion. */
+@layer components {
+  /* La coque : barre à gauche, page à droite. En dessous de 64 rem la barre passe au-dessus
+     de la page, comme la navigation du site public. */
+  .admin {
+    min-height: 100vh;
+    background: var(--site-bg);
+  }
+
+  @media (min-width: 64rem) {
+    .admin {
+      display: grid;
+      grid-template-columns: 17rem minmax(0, 1fr);
+    }
+  }
+
+  .admin__barre {
+    background: var(--site-surface);
+    border-bottom: 1px solid var(--site-border);
+  }
+
+  /* --- Tiroir mobile ---
+     En dessous de 64 rem la barre quitte le flux et glisse depuis la gauche, sur le
+     modèle exact de la navigation du site public : même durée, même ombre, même voile.
+     Son fond se nomme `admin-fond` : le tiroir d'édition utilise `admin-voile`, et deux
+     fonds qui se ressemblent finissent toujours par se confondre. */
+  .admin-fond {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    background: rgb(10 10 18 / 0.55);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 250ms ease, visibility 250ms;
+  }
+
+  .admin-fond.est-visible {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  @media (max-width: 63.999rem) {
+    .admin__barre {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 60;
+      width: min(18rem, 86vw);
+      overflow-y: auto;
+      border-right: 1px solid var(--site-border);
+      border-bottom: none;
+      box-shadow: var(--shadow-xl);
+      transform: translateX(-105%);
+      visibility: hidden;
+      transition: transform 250ms ease, visibility 250ms;
+    }
+
+    .admin__barre.est-ouvert {
+      transform: none;
+      visibility: visible;
+    }
+
+    /* Le corps ne défile plus derrière le tiroir : sans cela, le défilement se
+       poursuit sur la page que le voile est censé masquer. */
+    body.admin-tiroir-ouvert {
+      overflow: hidden;
+    }
+
+    /* Le repli n'a pas de sens quand la barre est déjà sortie du flux : c'est le
+       tiroir qui la fait revenir, d'un geste. */
+    .admin-replie {
+      display: none;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .admin__barre {
+      border-bottom: none;
+      border-right: 1px solid var(--site-border);
+    }
+  }
+
+  /* Le hamburger n'existe qu'en dessous de 64 rem, le bouton de repli qu'au-dessus :
+     à chaque largeur, un seul des deux boutons est dans le flux. */
+  .admin-topbar__burger {
+    display: inline-grid;
+    place-items: center;
+    width: calc(var(--spacing) * 4);
+    height: calc(var(--spacing) * 4);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-sm);
+    background: var(--site-surface);
+    color: var(--site-fg-muted);
+    cursor: pointer;
+  }
+
+  .admin-topbar__burger:hover {
+    color: var(--color-violet-500);
+    border-color: var(--color-violet-400);
+  }
+
+  @media (min-width: 64rem) {
+    .admin-topbar__burger {
+      display: none;
+    }
+
+    .admin-replie {
+      display: inline-grid;
+    }
+  }
+
+  .admin__page {
+    min-width: 0;
+  }
+
+  /* La barre du haut accompagne le défilement du contenu : l'administrateur garde le
+     retour au site et le mode sombre sous la main, quel que soit l'écran. */
+  .admin-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing);
+    padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 3);
+    background: var(--site-surface);
+    border-bottom: 1px solid var(--site-border);
+  }
+
+  .admin-topbar__titre {
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    color: var(--site-fg);
+  }
+
+  .admin-topbar__gauche {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 1.5);
+  }
+
+  .admin-replie {
+    display: inline-grid;
+    place-items: center;
+    width: calc(var(--spacing) * 4);
+    height: calc(var(--spacing) * 4);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-sm);
+    background: var(--site-surface);
+    color: var(--site-fg-muted);
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s, transform 0.2s;
+  }
+
+  .admin-replie:hover {
+    color: var(--color-violet-500);
+    border-color: var(--color-violet-400);
+  }
+
+  /* --- Barre latérale repliée ---
+     La classe est posée sur <html> : elle s'applique donc avant le premier rendu et
+     survit à la navigation enhanced. Repliée, la barre garde ses icônes — un
+     administrateur qui l'a repliée connaît déjà ses écrans — et le compteur d'une
+     entrée devient une pastille. */
+  @media (min-width: 64rem) {
+    html.admin-replie .admin {
+      grid-template-columns: 4.75rem minmax(0, 1fr);
+    }
+  }
+
+  html.admin-replie .admin-nav__marque-texte,
+  html.admin-replie .admin-nav__libelle,
+  html.admin-replie .admin-nav__groupe-titre {
+    display: none;
+  }
+
+  html.admin-replie .admin-nav__marque {
+    justify-content: center;
+    padding-inline: 0;
+  }
+
+  html.admin-replie .admin-nav__entree {
+    position: relative;
+    justify-content: center;
+    gap: 0;
+    padding-inline: 0;
+  }
+
+  html.admin-replie .admin-nav__compteur {
+    position: absolute;
+    top: 3px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    min-width: 0;
+    padding: 0;
+    font-size: 0;
+  }
+
+  html.admin-replie .admin-nav__liste {
+    padding-inline: calc(var(--spacing) * 1);
+  }
+
+  html.admin-replie .admin-nav__groupe + .admin-nav__groupe {
+    padding-top: calc(var(--spacing) * 1);
+    border-top: 1px solid var(--site-border);
+  }
+
+  html.admin-replie .admin-replie .dn-icon {
+    transform: rotate(180deg);
+  }
+
+  .admin-topbar__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing);
+  }
+
+  .admin-topbar__lien {
+    gap: calc(var(--spacing) * 0.75);
+  }
+
+  .admin-contenu {
+    padding: calc(var(--spacing) * 4) clamp(1rem, 3vw, calc(var(--spacing) * 5));
+  }
+
+  /* --- Barre latérale --- */
+
+  .admin-nav {
+    display: flex;
+    flex-direction: column;
+    gap: calc(var(--spacing) * 2);
+    padding-bottom: calc(var(--spacing) * 3);
+  }
+
+  @media (min-width: 64rem) {
+    .admin-nav {
+      position: sticky;
+      top: 0;
+      max-height: 100vh;
+      overflow-y: auto;
+    }
+  }
+
+  .admin-nav__marque {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 1.25);
+    padding: calc(var(--spacing) * 2.5) calc(var(--spacing) * 3);
+    color: var(--site-fg);
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .admin-nav__marque-icone {
+    display: inline-grid;
+    place-items: center;
+    width: calc(var(--spacing) * 4.5);
+    height: calc(var(--spacing) * 4.5);
+    border-radius: var(--radius-md);
+    background: var(--color-violet-500);
+    color: #fff;
+    flex: none;
+  }
+
+  .admin-nav__groupes {
+    display: grid;
+    gap: calc(var(--spacing) * 1);
+  }
+
+  .admin-nav__groupe-titre {
+    padding: calc(var(--spacing) * 1) calc(var(--spacing) * 3);
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    cursor: pointer;
+    list-style: none;
+  }
+
+  .admin-nav__groupe-titre::-webkit-details-marker {
+    display: none;
+  }
+
+  .admin-nav__liste {
+    display: grid;
+    gap: 2px;
+    margin: 0;
+    padding: 0 calc(var(--spacing) * 2);
+    list-style: none;
+  }
+
+  .admin-nav__entree {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 1.5);
+    padding: calc(var(--spacing) * 1.25) calc(var(--spacing) * 1.5);
+    border-radius: var(--radius-sm);
+    color: var(--site-fg-muted);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.15s, background-color 0.15s;
+  }
+
+  .admin-nav__entree:hover {
+    color: var(--site-fg);
+    background: var(--site-surface-strong);
+  }
+
+  .admin-nav__entree.est-active {
+    color: var(--color-violet-700);
+    background: var(--color-violet-50);
+    font-weight: 600;
+  }
+
+  .dark .admin-nav__entree.est-active {
+    color: var(--color-violet-200);
+    background: #512bd447;
+  }
+
+  .admin-nav__entree .dn-icon {
+    flex: none;
+  }
+
+  .admin-nav__libelle {
+    flex: 1 1 auto;
+  }
+
+  .admin-nav__compteur {
+    min-width: calc(var(--spacing) * 5);
+    padding: 0 calc(var(--spacing) * 0.75);
+    border-radius: var(--radius-full);
+    background: var(--color-orange-100);
+    color: var(--color-orange-700);
+    font-size: var(--text-micro);
+    font-weight: 700;
+    text-align: center;
+  }
+
+  .dark .admin-nav__compteur {
+    background: #e3660b2e;
+    color: var(--color-orange-300);
+  }
+
+  /* --- En-tête de page --- */
+
+  .admin-entete {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: calc(var(--spacing) * 2);
+    margin-bottom: calc(var(--spacing) * 4);
+  }
+
+  .admin-entete__titre {
+    margin: 0;
+    color: var(--site-fg);
+    font-size: var(--text-section);
+    font-weight: 800;
+    letter-spacing: -0.015em;
+  }
+
+  .admin-entete__intro {
+    margin: calc(var(--spacing) * 0.5) 0 0;
+    color: var(--site-fg-muted);
+    font-size: var(--text-sm);
+  }
+
+  /* --- Cartes d'indicateurs --- */
+
+  .admin-grille {
+    display: grid;
+    gap: calc(var(--spacing) * 3);
+    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+  }
+
+  .admin-grille--large {
+    grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  }
+
+  /* Champs côte à côte dans le tiroir : jour, heures, texte court et nombre.
+     `minmax(0, 1fr)` plutôt qu'une largeur minimale : un champ de date garde une
+     largeur intrinsèque, et une piste trop étroite le ferait déborder sur son voisin
+     au lieu de rétrécir. */
+  .admin-grille--compacte {
+    grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+    gap: calc(var(--spacing) * 2);
+  }
+
+  @media (max-width: 29.999rem) {
+    .admin-grille--compacte {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Un partenaire dans la liste : logo ou initiales, puis nom et présentation. */
+  .admin-partenaire {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 2);
+    min-width: 0;
+  }
+
+  .admin-partenaire__logo {
+    width: calc(var(--spacing) * 7);
+    height: calc(var(--spacing) * 7);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    background: var(--site-surface);
+    object-fit: contain;
+    padding: calc(var(--spacing) * 0.25);
+    flex: none;
+  }
+
+  .admin-partenaire__initiales {
+    display: inline-grid;
+    place-items: center;
+    width: calc(var(--spacing) * 7);
+    height: calc(var(--spacing) * 7);
+    border-radius: var(--radius-md);
+    background: var(--color-violet-500);
+    color: #fff;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    flex: none;
+  }
+
+  .dark .admin-partenaire__initiales {
+    background: var(--color-violet-600);
+  }
+
+  .admin-partenaire__nom {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  /* --- File de modération ---
+     Un commentaire et un signalement ne se comparent pas ligne à ligne : leur longueur
+     varie d'une ligne à l'autre, et une grille de tableau les écraserait. Une carte par
+     élément garde le texte lisible et permet de n'afficher les actions qu'en bas. */
+  .admin-moderation {
+    display: grid;
+    gap: var(--spacing);
+  }
+
+  .admin-moderation__ligne {
+    display: grid;
+    gap: calc(var(--spacing) * 1.5);
+    padding: calc(var(--spacing) * 2.5);
+    border: 1px solid var(--site-border);
+    border-left-width: 3px;
+    border-radius: var(--radius-md);
+    background: var(--site-surface);
+    min-width: 0;
+  }
+
+  /* Une bordure colorée à gauche suffit à repérer ce qui attend une décision de ce qui
+     est déjà traité, sans multiplier les couleurs des étiquettes. */
+  .admin-moderation__ligne--attente {
+    border-left-color: var(--color-orange-500);
+  }
+
+  .admin-moderation__ligne--masque {
+    border-left-color: var(--site-border-strong);
+    opacity: 0.75;
+  }
+
+  .admin-moderation__ligne--supprime {
+    border-left-color: var(--color-red-500);
+    opacity: 0.6;
+  }
+
+  .admin-moderation__entete {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing);
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .admin-moderation__auteur {
+    color: var(--site-fg);
+  }
+
+  /* La cible est une méta-information : elle tient sur une ligne et se coupe si le
+     titre est immense, plutôt que de repousser les actions hors de l'écran. */
+  .admin-moderation__cible {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 0.5);
+    flex-wrap: wrap;
+    color: var(--site-fg-muted);
+    font-size: var(--text-sm);
+    overflow-wrap: anywhere;
+  }
+
+  .admin-moderation__cible a {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 0.25);
+    color: var(--site-fg);
+    font-weight: 600;
+  }
+
+  .admin-moderation__objet {
+    color: var(--site-fg);
+    font-size: var(--text-lg);
+    font-weight: 600;
+    line-height: var(--leading-snug);
+    overflow-wrap: anywhere;
+  }
+
+  /* Le texte signalé est cité, pas réécrit : il doit rester lisible tel quel, y compris
+     quand le membre a collé un lien ou un long paragraphe. */
+  .admin-moderation__texte {
+    margin: 0;
+    padding: calc(var(--spacing) * 1.5) calc(var(--spacing) * 2);
+    border-radius: var(--radius-sm);
+    background: var(--site-surface-alt);
+    color: var(--site-fg);
+    font-size: var(--text-sm);
+    line-height: var(--leading-relaxed);
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+  }
+
+  .admin-moderation__details {
+    color: var(--site-fg-muted);
+    font-size: var(--text-sm);
+    overflow-wrap: anywhere;
+  }
+
+  .admin-moderation__details strong {
+    color: var(--site-fg);
+  }
+
+  .admin-moderation__actions {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 0.75);
+    flex-wrap: wrap;
+    padding-top: calc(var(--spacing) * 0.5);
+    border-top: 1px solid var(--site-border);
+  }
+
+  .admin-case--seule {
+    min-height: calc(var(--spacing) * 9);
+    align-items: center;
+  }
+
+  /* --- Carte-lien ---
+     Les écrans de l'espace membre sont ailleurs, dans une autre mise en page. Les pointer
+     depuis l'administration demande plus qu'une ligne de texte : un lien nu se confond avec
+     une note, alors qu'il s'agit d'une destination. */
+  .admin-lien-carte {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 1.5);
+    padding: calc(var(--spacing) * 2);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    background: var(--site-surface);
+    color: var(--site-fg);
+    transition: border-color 150ms ease, transform 150ms ease;
+    min-width: 0;
+  }
+
+  .admin-lien-carte:hover {
+    border-color: var(--site-border-strong);
+    transform: translateY(-1px);
+  }
+
+  .admin-lien-carte__texte {
+    display: grid;
+    gap: 2px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* Étiquettes serrées d'une même cellule : les technologies d'un projet. */
+  .admin-tableau__technologies {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: calc(var(--spacing) * 0.5);
+  }
+
+  /* Précision d'une ligne de tableau : le lieu d'un événement, par exemple. */
+  .admin-tableau__note {
+    display: block;
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+    font-weight: 400;
+  }
+
+  .admin-carte {
+    display: grid;
+    gap: calc(var(--spacing) * 0.75);
+    align-content: start;
+    padding: calc(var(--spacing) * 3);
+    background: var(--site-surface);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xs);
+  }
+
+  .admin-carte__libelle {
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+    font-weight: 600;
+  }
+
+  .admin-carte__valeur {
+    color: var(--site-fg);
+    font-size: var(--text-display);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .admin-carte__note {
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+  }
+
+  .admin-carte__lien {
+    justify-self: start;
+    color: var(--color-violet-600);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .dark .admin-carte__lien {
+    color: var(--color-violet-300);
+  }
+
+  .admin-carte__lien:hover {
+    text-decoration: underline;
+  }
+
+  /* --- Sections de page --- */
+
+  .admin-section {
+    display: grid;
+    gap: calc(var(--spacing) * 3);
+    margin-top: calc(var(--spacing) * 5);
+  }
+
+  .admin-section__titre {
+    margin: 0;
+    color: var(--site-fg);
+    font-size: var(--text-lead);
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  /* --- Listes de contenus --- */
+
+  .admin-liste {
+    display: grid;
+    gap: calc(var(--spacing) * 1);
+    margin: calc(var(--spacing) * 1.5) 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .admin-liste__ligne {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing);
+    padding: calc(var(--spacing) * 1.25) calc(var(--spacing) * 1.5);
+    background: var(--site-surface);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+  }
+
+  .admin-liste__lien {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+    color: var(--site-fg);
+    font-size: var(--text-sm);
+    text-decoration: none;
+  }
+
+  .admin-liste__lien:hover .admin-liste__titre {
+    color: var(--color-violet-600);
+  }
+
+  .dark .admin-liste__lien:hover .admin-liste__titre {
+    color: var(--color-violet-300);
+  }
+
+  .admin-liste__titre {
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .admin-liste__meta {
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+  }
+
+  /* --- Tableaux --- */
+
+  .admin-tableau {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--site-surface);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    font-size: var(--text-sm);
+  }
+
+  .admin-tableau th,
+  .admin-tableau td {
+    padding: calc(var(--spacing) * 2) calc(var(--spacing) * 2.5);
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  .admin-tableau thead th {
+    background: var(--site-surface-strong);
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  .admin-tableau tbody tr + tr td {
+    border-top: 1px solid var(--site-border);
+  }
+
+  .admin-tableau tbody tr:hover td {
+    background: var(--site-surface-soft);
+  }
+
+  .admin-tableau__titre {
+    color: var(--site-fg);
+    font-weight: 600;
+  }
+
+  .admin-tableau__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(var(--spacing) * 0.75);
+  }
+
+  @media (max-width: 47.999rem) {
+    .admin-tableau--defilant {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+  }
+
+  /* --- Barre de filtres --- */
+
+  .admin-bandeau {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    gap: calc(var(--spacing) * 2);
+    margin-bottom: calc(var(--spacing) * 3);
+  }
+
+  .admin-bandeau__champ {
+    display: grid;
+    gap: calc(var(--spacing) * 0.5);
+    min-width: 12rem;
+  }
+
+  .admin-bandeau__libelle {
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+    font-weight: 600;
+  }
+
+  .admin-bandeau__compte {
+    margin-left: auto;
+    color: var(--site-fg-muted);
+    font-size: var(--text-sm);
+  }
+
+  /* --- Formulaires de gestion --- */
+
+  .admin-formulaire {
+    display: grid;
+    gap: calc(var(--spacing) * 2);
+  }
+
+  .admin-formulaire__champ {
+    display: grid;
+    gap: calc(var(--spacing) * 0.75);
+  }
+
+  .admin-formulaire__intitule {
+    color: var(--site-fg);
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .admin-formulaire__aide {
+    margin: 0;
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+  }
+
+  /* Mention accolée à un intitulé : ce que le champ attend, pas ce qu'il signifie. */
+  .admin-formulaire__obligatoire {
+    margin-left: calc(var(--spacing) * 0.75);
+    padding: 0 calc(var(--spacing) * 0.75);
+    border-radius: var(--radius-full);
+    background: var(--color-orange-100);
+    color: var(--color-orange-700);
+    font-size: var(--text-micro);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .dark .admin-formulaire__obligatoire {
+    background: #e3660b2e;
+    color: var(--color-orange-300);
+  }
+
+  /* Le sélecteur de fichier natif est illisible sur fond sombre et varie d'un
+     navigateur à l'autre : on ne garde que son nom, et le bouton porte le geste. */
+  .admin-fichier {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .admin-fichier-bouton {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 1);
+    justify-self: start;
+  }
+
+  /* Le libellé est clickable sans être le bouton : c'est ce qui permet d'ouvrir le
+     sélecteur de fichiers en LeanCI, en gardant un vrai <button> pour le clavier. */
+  .admin-fichier-bouton input:focus-visible + .btn {
+    outline: 2px solid var(--color-violet-500);
+    outline-offset: 2px;
+  }
+
+  .admin-apercu {
+    display: grid;
+    gap: calc(var(--spacing) * 1.5);
+    justify-items: start;
+  }
+
+  .admin-apercu img {
+    max-width: 100%;
+    max-height: 11rem;
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    background: var(--site-surface-strong);
+  }
+
+  .admin-case {
+    display: flex;
+    align-items: flex-start;
+    gap: calc(var(--spacing) * 1);
+    color: var(--site-fg);
+    font-size: var(--text-sm);
+    cursor: pointer;
+  }
+
+  .admin-case input {
+    width: calc(var(--spacing) * 4);
+    height: calc(var(--spacing) * 4);
+    margin: 0;
+    flex: none;
+    accent-color: var(--color-violet-500);
+    cursor: pointer;
+  }
+
+  /* --- Confirmation en deux temps ---
+     Supprimer un article est irréversible : plutôt qu'une fenêtre modale, la ligne
+     elle-même demande confirmation. Le clic qui ouvre la demande ne supprime rien,
+     seul le second le fait. */
+  .admin-confirmation {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 0.75);
+    padding: 0 calc(var(--spacing) * 1.25);
+    border-radius: var(--radius-sm);
+    background: var(--color-orange-100);
+    color: var(--color-orange-700);
+    font-size: var(--text-caption);
+    font-weight: 600;
+  }
+
+  .dark .admin-confirmation {
+    background: #e3660b24;
+    color: var(--color-orange-300);
+  }
+
+  .admin-formulaire__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing);
+    margin-top: calc(var(--spacing) * 2);
+    padding-top: calc(var(--spacing) * 3);
+    border-top: 1px solid var(--site-border);
+  }
+
+  /* --- Tiroir d'édition --- */
+
+  .admin-voile {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgb(0 0 0 / 0.45);
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .admin-tiroir {
+    width: min(46rem, 100%);
+    height: 100%;
+    overflow-y: auto;
+    padding: calc(var(--spacing) * 4);
+    background: var(--site-surface);
+    border-left: 1px solid var(--site-border);
+    box-shadow: var(--shadow-xl);
+  }
+
+  .admin-tiroir__entete {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing);
+    margin-bottom: calc(var(--spacing) * 3);
+  }
+
+  .admin-tiroir__titre {
+    margin: 0;
+    color: var(--site-fg);
+    font-size: var(--text-lead);
+    font-weight: 800;
+  }
+
+  /* Le panneau des inscrits est une simple liste : il n'a pas besoin de toute la
+     largeur du tiroir d'édition. */
+  .admin-tiroir--etroit {
+    width: min(34rem, 100%);
+  }
+
+  /* --- Messages --- */
+
+  .admin-toasts {
+    position: fixed;
+    right: var(--spacing);
+    bottom: var(--spacing);
+    z-index: 60;
+    display: grid;
+    gap: var(--spacing);
+    pointer-events: none;
+  }
+
+  .admin-toast {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 1.5);
+    min-width: 18rem;
+    max-width: 24rem;
+    padding: calc(var(--spacing) * 1.75) calc(var(--spacing) * 2);
+    background: var(--site-surface);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    color: var(--site-fg);
+    font-size: var(--text-sm);
+    pointer-events: auto;
+  }
+
+  .admin-toast--succes {
+    border-left: 3px solid var(--color-vert-500);
+  }
+
+  .admin-toast--erreur {
+    border-left: 3px solid var(--color-danger);
   }
 }

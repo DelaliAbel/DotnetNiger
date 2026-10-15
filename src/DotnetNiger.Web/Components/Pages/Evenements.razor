@@ -1,5 +1,4 @@
 @page "/evenements"
-@attribute [StreamRendering]
 
 @inject ISiteContentService Contenu
 
@@ -12,8 +11,8 @@
 
 @if (_Evenements is null)
 {
-    <div class="wrap" style="padding-block: calc(var(--spacing) * 12);">
-        <p class="text-caption" style="color: var(--site-fg-muted);">Chargement…</p>
+    <div class="wrap py-12">
+        <p class="text-caption text-[var(--site-fg-muted)]">Chargement…</p>
     </div>
 }
 else
@@ -24,18 +23,34 @@ else
             <p class="hero__eyebrow">
                 <DnIcon Name="calendar" Size="14" /> Agenda de la communauté
             </p>
-            <h1 class="hero__title" style="margin-top: var(--spacing);">
+            <h1 class="hero__title mt-1">
                 Se retrouver pour <strong>apprendre ensemble</strong>
             </h1>
-            <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
+            <p class="hero__lead mt-3">
                 Des soirées de démonstration, des ateliers pratiques et un hackathon par an :
                 la plupart des rencontres sont en présentiel à Niamey, certaines en ligne.
             </p>
         </div>
     </section>
 
-    <!-- 2. Recherche, type, période et tri -->
-    <section class="section" aria-label="Rechercher et filtrer les événements" style="padding-block: calc(var(--spacing) * 5) 0;">
+    <!-- 2. Vue calendrier : le repère mensuel, avant le tri et les filtres -->
+    <section class="section pt-6 pb-0">
+        <div class="wrap">
+            <a class="calendrier__invitation" href="/evenements/calendrier">
+                <span class="calendrier__invitation-icone">
+                    <DnIcon Name="calendar" Size="24" />
+                </span>
+                <span class="calendrier__invitation-texte">
+                    <strong>Voir le calendrier</strong>
+                    <span>Repérez d'un coup d'œil les mois qui vous conviennent.</span>
+                </span>
+                <DnIcon Name="arrow-right" Size="20" />
+            </a>
+        </div>
+    </section>
+
+    <!-- 3. Recherche, type, période et tri -->
+    <section class="section pt-5 pb-0" aria-label="Rechercher et filtrer les événements">
         <div class="wrap">
             <form method="get" action="/evenements" class="filtres" role="search">
                 <div class="filtres__champ">
@@ -83,7 +98,7 @@ else
                     </span>
                 </div>
 
-                <div class="filtres__actions" style="grid-column: 1 / -1;">
+                <div class="filtres__actions col-span-full">
                     <button type="submit" class="btn btn--primary">
                         <DnIcon Name="search" Size="16" /> Filtrer
                     </button>
@@ -96,7 +111,7 @@ else
         </div>
     </section>
 
-    <!-- 3. Résultats -->
+    <!-- 4. Résultats -->
     <section class="section" aria-labelledby="agenda-titre">
         <div class="wrap">
             <div class="section__head section__head--split">
@@ -153,14 +168,14 @@ else
         </div>
     </section>
 
-    <!-- 4. Proposer un événement -->
+    <!-- 5. Proposer un événement -->
     <section class="section" aria-labelledby="proposer-titre">
         <div class="wrap">
             <div class="bande">
-                <div class="grid gap-6 md:grid-cols-2" style="align-items: center;">
+                <div class="grid items-center gap-6 md:grid-cols-2">
                     <div>
-                        <p class="eyebrow" style="color: var(--color-vert-300);">Contribuer</p>
-                        <h2 id="proposer-titre" class="bande__title" style="margin-top: var(--spacing);">
+                        <p class="eyebrow text-vert-300">Contribuer</p>
+                        <h2 id="proposer-titre" class="bande__title mt-1">
                             Un événement à signaler ?
                         </h2>
                         <p class="bande__lead">
@@ -185,11 +200,13 @@ else
 
 @code {
     /// <summary>
-    /// Nombre d'événements affichés par page. L'agenda compte peu d'événements :
-    /// en fixer six laissait une page unique et une pagination jamais visible, donc
-    /// impossible à tester. Trois garde deux pages dès que l'agenda se remplit.
+    /// Nombre d'événements affichés par page. La grille fait trois colonnes : trois
+    /// événements ne remplissaient qu'une rangée et laissaient la page à moitié vide,
+    /// là où le blog et les ressources montrent deux rangées complètes. Six remplit
+    /// l'écran sans noyer la pagination, l'agenda de la communauté ne dépassant pas
+    /// quelques dizaines de rendez-vous.
     /// </summary>
-    private const int EvenementsParPage = 3;
+    private const int EvenementsParPage = 6;
 
     /// <summary>
     /// Ordres de tri. Sur un agenda, la date compte plus que tout : par défaut les

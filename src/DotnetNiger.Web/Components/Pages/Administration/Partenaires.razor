@@ -1,0 +1,655 @@
+@page "/administration/partenaires"
+@layout DotnetNiger.Web.Components.Layout.AdministrationLayout
+@rendermode InteractiveServer
+
+@using System.Globalization
+@using System.Text.Json
+@using DotnetNiger.Domain.Enums
+@using DotnetNiger.Web.Services.Administration
+
+@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
+
+@inject ServicePartenaires Service
+@inject IJSRuntime JS
+
+@*
+    Partenaires et sponsors : qui soutient la communauté, et dans quel ordre.
+
+    Un partenaire n'a pas de cycle éditorial — il est présent ou absent du site. Le
+    formulaire est donc court : nom, site, niveau, logo et une phrase de présentation.
+    Pas d'éditeur riche : il n'y a pas de corps rédigé, seulement ce que le lecteur lit
+    sous le logo.
+*@
+
+<PageTitle>Partenaires — Administration</PageTitle>
+
+<header class="admin-entete">
+    <div>
+        <h1 class="admin-entete__titre">Partenaires</h1>
+        <p class="admin-entete__intro">Les organisations qui soutiennent la communauté.</p>
+    </div>
+
+    <button type="button" class="btn btn--primary" @onclick="OuvrirCreation" disabled="@_envoi">
+        <DnIcon Name="plus" Size="16" />
+        Nouveau partenaire
+    </button>
+</header>
+
+@if (_donnees is null)
+{
+    <Chargement />
+}
+else
+{
+    <div class="admin-bandeau">
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="partenaire-recherche">Recherche</label>
+            <input id="partenaire-recherche" class="input" type="search" placeholder="Nom ou description…"
+                   @bind="_recherche" @bind:event="oninput" />
+        </div>
+
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="partenaire-niveau">Niveau</label>
+            <div class="select">
+                <select id="partenaire-niveau" @bind="_filtreNiveau">
+                    <option value="">Tous</option>
+                    <option value="@nameof(PartnerTier.Sponsor)">Sponsor</option>
+                    <option value="@nameof(PartnerTier.Partner)">Partenaire</option>
+                </select>
+                <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+            </div>
+        </div>
+
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="partenaire-etat">Visibilité</label>
+            <div class="select">
+                <select id="partenaire-etat" @bind="_filtreActif">
+                    <option value="">Tous</option>
+                    <option value="actifs">Affichés sur le site</option>
+                    <option value="masques">Masqués</option>
+                </select>
+                <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+            </div>
+        </div>
+
+        <span class="admin-bandeau__compte">@Liste.Count partenaire(s)</span>
+    </div>
+
+    @if (Liste.Count is 0)
+    {
+        <p class="admin-formulaire__aide">Aucun partenaire ne correspond à ces filtres.</p>
+    }
+    else
+    {
+        <table class="admin-tableau admin-tableau--defilant">
+            <thead>
+                <tr>
+                    <th scope="col">Organisation</th>
+                    <th scope="col">Niveau</th>
+                    <th scope="col">Ordre</th>
+                    <th scope="col">Sur le site</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var ligne in Liste)
+                {
+                    <tr>
+                        <td>
+                            <span class="admin-partenaire">
+                                @if (!string.IsNullOrWhiteSpace(ligne.LogoUrl))
+                                {
+                                    <img class="admin-partenaire__logo" src="@ligne.LogoUrl" alt="" />
+                                }
+                                else
+                                {
+                                    <span class="admin-partenaire__initiales" aria-hidden="true">@Initiales(ligne.Nom)</span>
+                                }
+                                <span class="admin-partenaire__nom">
+                                    <span class="admin-tableau__titre">@ligne.Nom</span>
+                                    <span class="admin-tableau__note">@ligne.Description</span>
+                                </span>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge @(ligne.Niveau == PartnerTier.Sponsor ? "badge--violet" : "badge--outline")">
+                                @(ligne.Niveau == PartnerTier.Sponsor ? "Sponsor" : "Partenaire")
+                            </span>
+                        </td>
+                        <td>@ligne.Ordre</td>
+                        <td>
+                            @if (ligne.Actif)
+                            {
+                                <span class="badge badge--vert">Affiché</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge--ink">Masqué</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="admin-tableau__actions">
+                                <button type="button" class="btn btn--ghost btn--sm"
+                                        @onclick="() => OuvrirEdition(ligne)">
+                                    <DnIcon Name="edit" Size="14" />
+                                    Éditer
+                                </button>
+
+                                <a class="btn btn--ghost btn--sm" href="@ligne.Site"
+                                   target="_blank" rel="noopener">
+                                    <DnIcon Name="external-link" Size="14" />
+                                    Site
+                                </a>
+
+                                <button type="button" class="btn btn--sm"
+                                        @onclick="() => ChangerActivation(ligne, !ligne.Actif)">
+                                    @(ligne.Actif ? "Masquer" : "Afficher")
+                                </button>
+
+                                @if (_aSupprimer == ligne.Id)
+                                {
+                                    <span class="admin-confirmation">
+                                        Supprimer ?
+                                        <button type="button" class="btn btn--rouge btn--sm"
+                                                @onclick="() => Supprimer(ligne)">Oui</button>
+                                        <button type="button" class="btn btn--ghost btn--sm"
+                                                @onclick="() => _aSupprimer = null">Non</button>
+                                    </span>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn--rouge btn--sm"
+                                            @onclick="() => _aSupprimer = ligne.Id">
+                                        Supprimer
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+}
+
+<div class="admin-toasts" role="status" aria-live="polite">
+    @foreach (var message in _messages)
+    {
+        <div class="admin-toast admin-toast--@(message.Reussi ? "succes" : "erreur")">
+            <DnIcon Name="@(message.Reussi ? "check" : "alert")" Size="16" />
+            <span>@message.Texte</span>
+        </div>
+    }
+</div>
+
+@if (_formulaireOuvert)
+{
+    <div class="admin-voile" @onclick="FermerFormulaire">
+        <div class="admin-tiroir admin-tiroir--etroit" role="dialog" aria-modal="true"
+             aria-label="@(_edition is null ? "Nouveau partenaire" : "Modifier le partenaire")"
+             @onclick:stopPropagation="true">
+
+            <div class="admin-tiroir__entete">
+                <h2 class="admin-tiroir__titre">
+                    @(_edition is null ? "Nouveau partenaire" : "Modifier le partenaire")
+                </h2>
+
+                <button type="button" class="admin-replie" aria-label="Fermer"
+                        @onclick="FermerFormulaire">
+                    <DnIcon Name="check" Size="16" />
+                </button>
+            </div>
+
+            <div class="admin-formulaire">
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="partenaire-nom">Organisation</label>
+                    <input id="partenaire-nom" class="input" type="text" maxlength="150"
+                           placeholder="Nom de l'organisation" @bind="_formeNom" @bind:event="oninput" />
+                </div>
+
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="partenaire-description">
+                        Présentation
+                        <span class="admin-formulaire__obligatoire">obligatoire</span>
+                    </label>
+                    <textarea id="partenaire-description" class="input" rows="3" maxlength="500"
+                              placeholder="Ce que cette organisation apporte à la communauté."
+                              @bind="_formeDescription" @bind:event="oninput"></textarea>
+                    <p class="admin-formulaire__aide">
+                        Une ou deux phrases : c'est tout ce que la carte montre sous le nom.
+                    </p>
+                </div>
+
+                <div class="admin-formulaire__champ">
+                    <label class="admin-formulaire__intitule" for="partenaire-site">
+                        Site officiel
+                        <span class="admin-formulaire__obligatoire">obligatoire</span>
+                    </label>
+                    <input id="partenaire-site" class="input" type="url" placeholder="https://…"
+                           @bind="_formeSite" @bind:event="oninput" />
+                </div>
+
+                <div class="admin-grille admin-grille--compacte">
+                    <div class="admin-formulaire__champ">
+                        <label class="admin-formulaire__intitule" for="partenaire-tier">Niveau</label>
+                        <div class="select">
+                            <select id="partenaire-tier" @bind="_formeNiveau">
+                                <option value="@nameof(PartnerTier.Partner)">Partenaire</option>
+                                <option value="@nameof(PartnerTier.Sponsor)">Sponsor</option>
+                            </select>
+                            <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+                        </div>
+                    </div>
+
+                    <div class="admin-formulaire__champ">
+                        <label class="admin-formulaire__intitule" for="partenaire-ordre">Ordre d'affichage</label>
+                        <input id="partenaire-ordre" class="input" type="number" @bind="_formeOrdre" />
+                        <p class="admin-formulaire__aide">Plus petit d'abord, dans le même niveau.</p>
+                    </div>
+                </div>
+
+                <div class="admin-formulaire__champ">
+                    <span class="admin-formulaire__intitule">Logo</span>
+
+                    @if (!string.IsNullOrWhiteSpace(_formeImage))
+                    {
+                        <div class="admin-apercu">
+                            <img src="@_formeImage" alt="Logo du partenaire" />
+                            <button type="button" class="btn btn--ghost btn--sm" @onclick="RetirerImage">
+                                Retirer le logo
+                            </button>
+                        </div>
+                    }
+
+                    <label class="admin-fichier-bouton">
+                        <input class="admin-fichier" type="file" @ref="_champImage"
+                               accept="image/jpeg,image/png,image/webp" @onchange="TeleverserImage" />
+                        <span class="btn btn--secondary">
+                            <DnIcon Name="upload" Size="15" />
+                            Choisir une image
+                        </span>
+                    </label>
+
+                    <p class="admin-formulaire__aide">JPEG, PNG ou WebP, 5 Mo au plus. Sans logo, la carte montre les initiales.</p>
+                </div>
+
+                <label class="admin-case">
+                    <input type="checkbox" @bind="_formeActif" />
+                    Afficher sur le site
+                </label>
+
+                @if (_erreur is not null)
+                {
+                    <div class="alerte alerte--rouge" role="alert">
+                        <span class="alerte__icone"><DnIcon Name="alert" Size="16" /></span>
+                        <span>@_erreur</span>
+                    </div>
+                }
+
+                <div class="admin-formulaire__actions">
+                    <button type="button" class="btn btn--ghost" @onclick="FermerFormulaire" disabled="@_envoi">
+                        Annuler
+                    </button>
+
+                    <button type="button" class="btn btn--primary" @onclick="Enregistrer" disabled="@(_envoi || _depotEnCours)">
+                        @(_envoi ? "Enregistrement…" : "Enregistrer")
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
+
+    private PartenairesVue? _donnees;
+
+    private string _recherche = string.Empty;
+
+    private string _filtreNiveau = string.Empty;
+
+    private string _filtreActif = string.Empty;
+
+    private bool _formulaireOuvert;
+
+    private bool _envoi;
+
+    private bool _depotEnCours;
+
+    private Guid? _aSupprimer;
+
+    private PartenaireAdminDetail? _edition;
+
+    private string _formeNom = string.Empty;
+
+    private string _formeDescription = string.Empty;
+
+    private string _formeSite = string.Empty;
+
+    private PartnerTier _formeNiveau = PartnerTier.Partner;
+
+    private int _formeOrdre;
+
+    private string _formeImage = string.Empty;
+
+    private bool _formeActif = true;
+
+    private string? _erreur;
+
+    private ElementReference _champImage;
+
+    private readonly List<Annonce> _messages = [];
+
+    /// <summary>Partenaires qui passent les filtres de la barre.</summary>
+    private List<LignePartenaireAdmin> Liste =>
+        [.. (_donnees?.Partenaires ?? [])
+            .Where(ligne => string.IsNullOrWhiteSpace(_filtreNiveau)
+                || string.Equals(ligne.Niveau.ToString(), _filtreNiveau, StringComparison.Ordinal))
+            .Where(ligne => _filtreActif is not ("actifs" or "masques")
+                || (_filtreActif == "actifs") == ligne.Actif)
+            .Where(ligne => string.IsNullOrWhiteSpace(_recherche)
+                || ligne.Nom.Contains(_recherche, StringComparison.OrdinalIgnoreCase)
+                || ligne.Description.Contains(_recherche, StringComparison.OrdinalIgnoreCase))];
+
+    protected override async Task OnInitializedAsync() => _donnees = await Service.LireAsync();
+
+    private void OuvrirCreation()
+    {
+        _edition = null;
+        _formeNom = string.Empty;
+        _formeDescription = string.Empty;
+        _formeSite = string.Empty;
+        _formeNiveau = PartnerTier.Partner;
+        _formeOrdre = 0;
+        _formeImage = string.Empty;
+        _formeActif = true;
+        _erreur = null;
+        _formulaireOuvert = true;
+    }
+
+    private async Task OuvrirEdition(LignePartenaireAdmin ligne)
+    {
+        var detail = await Service.LireDetailAsync(ligne.Id);
+
+        if (detail is null)
+        {
+            await Previent("Ce partenaire n'existe plus.", false);
+            return;
+        }
+
+        _edition = detail;
+        _formeNom = detail.Nom;
+        _formeDescription = detail.Description;
+        _formeSite = detail.Site;
+        _formeNiveau = detail.Niveau;
+        _formeOrdre = detail.Ordre;
+        _formeImage = detail.LogoUrl ?? string.Empty;
+        _formeActif = ligne.Actif;
+        _erreur = null;
+        _formulaireOuvert = true;
+    }
+
+    private async Task FermerFormulaire()
+    {
+        await Task.CompletedTask;
+        _formulaireOuvert = false;
+        _erreur = null;
+    }
+
+    /// <summary>Dépose le logo choisi et garde l'adresse renvoyée par le serveur.</summary>
+    private async Task TeleverserImage()
+    {
+        _depotEnCours = true;
+
+        try
+        {
+            await JS.InvokeVoidAsync("DnAdminScripts.assure", true);
+
+            var reponse = await JS.InvokeAsync<ReponseApi>(
+                "DnApi.televerseFichier", "/api/images", "file", _champImage);
+
+            if (reponse.Ok && reponse.Url is { Length: > 0 })
+            {
+                _formeImage = reponse.Url;
+            }
+            else
+            {
+                _erreur = Raison(reponse);
+            }
+        }
+        finally
+        {
+            _depotEnCours = false;
+        }
+    }
+
+    private void RetirerImage() => _formeImage = string.Empty;
+
+    private async Task Enregistrer()
+    {
+        _erreur = null;
+
+        if (string.IsNullOrWhiteSpace(_formeNom))
+        {
+            _erreur = "Donnez un nom à l'organisation.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_formeDescription))
+        {
+            _erreur = "Décrivez en une phrase ce que l'organisation apporte.";
+            return;
+        }
+
+        var site = Adresse(_formeSite);
+
+        if (site is null)
+        {
+            _erreur = "Un partenaire a besoin de l'adresse de son site.";
+            return;
+        }
+
+        _envoi = true;
+
+        try
+        {
+            var reponse = _edition is null
+                ? await Ecrire("POST", "/api/partners", new
+                {
+                    name = _formeNom,
+                    description = _formeDescription,
+                    websiteUrl = site,
+                    tier = _formeNiveau,
+                    logoUrl = string.IsNullOrWhiteSpace(_formeImage) ? null : _formeImage,
+                    sortOrder = _formeOrdre
+                })
+                : await Ecrire("PUT", $"/api/partners/{_edition.Id}", new
+                {
+                    name = _formeNom,
+                    description = _formeDescription,
+                    websiteUrl = site,
+                    tier = _formeNiveau,
+                    logoUrl = string.IsNullOrWhiteSpace(_formeImage) ? null : _formeImage,
+                    sortOrder = _formeOrdre
+                });
+
+            if (!reponse.Ok)
+            {
+                _erreur = Raison(reponse);
+                return;
+            }
+
+            // Un partenaire créé arrive visible : l'API ne prend pas ce choix en compte.
+            // Décocher la case doit tout de même être respecté — c'est l'identifiant
+            // renvoyé par la création qui permet de le demander.
+            if (_edition is null && !_formeActif && reponse.Id is { } cree)
+            {
+                await AppliquerActivation(cree, false);
+            }
+
+            if (_edition is not null)
+            {
+                await AppliquerActivation(_edition.Id, _formeActif);
+            }
+
+            await FermerFormulaire();
+
+            Service.Oublie();
+            _donnees = await Service.LireAsync();
+
+            await Previent(_edition is null ? "Partenaire créé." : "Partenaire enregistré.", true);
+        }
+        finally
+        {
+            _envoi = false;
+        }
+    }
+
+    private async Task ChangerActivation(LignePartenaireAdmin ligne, bool actif)
+    {
+        await AppliquerActivation(ligne.Id, actif);
+
+        Service.Oublie();
+        _donnees = await Service.LireAsync();
+
+        await Previent(actif ? "Partenaire affiché sur le site." : "Partenaire masqué.", true);
+    }
+
+    /// <summary>Demande à l'API d'afficher ou de masquer un partenaire.</summary>
+    /// <param name="id">Identifiant du partenaire.</param>
+    /// <param name="actif">Vrai pour l'afficher.</param>
+    private async Task AppliquerActivation(Guid? id, bool actif)
+    {
+        if (id is not { } partenaire)
+        {
+            return;
+        }
+
+        var reponse = await Ecrire(
+            "POST",
+            $"/api/partners/{partenaire}/activation?actif={(actif ? "true" : "false")}",
+            null);
+
+        if (!reponse.Ok)
+        {
+            await Previent(Raison(reponse), false);
+        }
+    }
+
+    private async Task Supprimer(LignePartenaireAdmin ligne)
+    {
+        _aSupprimer = null;
+
+        var reponse = await Ecrire("DELETE", $"/api/partners/{ligne.Id}", null);
+
+        if (!reponse.Ok)
+        {
+            await Previent(Raison(reponse), false);
+            return;
+        }
+
+        Service.Oublie();
+        _donnees = await Service.LireAsync();
+
+        await Previent("Partenaire supprimé.", true);
+    }
+
+    /// <summary>Écrit par l'API, après avoir vérifié que le script d'appel est présent.</summary>
+    /// <param name="methode">Verbe de la requête.</param>
+    /// <param name="chemin">Adresse de l'API.</param>
+    /// <param name="corps">Charge utile, ou <see langword="null"/>.</param>
+    /// <returns>La réponse normalisée de l'appel.</returns>
+    private async Task<ReponseApi> Ecrire(string methode, string chemin, object? corps)
+    {
+        await JS.InvokeVoidAsync("DnAdminScripts.assure", true);
+
+        return await JS.InvokeAsync<ReponseApi>("DnApi.envoyer", methode, chemin, corps);
+    }
+
+    /// <summary>Affiche un message, puis l'efface.</summary>
+    /// <param name="texte">Message à afficher.</param>
+    /// <param name="reussi">Vrai pour un succès, faux pour une erreur.</param>
+    private async Task Previent(string texte, bool reussi)
+    {
+        var annonce = new Annonce(texte, reussi);
+        _messages.Add(annonce);
+
+        await InvokeAsync(StateHasChanged);
+
+        await Task.Delay(4000);
+        _messages.Remove(annonce);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Complète une adresse à laquelle il manque le schéma.</summary>
+    /// <param name="lien">Adresse saisie, éventuellement sans schéma.</param>
+    /// <returns>L'adresse complète, ou <see langword="null"/> si rien n'a été saisi.</returns>
+    private static string? Adresse(string? lien)
+    {
+        if (string.IsNullOrWhiteSpace(lien))
+        {
+            return null;
+        }
+
+        var adresse = lien.Trim();
+
+        return adresse.Contains("://", StringComparison.Ordinal) ? adresse : $"https://{adresse}";
+    }
+
+    /// <summary>Initiales d'une organisation, pour les cartes sans logo.</summary>
+    /// <param name="nom">Nom de l'organisation.</param>
+    /// <returns>Une ou deux lettres.</returns>
+    private static string Initiales(string nom)
+    {
+        var mots = nom.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        return mots.Length switch
+        {
+            0 => "?",
+            1 => mots[0][..1].ToUpperInvariant(),
+            _ => string.Concat(mots[0][..1], mots[1][..1]).ToUpperInvariant(),
+        };
+    }
+
+    /// <summary>Message d'erreur d'une réponse refusée, tel que le serveur l'a formulé.</summary>
+    /// <param name="reponse">Réponse de l'appel.</param>
+    /// <returns>Un texte compréhensible, jamais un code.</returns>
+    private static string Raison(ReponseApi reponse)
+        => reponse.Detail
+            ?? reponse.Titre
+            ?? (reponse.Statut == 0
+                ? "Le serveur n'a pas répondu."
+                : $"Le serveur a répondu {reponse.Statut}.");
+
+    /// <summary>Un message affiché à l'écran, le temps qu'il soit effacé.</summary>
+    /// <param name="Texte">Contenu du message.</param>
+    /// <param name="Reussi">Vrai pour un succès, faux pour une erreur.</param>
+    private sealed record Annonce(string Texte, bool Reussi);
+
+    /// <summary>Réponse normalisée d'un appel fait par le script d'administration.</summary>
+    /// <param name="Ok">Vrai si le serveur a accepté.</param>
+    /// <param name="Statut">Code de la réponse.</param>
+    /// <param name="Corps">Corps décodé, ou texte brut si la réponse n'était pas du JSON.</param>
+    private sealed record ReponseApi(bool Ok, int Statut, object? Corps)
+    {
+        /// <summary>Message d'erreur, au format problem details.</summary>
+        public string? Titre => (Corps as JsonElement?)?.TryGetProperty("title", out var titre) == true
+            ? titre.GetString()
+            : null;
+
+        /// <summary>Précision de l'erreur, quand le serveur en a produit une.</summary>
+        public string? Detail => (Corps as JsonElement?)?.TryGetProperty("detail", out var detail) == true
+            ? detail.GetString()
+            : null;
+
+        /// <summary>Adresse de l'image déposée, pour le dépôt d'un fichier.</summary>
+        public string? Url => (Corps as JsonElement?)?.TryGetProperty("url", out var url) == true
+            ? url.GetString()
+            : null;
+
+        /// <summary>Identifiant renvoyé par la création, pour enchaîner sur une autre action.</summary>
+        public Guid? Id => (Corps as JsonElement?)?.TryGetProperty("id", out var id) == true
+            && id.TryGetGuid(out var valeur) ? valeur : null;
+    }
+}

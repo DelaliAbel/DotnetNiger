@@ -1,7 +1,8 @@
 @page "/blog"
-@attribute [StreamRendering]
 
 @inject ISiteContentService Contenu
+
+@inject DotnetNiger.Application.Abstractions.ICurrentUserService Utilisateur
 
 <PageTitle>Blog — notions, projets et portraits de développeurs .NET du Niger</PageTitle>
 <HeadContent>
@@ -12,8 +13,8 @@
 
 @if (_Articles is null)
 {
-    <div class="wrap" style="padding-block: calc(var(--spacing) * 12);">
-        <p class="text-caption" style="color: var(--site-fg-muted);">Chargement…</p>
+    <div class="wrap py-12">
+        <p class="text-caption text-[var(--site-fg-muted)]">Chargement…</p>
     </div>
 }
 else
@@ -24,10 +25,10 @@ else
             <p class="hero__eyebrow">
                 <DnIcon Name="sparkles" Size="14" /> Le blog de la communauté
             </p>
-            <h1 class="hero__title" style="margin-top: var(--spacing);">
+            <h1 class="hero__title mt-1">
                 Ce que la communauté <strong>apprend et publie</strong>
             </h1>
-            <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
+            <p class="hero__lead mt-3">
                 Nouveautés de la plateforme, retours d'expérience sur des projets menés ici et
                 portraits de celles et ceux qui construisent avec .NET au Niger.
             </p>
@@ -35,7 +36,7 @@ else
     </section>
 
     <!-- 2. Recherche, rubrique et tri -->
-    <section class="section" aria-label="Rechercher et filtrer les articles" style="padding-block: calc(var(--spacing) * 5) 0;">
+    <section class="section pt-5 pb-0" aria-label="Rechercher et filtrer les articles">
         <div class="wrap">
             <form method="get" action="/blog" class="filtres" role="search">
                 <div class="filtres__champ">
@@ -134,14 +135,16 @@ else
         </div>
     </section>
 
-    <!-- 4. Écrire sur le blog -->
+    @* ------------------------------------a trancher entre celui ci------------------------------------------------------ *@
+
+    @* <!-- 4. Écrire sur le blog -->
     <section class="section" aria-labelledby="ecrire-titre">
         <div class="wrap">
             <div class="bande">
-                <div class="grid gap-6 md:grid-cols-2" style="align-items: center;">
+                <div class="grid items-center gap-6 md:grid-cols-2">
                     <div>
-                        <p class="eyebrow" style="color: var(--color-vert-300);">Contribuer</p>
-                        <h2 id="ecrire-titre" class="bande__title" style="margin-top: var(--spacing);">
+                        <p class="eyebrow text-vert-300">Contribuer</p>
+                        <h2 id="ecrire-titre" class="bande__title mt-1">
                             Un retour d'expérience à partager ?
                         </h2>
                         <p class="bande__lead">
@@ -161,7 +164,54 @@ else
                 </div>
             </div>
         </div>
-    </section>
+    </section> *@
+
+    @* ---------------------------------------ou celui la------------------------------------------------------------------ *@
+
+
+<!-- 4. Contribuer -->
+<section class="section" aria-labelledby="proposer-titre">
+    <div class="wrap">
+        <div class="bande">
+            <div class="grid items-center gap-6 md:grid-cols-2">
+                <div>
+                    <p class="eyebrow text-vert-300">Contribuer</p>
+                    <h2 id="proposer-titre" class="bande__title mt-1">
+                        Une ressource à partager avec la communauté ?
+                    </h2>
+                    <p class="bande__lead">
+                        Tutoriel, outil ou guide qui vous a fait gagner du temps : proposez-la,
+                        elle aidera peut-être un autre développeur nigerien.
+                    </p>
+                </div>
+                <div class="contribuer__actions">
+
+                    @if (Utilisateur.IsAuthenticated)
+                    {
+
+                        <a class="btn btn--white btn--lg" href="/compte/tableau-de-bord">
+                            Proposer une ressource <DnIcon Name="arrow-right" Size="18" />
+                        </a>
+
+                    }
+                    else
+                    {
+
+                        <a class="btn btn--white btn--lg" href="/compte/inscription">
+                            Proposer une ressource <DnIcon Name="arrow-right" Size="18" />
+                        </a>
+                        <p class="contribuer__note">
+                            Connectez-vous pour publier directement votre ressource :
+                            <a class="link" href="/compte/connexion?retour=/ressources">se connecter</a>.
+                        </p>
+                    }
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
 }
 
 @code {

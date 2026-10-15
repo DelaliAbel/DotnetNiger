@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using DotnetNiger.Application.Common;
 using DotnetNiger.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -10,6 +11,7 @@ namespace DotnetNiger.Web.Authentication;
 /// </summary>
 public sealed class ExternalCallbackHandler(
     SignInManager<ApplicationUser> signInManager,
+    UserManager<ApplicationUser> userManager,
     IExternalAccountService externalAccounts)
 {
     private static readonly string ExternalCookieScheme = IdentityConstants.ExternalScheme;
@@ -33,6 +35,7 @@ public sealed class ExternalCallbackHandler(
 
         var providerKey = ReadProviderKey(principal, provider);
         var email = principal.FindFirst(ClaimTypes.Email)?.Value;
+        var photo = ReadProviderPhoto(principal);
         var result = await externalAccounts.Complete(provider, providerKey, email, principal.Claims);
 
         // La session temporaire contient aussi les informations de retour du fournisseur :
@@ -44,8 +47,13 @@ public sealed class ExternalCallbackHandler(
             case ExternalSignInStatus.Connected:
             case ExternalSignInStatus.LinkedToExistingAccount:
                 await signInManager.SignInAsync(result.User!, isPersistent: false);
+
+                // Même règle que la connexion locale : le rôle décide de la destination
+                // quand le visiteur n'en a pas demandé une.
+                var estAdministrateur = await userManager.IsInRoleAsync(result.User!, RoleNames.Admin);
+
                 return ExternalCallbackOutcome.SignedIn(
-                    ExternalSignInNavigation.IsLocal(returnUrl) ? returnUrl! : "/");
+                    DestinationConnexion.Pour(returnUrl, estAdministrateur));
 
             case ExternalSignInStatus.PasswordProofRequired:
                 return ExternalCallbackOutcome.PasswordRequired(
@@ -53,7 +61,8 @@ public sealed class ExternalCallbackHandler(
                     providerKey,
                     email,
                     emailVerified: result.EmailVerified,
-                    requiresExistingPassword: true);
+                    requiresExistingPassword: true,
+                    photoUrl: photo);
 
             case ExternalSignInStatus.PasswordRequired:
             default:
@@ -65,8 +74,31 @@ public sealed class ExternalCallbackHandler(
                     providerKey,
                     email,
                     emailVerified: result.EmailVerified,
-                    requiresExistingPassword: false);
+                    requiresExistingPassword: false,
+                    photoUrl: photo);
         }
+    }
+
+    /// <summary>
+    /// Adresse de la photo transmise par le fournisseur, si elle en fournit une.
+    /// </summary>
+    /// <remarks>
+    /// Google publie l'avatar sous <c>https://lh3.googleusercontent.com/…</c> ; d'autres
+    /// fournisseurs utilisent <c>picture</c> ou <c>avatar_url</c>. Seule une adresse en
+    /// HTTPS est retenue : la photo est rendue par le navigateur du visiteur, une adresse
+    /// en clair la feraitULTS transporter en clair et可能被擷取 hors du site.
+    /// </remarks>
+    /// <param name="principal">Identité renvoyée par le fournisseur.</param>
+    /// <returns>L'adresse de la photo, ou <see langword="null"/>.</returns>
+    private static string? ReadProviderPhoto(ClaimsPrincipal principal)
+    {
+        var photo = principal.FindFirst("picture")?.Value
+            ?? principal.FindFirst("avatar_url")?.Value;
+
+        return Uri.TryCreate(photo, UriKind.Absolute, out var adresse)
+            && adresse.Scheme == Uri.UriSchemeHttps
+                ? adresse.ToString()
+                : null;
     }
 
     private static string ReadProviderKey(ClaimsPrincipal principal, string provider)
@@ -102,6 +134,7 @@ public sealed class ExternalIdentityException(string message) : InvalidOperation
 /// <param name="Email">Adresse transmise par le fournisseur.</param>
 /// <param name="EmailVerified">Vrai si le fournisseur a certifié l'adresse.</param>
 /// <param name="RequiresExistingPassword">Vrai si un compte existe déjà et doit être prouvé.</param>
+/// <param name="PhotoUrl">Photo fournie par le fournisseur, si elle en transmet une.</param>
 public sealed record ExternalCallbackOutcome(
     ExternalCallbackStatus Status,
     string? RedirectUrl,
@@ -109,7 +142,8 @@ public sealed record ExternalCallbackOutcome(
     string? ProviderKey,
     string? Email,
     bool EmailVerified,
-    bool RequiresExistingPassword)
+    bool RequiresExistingPassword,
+    string? PhotoUrl = null)
 {
     /// <summary>
     /// Crée une issue de session ouverte.
@@ -127,13 +161,15 @@ public sealed record ExternalCallbackOutcome(
     /// <param name="email">Adresse transmise par le fournisseur.</param>
     /// <param name="emailVerified">Vrai si le fournisseur a certifié l'adresse.</param>
     /// <param name="requiresExistingPassword">Vrai si un compte doit être prouvé.</param>
+    /// <param name="photoUrl">Photo fournie par le fournisseur, si elle en transmet une.</param>
     /// <returns>Issue correspondante.</returns>
     public static ExternalCallbackOutcome PasswordRequired(
         string provider,
         string providerKey,
         string? email,
         bool emailVerified,
-        bool requiresExistingPassword) =>
+        bool requiresExistingPassword,
+        string? photoUrl = null) =>
         new(
             ExternalCallbackStatus.PasswordRequired,
             null,
@@ -141,7 +177,8 @@ public sealed record ExternalCallbackOutcome(
             providerKey,
             email,
             emailVerified,
-            requiresExistingPassword);
+            requiresExistingPassword,
+            photoUrl);
 }
 
 /// <summary>

@@ -49,23 +49,22 @@ public interface IUnitOfWork
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Ouvre une transaction explicite.
+    /// Exécute une opération dans une transaction, et la rejoue si la base échoue
+    /// temporairement.
     /// </summary>
+    /// <remarks>
+    /// Dès que la reprise est activée, EF refuse une transaction ouverte à la main : il
+    /// faut passer par une stratégie d'exécution. Cette méthode est cette stratégie, et
+    /// c'est la seule façon d'ouvrir une transaction sur ce projet sans staples.
+    /// <para>
+    /// L'opération rejouée doit donc être <em>idempotente</em> : relire l'événement avant
+    /// d'écrire l'inscription, plutôt que d'ajouter une ligne à chaque tentative.
+    /// </para>
+    /// </remarks>
+    /// <param name="operation">Travail à exécuter dans la transaction.</param>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
-    /// <returns>Tâche représentant l'ouverture de la transaction.</returns>
-    Task BeginTransactionAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Valide la transaction courante.
-    /// </summary>
-    /// <param name="cancellationToken">Jeton d'annulation.</param>
-    /// <returns>Tâche représentant la validation.</returns>
-    Task CommitTransactionAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Annule la transaction courante.
-    /// </summary>
-    /// <param name="cancellationToken">Jeton d'annulation.</param>
-    /// <returns>Tâche représentant l'annulation.</returns>
-    Task RollbackTransactionAsync(CancellationToken cancellationToken = default);
+    /// <returns>Tâche représentant l'exécution.</returns>
+    Task ExecuteInTransactionAsync(
+        Func<CancellationToken, Task> operation,
+        CancellationToken cancellationToken = default);
 }

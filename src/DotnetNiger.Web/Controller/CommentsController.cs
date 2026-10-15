@@ -224,6 +224,51 @@ public sealed class CommentsController(
         return NoContent();
     }
 
+    /// <summary>Rétablit un commentaire masqué ou mis de côté, après examen.</summary>
+    /// <param name="id">Identifiant du commentaire.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Réponse vide.</returns>
+    /// <remarks>
+    /// Sans cette issue de secours, une sanction était définitive alors que la modération a
+    /// le droit de se tromper. Le commentaire supprimé, lui, ne se rétablit pas.
+    /// </remarks>
+    /// <response code="204">Commentaire rétabli.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est pas administrateur.</response>
+    /// <response code="404">Commentaire introuvable.</response>
+    /// <response code="409">Le commentaire a été supprimé et ne se rétablit pas.</response>
+    [HttpPost("{id:guid}/approve")]
+    [Authorize(Roles = RoleNames.Admin)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> Retablir(Guid id, CancellationToken cancellationToken)
+    {
+        RequireAdministrateur(currentUser);
+
+        var commentaire = await ChargerCommentaire(id, cancellationToken);
+
+        if (commentaire is null)
+        {
+            return NotFound();
+        }
+
+        if (commentaire.Status == CommentStatus.Deleted)
+        {
+            throw new DomainException(
+                "comment_deleted",
+                "Un commentaire supprimé ne se rétablit pas : masquez plutôt les signalements abusifs.");
+        }
+
+        commentaire.MarkApproved();
+        unitOfWork.Repository<Comment>().Update(commentaire);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return NoContent();
+    }
+
     private Task<Comment?> ChargerCommentaire(Guid id, CancellationToken cancellationToken) =>
         unitOfWork.ReadRepository<Comment>().Query
             .FirstOrDefaultAsync(comment => comment.Id == id, cancellationToken);

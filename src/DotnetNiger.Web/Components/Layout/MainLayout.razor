@@ -1,18 +1,21 @@
-﻿@inherits LayoutComponentBase
+@inherits LayoutComponentBase
+@using DotnetNiger.Web.Services.Membres
+@inject NavigationManager Navigation
 @inject DotnetNiger.Application.Abstractions.ICurrentUserService Utilisateur
+@inject IServiceScopeFactory Portees
 
-<PageTitle>DotnetNiger — la communauté des développeurs .NET au Niger</PageTitle>
+<PageTitle>DotnetNiger — La communauté des développeurs .NET au Niger</PageTitle>
 
 <div class="app-shell">
     <a class="skip-link" href="#contenu">Aller au contenu</a>
 
-    <header class="site-header">
-        <div class="wrap site-header__inner">
-            <DnBrand />
+<header class="site-header">
+    <div class="wrap site-header__inner">
+        <DnBrand />
 
-            <nav id="site-nav" class="site-nav" aria-label="Navigation principale">
-                <div class="site-nav__head">
-                    <span class="text-caption" style="font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--site-fg-muted);">Menu</span>
+        <nav id="site-nav" class="site-nav" aria-label="Navigation principale">
+            <div class="site-nav__head">
+                    <span class="text-caption font-bold uppercase tracking-[0.08em] text-[color:var(--site-fg-muted)]">Menu</span>
                     <button class="site-nav__close" type="button" data-nav-close aria-label="Fermer la navigation"
                             onclick="DnNav.ferme(); return false;">
                         <DnIcon Name="x" Size="16" />
@@ -28,36 +31,131 @@
                 <NavLink class="site-nav__link" href="/partenaires">Partenaires</NavLink>
                 <NavLink class="site-nav__link" href="/contact">Contact</NavLink>
 
-                @if (Utilisateur.IsInRole(DotnetNiger.Application.Common.RoleNames.Admin))
-                {
-                    <NavLink class="site-nav__link" href="/administration">Administration</NavLink>
-                }
-
                 <!-- Compte : visible dans le tiroir sur mobile -->
                 <div class="site-nav__footer">
-                    <a class="site-nav__connexion" href="/compte/connexion">
-                        Se connecter <DnIcon Name="arrow-right" Size="16" />
-                    </a>
-                    <a class="btn btn--primary" href="/compte/inscription">Rejoindre la communauté</a>
+                    @if (Utilisateur.IsAuthenticated)
+                    {
+                        @if (SurEspaceMembre)
+                        {
+                            <a class="site-nav__connexion" href="/">Aller au site</a>
+                        }
+                        else
+                        {
+                            <a class="site-nav__connexion" href="/compte/tableau-de-bord">Tableau de bord</a>
+                        }
+
+                        <a class="site-nav__connexion" href="/compte/profil">Mon profil</a>
+
+                        @* La barre mobile a son propre pied : l'entrée d'administration y
+                           figure aussi, sinon un administrateur sur téléphone n'aurait
+                           aucun chemin vers l'administration. *@
+                        @if (EstAdministrateur)
+                        {
+                            <a class="site-nav__connexion" href="/administration">Administration</a>
+                        }
+
+                        <form method="post" action="/compte/deconnexion">
+                            <AntiforgeryToken />
+                            <button class="btn btn--ghost w-full" type="submit">
+                                Se déconnecter
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a class="site-nav__connexion" href="/compte/connexion">
+                            Se connecter <DnIcon Name="arrow-right" Size="16" />
+                        </a>
+                        @*  <a class="btn btn--primary" href="/compte/inscription">Rejoindre la communauté</a>  *@
+                    }
                 </div>
             </nav>
 
             <div class="site-header__actions">
-                <!-- Compte : visible dans la barre d'en-tête sur ordinateur -->
-                <a class="btn btn--secondary site-header__connexion" href="/compte/connexion">Se connecter</a>
-                @* Deux libellés plutôt qu'un seul raccourci en CSS : entre 64 et 90
-                   rem, la barre complète dépasse la largeur de la fenêtre. Le nom
-                   accessible reste fixe, sinon le lien n'en aurait plus dès que le
-                   libellé long est masqué. *@
-                <a class="btn btn--primary site-header__cta" href="/compte/inscription"
-                   aria-label="Rejoindre la communauté">
-                    <span class="site-header__cta-long">Rejoindre la communauté</span>
-                    <span class="site-header__cta-court">Rejoindre</span>
-                </a>
+                @* Un membre connecté ne voit plus « Se connecter » : la barre ne lui propose
+                   que son avatar. Le tableau de bord et la déconnexion vivaient ici en
+                   boutons pleine largeur ; ils sont devenus les entrées du menu de profil,
+                   où ils n'occupent plus de place une fois le membre connecté — c'était
+                   précisément la raison de leur présence ici. *@
+                @if (Utilisateur.IsAuthenticated)
+                {
+                    @* <details> plutôt qu'un bouton piloté en JavaScript : le menu s'ouvre
+                       et se referme sans script, survit à la navigation enhanced de Blazor
+                       qui régénère le document, et se referme tout seul quand le membre
+                       choisit une entrée. *@
+                    <details class="profil">
+                        <summary class="profil__declencheur" aria-label="Mon profil">
+                            @if (_membre is not null)
+                            {
+                                <DnAvatar Nom="@_membre.FullName" ImageUrl="@_membre.PhotoUrl" Sm />
+                            }
+                            else
+                            {
+                                @* La fiche n'a pas pu être lue : on garde une pastille
+                                   neutre plutôt qu'un avatar vide ou une image cassée. *@
+                                <span class="avatar avatar--sm avatar--ink" aria-hidden="true">?</span>
+                            }
+                            <DnIcon Name="chevron-down" Size="14" />
+                        </summary>
+
+                        <div class="profil__menu">
+                            @if (_membre is not null)
+                            {
+                                @* Ni l'adresse ni la ville : la fiche publique ne les expose
+                                   pas toutes deux, et une requête supplémentaire pour
+                                   remplir deux lignes de menu n'en vaudrait pas le coût. *@
+                                <p class="profil__identite">
+                                    <span class="profil__nom">@_membre.FullName</span>
+                                </p>
+                            }
+
+                            @* Sur la partie publique, le tableau de bord est le seul chemin vers
+                               l'espace membre. Une fois dedans, « Aller au site » ramène au public. *@
+                            @if (SurEspaceMembre)
+                            {
+                                <a class="profil__entree" href="/">Aller au site</a>
+                            }
+                            else
+                            {
+                                <a class="profil__entree" href="/compte/tableau-de-bord">Tableau de bord</a>
+                            }
+
+                            <a class="profil__entree" href="/compte/profil">Mon profil</a>
+
+                            @* Réservé aux administrateurs : c'est le seul chemin visible
+                               vers l'administration, sans quoi il faudrait taper l'adresse. *@
+                            @if (EstAdministrateur)
+                            {
+                                <a class="profil__entree" href="/administration">Administration</a>
+                            }
+
+                            @if (SurEspaceMembre)
+                            {
+                                <a class="profil__entree" href="/compte/tableau-de-bord">Mes publications</a>
+                            }
+
+                            @* La déconnexion est une méthode POST : une déconnexion par GET
+                               pourrait être déclenchée par une image tierce glissée dans la
+                               page. *@
+                            <form method="post" action="/compte/deconnexion">
+                                <AntiforgeryToken />
+                                <button class="profil__entree profil__entree--deconnexion" type="submit">
+                                    Se déconnecter
+                                </button>
+                            </form>
+                        </div>
+                    </details>
+                }
+                else
+                {
+                    @* Le bouton d'inscription vit sur le hero : la barre ne propose que la
+                       connexion aux visiteurs. *@
+                    <a class="btn btn--secondary site-header__connexion" href="/compte/connexion">Se connecter</a>
+                }
 
                 <button class="theme-toggle" type="button" data-theme-toggle aria-label="Activer le mode sombre" aria-pressed="false"
                         onclick="DnTheme.toggle(); return false;">
-                    <span data-icone-soleil style="display: none"><DnIcon Name="sun" Size="16" /></span>
+                    <span data-icone-soleil class="hidden"><DnIcon Name="sun" Size="16" /></span>
                     <span data-icone-lune><DnIcon Name="moon" Size="16" /></span>
                 </button>
 
@@ -78,7 +176,29 @@
 
     <SiteFooter />
 
-    <script src="/js/site.js"></script>
+    <script src="@Assets["js/site.js"]"></script>
+
+    @* Les boutons de partage sont rendus par le serveur : le script doit les brancher
+       après leur arrivée dans la page, pas avant. *@
+    <script>
+        (function () {
+            function installe() {
+                window.DnPartage?.installe();
+            }
+
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", installe);
+            } else {
+                installe();
+            }
+
+            // Une navigation sans rechargement remplace le contenu : les nouveaux boutons
+            // de partage doivent être branchés eux aussi.
+            if (window.Blazor) {
+                Blazor.addEventListener("enhancedNav", installe);
+            }
+        })();
+    </script>
 </div>
 
 <div id="blazor-error-ui" data-nosnippet>
@@ -86,3 +206,67 @@
     <a href="." class="reload">Recharger la page</a>
     <span class="dismiss">&times;</span>
 </div>
+
+@code {
+    /// <summary>
+    /// Fiche du membre connecté, pour l'avatar et le nom du menu de profil.
+    /// </summary>
+    /// <remarks>
+    /// Projection minimale et sans suivi : le menu n'a besoin que du nom et de la photo. La
+    /// barre est rendue sur chaque page, donc la requête se répète à chaque navigation ;
+    /// elle porte sur une ligne et ne doit pas devenir le premier poste de coût d'une page.
+    /// </remarks>
+    private DotnetNiger.Web.Services.Membres.MembreVue? _membre;
+
+    /// <summary>
+    /// Vrai lorsque la page courante appartient à l'espace privé du membre.
+    /// </summary>
+    /// <remarks>
+    /// L'espace membre n'a pas sa propre barre : il utilise celle du site, pour que le
+    /// membre puisse en permanence revenir au site public. C'est donc la seule chose qui
+    /// distingue les deux mondes d'un coup d'œil, et elle décide de ce que le menu propose.
+    /// </remarks>
+    private bool SurEspaceMembre
+    {
+        get
+        {
+            var chemin = Navigation.ToBaseRelativePath(Navigation.Uri);
+
+            return chemin.StartsWith("compte/", StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    /// <summary>
+    /// Vrai lorsque l'utilisateur connecté détient le rôle d'administrateur.
+    /// </summary>
+    /// <remarks>
+    /// Décide de l'entrée « Administration » du menu de profil. Le rôle est lu sur
+    /// l'utilisateur courant, donc sans requête supplémentaire.
+    /// </remarks>
+    private bool EstAdministrateur
+        => Utilisateur.IsInRole(DotnetNiger.Application.Common.RoleNames.Admin);
+
+    /// <summary>
+    /// Lit la fiche du membre pour le menu de profil.
+    /// </summary>
+    /// <remarks>
+    /// La lecture se fait dans une portée de dépendances à elle, donc sur un contexte de
+    /// base distinct de celui de la page. La barre et la page s'initialisent en parallèle :
+    /// partageant un contexte, leurs requêtes se marcheraient dessus et EF refuserait la
+    /// seconde — ce qui faisait tomber l'accueil en erreur 500 pour un membre connecté.
+    /// La barre n'a pas à partager la transaction de la page : elle ne lit que son nom.
+    /// </remarks>
+    protected override async Task OnInitializedAsync()
+    {
+        if (Utilisateur.UserId is not { } identifiant)
+        {
+            return;
+        }
+
+        using var portee = Portees.CreateScope();
+
+        _membre = await portee.ServiceProvider
+            .GetRequiredService<ServiceMembres>()
+            .LireAsync(identifiant);
+    }
+}

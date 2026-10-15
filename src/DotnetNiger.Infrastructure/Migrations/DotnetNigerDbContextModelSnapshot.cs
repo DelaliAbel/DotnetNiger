@@ -126,6 +126,11 @@ namespace DotnetNiger.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("Location")
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
@@ -361,6 +366,32 @@ namespace DotnetNiger.Infrastructure.Migrations
                     b.ToTable("Articles", (string)null);
                 });
 
+            modelBuilder.Entity("DotnetNiger.Domain.Entities.Content.ContentImage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("Contenu")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TypeContenu")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ContentImages", (string)null);
+                });
+
             modelBuilder.Entity("DotnetNiger.Domain.Entities.Content.NewsletterSubscription", b =>
                 {
                     b.Property<Guid>("Id")
@@ -469,6 +500,9 @@ namespace DotnetNiger.Infrastructure.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("nvarchar(32)");
 
+                    b.Property<string>("Subject")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -523,6 +557,73 @@ namespace DotnetNiger.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Rubriques", (string)null);
+                });
+
+            modelBuilder.Entity("DotnetNiger.Domain.Entities.Identity.MemberLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("nvarchar(80)");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("nvarchar(2048)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MemberId", "SortOrder");
+
+                    b.ToTable("MemberLinks", (string)null);
+                });
+
+            modelBuilder.Entity("DotnetNiger.Domain.Entities.Identity.ProfilePhoto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("Contenu")
+                        .IsRequired()
+                        .HasColumnType("varbinary(max)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("MembreId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TypeContenu")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MembreId")
+                        .IsUnique();
+
+                    b.ToTable("ProfilePhotos", (string)null);
                 });
 
             modelBuilder.Entity("DotnetNiger.Domain.Entities.Moderation.Report", b =>
@@ -921,6 +1022,9 @@ namespace DotnetNiger.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("Profession")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("nvarchar(max)");
 
@@ -1145,6 +1249,24 @@ namespace DotnetNiger.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("CreatorId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("DotnetNiger.Domain.Entities.Identity.MemberLink", b =>
+                {
+                    b.HasOne("DotnetNiger.Infrastructure.Identity.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("DotnetNiger.Domain.Entities.Identity.ProfilePhoto", b =>
+                {
+                    b.HasOne("DotnetNiger.Infrastructure.Identity.ApplicationUser", null)
+                        .WithOne()
+                        .HasForeignKey("DotnetNiger.Domain.Entities.Identity.ProfilePhoto", "MembreId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

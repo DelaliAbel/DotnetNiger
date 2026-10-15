@@ -1,7 +1,8 @@
 @page "/ressources"
-@attribute [StreamRendering]
 
 @inject ISiteContentService Contenu
+
+@inject DotnetNiger.Application.Abstractions.ICurrentUserService Utilisateur
 
 <PageTitle>Ressources — DotnetNiger, la communauté des développeurs .NET au Niger</PageTitle>
 <HeadContent>
@@ -12,8 +13,8 @@
 
 @if (_Ressources is null)
 {
-    <div class="wrap" style="padding-block: calc(var(--spacing) * 12);">
-        <p class="text-caption" style="color: var(--site-fg-muted);">Chargement…</p>
+    <div class="wrap py-12">
+        <p class="text-caption text-[var(--site-fg-muted)]">Chargement…</p>
     </div>
 }
 else
@@ -24,10 +25,10 @@ else
             <p class="hero__eyebrow">
                 <DnIcon Name="book-open" Size="14" /> Bibliothèque de la communauté
             </p>
-            <h1 class="hero__title" style="margin-top: var(--spacing);">
+            <h1 class="hero__title mt-1">
                 Apprendre, pratiquer et <strong>passer à l'action</strong>
             </h1>
-            <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
+            <p class="hero__lead mt-3">
                 Formations, tutoriels, bibliothèques et guides : une sélection de la communauté
                 DotnetNiger pour progresser avec .NET, de la découverte à la maîtrise.
             </p>
@@ -35,13 +36,13 @@ else
     </section>
 
     <!-- 2. Recherche, catégorie et tri -->
-    <section class="section" aria-label="Rechercher et filtrer les ressources" style="padding-block: calc(var(--spacing) * 5) 0;">
+    <section class="section pt-5 pb-0" aria-label="Rechercher et filtrer les ressources">
         <div class="wrap">
             <form method="get" action="/ressources" class="filtres" role="search">
                 <div class="filtres__champ">
                     <label class="filtres__libelle" for="recherche-ressources">Recherche</label>
                     <input id="recherche-ressources" class="input" type="search" name="q"
-                           value="@_Recherche" placeholder="Titre, sujet, auteur…" />
+                    value="@_Recherche" placeholder="Titre, sujet, auteur…" />
                 </div>
 
                 <div class="filtres__champ">
@@ -110,46 +111,58 @@ else
             @if (ResultatsPageCourante.Length == 0)
             {
                 <EmptyState Icone="search"
-                            Titre="Aucune ressource ne correspond à votre recherche"
-                            Message="Essayez d'autres mots-clés ou élargissez la recherche en réinitialisant le filtre de catégorie.">
-                    <a class="btn btn--ghost" href="/ressources">
-                        Voir toutes les ressources <DnIcon Name="arrow-right" Size="16" />
-                    </a>
-                </EmptyState>
-            }
-            else
-            {
-                <div class="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-                    @foreach (var ressource in ResultatsPageCourante)
-                    {
-                        <RessourceCarte Ressource="ressource" Icone="book-open" />
-                    }
+                Titre="Aucune ressource ne correspond à votre recherche"
+                Message="Essayez d'autres mots-clés ou élargissez la recherche en réinitialisant le filtre de catégorie.">
+                <a class="btn btn--ghost" href="/ressources">
+                    Voir toutes les ressources <DnIcon Name="arrow-right" Size="16" />
+                </a>
+            </EmptyState>
+        }
+        else
+        {
+            <div class="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                @foreach (var ressource in ResultatsPageCourante)
+                {
+                    <RessourceCarte Ressource="ressource" Icone="book-open" />
+                }
+            </div>
+
+            <Pagination PageCourante="PageCourante"
+            NombreDePages="NombreDePages"
+            Libelle="Pagination des ressources"
+            UrlPage="UrlPage" />
+        }
+    </div>
+</section>
+
+<!-- 4. Contribuer -->
+<section class="section" aria-labelledby="proposer-titre">
+    <div class="wrap">
+        <div class="bande">
+            <div class="grid items-center gap-6 md:grid-cols-2">
+                <div>
+                    <p class="eyebrow text-vert-300">Contribuer</p>
+                    <h2 id="proposer-titre" class="bande__title mt-1">
+                        Une ressource à partager avec la communauté ?
+                    </h2>
+                    <p class="bande__lead">
+                        Tutoriel, outil ou guide qui vous a fait gagner du temps : proposez-la,
+                        elle aidera peut-être un autre développeur nigerien.
+                    </p>
                 </div>
+                <div class="contribuer__actions">
 
-                <Pagination PageCourante="PageCourante"
-                            NombreDePages="NombreDePages"
-                            Libelle="Pagination des ressources"
-                            UrlPage="UrlPage" />
-            }
-        </div>
-    </section>
+                    @if (Utilisateur.IsAuthenticated)
+                    {
 
-    <!-- 4. Contribuer -->
-    <section class="section" aria-labelledby="proposer-titre">
-        <div class="wrap">
-            <div class="bande">
-                <div class="grid gap-6 md:grid-cols-2" style="align-items: center;">
-                    <div>
-                        <p class="eyebrow" style="color: var(--color-vert-300);">Contribuer</p>
-                        <h2 id="proposer-titre" class="bande__title" style="margin-top: var(--spacing);">
-                            Une ressource à partager avec la communauté ?
-                        </h2>
-                        <p class="bande__lead">
-                            Tutoriel, outil ou guide qui vous a fait gagner du temps : proposez-la,
-                            elle aidera peut-être un autre développeur nigerien.
-                        </p>
-                    </div>
-                    <div class="contribuer__actions">
+                        <a class="btn btn--white btn--lg" href="/compte/tableau-de-bord">
+                            Proposer une ressource <DnIcon Name="arrow-right" Size="18" />
+                        </a>
+
+                    }
+                    else
+                    {
+
                         <a class="btn btn--white btn--lg" href="/compte/inscription">
                             Proposer une ressource <DnIcon Name="arrow-right" Size="18" />
                         </a>
@@ -157,11 +170,14 @@ else
                             Connectez-vous pour publier directement votre ressource :
                             <a class="link" href="/compte/connexion?retour=/ressources">se connecter</a>.
                         </p>
-                    </div>
+                    }
+
+
                 </div>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 }
 
 @code {

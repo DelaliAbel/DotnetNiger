@@ -124,8 +124,11 @@ public static class AccountVerificationEndpoints
             {
                 await accounts.SignInVerifiedUserAsync(creation.User, cancellationToken);
 
+                // Un compte qui vient d'être créé n'a aucun rôle : le rôle administrateur
+                // est posé à la main, jamais par l'inscription. Le paramètre est donc false
+                // ici par construction, et non par oubli.
                 return Results.Redirect(
-                    ExternalSignInNavigation.IsLocal(pending.ReturnUrl) ? pending.ReturnUrl! : "/");
+                    DestinationConnexion.Pour(pending.ReturnUrl, estAdministrateur: false));
             }
 
             return Results.Redirect(
@@ -173,7 +176,7 @@ public static class AccountVerificationEndpoints
             await signInManager.SignInAsync(proof.User!, isPersistent: false);
 
             return Results.Redirect(
-                ExternalSignInNavigation.IsLocal(pending.ReturnUrl) ? pending.ReturnUrl! : "/");
+                DestinationConnexion.Pour(pending.ReturnUrl, estAdministrateur: false));
         })
         .AllowAnonymous();
 

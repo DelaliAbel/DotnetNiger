@@ -1,0 +1,219 @@
+@page "/administration/parametres"
+@layout DotnetNiger.Web.Components.Layout.AdministrationLayout
+@rendermode InteractiveServer
+
+@using System.Text.Json
+@using DotnetNiger.Web.Services.Administration
+
+@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
+
+@inject ServiceParametres Service
+@inject IJSRuntime JS
+
+@*
+    Configuration du site, et essai des modèles de courriel.
+
+    Ces réglages se lisent, ils ne s'écrivent pas : ils vivent dans les fichiers de
+    déploiement. Les faire passer par un formulaire donnerait l'illusion qu'un changement
+    fait depuis le site survit au redémarrage suivant — il ne survit à rien.
+
+    Le mot de passe du serveur de courriel n'apparaît donc pas. Ce qui apparaît est son
+    état, et c'est ce qui manque vraiment quand un envoi ne part pas.
+
+    Les modèles, eux, s'essaient : c'est le seul test honnête d'une configuration de courriel,
+    parce qu'il passe par la même file d'attente que les vrais messages.
+*@
+
+<PageTitle>Paramètres — Administration</PageTitle>
+
+<header class="admin-entete">
+    <div>
+        <h1 class="admin-entete__titre">Paramètres</h1>
+        <p class="admin-entete__intro">
+            La configuration en vigueur sur ce déploiement. Elle se lit ici et se change dans
+            les fichiers de configuration, pas depuis le site.
+        </p>
+    </div>
+</header>
+
+@if (_donnees.EnvoiPossible)
+{
+    <p class="alerte alerte--vert" role="status">
+        <span class="alerte__icone"><DnIcon Name="check" Size="16" /></span>
+        <span>Le site peut envoyer des courriels.</span>
+    </p>
+}
+else
+{
+    <div class="alerte alerte--rouge" role="alert">
+        <span class="alerte__icone"><DnIcon Name="alert" Size="16" /></span>
+        <span>
+            Le site n'envoie aucun courriel : les messages restent consignés au journal.
+            Réglez @string.Join(", ", _donnees.Manquants) dans la configuration du déploiement.
+        </span>
+    </div>
+}
+
+<section class="admin-section">
+    <h2 class="admin-section__titre">Site et courriel</h2>
+
+    <table class="admin-tableau">
+        <tbody>
+            @foreach (var reglage in _donnees.Reglages)
+            {
+                <tr>
+                    <th scope="row" class="admin-tableau__titre">@reglage.Intitule</th>
+                    <td>
+                        @(reglage.EstComplet ? reglage.Valeur : $"⚠ {reglage.Valeur}")
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</section>
+
+<section class="admin-section">
+    <h2 class="admin-section__titre">Modèles de courriel</h2>
+
+    <p class="admin-formulaire__aide">
+        Chaque essai part vers votre propre adresse, avec des données d'exemple : les liens
+        qu'il contient ne mènent nulle part. Le message passe par la file d'attente du site,
+        exactement comme un vrai envoi.
+    </p>
+
+    <table class="admin-tableau admin-tableau--defilant">
+        <thead>
+            <tr>
+                <th scope="col">Modèle</th>
+                <th scope="col">Clé</th>
+                <th scope="col">Essai</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var modele in _donnees.Modeles)
+            {
+                <tr>
+                    <td class="admin-tableau__titre">@modele.Intitule</td>
+                    <td><code class="admin-tableau__note">@modele.Cle</code></td>
+                    <td>
+                        @if (_essaiEnCours == modele.Cle)
+                        {
+                            <span class="admin-tableau__note">mise en file…</span>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn--ghost btn--sm"
+                                    @onclick="() => Essayer(modele)"
+                                    disabled="@(_essaiEnCours is not null || !_donnees.EnvoiPossible)">
+                                <DnIcon Name="send" Size="14" />
+                                Envoyer un essai
+                            </button>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (!_donnees.EnvoiPossible)
+    {
+        <p class="admin-formulaire__aide">
+            Les essais restent désactivés tant que l'envoi n'est pas configuré : ils
+            seraient consignés au journal et jamais reçus.
+        </p>
+    }
+</section>
+
+<div class="admin-toasts" role="status" aria-live="polite">
+    @foreach (var message in _messages)
+    {
+        <div class="admin-toast admin-toast--@(message.Reussi ? "succes" : "erreur")">
+            <DnIcon Name="@(message.Reussi ? "check" : "alert")" Size="16" />
+            <span>@message.Texte</span>
+        </div>
+    }
+</div>
+
+@code {
+    private ParametresVue _donnees = default!;
+
+    private string? _essaiEnCours;
+
+    private readonly List<Annonce> _messages = [];
+
+    protected override void OnInitialized() => _donnees = Service.Lire();
+
+    /// <summary>Met un modèle de courriel en file, vers l'adresse de l'administrateur.</summary>
+    /// <param name="modele">Modèle à essayer.</param>
+    private async Task Essayer(ModeleCourriel modele)
+    {
+        _essaiEnCours = modele.Cle;
+
+        try
+        {
+            await JS.InvokeVoidAsync("DnAdminScripts.assure", true);
+
+            var reponse = await JS.InvokeAsync<ReponseApi>(
+                "DnApi.envoyer", "POST", $"/api/admin/email-templates/{modele.Cle}/test", null);
+
+            if (!reponse.Ok)
+            {
+                await Previent(Raison(reponse), false);
+                return;
+            }
+
+            await Previent($"{modele.Intitule} : essai mis en file vers votre adresse.", true);
+        }
+        finally
+        {
+            _essaiEnCours = null;
+        }
+    }
+
+    /// <summary>Affiche un message, puis l'efface.</summary>
+    /// <param name="texte">Message à afficher.</param>
+    /// <param name="reussi">Vrai pour un succès, faux pour une erreur.</param>
+    private async Task Previent(string texte, bool reussi)
+    {
+        var annonce = new Annonce(texte, reussi);
+        _messages.Add(annonce);
+
+        await InvokeAsync(StateHasChanged);
+
+        await Task.Delay(4000);
+        _messages.Remove(annonce);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Message d'erreur d'une réponse refusée, tel que le serveur l'a formulé.</summary>
+    /// <param name="reponse">Réponse de l'appel.</param>
+    /// <returns>Un texte compréhensible, jamais un code.</returns>
+    private static string Raison(ReponseApi reponse)
+        => reponse.Detail
+            ?? reponse.Titre
+            ?? (reponse.Statut == 0
+                ? "Le serveur n'a pas répondu."
+                : $"Le serveur a répondu {reponse.Statut}.");
+
+    /// <summary>Un message affiché à l'écran, le temps qu'il soit effacé.</summary>
+    /// <param name="Texte">Contenu du message.</param>
+    /// <param name="Reussi">Vrai pour un succès, faux pour une erreur.</param>
+    private sealed record Annonce(string Texte, bool Reussi);
+
+    /// <summary>Réponse normalisée d'un appel fait par le script d'administration.</summary>
+    /// <param name="Ok">Vrai si le serveur a accepté.</param>
+    /// <param name="Statut">Code de la réponse.</param>
+    /// <param name="Corps">Corps décodé de la réponse.</param>
+    private sealed record ReponseApi(bool Ok, int Statut, object? Corps)
+    {
+        /// <summary>Message d'erreur, au format problem details.</summary>
+        public string? Titre => (Corps as JsonElement?)?.TryGetProperty("title", out var titre) == true
+            ? titre.GetString()
+            : null;
+
+        /// <summary>Précision de l'erreur, quand le serveur en a produit une.</summary>
+        public string? Detail => (Corps as JsonElement?)?.TryGetProperty("detail", out var detail) == true
+            ? detail.GetString()
+            : null;
+    }
+}

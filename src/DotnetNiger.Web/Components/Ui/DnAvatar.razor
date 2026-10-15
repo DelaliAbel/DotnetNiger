@@ -22,7 +22,14 @@ else
     /// <summary>Affiche la version réduite du cercle.</summary>
     [Parameter] public bool Sm { get; set; }
 
-    private string TailleCss => Sm ? "avatar--sm" : string.Empty;
+    /// <summary>
+    /// Version large, carrée aux angles arrondis : réservée à la photo de profil de
+    /// l'espace membre, où la taille du cercle est trop petite pour reconnaître
+    /// la personne.
+    /// </summary>
+    [Parameter] public bool Profil { get; set; }
+
+    private string TailleCss => Profil ? "avatar--profil" : Sm ? "avatar--sm" : string.Empty;
 
     private string Initiales
     {

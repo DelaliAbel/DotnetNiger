@@ -42,8 +42,19 @@ public sealed partial class OutboxDispatcher(
                 using var scope = scopeFactory.CreateScope();
                 var processor = scope.ServiceProvider.GetRequiredService<OutboxProcessor>();
                 treated = await processor.DrainAsync(stoppingToken);
+
+                // Une file vide ne justifie pas de marteler la base : le relais attend.
+                // L'attente est à l'intérieur du try parce qu'elle s'annule au moment où
+                // l'hôte s'arrête, et qu'une annulation est ici un signal d'arrêt, jamais
+                // une panne. La laisser dehors faisait remonter l'exception au
+                // BackgroundService, qui — avec StopHost — transforme chaque Ctrl+C en
+                // arrêt en erreur.
+                if (treated == 0)
+                {
+                    await Task.Delay(_options.IdleInterval, stoppingToken);
+                }
             }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+            catch (OperationCanceledException)
             {
                 break;
             }
@@ -52,12 +63,17 @@ public sealed partial class OutboxDispatcher(
 #pragma warning restore CA1031
             {
                 LogErreurGenerale(logger, ex);
-            }
 
-            // Une file vide ne justifie pas de marteler la base toutes les secondes.
-            if (treated == 0)
-            {
-                await Task.Delay(_options.IdleInterval, stoppingToken);
+                // Une erreur laisse la file dans le même état : attendre avant le tour
+                // suivant, sinon une panne répétée ferait tourner la boucle à vide.
+                try
+                {
+                    await Task.Delay(_options.IdleInterval, stoppingToken);
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
             }
         }
     }

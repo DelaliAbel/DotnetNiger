@@ -4,10 +4,13 @@ using DotnetNiger.Application.Abstractions;
 using DotnetNiger.Infrastructure.Email;
 using DotnetNiger.Infrastructure.Identity;
 using DotnetNiger.Infrastructure.Notifications;
+using DotnetNiger.Infrastructure.Content;
 using DotnetNiger.Infrastructure.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+
+using DotnetNiger.Infrastructure.Queries;
 
 namespace DotnetNiger.Infrastructure;
 
@@ -51,6 +54,17 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<AuditSaveChangesInterceptor>();
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddScoped<IMemberDirectory, MemberDirectory>();
+
+        // Les lectures du site public. Les contrôleurs d'API et les pages Blazor
+        // partagent ces services : une ressource retirée de la base disparaît donc des
+        // deux côtés au même endroit, et jamais d'un seul.
+        services.AddScoped<ArticleQueries>();
+        services.AddScoped<EvenementQueries>();
+        services.AddScoped<CatalogueQueries>();
+        services.AddScoped<DepotRessources>();
+        services.AddScoped<DepotPhotosProfil>();
+        services.AddScoped<DepotImagesContenu>();
+        services.AddScoped<DepotImagesContenu>();
         services.AddScoped<IEmailDispatcher, EmailDispatcher>();
         services.AddScoped<INewsletterDiffusion, NewsletterDiffusion>();
         services.AddScoped<IOutbox, Outbox>();

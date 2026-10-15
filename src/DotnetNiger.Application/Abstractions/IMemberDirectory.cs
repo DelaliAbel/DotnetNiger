@@ -28,7 +28,73 @@ public interface IMemberDirectory
     /// ce qu'il fait de l'absence, le plus souvent il renonce à l'envoi et le consigne.
     /// </remarks>
     Task<MemberContact?> ObtenirAsync(Guid memberId, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Rend les profils publics de plusieurs membres en une seule lecture.
+    /// </summary>
+    /// <param name="memberIds">Identifiants des membres.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>
+    /// Une correspondance identifiant vers profil, ne contenant que les membres trouvés.
+    /// </returns>
+    /// <remarks>
+    /// Une page de six articles affiche six auteurs. Les rechercher l'un après l'autre
+    /// ferait six requêtes là où une seule suffit, et le pageur d'un article s'en
+    /// apercevrait immédiatement. L'absence d'un membre n'a rien d'anormal : un compte
+    /// supprimé laisse ses contributions orphelines, et la page affiche alors un nom
+    /// générique plutôt que de manquer d'y répondre.
+    /// </remarks>
+    Task<IReadOnlyDictionary<Guid, MemberProfile>> ObtenirPlusieursAsync(
+        IReadOnlyCollection<Guid> memberIds,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Compte les membres de la communauté.
+    /// </summary>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Le nombre de comptes actifs.</returns>
+    /// <remarks>
+    /// La désactivation est la seule façon, pour l'administration, de retirer quelqu'un du
+    /// décompte : c'est donc elle qui fait la différence entre un membre et un compte laissé
+    /// en attente. Le nombre est lu en base à chaque appel — l'accueil est la seule page qui
+    /// l'affiche, et une valeur figée dans le code deviendrait un mensonge dès la première
+    /// inscription.
+    /// </remarks>
+    Task<int> CompterMembresAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Rend les membres de l'équipe organisatrice, tels que la page « À propos » les présente.
+    /// </summary>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Les membres de l'équipe, par ordre d'affichage.</returns>
+    /// <remarks>
+    /// L'équipe est une information de la base, portée par <c>IsTeam</c> : c'est
+    /// l'administration qui la compose. La déduire des articles publiés donnerait une
+    /// équipe de fait — les personnes dont on a mis en avant le texte — et le lecteur
+    /// confondrait « auteur d'un article » et « membre de l'association ».
+    /// </remarks>
+    Task<IReadOnlyList<TeamMember>> ListerEquipeAsync(CancellationToken cancellationToken);
 }
+
+/// <summary>
+/// Membre de l'équipe organisatrice, tel que la page « À propos » le présente.
+/// </summary>
+/// <param name="FullName">Nom affiché.</param>
+/// <param name="Role">Fonction au sein de l'équipe, facultative.</param>
+/// <param name="PhotoUrl">Photo, facultative : l'absence fait tomber sur les initiales.</param>
+/// <remarks>
+/// Type distinct de <see cref="MemberProfile"/> : celui-ci décrit un auteur pour un
+/// contexte de lecture, celui-là une carte d'identité d'équipe avec sa photo et sa fonction.
+/// Confondre les deux ferait hériter les auteurs d'une photo qu'ils n'ont pas.
+/// </remarks>
+public sealed record TeamMember(string FullName, string? Role, string? PhotoUrl);
+
+/// <summary>
+/// Profil public d'un membre, tel qu'une page de contenu l'affiche.
+/// </summary>
+/// <param name="FullName">Nom affiché.</param>
+/// <param name="Profession">Fonction professionnelle déclarée, facultative.</param>
+public sealed record MemberProfile(string FullName, string? Profession);
 
 /// <summary>
 /// Coordonnées d'un membre, telles qu'un courriel les utilise.

@@ -59,7 +59,16 @@ public sealed partial class AccountDeletionService(
 
         // Une seule transaction : à mi-parcours, un échec laisserait un compte amputé de
         // ses contenus mais toujours actif, sans aucun moyen de savoir ce qui a disparu.
-        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+        //
+        // Elle passe par la stratégie d'exécution, imposée par la reprise activée sur la
+        // connexion. Chaque étape est un DELETE direct ou un appel à UserManager, donc
+        // l'ensemble est rejouable : le compte n'existe qu'à la fin, et rien de ce qu'il
+        // contient n'est lu après sa suppression.
+        var strategie = context.Database.CreateExecutionStrategy();
+
+        return await strategie.ExecuteAsync(async () =>
+        {
+            await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
         // Le rendu des signalements traités passe par le suivi EF, car ils survivent au
         // compte : ils sont enregistrés avant tout le reste, tant que le suivi est encore
@@ -107,6 +116,7 @@ public sealed partial class AccountDeletionService(
         CompteSupprime(logger, accountId, email, bilan);
 
         return bilan;
+        });
     }
 
     private async Task<int> SupprimerLesCommentairesAsync(Guid accountId, CancellationToken cancellationToken)

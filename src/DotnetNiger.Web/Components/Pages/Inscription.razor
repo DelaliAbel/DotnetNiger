@@ -6,11 +6,7 @@
 <CadreCompte Titre="Créer un compte"
             SurTitre="Rejoindre la communauté"
             Lead="Votre adresse sert aussi d'identifiant. Elle ne sera jamais transmise à un tiers.">
-    @if (Error is not null)
-    {
-        <Alerte Variante="rouge">@Error</Alerte>
-    }
-    else if (EmailFailed is not null)
+    @if (EmailFailed is not null)
     {
         <Alerte Variante="orange">
             Votre compte a été créé, mais le message de confirmation n'a pas pu partir. Vérifiez que le
@@ -31,6 +27,13 @@
     }
     else
     {
+        @* L'échec laisse le formulaire en place : un message d'erreur suivi d'une page
+           vide oblige à tout retaper, alors que seule l'adresse était fautive. *@
+        @if (Error is not null)
+        {
+            <Alerte Variante="rouge">@Error</Alerte>
+        }
+
         <form method="post" action="/compte/inscription/creer" class="grid gap-4">
             <AntiforgeryToken />
 
@@ -38,19 +41,19 @@
                 <div class="field">
                     <label class="field__label" for="FirstName">Prénom</label>
                     <input class="input" id="FirstName" type="text" name="FirstName" required minlength="2" maxlength="80"
-                           autocomplete="given-name" />
+                           autocomplete="given-name" value="@FirstName" />
                 </div>
                 <div class="field">
                     <label class="field__label" for="LastName">Nom</label>
                     <input class="input" id="LastName" type="text" name="LastName" required minlength="2" maxlength="80"
-                           autocomplete="family-name" />
+                           autocomplete="family-name" value="@LastName" />
                 </div>
             </div>
 
             <div class="field">
                 <label class="field__label" for="Email">Adresse e-mail</label>
                 <input class="input" id="Email" type="email" name="Email" required maxlength="256"
-                       autocomplete="email" />
+                       autocomplete="email" value="@AdresseSaisie" />
             </div>
 
             <div class="field">
@@ -104,6 +107,25 @@
 
     [SupplyParameterFromQuery(Name = "courrielEchoue")]
     public string? EmailFailed { get; set; }
+
+    /// <summary>Prénom renvoyé par le formulaire après un refus, pour ne pas le retaper.</summary>
+    [SupplyParameterFromQuery(Name = "prenom")]
+    public string? FirstName { get; set; }
+
+    /// <summary>Nom renvoyé par le formulaire après un refus, pour ne pas le retaper.</summary>
+    [SupplyParameterFromQuery(Name = "nom")]
+    public string? LastName { get; set; }
+
+    /// <summary>Adresse renvoyée par le formulaire après un refus, pour ne pas la retaper.</summary>
+    [SupplyParameterFromQuery(Name = "courrielSaisi")]
+    public string? SaisiEmail { get; set; }
+
+    /// <summary>
+    /// Adresse à réafficher dans le formulaire. Le succès annonce un envoi à
+    /// <c>courriel</c> ; un refus renvoie la saisie sous <c>courrielSaisi</c>, pour ne
+    /// pas laisser croire que l'inscription a réussi.
+    /// </summary>
+    private string AdresseSaisie => SaisiEmail ?? Email ?? string.Empty;
 
     private List<EnabledProvider> EnabledProviders { get; set; } = new();
 

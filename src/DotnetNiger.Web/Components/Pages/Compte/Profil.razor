@@ -1,0 +1,326 @@
+@page "/compte/profil"
+@layout DotnetNiger.Web.Components.Layout.MemberLayout
+@using DotnetNiger.Application.Abstractions
+@using DotnetNiger.Application.Abstractions.Persistence
+@using DotnetNiger.Infrastructure.Identity
+@using DotnetNiger.Web.Services.EspaceMembre
+@using DotnetNiger.Web.Services.Membres
+@using Microsoft.EntityFrameworkCore
+@attribute [Authorize]
+
+@inject ICurrentUserService UtilisateurCourant
+@inject ServiceEspaceMembre Espace
+@inject ServiceMembres Membres
+@inject IUnitOfWork UniteDeTravail
+
+<PageTitle>Mon profil — DotnetNiger</PageTitle>
+
+<HeadContent>
+    <meta name="robots" content="noindex" />
+</HeadContent>
+
+@if (_Profil is null)
+{
+    <p class="text-caption text-[var(--site-fg-muted)]">Chargement…</p>
+}
+else
+{
+    <section class="section">
+        <div class="max-w-[44rem]">
+            @if (_Erreur is not null)
+            {
+                <p class="alerte alerte--rouge mb-4" role="alert">
+                    <span class="alerte__icone"><DnIcon Name="alert" Size="14" /></span>
+                    @_Erreur
+                </p>
+            }
+
+            @if (_Confirmation is not null)
+            {
+                <p class="alerte alerte--vert mb-4" role="status">
+                    <span class="alerte__icone"><DnIcon Name="check" Size="14" /></span>
+                    @_Confirmation
+                </p>
+            }
+
+            <h2 class="section__title text-lead mb-4">
+                Ma photo
+            </h2>
+
+            @* Le dépôt et l'adresse sont deux entrées distinctes : le fichier est stocké
+               en base et servi par /api/photos-profil, l'adresse est celle d'une image déjà
+               en ligne — celle d'un fournisseur externe, par exemple. Un seul des deux
+               suffit. *@
+            <div class="carte mb-4">
+                <div class="carte__body flex flex-wrap items-center gap-4">
+                    <DnAvatar Nom="@($"{_Profil.Prenom} {_Profil.Nom}")" ImageUrl="@_Profil.PhotoUrl" Profil />
+
+                    <div class="grow">
+                        <form method="post" action="/compte/photo" enctype="multipart/form-data">
+                            <AntiforgeryToken />
+                            <label class="field__label" for="profil-photo-fichier">
+                                Choisir une image (JPEG, PNG ou WebP, 2 Mo au plus)
+                            </label>
+                            <input id="profil-photo-fichier" class="input" type="file" name="file"
+                                   accept="image/jpeg,image/png,image/webp" />
+                            <button class="btn btn--secondary btn--sm mt-2" type="submit">
+                                Envoyer la photo
+                            </button>
+                        </form>
+
+                        @if (_Profil.PhotoUrl is not null)
+                        {
+                            <form method="post" action="/compte/photo/retirer" class="mt-2">
+                                <AntiforgeryToken />
+                                <button class="btn btn--ghost btn--sm" type="submit">
+                                    Retirer ma photo
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <h2 class="section__title text-lead mb-4">
+                Mes informations
+            </h2>
+
+            <form method="post" action="/compte/profil/enregistrer" class="grid gap-4">
+                <AntiforgeryToken />
+
+                <div class="grid gap-2 md:grid-cols-2">
+                    <div class="field">
+                        <label class="field__label" for="profil-prenom">Prénom</label>
+                        <input id="profil-prenom" class="input" name="Prenom" value="@_Profil.Prenom"
+                               maxlength="150" required />
+                    </div>
+                    <div class="field">
+                        <label class="field__label" for="profil-nom">Nom</label>
+                        <input id="profil-nom" class="input" name="Nom" value="@_Profil.Nom"
+                               maxlength="150" required />
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="field__label" for="profil-bio">Présentation</label>
+                    <textarea id="profil-bio" class="input" name="Bio" rows="3"
+                              maxlength="2000"
+                              placeholder="Ce que vous faites, ce que vous apprenez…">@_Profil.Bio</textarea>
+                </div>
+
+                <div class="grid gap-2 md:grid-cols-2">
+                    <div class="field">
+                        <label class="field__label" for="profil-ville">Ville</label>
+                        <input id="profil-ville" class="input" name="Ville" value="@_Profil.Ville" maxlength="150" />
+                    </div>
+                    <div class="field">
+                        <label class="field__label" for="profil-technologies">Technologies</label>
+                        <input id="profil-technologies" class="input" name="Technologies"
+                               value="@_Profil.Technologies" maxlength="300"
+                               placeholder="Blazor, PostgreSQL…" />
+                    </div>
+                </div>
+
+                <fieldset class="profil-liens">
+                    <legend class="section__title text-lead mb-2">Mes liens</legend>
+                    <p class="mb-3 text-caption text-[color:var(--site-fg-muted)]">
+                        Ajoutez GitHub, LinkedIn, X, un portfolio ou n'importe quel autre lien.
+                        Vous pouvez en conserver jusqu'à 12 et les retirer un par un.
+                    </p>
+
+                    <div data-profil-liens>
+                        @for (var index = 0; index < Math.Max(_Liens.Count, 1); index++)
+                        {
+                            var lien = index < _Liens.Count ? _Liens[index] : null;
+
+                            <div class="profil-lien" data-profil-lien>
+                                <label class="field">
+                                    <span class="field__label">Nom du lien</span>
+                                    <input class="input" name="Liens[@index].Label" maxlength="80"
+                                           value="@lien?.Label" placeholder="GitHub, portfolio…" />
+                                </label>
+                                <label class="field">
+                                    <span class="field__label">Adresse</span>
+                                    <input class="input" name="Liens[@index].Url" type="url" maxlength="2048"
+                                           value="@lien?.Url" placeholder="https://…" />
+                                </label>
+                                <button class="btn btn--ghost btn--sm" type="button" data-profil-lien-retirer>
+                                    Retirer
+                                </button>
+                            </div>
+                        }
+                    </div>
+
+                    <template id="profil-lien-modele">
+                        <div class="profil-lien" data-profil-lien>
+                            <label class="field">
+                                <span class="field__label">Nom du lien</span>
+                                <input class="input" name="Liens[__index__].Label" maxlength="80"
+                                       placeholder="GitHub, portfolio…" />
+                            </label>
+                            <label class="field">
+                                <span class="field__label">Adresse</span>
+                                <input class="input" name="Liens[__index__].Url" type="url" maxlength="2048"
+                                       placeholder="https://…" />
+                            </label>
+                            <button class="btn btn--ghost btn--sm" type="button" data-profil-lien-retirer>
+                                Retirer
+                            </button>
+                        </div>
+                    </template>
+
+                    <button class="btn btn--secondary btn--sm mt-3" type="button" data-profil-lien-ajouter>
+                        Ajouter un lien
+                    </button>
+                </fieldset>
+
+                <div>
+                    <button class="btn btn--primary" type="submit">
+                        Enregistrer <DnIcon Name="check" Size="16" />
+                    </button>
+                </div>
+            </form>
+
+            @* Zone dangereuse : à part, fermée, et jamais au-dessus du formulaire de
+               modifications. On ne supprime pas un compte au clic d'un bouton placé
+               sous un formulaire d'enregistrement. *@
+            <section class="zone-danger" aria-labelledby="zone-danger-titre">
+                <h2 class="section__title text-lead" id="zone-danger-titre">
+                    Supprimer mon compte
+                </h2>
+
+                <p class="mt-2 text-sm text-[color:var(--site-fg-muted)]">
+                    Cette action est définitive. Votre profil, vos commentaires, vos
+                    ressources, vos projets, vos événements et vos inscriptions aux
+                    rencontres seront effacés. Il n'y a pas de retour possible.
+                </p>
+
+                <details class="zone-danger__detail mt-4">
+                    <summary class="zone-danger__ouvrir">Je veux supprimer mon compte</summary>
+
+                    <form method="post" action="/compte/suppression" class="zone-danger__form">
+                        <AntiforgeryToken />
+
+                        @* Première confirmation : recopier l'adresse. *@
+                        <div class="field">
+                            <label class="field__label" for="suppression-email">
+                                Recopiez votre adresse e-mail pour confirmer
+                            </label>
+                            <input id="suppression-email" class="input" name="Email" type="email"
+                                   autocomplete="off" placeholder="@_AdresseCompte" required />
+                            <p class="field__aide">
+                                Elle doit correspondre exactement à celle de votre compte.
+                            </p>
+                        </div>
+
+                        @* Seconde confirmation : une case explicite. Les deux sont exigées
+                           côté serveur : en omettre une laisserait un clic suffit. *@
+                        <label class="zone-danger__case">
+                            <input type="checkbox" name="Confirmation" value="true" required />
+                            <span>
+                                Je comprends que mon compte et tout ce qu'il a publié seront
+                                définitivement supprimés.
+                            </span>
+                        </label>
+
+                        <button class="btn btn--rouge mt-4" type="submit">
+                            Supprimer définitivement mon compte
+                        </button>
+                    </form>
+                </details>
+            </section>
+
+        </div>
+    </section>
+}
+
+@code {
+    private ProfilEnCours? _Profil;
+
+    /// <summary>
+    /// Bandeau d'erreur ; nul tant qu'aucune erreur n'est transmise.
+    /// </summary>
+    /// <remarks>
+    /// Volontairement nullable : une chaîne vide y serait toujours « non nulle », et les
+    /// deux bandeaux s'afficheraient en permanence, vides, au-dessus du formulaire.
+    /// </remarks>
+    private string? _Erreur;
+
+    /// <summary>Bandeau de confirmation ; nul en dehors d'un retour de formulaire.</summary>
+    private string? _Confirmation;
+
+    private IReadOnlyList<LienMembreVue> _Liens = [];
+
+    [SupplyParameterFromQuery(Name = "erreur")]
+    public string? _ErreurUrl { get; set; }
+
+    [SupplyParameterFromQuery(Name = "confirmation")]
+    public string? _ConfirmationUrl { get; set; }
+
+    private string _Prenom => _Profil?.Prenom ?? string.Empty;
+
+    /// <summary>
+    /// Adresse du compte, lue en base plutôt que dans l'identité de la requête : la
+    /// page doit s'afficher aussi en rendu statique, où aucun contexte de requête
+    /// n'est disponible.
+    /// </summary>
+    private string _AdresseCompte { get; set; } = string.Empty;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _Erreur = string.IsNullOrWhiteSpace(_ErreurUrl) ? null : _ErreurUrl;
+        _Confirmation = string.IsNullOrWhiteSpace(_ConfirmationUrl) ? null : _ConfirmationUrl;
+
+        if (UtilisateurCourant.UserId is not { } identifiant)
+        {
+            return;
+        }
+
+        // La lecture passe par le service partagé, comme la mise en page : les deux
+        // attendent la même tâche au lieu de poser deux requêtes sur le même contexte.
+        // L'adresse du compte est lue ensuite, quand la tâche commune est terminée.
+        var espace = await Espace.LireAsync();
+
+        if (espace is null)
+        {
+            return;
+        }
+
+        _AdresseCompte = await UniteDeTravail.ReadRepository<ApplicationUser>().Query
+            .AsNoTracking()
+            .Where(compte => compte.Id == identifiant)
+            .Select(compte => compte.Email ?? string.Empty)
+            .FirstOrDefaultAsync() ?? string.Empty;
+
+        var membre = espace.Profil;
+        _Liens = await Membres.ListerLiensAsync(identifiant);
+
+        // Le nom affiché est unique dans la table d'identité, pas dans le formulaire :
+        // on le rend en deux champs pour que la personne corrige une faute, tout en gardant
+        // possible un nom composé.
+        var parties = membre.FullName.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+
+        _Profil = new ProfilEnCours(
+            parties.ElementAtOrDefault(0) ?? string.Empty,
+            string.Join(' ', parties.Skip(1)),
+            membre.Bio,
+            membre.City,
+            membre.PhotoUrl,
+            membre.Technologies,
+            null,
+            null,
+            null);
+    }
+
+    /// <summary>Champs du formulaire, alignés sur ce que le formulaire de l'API accepte.</summary>
+    private sealed record ProfilEnCours(
+        string Prenom,
+        string Nom,
+        string? Bio,
+        string? Ville,
+        string? PhotoUrl,
+        string? Technologies,
+        string? GitHubUsername,
+        string? LinkedInUrl,
+        string? XUrl);
+}

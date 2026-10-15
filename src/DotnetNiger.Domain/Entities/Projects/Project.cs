@@ -124,9 +124,9 @@ public sealed class Project : SoftDeletableEntity
     /// <summary>
     /// Définit le logo du projet.
     /// </summary>
-    /// <param name="imageUrl">URL absolue, ou <see langword="null"/>.</param>
+    /// <param name="imageUrl">Adresse de l’image : URL absolue ou chemin du site, ou <see langword="null"/>.</param>
     public void SetImageUrl(string? imageUrl)
-        => ImageUrl = DomainGuard.OptionalAgainstHttpUrl(imageUrl, nameof(imageUrl));
+        => ImageUrl = DomainGuard.OptionalAgainstImageSource(imageUrl, nameof(imageUrl));
 
     /// <summary>
     /// Définit les technologies utilisées.

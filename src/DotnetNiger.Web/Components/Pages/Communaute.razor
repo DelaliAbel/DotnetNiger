@@ -1,7 +1,8 @@
 @page "/communaute"
-@attribute [StreamRendering]
 
 @inject ISiteContentService Contenu
+
+@inject DotnetNiger.Application.Abstractions.ICurrentUserService Utilisateur
 
 <PageTitle>Communauté — rejoindre les développeurs .NET du Niger</PageTitle>
 <HeadContent>
@@ -12,8 +13,8 @@
 
 @if (_Communaute is null)
 {
-    <div class="wrap" style="padding-block: calc(var(--spacing) * 12);">
-        <p class="text-caption" style="color: var(--site-fg-muted);">Chargement…</p>
+    <div class="wrap py-12">
+        <p class="text-caption text-[var(--site-fg-muted)]">Chargement…</p>
     </div>
 }
 else
@@ -25,19 +26,19 @@ else
                 <p class="hero__eyebrow">
                     <DnIcon Name="users" Size="14" /> La communauté
                 </p>
-                <h1 class="hero__title" style="margin-top: var(--spacing);">
+                <h1 class="hero__title mt-1">
                     On code <strong>ensemble</strong>, on avance <strong>ensemble</strong>
                 </h1>
-                <p class="hero__lead" style="margin-top: calc(var(--spacing) * 3);">
+                <p class="hero__lead mt-3">
                     Développeurs, étudiants et professionnels .NET du Niger : échangez sur nos
                     canaux, participez à nos meetups et contribuez aux projets open source de la
                     communauté.
                 </p>
-                <div class="hero__actions" style="margin-top: calc(var(--spacing) * 4);">
-                    <a class="btn btn--white btn--lg" href="#canaux">
+                <div class="hero__actions mt-4">
+                    <a class="btn btn--white btn--lg" href="/communaute#canaux">
                         Rejoindre le Discord <DnIcon Name="discord" Size="18" />
                     </a>
-                    <a class="btn btn--accent btn--lg" href="#evenements">
+                    <a class="btn btn--accent btn--lg" href="/communaute#evenements">
                         Prochains meetups <DnIcon Name="calendar" Size="18" />
                     </a>
                 </div>
@@ -45,18 +46,18 @@ else
 
             <div class="hero__panel">
                 <div class="hero__panel__bar" aria-hidden="true">
-                    <span class="hero__panel__dot" style="background: #f17b26;"></span>
-                    <span class="hero__panel__dot" style="background: #03ad69;"></span>
-                    <span class="hero__panel__dot" style="background: #ad9be8;"></span>
+                    <span class="hero__panel__dot bg-orange-400"></span>
+                    <span class="hero__panel__dot bg-vert-400"></span>
+                    <span class="hero__panel__dot bg-violet-300"></span>
                 </div>
                 <img class="hero__panel__image" src="/images/img2.jpg" loading="lazy"
-                     alt="Développeurs .NET du Niger réunis autour d'un meetup communautaire" />
+                alt="Développeurs .NET du Niger réunis autour d'un meetup communautaire" />
             </div>
         </div>
     </section>
 
     <!-- Chiffres clés -->
-    <section class="section" style="padding-block: calc(var(--spacing) * 8) 0;">
+    <section class="section pt-8 pb-0">
         <div class="wrap">
             <div class="numeros">
                 <div>
@@ -102,177 +103,180 @@ else
             @if (_Communaute.Evenements.Count == 0)
             {
                 <EmptyState Icone="calendar"
-                            Titre="Aucun événement pour le moment"
-                            Message="La programmation des prochains meetups et conférences sera publiée ici dès qu'elle sera arrêtée.">
-                    <a class="btn btn--ghost" href="/evenements">
-                        Voir la page événements <DnIcon Name="arrow-right" Size="16" />
-                    </a>
-                </EmptyState>
-            }
-            else
-            {
-                <div class="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-                    @foreach (var evenement in _Communaute.Evenements)
-                    {
-                        <EvenementCarte Evenement="evenement" />
-                    }
-                </div>
-            }
-        </div>
-    </section>
-
-    <!-- 3. Projets open source locaux -->
-    <section class="section section--alt" id="projets" aria-labelledby="projets-titre">
-        <div class="wrap">
-            <div class="section__head section__head--split">
-                <div>
-                    <p class="eyebrow">Projets open source locaux · @_Communaute.NombreProjets</p>
-                    <h2 id="projets-titre" class="section__title">
-                        Des logiciels <strong>pensés pour nos réalités</strong>
-                    </h2>
-                    <p class="section__lead">
-                        Outils, bibliothèques et applications portés par des membres de la
-                        communauté. Corrigez un bug, ouvrez une issue ou proposez une fonctionnalité :
-                        chaque contribution compte.
-                    </p>
-                </div>
-                <a class="btn btn--ghost" href="https://github.com/dotnetniger" target="_blank" rel="noopener">
-                    Organisation GitHub <DnIcon Name="external-link" Size="16" />
+                Titre="Aucun événement pour le moment"
+                Message="La programmation des prochains meetups et conférences sera publiée ici dès qu'elle sera arrêtée.">
+                <a class="btn btn--ghost" href="/evenements">
+                    Voir la page événements <DnIcon Name="arrow-right" Size="16" />
                 </a>
+            </EmptyState>
+        }
+        else
+        {
+            <div class="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+                @foreach (var evenement in _Communaute.Evenements)
+                {
+                    <EvenementCarte Evenement="evenement" />
+                }
             </div>
+        }
+    </div>
+</section>
 
-            @if (_Communaute.Projets.Count == 0)
+<!-- 3. Projets open source locaux -->
+<section class="section section--alt" id="projets" aria-labelledby="projets-titre">
+    <div class="wrap">
+        <div class="section__head section__head--split">
+            <div>
+                <p class="eyebrow">Projets open source locaux · @_Communaute.NombreProjets</p>
+                <h2 id="projets-titre" class="section__title">
+                    Des logiciels <strong>pensés pour nos réalités</strong>
+                </h2>
+                <p class="section__lead">
+                    Outils, bibliothèques et applications portés par des membres de la
+                    communauté. Corrigez un bug, ouvrez une issue ou proposez une fonctionnalité :
+                    chaque contribution compte.
+                </p>
+            </div>
+            <a class="btn btn--ghost" href="https://github.com/dotnetniger" target="_blank" rel="noopener">
+                Organisation GitHub <DnIcon Name="external-link" Size="16" />
+            </a>
+        </div>
+
+        @if (_Communaute.Projets.Count == 0)
+        {
+            <EmptyState Icone="code"
+            Titre="Aucun projet publié pour l'instant"
+            Message="Les dépôts de la communauté apparaîtront ici. Vous en avez un à partager ? Ouvrez-le sur GitHub et faites-le nous connaître.">
+            <a class="btn btn--ghost" href="https://github.com/dotnetniger" target="_blank" rel="noopener">
+                Ouvrir l'organisation GitHub <DnIcon Name="external-link" Size="16" />
+            </a>
+        </EmptyState>
+    }
+    else
+    {
+        <div class="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
+            @foreach (var projet in ProjetsPage)
             {
-                <EmptyState Icone="code"
-                            Titre="Aucun projet publié pour l'instant"
-                            Message="Les dépôts de la communauté apparaîtront ici. Vous en avez un à partager ? Ouvrez-le sur GitHub et faites-le nous connaître.">
-                    <a class="btn btn--ghost" href="https://github.com/dotnetniger" target="_blank" rel="noopener">
-                        Ouvrir l'organisation GitHub <DnIcon Name="external-link" Size="16" />
+                <ProjetCarte Projet="projet" />
+            }
+        </div>
+
+        <Pagination PageCourante="PageProjets"
+        NombreDePages="NombreDePagesProjets"
+        Libelle="Pagination des projets"
+        UrlPage="UrlPageProjets" />
+    }
+</div>
+</section>
+
+<!-- 4. Canaux de la communauté -->
+<section class="section" id="canaux" aria-labelledby="canaux-titre">
+    <div class="wrap">
+        <div class="section__head">
+            <p class="eyebrow">Nos canaux</p>
+            <h2 id="canaux-titre" class="section__title">
+                Choisissez <strong>votre façon d'échanger</strong>
+            </h2>
+            <p class="section__lead">
+                Une question rapide sur Discord, une contribution sur GitHub ou une mise en
+                relation professionnelle : rejoignez le canal qui vous convient.
+            </p>
+        </div>
+
+        @if (_Communaute.Canaux.Count == 0)
+        {
+            <EmptyState Icone="globe"
+            Titre="Aucun canal publié"
+            Message="Les adresses Discord, GitHub et réseaux sociaux de la communauté seront listées ici." />
+        }
+        else
+        {
+            <div class="canaux">
+                @foreach (var canal in _Communaute.Canaux)
+                {
+                    <a class="canal" href="@canal.Url" target="_blank" rel="noopener">
+                        <span class="canal__icone"><DnIcon Name="@canal.Icône" Size="20" /></span>
+                        <span class="canal__texte">
+                            <span class="canal__nom">@canal.Nom</span>
+                            <span class="canal__hint">Ouvrir le canal</span>
+                        </span>
+                        <DnIcon Name="arrow-up-right" Size="16" />
                     </a>
-                </EmptyState>
-            }
-            else
-            {
-                <div class="grid gap-2 md:grid-cols-2 lg:grid-cols-3">
-                    @foreach (var projet in ProjetsPage)
-                    {
-                        <ProjetCarte Projet="projet" />
-                    }
+                }
+            </div>
+        }
+    </div>
+</section>
+
+<!-- 5. Contribuer -->
+<section class="section section--alt" id="contribuer" aria-labelledby="contribuer-titre">
+    <div class="wrap">
+        <div class="section__head">
+            <p class="eyebrow">Contribuer</p>
+            <h2 id="contribuer-titre" class="section__title">
+                Trois façons de <strong>prendre la main</strong>
+            </h2>
+            <p class="section__lead">
+                La communauté vit de ses contributions. Quel que soit votre niveau, il y a une
+                place pour vous.
+            </p>
+        </div>
+
+        <div class="grid gap-2 md:grid-cols-3">
+            <article class="card card--hover">
+                <div class="card__body">
+                    <span class="badge badge--vert"><DnIcon Name="book-open" Size="14" /> Partager</span>
+                    <h3 class="card__title text-base">Publier une ressource</h3>
+                    <p class="card__text">
+                        Proposez une formation, un tutoriel ou un outil que vous utilisez au
+                        quotidien : la communauté les ajoute à son catalogue.
+                    </p>
+                    <a class="link" href="/ressources">
+                        Voir le catalogue <DnIcon Name="arrow-right" Size="14" />
+                    </a>
                 </div>
-
-                <Pagination PageCourante="PageProjets"
-                            NombreDePages="NombreDePagesProjets"
-                            Libelle="Pagination des projets"
-                            UrlPage="UrlPageProjets" />
-            }
-        </div>
-    </section>
-
-    <!-- 4. Canaux de la communauté -->
-    <section class="section" id="canaux" aria-labelledby="canaux-titre">
-        <div class="wrap">
-            <div class="section__head">
-                <p class="eyebrow">Nos canaux</p>
-                <h2 id="canaux-titre" class="section__title">
-                    Choisissez <strong>votre façon d'échanger</strong>
-                </h2>
-                <p class="section__lead">
-                    Une question rapide sur Discord, une contribution sur GitHub ou une mise en
-                    relation professionnelle : rejoignez le canal qui vous convient.
-                </p>
-            </div>
-
-            @if (_Communaute.Canaux.Count == 0)
-            {
-                <EmptyState Icone="globe"
-                            Titre="Aucun canal publié"
-                            Message="Les adresses Discord, GitHub et réseaux sociaux de la communauté seront listées ici." />
-            }
-            else
-            {
-                <div class="canaux">
-                    @foreach (var canal in _Communaute.Canaux)
-                    {
-                        <a class="canal" href="@canal.Url" target="_blank" rel="noopener">
-                            <span class="canal__icone"><DnIcon Name="@canal.Icône" Size="20" /></span>
-                            <span class="canal__texte">
-                                <span class="canal__nom">@canal.Nom</span>
-                                <span class="canal__hint">Ouvrir le canal</span>
-                            </span>
-                            <DnIcon Name="arrow-up-right" Size="16" />
-                        </a>
-                    }
+            </article>
+            <article class="card card--hover">
+                <div class="card__body">
+                    <span class="badge badge--violet"><DnIcon Name="sparkles" Size="14" /> Raconter</span>
+                    <h3 class="card__title text-base">Écrire sur le blog</h3>
+                    <p class="card__text">
+                        Un retour d'expérience, un tutoriel, un projet : le blog accueille les
+                        articles des membres, relus par l'équipe de modération.
+                    </p>
+                    <a class="link" href="/blog">
+                        Lire le blog <DnIcon Name="arrow-right" Size="14" />
+                    </a>
                 </div>
-            }
+            </article>
+            <article class="card card--hover">
+                <div class="card__body">
+                    <span class="badge badge--orange"><DnIcon Name="code" Size="14" /> Coder</span>
+                    <h3 class="card__title text-base">Contribuer au code</h3>
+                    <p class="card__text">
+                        Corrigez un bug, documentez une API ou démarrez un projet : tous les
+                        dépôts sont ouverts et accompagnés par leur mainteneur.
+                    </p>
+                    <a class="link" href="https://github.com/dotnetniger" target="_blank" rel="noopener">
+                        Voir les dépôts <DnIcon Name="external-link" Size="14" />
+                    </a>
+                </div>
+            </article>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- 5. Contribuer -->
-    <section class="section section--alt" id="contribuer" aria-labelledby="contribuer-titre">
-        <div class="wrap">
-            <div class="section__head">
-                <p class="eyebrow">Contribuer</p>
-                <h2 id="contribuer-titre" class="section__title">
-                    Trois façons de <strong>prendre la main</strong>
-                </h2>
-                <p class="section__lead">
-                    La communauté vit de ses contributions. Quel que soit votre niveau, il y a une
-                    place pour vous.
-                </p>
-            </div>
 
-            <div class="grid gap-2 md:grid-cols-3">
-                <article class="card card--hover">
-                    <div class="card__body">
-                        <span class="badge badge--vert"><DnIcon Name="book-open" Size="14" /> Partager</span>
-                        <h3 class="card__title" style="font-size: var(--text-base);">Publier une ressource</h3>
-                        <p class="card__text">
-                            Proposez une formation, un tutoriel ou un outil que vous utilisez au
-                            quotidien : la communauté les ajoute à son catalogue.
-                        </p>
-                        <a class="link" href="/ressources">
-                            Voir le catalogue <DnIcon Name="arrow-right" Size="14" />
-                        </a>
-                    </div>
-                </article>
-                <article class="card card--hover">
-                    <div class="card__body">
-                        <span class="badge badge--violet"><DnIcon Name="sparkles" Size="14" /> Raconter</span>
-                        <h3 class="card__title" style="font-size: var(--text-base);">Écrire sur le blog</h3>
-                        <p class="card__text">
-                            Un retour d'expérience, un tutoriel, un projet : le blog accueille les
-                            articles des membres, relus par l'équipe de modération.
-                        </p>
-                        <a class="link" href="/blog">
-                            Lire le blog <DnIcon Name="arrow-right" Size="14" />
-                        </a>
-                    </div>
-                </article>
-                <article class="card card--hover">
-                    <div class="card__body">
-                        <span class="badge badge--orange"><DnIcon Name="code" Size="14" /> Coder</span>
-                        <h3 class="card__title" style="font-size: var(--text-base);">Contribuer au code</h3>
-                        <p class="card__text">
-                            Corrigez un bug, documentez une API ou démarrez un projet : tous les
-                            dépôts sont ouverts et accompagnés par leur mainteneur.
-                        </p>
-                        <a class="link" href="https://github.com/dotnetniger" target="_blank" rel="noopener">
-                            Voir les dépôts <DnIcon Name="external-link" Size="14" />
-                        </a>
-                    </div>
-                </article>
-            </div>
-        </div>
-    </section>
-
-    <!-- 6. Zone d'inscription -->
+<!-- 6. Zone d'inscription -->
+@if (!Utilisateur.IsAuthenticated)
+{
     <section class="section" aria-labelledby="rejoindre-titre">
         <div class="wrap">
             <div class="bande">
-                <div class="grid gap-6 md:grid-cols-2" style="align-items: center;">
+                <div class="grid items-center gap-6 md:grid-cols-2">
                     <div>
-                        <p class="eyebrow" style="color: var(--color-vert-300);">Rejoindre la communauté</p>
-                        <h2 id="rejoindre-titre" class="bande__title" style="margin-top: var(--spacing);">
+                        <p class="eyebrow text-vert-300">Rejoindre la communauté</p>
+                        <h2 id="rejoindre-titre" class="bande__title mt-1">
                             Créez votre compte et passez à l'action
                         </h2>
                         <p class="bande__lead">
@@ -280,7 +284,7 @@ else
                             de vous inscrire aux événements et de suivre vos contributions.
                         </p>
                     </div>
-                    <div style="display: grid; justify-items: start; gap: calc(var(--spacing) * 2);">
+                    <div class="grid justify-items-start gap-2">
                         <a class="btn btn--white btn--lg" href="/compte/inscription">
                             Créer un compte <DnIcon Name="arrow-right" Size="18" />
                         </a>
@@ -292,6 +296,7 @@ else
             </div>
         </div>
     </section>
+}
 }
 
 @code {
@@ -334,5 +339,4 @@ else
     /// </summary>
     private static string UrlPageProjets(int numero) =>
         (numero > 1 ? $"/communaute?page={numero}#projets" : "/communaute#projets");
-
 }

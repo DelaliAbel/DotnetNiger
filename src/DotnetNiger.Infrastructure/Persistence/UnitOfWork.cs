@@ -13,7 +13,6 @@ namespace DotnetNiger.Infrastructure.Persistence;
 internal sealed class UnitOfWork : IUnitOfWork
 {
     private readonly DotnetNigerDbContext _context;
-    private IDbContextTransaction? _currentTransaction;
 
     /// <summary>
     /// Initialise l'unité de travail.
@@ -44,49 +43,37 @@ internal sealed class UnitOfWork : IUnitOfWork
         => _context.SaveChangesAsync(cancellationToken);
 
     /// <inheritdoc />
-    public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
+    public async Task ExecuteInTransactionAsync(
+        Func<CancellationToken, Task> operation,
+        CancellationToken cancellationToken = default)
     {
-        if (_currentTransaction is not null)
+        ArgumentNullException.ThrowIfNull(operation);
+
+        // CreateExecutionStrategy est le point d'entrée imposé par EF quand la reprise est
+        // activée : une transaction ouverte en dehors lève une exception à la première
+        // commande. C'est ici que la reprise s'applique, et nowhere ailleurs.
+        var strategie = _context.Database.CreateExecutionStrategy();
+
+        await strategie.ExecuteAsync(async () =>
         {
-            return;
-        }
+            await using var transaction = await _context.Database
+                .BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken)
+                .ConfigureAwait(false);
 
-        _currentTransaction = await _context.Database
-            .BeginTransactionAsync(IsolationLevel.ReadCommitted, cancellationToken)
-            .ConfigureAwait(false);
-    }
+            try
+            {
+                await operation(cancellationToken).ConfigureAwait(false);
 
-    /// <inheritdoc />
-    public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
-    {
-        if (_currentTransaction is null)
-        {
-            return;
-        }
-
-        await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        await _currentTransaction.CommitAsync(cancellationToken).ConfigureAwait(false);
-        await DisposeTransactionAsync().ConfigureAwait(false);
-    }
-
-    /// <inheritdoc />
-    public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
-    {
-        if (_currentTransaction is null)
-        {
-            return;
-        }
-
-        await _currentTransaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
-        await DisposeTransactionAsync().ConfigureAwait(false);
-    }
-
-    private async ValueTask DisposeTransactionAsync()
-    {
-        if (_currentTransaction is not null)
-        {
-            await _currentTransaction.DisposeAsync().ConfigureAwait(false);
-            _currentTransaction = null;
-        }
+                await SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+                await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                // L'annulation explicite est indispensable : sans elle, une reprise
+                // rejouerait le travail par-dessus une transaction encore ouverte.
+                await transaction.RollbackAsync(cancellationToken).ConfigureAwait(false);
+                throw;
+            }
+        }).ConfigureAwait(false);
     }
 }

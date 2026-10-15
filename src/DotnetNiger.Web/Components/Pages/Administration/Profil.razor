@@ -1,0 +1,136 @@
+@page "/administration/profil"
+@layout DotnetNiger.Web.Components.Layout.AdministrationLayout
+@rendermode InteractiveServer
+
+@using System.Globalization
+@using DotnetNiger.Application.Abstractions
+@using DotnetNiger.Application.Common
+@using DotnetNiger.Web.Services.Administration
+
+@attribute [Authorize(Roles = RoleNames.Admin)]
+
+@inject ServiceMembres Service
+@inject ICurrentUserService UtilisateurCourant
+
+@*
+    Le compte de l'administrateur connecté.
+
+    Cette page ne modifie rien : elle dit qui administer, ce que ce compte peut faire, et où
+    aller pour le changer. Le profil public et la photo se modifient depuis l'espace membre,
+    le mot de passe depuis son écran dédié — les deux existent déjà, et les dupliquer ici
+    donnerait deux endroits pour changer la même chose, dont un forgot de le faire.
+
+    Un administrateur qui ne reconnaît pas son propre accès doit pouvoir le voir tout de
+    suite : c'est la page qui répond à cette question.
+*@
+
+<PageTitle>Mon profil — Administration</PageTitle>
+
+<header class="admin-entete">
+    <div>
+        <h1 class="admin-entete__titre">Mon profil</h1>
+        <p class="admin-entete__intro">
+            Le compte avec lequel vous administrez le site, et les accès qu'il porte.
+        </p>
+    </div>
+</header>
+
+@if (_moi is null)
+{
+    <Chargement />
+}
+else
+{
+    <section class="admin-section">
+        <div class="admin-partenaire">
+            <DnAvatar Nom="@_moi.NomComplet" ImageUrl="@_moi.PhotoUrl" Profil />
+
+            <div class="admin-partenaire__nom">
+                <h2 class="admin-tableau__titre">@_moi.NomComplet</h2>
+                <span class="admin-tableau__note">@_moi.Courriel</span>
+            </div>
+        </div>
+
+        <table class="admin-tableau">
+            <tbody>
+                <tr>
+                    <th scope="row" class="admin-tableau__titre">Accès</th>
+                    <td>
+                        <div class="admin-tableau__technologies">
+                            @foreach (var role in _moi.Roles)
+                            {
+                                <span class="badge badge--violet">@role</span>
+                            }
+                        </div>
+                    </td>
+                </tr>
+
+                <tr>
+                    <th scope="row" class="admin-tableau__titre">Équipe organisatrice</th>
+                    <td>@(_moi.EstEquipe ? "oui" : "non")</td>
+                </tr>
+
+                <tr>
+                    <th scope="row" class="admin-tableau__titre">Adresse confirmée</th>
+                    <td>@(_moi.EmailConfirme ? "oui" : "non — votre compte ne peut pas se connecter")</td>
+                </tr>
+
+                <tr>
+                    <th scope="row" class="admin-tableau__titre">Membre depuis</th>
+                    <td>@_moi.InscritLe.ToString("d MMMM yyyy", Culture)</td>
+                </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="admin-section">
+        <h2 class="admin-section__titre">Modifier</h2>
+
+        <div class="admin-grille admin-grille--compacte">
+            <a class="admin-lien-carte" href="/compte/profil">
+                <DnIcon Name="user" Size="18" />
+                <span class="admin-lien-carte__texte">
+                    <strong>Profil public</strong>
+                    <span class="admin-tableau__note">photo, biographie, ville, liens</span>
+                </span>
+                <DnIcon Name="arrow-right" Size="16" />
+            </a>
+
+            <a class="admin-lien-carte" href="/compte/mot-de-passe">
+                <DnIcon Name="key" Size="18" />
+                <span class="admin-lien-carte__texte">
+                    <strong>Mot de passe</strong>
+                    <span class="admin-tableau__note">changer le mot de passe de ce compte</span>
+                </span>
+                <DnIcon Name="arrow-right" Size="16" />
+            </a>
+
+            <a class="admin-lien-carte" href="/compte/tableau-de-bord">
+                <DnIcon Name="sparkles" Size="18" />
+                <span class="admin-lien-carte__texte">
+                    <strong>Mon espace</strong>
+                    <span class="admin-tableau__note">inscriptions, participations, préférences</span>
+                </span>
+                <DnIcon Name="arrow-right" Size="16" />
+            </a>
+        </div>
+
+        <p class="admin-formulaire__aide">
+            Ces écrans quittent l'administration et appartiennent à votre espace membre. Vos
+            sessions restent actives : revenir ici ne demande rien de plus.
+        </p>
+    </section>
+}
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
+
+    private LigneMembreAdmin? _moi;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var membres = await Service.LireAsync();
+
+        _moi = membres.Membres.FirstOrDefault(membre => membre.Id == UtilisateurCourant.UserId);
+    }
+}

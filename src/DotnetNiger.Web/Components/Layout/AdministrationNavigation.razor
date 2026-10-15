@@ -1,0 +1,168 @@
+@using DotnetNiger.Web.Services.Administration
+@using Microsoft.AspNetCore.Authorization
+@inject IServiceScopeFactory Portees
+
+@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
+
+@*
+    Barre latérale de l'administration.
+
+    Elle est rendue côté serveur, sans îlot interactif : une seule lecture au moment de la
+    page, aucun état à conserver entre deux clics, donc aucune raison de payer un circuit.
+    Les sections sont des <c>details</c>, qui s'ouvrent et se referment sans script et
+    survivent à la navigation enhancee de Blazor qui regenere le document.
+    <para>
+    L'adresse courante est lue au rendu : le serveur connait la requete, la mise en
+    evidence n'a donc pas besoin d'ecouteur ni de re-rendu apres navigation.
+    </para>
+*@
+
+<nav class="admin-nav" aria-label="Navigation de l'administration">
+    <a class="admin-nav__marque" href="/administration">
+        <span class="admin-nav__marque-icone">
+            <DnIcon Name="sparkles" Size="18" />
+        </span>
+        <span class="admin-nav__marque-texte">Administration</span>
+    </a>
+
+    @* Les compteurs sont lus dans une portee a eux : la page et la barre s'initialisent en
+       parallele, et un contexte de base partage ne traite qu'une operation a la fois. *@
+    @if (_compteurs is not null)
+    {
+        <div class="admin-nav__groupes">
+            @foreach (var groupe in Groupes)
+            {
+                <details class="admin-nav__groupe" open>
+                    <summary class="admin-nav__groupe-titre">@groupe.Titre</summary>
+
+                    <ul class="admin-nav__liste">
+                        @foreach (var entree in groupe.Entrees)
+                        {
+                            var actif = EstActive(entree.Href);
+
+                            <li>
+                                <a class="admin-nav__entree @(actif ? "est-active" : null)"
+                                   href="@entree.Href"
+                                   aria-current="@(actif ? "page" : null)">
+                                    <DnIcon Name="@entree.Icone" Size="16" />
+                                    <span class="admin-nav__libelle">@entree.Titre</span>
+                                    @if (Compteur(entree.Href) is { } nombre and > 0)
+                                    {
+                                        <span class="admin-nav__compteur">@nombre</span>
+                                    }
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </details>
+            }
+        </div>
+    }
+</nav>
+
+@code {
+    /// <summary>
+    /// Sections de la barre, dans l'ordre d'affichage.
+    /// </summary>
+    /// <remarks>
+    /// Les adresses sont celles des écrans à construire : une entrée dont la page n'existe
+    /// pas encore mène à la page introuvable du site, ce qui signale le travail restant
+    /// plutôt que de le cacher.
+    /// </remarks>
+    private static readonly Groupe[] Groupes =
+    [
+        new("Contenu",
+        [
+            new("/administration", "Tableau de bord", "sparkles"),
+            new("/administration/actualites", "Blog", "code"),
+            new("/administration/evenements", "Événements", "calendar"),
+            new("/administration/ressources", "Ressources", "book-open"),
+            new("/administration/projets", "Projets", "layers"),
+            new("/administration/partenaires", "Partenaires", "globe"),
+        ]),
+        new("Modération",
+        [
+            new("/administration/commentaires", "Commentaires", "info"),
+            new("/administration/signalements", "Signalements", "alert"),
+            new("/administration/messages", "Messages", "mail"),
+        ]),
+        new("Communauté",
+        [
+            new("/administration/membres", "Membres", "users"),
+            new("/administration/abonnes", "Abonnés", "send"),
+        ]),
+        new("Outils",
+        [
+            new("/administration/parametres", "Paramètres", "star"),
+            new("/administration/profil", "Mon profil", "key"),
+        ]),
+    ];
+
+    private CompteursVue? _compteurs;
+
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    /// <summary>
+    /// Lit les compteurs de la barre, sur un contexte de base distinct de celui de la page.
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        using var portee = Portees.CreateScope();
+
+        _compteurs = await portee.ServiceProvider
+            .GetRequiredService<ServiceTableauDeBord>()
+            .LireCompteursAsync();
+    }
+
+    /// <summary>
+    /// Indique si l'adresse affichée relève de cette entrée de la barre.
+    /// </summary>
+    /// <remarks>
+    /// L'entrée la plus longue qui préfixe l'adresse gagne : un article ouvert met en
+    /// évidence « Blog », et le tableau de bord, préfixe de tout, ne reste sélectionné que
+    /// lorsqu'il est lui-même l'écran affiché.
+    /// </remarks>
+    /// <param name="href">Adresse de l'entrée.</param>
+    /// <returns><see langword="true"/> si l'entrée correspond à l'écran courant.</returns>
+    private bool EstActive(string href)
+    {
+        var adresse = Navigation.ToBaseRelativePath(Navigation.Uri).TrimStart('/');
+
+        var index = adresse.IndexOf('?');
+
+        if (index >= 0)
+        {
+            adresse = adresse[..index];
+        }
+
+        var cible = href.TrimStart('/');
+
+        return adresse.Equals(cible, StringComparison.OrdinalIgnoreCase)
+            || adresse.StartsWith(cible + "/", StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Nombre à afficher en regard d'une entrée, s'il y a lieu.
+    /// </summary>
+    /// <param name="href">Adresse de l'entrée.</param>
+    /// <returns>Le nombre, ou <see langword="null"/> si l'entrée n'a pas de compteur.</returns>
+    private int? Compteur(string href) => href switch
+    {
+        "/administration/messages" => _compteurs?.Messages,
+        "/administration/signalements" => _compteurs?.Signalements,
+        "/administration/commentaires" => _compteurs?.Comments,
+        "/administration/actualites" => _compteurs?.Brouillons,
+        _ => null,
+    };
+
+    /// <summary>Section de la barre latérale.</summary>
+    /// <param name="Titre">Intitulé de la section.</param>
+    /// <param name="Entrees">Entrées de la section.</param>
+    private sealed record Groupe(string Titre, Entree[] Entrees);
+
+    /// <summary>Lien de la barre latérale.</summary>
+    /// <param name="Href">Adresse.</param>
+    /// <param name="Titre">Libellé affiché.</param>
+    /// <param name="Icone">Nom d'icône dans la bibliothèque du site.</param>
+    private sealed record Entree(string Href, string Titre, string Icone);
+}

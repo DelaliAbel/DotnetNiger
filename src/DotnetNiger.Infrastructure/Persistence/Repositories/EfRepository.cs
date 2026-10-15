@@ -46,5 +46,8 @@ internal class EfRepository<T> : IRepository<T>
     public void Add(T entity) => _set.Add(entity);
 
     /// <inheritdoc />
+    public void Remove(T entity) => _set.Remove(entity);
+
+    /// <inheritdoc />
     public void Update(T entity) => _set.Update(entity);
 }

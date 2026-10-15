@@ -1,0 +1,360 @@
+@page "/administration/commentaires"
+@layout DotnetNiger.Web.Components.Layout.AdministrationLayout
+@rendermode InteractiveServer
+
+@using System.Globalization
+@using System.Text.Json
+@using DotnetNiger.Domain.Enums
+@using DotnetNiger.Web.Services.Administration
+
+@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
+
+@inject ServiceCommentaires Service
+@inject IJSRuntime JS
+
+@*
+    Modération des commentaires d'articles et d'événements.
+
+    Un commentaire est publié dès son dépôt : la discussion n'attend pas de relecture. Ce
+    qui peut encore arriver, c'est un signalement — et la sanction. Cette page est donc le
+    registre des décisions prises, pas une file à traiter.
+
+    Tous les états sont affichés, y compris masqués et supprimés : c'est la seule façon de
+    savoir ce qui a été sanctionné, et de le rétablir quand la sanction était une erreur.
+*@
+
+<PageTitle>Commentaires — Administration</PageTitle>
+
+<header class="admin-entete">
+    <div>
+        <h1 class="admin-entete__titre">Commentaires</h1>
+        <p class="admin-entete__intro">
+            Les échanges sur les articles et les événements. Un commentaire masqué disparaît
+            de la discussion mais reste ici, et peut être rétabli.
+        </p>
+    </div>
+</header>
+
+@if (_donnees is null)
+{
+    <Chargement />
+}
+else
+{
+    <div class="admin-bandeau">
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="commentaire-recherche">Recherche</label>
+            <input id="commentaire-recherche" class="input" type="search" placeholder="Texte ou auteur…"
+                   @bind="_recherche" @bind:event="oninput" />
+        </div>
+
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="commentaire-etat">État</label>
+            <div class="select">
+                <select id="commentaire-etat" @bind="_filtreEtat">
+                    <option value="">Tous les états</option>
+                    <option value="@nameof(CommentStatus.Published)">Publiés</option>
+                    <option value="@nameof(CommentStatus.PendingReview)">À réexaminer</option>
+                    <option value="@nameof(CommentStatus.Hidden)">Masqués</option>
+                    <option value="@nameof(CommentStatus.Deleted)">Supprimés</option>
+                </select>
+                <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+            </div>
+        </div>
+
+        <div class="admin-bandeau__champ">
+            <label class="admin-bandeau__libelle" for="commentaire-cible">Cible</label>
+            <div class="select">
+                <select id="commentaire-cible" @bind="_filtreCible">
+                    <option value="">Articles et événements</option>
+                    <option value="@(CibleArticle)">Sur un article</option>
+                    <option value="@(CibleEvenement)">Sur un événement</option>
+                </select>
+                <span class="select__chevron"><DnIcon Name="chevron-down" Size="14" /></span>
+            </div>
+        </div>
+
+        <span class="admin-bandeau__compte">@Liste.Count commentaire(s)</span>
+    </div>
+
+    @if (Liste.Count is 0)
+    {
+        <p class="admin-formulaire__aide">Aucun commentaire ne correspond à ces filtres.</p>
+    }
+    else
+    {
+        <div class="admin-moderation">
+            @foreach (var ligne in Liste)
+            {
+                <article class="admin-moderation__ligne @EtatClasse(ligne.Statut)">
+                    <div class="admin-moderation__entete">
+                        <div>
+                            <strong class="admin-moderation__auteur">@ligne.Auteur</strong>
+                            @if (ligne.EstReponse)
+                            {
+                                <span class="admin-tableau__note">réponse</span>
+                            }
+
+                            <span class="admin-tableau__note">il y a @Delai(ligne.DeposeLe)</span>
+                        </div>
+
+                        <span class="badge @Etiquette(ligne.Statut)">@Etat(ligne.Statut)</span>
+                    </div>
+
+                    <p class="admin-moderation__cible">
+                        <DnIcon Name="@(ligne.Cible.EstArticle ? "file-text" : "calendar")" Size="14" />
+                        sur
+                        @if (string.IsNullOrWhiteSpace(ligne.Cible.Lien))
+                        {
+                            <span>@ligne.Cible.Libelle</span>
+                        }
+                        else
+                        {
+                            <a href="@ligne.Cible.Lien" target="_blank" rel="noopener">
+                                @ligne.Cible.Libelle
+                                <DnIcon Name="external-link" Size="12" />
+                            </a>
+                        }
+                    </p>
+
+                    <blockquote class="admin-moderation__texte">@ligne.Corps</blockquote>
+
+                    <div class="admin-moderation__actions">
+                        @if (ligne.Statut == CommentStatus.Published || ligne.Statut == CommentStatus.PendingReview)
+                        {
+                            @if (ligne.Statut == CommentStatus.Published)
+                            {
+                                <button type="button" class="btn btn--sm" @onclick="() => ChangerEtat(ligne, false)">
+                                    <DnIcon Name="eye-off" Size="14" />
+                                    Masquer
+                                </button>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn btn--primary btn--sm"
+                                        @onclick="() => ChangerEtat(ligne, true)">
+                                    <DnIcon Name="check" Size="14" />
+                                    Rétablir
+                                </button>
+                            }
+
+                            <button type="button" class="btn btn--rouge btn--sm"
+                                    @onclick="() => Supprimer(ligne)">
+                                Supprimer
+                            </button>
+                        }
+                        else
+                        {
+                            @* Un commentaire supprimé ne se rétablit pas : le domaine l'interdit,
+                               et une réponse à un commentaire effacé laisserait un fil troué. *@
+                            <p class="admin-formulaire__aide">
+                                @(ligne.Statut == CommentStatus.Deleted
+                                    ? "Ce commentaire a été supprimé : il ne revient pas dans la discussion."
+                                    : "Ce commentaire est masqué : il ne s'affiche plus, mais reste ici.")
+                            </p>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    }
+}
+
+<div class="admin-toasts" role="status" aria-live="polite">
+    @foreach (var message in _messages)
+    {
+        <div class="admin-toast admin-toast--@(message.Reussi ? "succes" : "erreur")">
+            <DnIcon Name="@(message.Reussi ? "check" : "alert")" Size="16" />
+            <span>@message.Texte</span>
+        </div>
+    }
+</div>
+
+@code {
+    private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
+
+    private const string CibleArticle = "article";
+
+    private const string CibleEvenement = "evenement";
+
+    private CommentairesVue? _donnees;
+
+    private string _recherche = string.Empty;
+
+    private string _filtreEtat = string.Empty;
+
+    private string _filtreCible = string.Empty;
+
+    private readonly List<Annonce> _messages = [];
+
+    /// <summary>Commentaires qui passent les filtres de la barre.</summary>
+    private List<LigneCommentaireAdmin> Liste =>
+    [
+        .. (_donnees?.Commentaires ?? [])
+            .Where(ligne => string.IsNullOrWhiteSpace(_filtreEtat)
+                || string.Equals(ligne.Statut.ToString(), _filtreEtat, StringComparison.Ordinal))
+            .Where(ligne => string.IsNullOrWhiteSpace(_filtreCible)
+                || (_filtreCible == CibleArticle) == ligne.Cible.EstArticle)
+            .Where(ligne => string.IsNullOrWhiteSpace(_recherche)
+                || ligne.Corps.Contains(_recherche, StringComparison.OrdinalIgnoreCase)
+                || ligne.Auteur.Contains(_recherche, StringComparison.OrdinalIgnoreCase))
+    ];
+
+    protected override async Task OnInitializedAsync() => _donnees = await Service.LireAsync();
+
+    /// <summary>Masque un commentaire, ou le rétablit après examen.</summary>
+    /// <param name="ligne">Commentaire concerné.</param>
+    /// <param name="retablir">Vrai pour rétablir, faux pour masquer.</param>
+    private async Task ChangerEtat(LigneCommentaireAdmin ligne, bool retablir)
+    {
+        var reponse = await Ecrire("POST", $"/api/comments/{ligne.Id}/{(retablir ? "approve" : "hide")}", null);
+
+        if (!reponse.Ok)
+        {
+            await Previent(Raison(reponse), false);
+            return;
+        }
+
+        Service.Oublie();
+        _donnees = await Service.LireAsync();
+
+        await Previent(retablir ? "Commentaire rétabli." : "Commentaire masqué.", true);
+    }
+
+    private async Task Supprimer(LigneCommentaireAdmin ligne)
+    {
+        var reponse = await Ecrire("DELETE", $"/api/comments/{ligne.Id}", null);
+
+        if (!reponse.Ok)
+        {
+            await Previent(Raison(reponse), false);
+            return;
+        }
+
+        Service.Oublie();
+        _donnees = await Service.LireAsync();
+
+        await Previent("Commentaire supprimé.", true);
+    }
+
+    /// <summary>
+    /// Écrit par l'API, après avoir vérifié que le script d'appel est présent.
+    /// </summary>
+    /// <param name="methode">Verbe de la requête.</param>
+    /// <param name="chemin">Adresse de l'API.</param>
+    /// <param name="corps">Charge utile, ou <see langword="null"/>.</param>
+    /// <returns>La réponse normalisée de l'appel.</returns>
+    private async Task<ReponseApi> Ecrire(string methode, string chemin, object? corps)
+    {
+        await JS.InvokeVoidAsync("DnAdminScripts.assure", true);
+
+        return await JS.InvokeAsync<ReponseApi>("DnApi.envoyer", methode, chemin, corps);
+    }
+
+    /// <summary>Affiche un message, puis l'efface.</summary>
+    /// <param name="texte">Message à afficher.</param>
+    /// <param name="reussi">Vrai pour un succès, faux pour une erreur.</param>
+    private async Task Previent(string texte, bool reussi)
+    {
+        var annonce = new Annonce(texte, reussi);
+        _messages.Add(annonce);
+
+        await InvokeAsync(StateHasChanged);
+
+        await Task.Delay(4000);
+        _messages.Remove(annonce);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// Énonce le temps écoulé, en français, sans dépendre du fuseau de la machine.
+    /// </summary>
+    /// <param name="instant">Date de dépôt.</param>
+    /// <returns>Une expression comme « 3 h ».</returns>
+    private static string Delai(DateTime instant)
+    {
+        var ecoule = DateTime.UtcNow - instant;
+
+        if (ecoule.TotalMinutes < 1)
+        {
+            return "quelques instants";
+        }
+
+        if (ecoule.TotalHours < 1)
+        {
+            var minutes = (int)ecoule.TotalMinutes;
+
+            return minutes == 1 ? "1 minute" : $"{minutes} minutes";
+        }
+
+        if (ecoule.TotalDays < 1)
+        {
+            var heures = (int)ecoule.TotalHours;
+
+            return heures == 1 ? "1 heure" : $"{heures} heures";
+        }
+
+        var jours = (int)ecoule.TotalDays;
+
+        return jours == 1 ? "1 jour" : $"{jours} jours";
+    }
+
+    private static string Etat(CommentStatus statut) => statut switch
+    {
+        CommentStatus.Published => "Publié",
+        CommentStatus.PendingReview => "À réexaminer",
+        CommentStatus.Hidden => "Masqué",
+        _ => "Supprimé",
+    };
+
+    private static string Etiquette(CommentStatus statut) => statut switch
+    {
+        CommentStatus.Published => "badge--vert",
+        CommentStatus.PendingReview => "badge--orange",
+        CommentStatus.Hidden => "badge--ink",
+        _ => "badge--rouge",
+    };
+
+    /// <summary>Classe de ligne, pour distinguer d'un coup d'œil ce qui est sanctionné.</summary>
+    /// <param name="statut">État de modération.</param>
+    /// <returns>Un modificateur de classe.</returns>
+    private static string EtatClasse(CommentStatus statut) => statut switch
+    {
+        CommentStatus.Published => string.Empty,
+        CommentStatus.PendingReview => "admin-moderation__ligne--attente",
+        CommentStatus.Hidden => "admin-moderation__ligne--masque",
+        _ => "admin-moderation__ligne--supprime",
+    };
+
+    /// <summary>Message d'erreur d'une réponse refusée, tel que le serveur l'a formulé.</summary>
+    /// <param name="reponse">Réponse de l'appel.</param>
+    /// <returns>Un texte compréhensible, jamais un code.</returns>
+    private static string Raison(ReponseApi reponse)
+        => reponse.Detail
+            ?? reponse.Titre
+            ?? (reponse.Statut == 0
+                ? "Le serveur n'a pas répondu."
+                : $"Le serveur a répondu {reponse.Statut}.");
+
+    /// <summary>Un message affiché à l'écran, le temps qu'il soit effacé.</summary>
+    /// <param name="Texte">Contenu du message.</param>
+    /// <param name="Reussi">Vrai pour un succès, faux pour une erreur.</param>
+    private sealed record Annonce(string Texte, bool Reussi);
+
+    /// <summary>Réponse normalisée d'un appel fait par le script d'administration.</summary>
+    /// <param name="Ok">Vrai si le serveur a accepté.</param>
+    /// <param name="Statut">Code de la réponse.</param>
+    /// <param name="Corps">Corps décodé de la réponse.</param>
+    private sealed record ReponseApi(bool Ok, int Statut, object? Corps)
+    {
+        /// <summary>Message d'erreur, au format problem details.</summary>
+        public string? Titre => (Corps as JsonElement?)?.TryGetProperty("title", out var titre) == true
+            ? titre.GetString()
+            : null;
+
+        /// <summary>Précision de l'erreur, quand le serveur en a produit une.</summary>
+        public string? Detail => (Corps as JsonElement?)?.TryGetProperty("detail", out var detail) == true
+            ? detail.GetString()
+            : null;
+    }
+}

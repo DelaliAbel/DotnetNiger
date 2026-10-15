@@ -3,6 +3,7 @@ using DotnetNiger.Application.Abstractions.Persistence;
 using DotnetNiger.Application.Common;
 using DotnetNiger.Domain.Entities.Partners;
 using DotnetNiger.Domain.Enums;
+using DotnetNiger.Infrastructure.Queries;
 using DotnetNiger.Web.Controller.Common;
 using DotnetNiger.Web.Controller.Contracts;
 using Microsoft.AspNetCore.Authorization;
@@ -19,6 +20,7 @@ namespace DotnetNiger.Web.Controller;
 public sealed class PartnersController(
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
+    CatalogueQueries lectures,
     TimeProvider clock) : ApiControllerBase
 {
     /// <summary>Liste les partenaires actifs.</summary>
@@ -33,22 +35,12 @@ public sealed class PartnersController(
         [FromQuery] PartnerTier? tier = null,
         CancellationToken cancellationToken = default)
     {
-        var requete = unitOfWork.ReadRepository<Partner>().Query
-            .Where(partner => partner.IsActive);
+        // La sélection et l'ordre appartiennent au service de lecture, que la page
+        // partenaires utilise aussi : la page et l'API ne peuvent pas proposer des
+        // partenaires dans deux ordres différents.
+        var partenaires = await lectures.ListerPartenairesAsync(tier, cancellationToken);
 
-        if (tier is { } niveau)
-        {
-            requete = requete.Where(partner => partner.Tier == niveau);
-        }
-
-        // L'ordre d'affichage est fixé par l'administration, puis alphabétique pour que
-        // deux partenaires d'un même niveau ne changent pas d'ordre d'une requête à l'autre.
-        var items = await requete
-            .OrderBy(partner => partner.SortOrder)
-            .ThenBy(partner => partner.Name)
-            .ToListAsync(cancellationToken);
-
-        return Ok(items.Select(ApiProjections.ToResponse).ToList());
+        return Ok(partenaires.Select(ApiProjections.ToResponse).ToList());
     }
 
     /// <summary>Lit un partenaire actif par son slug.</summary>

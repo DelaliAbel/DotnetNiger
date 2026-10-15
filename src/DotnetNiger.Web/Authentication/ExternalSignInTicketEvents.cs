@@ -78,7 +78,8 @@ public static class ExternalSignInTicketEvents
             outcome.ProviderKey!,
             outcome.Email,
             outcome.EmailVerified,
-            returnUrl);
+            returnUrl,
+            outcome.PhotoUrl);
 
         var jeton = Uri.EscapeDataString(protector.Protect(pending));
 

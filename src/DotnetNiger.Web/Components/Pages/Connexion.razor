@@ -113,7 +113,9 @@
             .EnabledProviders(Configuration)
             .First(fournisseur => fournisseur.Label == label);
 
-        var destination = ExternalSignInNavigation.IsLocal(ReturnUrl) ? ReturnUrl! : "/";
+        var destination = ExternalSignInNavigation.IsLocal(ReturnUrl)
+            ? ReturnUrl!
+            : ExternalSignInNavigation.EspaceMembre;
 
         return $"/connexion/{provider.Key}?returnUrl={Uri.EscapeDataString(destination)}";
     }

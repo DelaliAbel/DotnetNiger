@@ -1,0 +1,78 @@
+@*
+    Formulaire HTML autonome : le dépôt fonctionne en rendu serveur statique, sans devoir
+    établir une session interactive Blazor. Avant, EditForm appelait OnValidSubmit, mais
+    cette page n'est pas interactive ; le clic semblait ne rien faire.
+*@
+
+<section class="composer" aria-labelledby="composer-titre">
+    <h2 id="composer-titre" class="visually-hidden">Partager une ressource</h2>
+
+    <form method="post" action="/compte/ressources/deposer">
+        <AntiforgeryToken />
+
+        <div class="composer__corps">
+            <div class="composer__champs">
+                <label class="field" for="depot-titre">
+                    <span class="field__label">Titre de la ressource</span>
+                    <input id="depot-titre" class="input" name="Titre"
+                           maxlength="200" required
+                           placeholder="Ce que vous partagez, en une phrase" />
+                </label>
+
+                <label class="field" for="depot-description">
+                    <span class="field__label">Description</span>
+                    <textarea id="depot-description" class="input" name="Description"
+                              rows="3" maxlength="500" required
+                              placeholder="À quoi elle sert, pour qui"></textarea>
+                </label>
+            </div>
+        </div>
+
+        <details class="composer__plus">
+            
+            <summary class="composer__plus-titre">Cliquer pour ajouter un lien et choisir une catégorie *</summary>
+
+            <div class="composer__champs mt-3">
+                <label class="field" for="depot-lien">
+                    <span class="field__label">Adresse de la ressource</span>
+                    <input id="depot-lien" class="input" name="LienExterne"
+                           type="url" maxlength="2048" required placeholder="https://…" />
+                </label>
+
+                <label class="field" for="depot-fournisseur">
+                    <span class="field__label">Éditeur ou site</span>
+                    <input id="depot-fournisseur" class="input" name="Fournisseur"
+                           maxlength="120" required placeholder="Microsoft Learn, GitHub…" />
+                </label>
+
+                <label class="field" for="depot-categorie">
+                    <span class="field__label">Catégorie</span>
+                    <select id="depot-categorie" required class="input" name="Categorie">
+                        <option value="Guide">Guide</option>
+                        <option value="Training">Cours en ligne</option>
+                        <option value="Tutorial">Tutoriel</option>
+                        <option value="Library">Bibliothèque</option>
+                        <option value="Tool">Outil</option>
+                    </select>
+                </label>
+            </div>
+
+        </details>
+
+        <div class="composer__pied">
+            <p class="composer__avertissement">
+                La ressource est publiée immédiatement. L'administration peut la retirer si
+                nécessaire.
+            </p>
+            <button class="btn btn--primary" type="submit">Partager</button>
+        </div>
+    </form>
+</section>
+
+@code {
+    /// <summary>Nom utilisé par l'avatar du formulaire.</summary>
+    [Parameter] public string Nom { get; set; } = string.Empty;
+
+    /// <summary>Photo de profil, si le membre en a une.</summary>
+    [Parameter] public string? Photo { get; set; }
+}
