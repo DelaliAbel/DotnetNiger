@@ -107,3 +107,5 @@ Voir [DEPLOYMENT.md](DEPLOYMENT.md) : les seules clés à renseigner en producti
 Les avertissements sont des erreurs (`TreatWarningsAsErrors`), la documentation XML
 est obligatoire sur l'API publique, et le style est appliqué à la compilation par
 `.editorconfig`.
+
+Avant une première contribution : [CONTRIBUTING.md](CONTRIBUTING.md).

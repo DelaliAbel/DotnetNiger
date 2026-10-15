@@ -1,6 +1,6 @@
 # Déploiement
 
-À renseigner en production, dans les variables d'environnement du site.
+Clés à renseigner dans les variables d'environnement du site.
 
 ## Base de données
 
@@ -10,17 +10,9 @@
 | `Database__Provider` | `SqlServer` |
 | `Database__Initialization` | `None` |
 
-Les migrations s'appliquent au déploiement, pas au démarrage :
-
-```bash
-dotnet ef database update \
-  --project src/DotnetNiger.Infrastructure \
-  --startup-project src/DotnetNiger.Web
-```
-
 ## Courriel
 
-Sans ces valeurs, aucune inscription ni aucun rappel d'événement n'est envoyé.
+Sans ces valeurs, rien n'est envoyé.
 
 | Clé | Valeur |
 |---|---|
@@ -36,11 +28,11 @@ Sans ces valeurs, aucune inscription ni aucun rappel d'événement n'est envoyé
 
 ## Premier administrateur
 
-À ne renseigner que sur une base neuve, puis à vider.
+Base neuve seulement, à vider ensuite.
 
 | Clé | Valeur |
 |---|---|
-| `AdminBootstrap__Email` | adresse du compte administrateur |
+| `AdminBootstrap__Email` | adresse du compte |
 | `AdminBootstrap__Password` | mot de passe initial |
 | `AdminBootstrap__DisplayName` | `Admin` |
 
@@ -57,26 +49,3 @@ Facultatif. Un fournisseur sans identifiant est ignoré.
 | `ExternalProviders__Providers__Microsoft__Tenant` | `common` |
 | `ExternalProviders__Providers__GitHub__ClientId` | identifiant client |
 | `ExternalProviders__Providers__GitHub__ClientSecret` | secret |
-
-## Déploiement
-
-`--runtime` suit l'offre de l'hébergeur : `win-x86` sur l'offre gratuite,
-`win-x64` en Premium.
-
-```bash
-npm ci
-npm run css:minify
-
-dotnet publish src/DotnetNiger.Web \
-  --configuration Release \
-  --runtime win-x64 \
-  --self-contained false
-```
-
-Déposer `app_offline.htm` à la racine du site avant la synchronisation WebDeploy, le
-retirer après. Sans lui, IIS verrouille les fichiers et la synchronisation échoue.
-
-## Vérifier
-
-Administration → Paramètres doit indiquer que l'envoi est possible. Sinon, la page
-nomme elle-même la clé manquante.
