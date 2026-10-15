@@ -46,6 +46,7 @@ builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceMessag
 builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceMembres>();
 builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceAbonnees>();
 builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceParametres>();
+builder.Services.AddScoped<DotnetNiger.Web.Services.Reglages.ServiceReglages>();
 builder.Services.AddScoped<ServiceInscriptionsMembre>();
 builder.Services.AddSingleton<PendingExternalSignInProtector>();
 

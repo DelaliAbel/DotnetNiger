@@ -89,6 +89,9 @@ public sealed class DotnetNigerDbContext
     /// <summary>Liens externes affichés sur les profils des membres.</summary>
     public DbSet<MemberLink> MemberLinks => Set<MemberLink>();
 
+    /// <summary>Réglages du site : logo, contact et canaux de la communauté.</summary>
+    public DbSet<ReglageSite> SiteSettings => Set<ReglageSite>();
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder builder)
     {

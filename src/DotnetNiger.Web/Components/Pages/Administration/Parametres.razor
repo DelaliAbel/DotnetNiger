@@ -4,24 +4,25 @@
 
 @using System.Text.Json
 @using DotnetNiger.Web.Services.Administration
+@using DotnetNiger.Web.Services.Reglages
 
 @attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
 
-@inject ServiceParametres Service
+@inject ServiceReglages Service
 @inject IJSRuntime JS
+@inject Microsoft.Extensions.Options.IOptions<DotnetNiger.Infrastructure.Email.EmailOptions> OptionsCourriel
 
 @*
-    Configuration du site, et essai des modèles de courriel.
+    Réglages du site : identité, contact et canaux de la communauté.
 
-    Ces réglages se lisent, ils ne s'écrivent pas : ils vivent dans les fichiers de
-    déploiement. Les faire passer par un formulaire donnerait l'illusion qu'un changement
-    fait depuis le site survit au redémarrage suivant — il ne survit à rien.
+    Ces valeurs vivent en base et non dans un fichier, parce que ce sont celles qu'une
+    administratrice change souvent — le logo quand la communauté grandit, un canal quand il
+    apparaît. Ce que le site ne doit pas laisser modifier depuis l'interface — la base, le
+    relais de courriel, les clés de connexion externe — reste affiché en lecture seule, avec
+    la raison pour laquelle il n'est pas modifiable ici.
 
-    Le mot de passe du serveur de courriel n'apparaît donc pas. Ce qui apparaît est son
-    état, et c'est ce qui manque vraiment quand un envoi ne part pas.
-
-    Les modèles, eux, s'essaient : c'est le seul test honnête d'une configuration de courriel,
-    parce qu'il passe par la même file d'attente que les vrais messages.
+    Un champ laissé vide retire l'entrée du pied de page. C'est le comportement demandé :
+    mieux vaut une icône absente qu'une icône qui mène nulle part.
 *@
 
 <PageTitle>Paramètres — Administration</PageTitle>
@@ -30,98 +31,148 @@
     <div>
         <h1 class="admin-entete__titre">Paramètres</h1>
         <p class="admin-entete__intro">
-            La configuration en vigueur sur ce déploiement. Elle se lit ici et se change dans
-            les fichiers de configuration, pas depuis le site.
+            L'identité du site et ses canaux. Un champ laissé vide masque l'entrée correspondante
+            du pied de page.
         </p>
     </div>
 </header>
 
-@if (_donnees.EnvoiPossible)
-{
-    <p class="alerte alerte--vert" role="status">
-        <span class="alerte__icone"><DnIcon Name="check" Size="16" /></span>
-        <span>Le site peut envoyer des courriels.</span>
-    </p>
-}
-else
-{
-    <div class="alerte alerte--rouge" role="alert">
-        <span class="alerte__icone"><DnIcon Name="alert" Size="16" /></span>
-        <span>
-            Le site n'envoie aucun courriel : les messages restent consignés au journal.
-            Réglez @string.Join(", ", _donnees.Manquants) dans la configuration du déploiement.
-        </span>
-    </div>
-}
-
 <section class="admin-section">
-    <h2 class="admin-section__titre">Site et courriel</h2>
+    <h2 class="admin-section__titre">Identité</h2>
 
-    <table class="admin-tableau">
-        <tbody>
-            @foreach (var reglage in _donnees.Reglages)
+    <div class="admin-formulaire">
+        <div class="admin-formulaire__champ">
+            <label class="admin-formulaire__intitule" for="reglage-logo">Logo du site</label>
+
+            @if (!string.IsNullOrWhiteSpace(_formeLogo))
             {
-                <tr>
-                    <th scope="row" class="admin-tableau__titre">@reglage.Intitule</th>
-                    <td>
-                        @(reglage.EstComplet ? reglage.Valeur : $"⚠ {reglage.Valeur}")
-                    </td>
-                </tr>
+                <div class="admin-apercu admin-apercu--logo">
+                    <img src="@_formeLogo" alt="Logo actuellement enregistré" />
+
+                    <button type="button" class="btn btn--rouge btn--sm" @onclick="() => _formeLogo = string.Empty">
+                        Retirer le logo
+                    </button>
+                </div>
             }
-        </tbody>
-    </table>
+
+            <label class="admin-fichier-bouton">
+                <input class="admin-fichier" type="file" @ref="_champLogo"
+                       accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                       @onchange="TeleverserLogo" />
+                <span class="btn btn--secondary">
+                    <DnIcon Name="upload" Size="15" />
+                    @(string.IsNullOrWhiteSpace(_formeLogo) ? "Choisir un logo" : "Remplacer le logo")
+                </span>
+            </label>
+
+            <p class="admin-formulaire__aide">
+                Le logo remplace les initiales dans l'en-tête, le pied de page et la signature
+                des courriels. PNG ou SVG de préférence : il doit rester net sur un téléphone.
+            </p>
+        </div>
+
+        <div class="admin-formulaire__champ">
+            <label class="admin-formulaire__intitule" for="reglage-courriel">Adresse de contact</label>
+            <input id="reglage-courriel" class="input" type="email" maxlength="320"
+                   placeholder="contact@votre-domaine" @bind="_formeCourriel" @bind:event="oninput" />
+
+            <p class="admin-formulaire__aide">
+                Affichée sur le site et utilisée comme expéditeur des courriels. La changer ici
+                n'a pas d'effet sur l'envoi tant que <code>Email:FromAddress</code> n'a pas
+                été ajusté dans la configuration du serveur.
+            </p>
+        </div>
+    </div>
 </section>
 
 <section class="admin-section">
-    <h2 class="admin-section__titre">Modèles de courriel</h2>
+    <h2 class="admin-section__titre">Canaux de la communauté</h2>
 
     <p class="admin-formulaire__aide">
-        Chaque essai part vers votre propre adresse, avec des données d'exemple : les liens
-        qu'il contient ne mènent nulle part. Le message passe par la file d'attente du site,
-        exactement comme un vrai envoi.
+        Seuls les canaux renseignés apparaissent dans le pied de page, dans le bon ordre.
+        Une adresse morte n'est pas une erreur : le lien reste affiché tant qu'il est visé,
+        et disparaît dès que le champ est vidé.
     </p>
 
-    <table class="admin-tableau admin-tableau--defilant">
-        <thead>
-            <tr>
-                <th scope="col">Modèle</th>
-                <th scope="col">Clé</th>
-                <th scope="col">Essai</th>
-            </tr>
-        </thead>
+    <div class="admin-formulaire">
+        <div class="admin-formulaire__champ">
+            <label class="admin-formulaire__intitule" for="canal-whatsapp">WhatsApp</label>
+            <input id="canal-whatsapp" class="input" type="url" maxlength="500"
+                   placeholder="https://chat.whatsapp.com/…" @bind="_formeWhatsapp" @bind:event="oninput" />
+
+            <p class="admin-formulaire__aide">Le groupe principal de discussion.</p>
+        </div>
+
+        <div class="admin-formulaire__champ">
+            <label class="admin-formulaire__intitule" for="canal-github">GitHub</label>
+            <input id="canal-github" class="input" type="url" maxlength="500"
+                   placeholder="https://github.com/…" @bind="_formeGithub" @bind:event="oninput" />
+        </div>
+
+        <div class="admin-formulaire__champ">
+            <label class="admin-formulaire__intitule" for="canal-linkedin">LinkedIn</label>
+            <input id="canal-linkedin" class="input" type="url" maxlength="500"
+                   placeholder="https://www.linkedin.com/company/…" @bind="_formeLinkedin" @bind:event="oninput" />
+        </div>
+
+        <div class="admin-formulaire__champ">
+            <label class="admin-formulaire__intitule" for="canal-x">X (Twitter)</label>
+            <input id="canal-x" class="input" type="url" maxlength="500"
+                   placeholder="https://x.com/…" @bind="_formeX" @bind:event="oninput" />
+        </div>
+
+        <div class="admin-formulaire__champ">
+            <label class="admin-formulaire__intitule" for="canal-youtube">YouTube</label>
+            <input id="canal-youtube" class="input" type="url" maxlength="500"
+                   placeholder="https://www.youtube.com/@@votre-chaine" @bind="_formeYoutube" @bind:event="oninput" />
+        </div>
+
+        <div class="admin-formulaire__champ">
+            <label class="admin-formulaire__intitule" for="canal-facebook">Facebook</label>
+            <input id="canal-facebook" class="input" type="url" maxlength="500"
+                   placeholder="https://www.facebook.com/…" @bind="_formeFacebook" @bind:event="oninput" />
+        </div>
+    </div>
+
+    @if (_erreur is not null)
+    {
+        <div class="alerte alerte--rouge" role="alert">
+            <span class="alerte__icone"><DnIcon Name="alert" Size="16" /></span>
+            <span>@_erreur</span>
+        </div>
+    }
+
+    <div class="admin-formulaire__actions">
+        <button type="button" class="btn btn--ghost" @onclick="Recharger" disabled="@(_envoi || _depotEnCours)">
+            Annuler les modifications
+        </button>
+
+        <button type="button" class="btn btn--primary" @onclick="Enregistrer" disabled="@(_envoi || _depotEnCours)">
+            @(_envoi ? "Enregistrement…" : "Enregistrer les réglages")
+        </button>
+    </div>
+</section>
+
+<section class="admin-section">
+    <h2 class="admin-section__titre">Configuration du serveur</h2>
+
+    <p class="admin-formulaire__aide">
+        Ces valeurs ne sont pas modifiables depuis le site : elles désignent la machine qui
+        héberge l'application. Les changer ici n'aurait aucun effet et donnerait l'illusion du
+        contraire.
+    </p>
+
+    <table class="admin-tableau">
         <tbody>
-            @foreach (var modele in _donnees.Modeles)
+            @foreach (var reglage in Serveur)
             {
                 <tr>
-                    <td class="admin-tableau__titre">@modele.Intitule</td>
-                    <td><code class="admin-tableau__note">@modele.Cle</code></td>
-                    <td>
-                        @if (_essaiEnCours == modele.Cle)
-                        {
-                            <span class="admin-tableau__note">mise en file…</span>
-                        }
-                        else
-                        {
-                            <button type="button" class="btn btn--ghost btn--sm"
-                                    @onclick="() => Essayer(modele)"
-                                    disabled="@(_essaiEnCours is not null || !_donnees.EnvoiPossible)">
-                                <DnIcon Name="send" Size="14" />
-                                Envoyer un essai
-                            </button>
-                        }
-                    </td>
+                    <th scope="row" class="admin-tableau__titre">@reglage.Intitule</th>
+                    <td>@(reglage.EstComplet ? reglage.Valeur : $"⚠ {reglage.Valeur}")</td>
                 </tr>
             }
         </tbody>
     </table>
-
-    @if (!_donnees.EnvoiPossible)
-    {
-        <p class="admin-formulaire__aide">
-            Les essais restent désactivés tant que l'envoi n'est pas configuré : ils
-            seraient consignés au journal et jamais reçus.
-        </p>
-    }
 </section>
 
 <div class="admin-toasts" role="status" aria-live="polite">
@@ -135,38 +186,130 @@ else
 </div>
 
 @code {
-    private ParametresVue _donnees = default!;
+    private static readonly LigneReglage[] Aucun = [];
 
-    private string? _essaiEnCours;
+    private ReglagesVue _valeurs = new(null, null, null, null, null, null, null, null);
+
+    private string _formeLogo = string.Empty;
+
+    private string _formeCourriel = string.Empty;
+
+    private string _formeWhatsapp = string.Empty;
+
+    private string _formeGithub = string.Empty;
+
+    private string _formeLinkedin = string.Empty;
+
+    private string _formeX = string.Empty;
+
+    private string _formeYoutube = string.Empty;
+
+    private string _formeFacebook = string.Empty;
+
+    private bool _envoi;
+
+    private bool _depotEnCours;
+
+    private string? _erreur;
+
+    private ElementReference _champLogo;
 
     private readonly List<Annonce> _messages = [];
 
-    protected override void OnInitialized() => _donnees = Service.Lire();
-
-    /// <summary>Met un modèle de courriel en file, vers l'adresse de l'administrateur.</summary>
-    /// <param name="modele">Modèle à essayer.</param>
-    private async Task Essayer(ModeleCourriel modele)
+    protected override async Task OnInitializedAsync()
     {
-        _essaiEnCours = modele.Cle;
+        // La configuration du serveur est lue telle qu'elle est en vigueur, pas
+        // reconstruite : afficher un réglage « non renseigné » parce qu'on lui aurait donné
+        // une option vide serait pire que de ne rien afficher.
+        Serveur = new ServiceParametres(OptionsCourriel).Lire().Reglages;
+
+        await ChargerAsync();
+    }
+
+    /// <summary>Réglages de serveur, affichés en lecture seule.</summary>
+    private IReadOnlyList<LigneReglage> Serveur { get; set; } = Aucun;
+
+    private async Task ChargerAsync()
+    {
+        _valeurs = await Service.LireAsync();
+
+        _formeLogo = _valeurs.Logo ?? string.Empty;
+        _formeCourriel = _valeurs.Courriel ?? string.Empty;
+        _formeWhatsapp = _valeurs.Whatsapp ?? string.Empty;
+        _formeGithub = _valeurs.Github ?? string.Empty;
+        _formeLinkedin = _valeurs.Linkedin ?? string.Empty;
+        _formeX = _valeurs.X ?? string.Empty;
+        _formeYoutube = _valeurs.Youtube ?? string.Empty;
+        _formeFacebook = _valeurs.Facebook ?? string.Empty;
+    }
+
+    private async Task Recharger()
+    {
+        _erreur = null;
+        await ChargerAsync();
+    }
+
+    /// <summary>Dépose le logo choisi et garde l'adresse renvoyée par le serveur.</summary>
+    private async Task TeleverserLogo()
+    {
+        _depotEnCours = true;
 
         try
         {
             await JS.InvokeVoidAsync("DnAdminScripts.assure", true);
 
             var reponse = await JS.InvokeAsync<ReponseApi>(
-                "DnApi.envoyer", "POST", $"/api/admin/email-templates/{modele.Cle}/test", null);
+                "DnApi.televerseFichier", "/api/images", "file", _champLogo);
 
-            if (!reponse.Ok)
+            if (reponse.Ok && reponse.Url is { Length: > 0 })
             {
-                await Previent(Raison(reponse), false);
-                return;
+                _formeLogo = reponse.Url;
+                _erreur = null;
             }
-
-            await Previent($"{modele.Intitule} : essai mis en file vers votre adresse.", true);
+            else
+            {
+                _erreur = Raison(reponse);
+            }
         }
         finally
         {
-            _essaiEnCours = null;
+            _depotEnCours = false;
+        }
+    }
+
+    private async Task Enregistrer()
+    {
+        _envoi = true;
+
+        try
+        {
+            var reponse = await JS.InvokeAsync<ReponseApi>(
+                "DnApi.envoyer", "PUT", "/api/admin/settings", new
+                {
+                    logo = _formeLogo,
+                    email = _formeCourriel,
+                    whatsappUrl = _formeWhatsapp,
+                    githubUrl = _formeGithub,
+                    linkedinUrl = _formeLinkedin,
+                    xUrl = _formeX,
+                    youtubeUrl = _formeYoutube,
+                    facebookUrl = _formeFacebook,
+                });
+
+            if (!reponse.Ok)
+            {
+                _erreur = Raison(reponse);
+                return;
+            }
+
+            await ChargerAsync();
+            _erreur = null;
+
+            await Previent("Réglages enregistrés. Le pied de page est à jour.", true);
+        }
+        finally
+        {
+            _envoi = false;
         }
     }
 
@@ -185,15 +328,12 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
-    /// <summary>Message d'erreur d'une réponse refusée, tel que le serveur l'a formulé.</summary>
-    /// <param name="reponse">Réponse de l'appel.</param>
-    /// <returns>Un texte compréhensible, jamais un code.</returns>
     private static string Raison(ReponseApi reponse)
         => reponse.Detail
             ?? reponse.Titre
             ?? (reponse.Statut == 0
                 ? "Le serveur n'a pas répondu."
-                : $"Le serveur a répondu {reponse.Statut}.");
+                : $"Le serveur a répondu {reponse.Statut} sans explication.");
 
     /// <summary>Un message affiché à l'écran, le temps qu'il soit effacé.</summary>
     /// <param name="Texte">Contenu du message.</param>
@@ -214,6 +354,11 @@ else
         /// <summary>Précision de l'erreur, quand le serveur en a produit une.</summary>
         public string? Detail => (Corps as JsonElement?)?.TryGetProperty("detail", out var detail) == true
             ? detail.GetString()
+            : null;
+
+        /// <summary>Adresse de l'image déposée, pour le dépôt d'un fichier.</summary>
+        public string? Url => (Corps as JsonElement?)?.TryGetProperty("url", out var url) == true
+            ? url.GetString()
             : null;
     }
 }
