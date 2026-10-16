@@ -58,4 +58,7 @@ public static class EmailTemplateKeys
 
     /// <summary>Copie d'un message de contact adressée à l'administration.</summary>
     public const string ContactForwarded = "contact.forwarded";
+
+    /// <summary>Réponse de l'administration au demandeur.</summary>
+    public const string ContactReplied = "contact.replied";
 }

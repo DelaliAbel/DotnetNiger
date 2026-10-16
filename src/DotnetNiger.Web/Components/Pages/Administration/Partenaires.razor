@@ -301,6 +301,11 @@ else
 }
 
 @code {
+    /// <summary>
+    /// Demande d'ouverture du formulaire de création, par l'action rapide du tableau de bord.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "nouveau")]
+    public string? Nouveau { get; set; }
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
 
     private PartenairesVue? _donnees;
@@ -352,7 +357,15 @@ else
                 || ligne.Nom.Contains(_recherche, StringComparison.OrdinalIgnoreCase)
                 || ligne.Description.Contains(_recherche, StringComparison.OrdinalIgnoreCase))];
 
-    protected override async Task OnInitializedAsync() => _donnees = await Service.LireAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        _donnees = await Service.LireAsync();
+
+        if (string.Equals(Nouveau, "1", StringComparison.Ordinal))
+        {
+            OuvrirCreation();
+        }
+    }
 
     private void OuvrirCreation()
     {

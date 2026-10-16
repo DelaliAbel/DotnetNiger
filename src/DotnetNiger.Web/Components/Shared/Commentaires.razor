@@ -102,7 +102,10 @@
                         </form>
                     }
 
-                    @if (UtilisateurCourant.IsAuthenticated)
+                    @* Jamais sur son propre commentaire : la file de modération sert à examiner un propos
+                       tenu par quelqu'un d'autre. Le serveur refuse aussi, mais un bouton
+                       qui mène à un refus est un bouton inutile. *@
+                    @if (UtilisateurCourant.IsAuthenticated && !EstMoi(commentaire))
                     {
                         <details class="commentaire__signalement">
                             <summary class="btn btn--ghost btn--sm">Signaler</summary>

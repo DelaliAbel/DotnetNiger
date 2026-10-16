@@ -44,6 +44,16 @@ public sealed record ContactMessageResponse(
     DateTime ReceivedAtUtc,
     DateTime? HandledAtUtc);
 
+/// <summary>Réponse de l'administration à un message reçu.</summary>
+/// <param name="Body">Corps de la réponse, en HTML simple.</param>
+/// <remarks>
+/// Le message d'origine n'est pas renvoyé : le serveur le relit en base. Le renvoyer aussi
+/// permettrait à un appel malveillant de répondre à un autre message que celui qu'il
+/// désigne.
+/// </remarks>
+public sealed record ReplyToContactRequest(
+    [Required, StringLength(8000)] string Body);
+
 /// <summary>Demande d'abonnement à la lettre d'information.</summary>
 /// <param name="Email">Adresse à abonner.</param>
 public sealed record SubscribeToNewsletterRequest(

@@ -79,4 +79,7 @@ public static class EmailVariables
 
     /// <summary>Corps du message reçu par le formulaire de contact.</summary>
     public const string MessageContact = "MessageContact";
+
+    /// <summary>Réponse rédigée par l'administration au demandeur.</summary>
+    public const string MessageReponse = "MessageReponse";
 }

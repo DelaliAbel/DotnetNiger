@@ -35,6 +35,7 @@ public static partial class EmailTemplateCatalog
         .. ModelesDesEvenements(),
         .. ModelesDeContenu(),
         .. ModelesDeContact(),
+        ModeleReponseContact(),
     ]);
 
     /// <summary>

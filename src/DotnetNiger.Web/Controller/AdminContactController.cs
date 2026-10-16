@@ -2,6 +2,7 @@ using DotnetNiger.Application.Abstractions;
 using DotnetNiger.Application.Abstractions.Persistence;
 using DotnetNiger.Application.Common;
 using DotnetNiger.Domain.Entities.Community;
+using DotnetNiger.Infrastructure.Email;
 using DotnetNiger.Web.Controller.Common;
 using DotnetNiger.Web.Controller.Contracts;
 using Microsoft.AspNetCore.Authorization;
@@ -17,6 +18,7 @@ namespace DotnetNiger.Web.Controller;
 public sealed class AdminContactController(
     IUnitOfWork unitOfWork,
     ICurrentUserService currentUser,
+    IEmailDispatcher emails,
     TimeProvider clock) : ApiControllerBase
 {
     /// <summary>
@@ -88,6 +90,95 @@ public sealed class AdminContactController(
         {
             return NotFound();
         }
+
+        message.MarkHandled(clock.GetUtcNow().UtcDateTime);
+        unitOfWork.Repository<ContactMessage>().Update(message);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return Ok(ToResponse(message));
+    }
+
+    /// <summary>
+    /// Répond au demandeur par courriel, et marque le message comme traité.
+    /// </summary>
+    /// <param name="id">Identifiant du message.</param>
+    /// <param name="request">Corps de la réponse.</param>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>Le message, désormais traité.</returns>
+    /// <remarks>
+    /// La réponse part par le même relais que les autres courriels : elle passe donc par la
+    /// file et par les modèles du site, et non par un envoi direct. Un lien
+    /// <c>mailto:</c> aurait laissé la moitié du travail à l'administrateur — composer dans
+    /// son logiciel de messagerie, sans trace dans la boîte, et en oubliant de marquer le
+    /// message comme traité.
+    /// <para>
+    /// Le message n'est marqué traité qu'après acceptation par le relais. Dans le cas
+    /// contraire, la boîte afficherait « répondu » alors que rien n'est parti — et
+    /// l'administrateur ne le relirait jamais.
+    /// </para>
+    /// </remarks>
+    /// <response code="200">Réponse expédiée, message traité.</response>
+    /// <response code="400">Réponse vide, ou demandeur sans adresse.</response>
+    /// <response code="401">Utilisateur anonyme.</response>
+    /// <response code="403">L'appelant n'est pas administrateur.</response>
+    /// <response code="404">Message introuvable.</response>
+    [HttpPost]
+    [Authorize(Roles = RoleNames.Admin)]
+    [Route("messages/{id:guid}/reply")]
+    [ProducesResponseType<ContactMessageResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<ActionResult<ContactMessageResponse>> Repondre(
+        Guid id,
+        [FromBody] ReplyToContactRequest request,
+        CancellationToken cancellationToken)
+    {
+        RequireAdministrateur(currentUser);
+
+        var message = await unitOfWork.ReadRepository<ContactMessage>().Query
+            .FirstOrDefaultAsync(candidat => candidat.Id == id, cancellationToken);
+
+        if (message is null)
+        {
+            return NotFound();
+        }
+
+        if (string.IsNullOrWhiteSpace(message.Email))
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Adresse manquante",
+                Detail = "Ce message ne porte aucune adresse de retour : impossible d'y répondre.",
+            });
+        }
+
+        var reponse = (request.Body ?? string.Empty).Trim();
+
+        if (reponse.Length == 0)
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Réponse vide",
+                Detail = "Écrivez la réponse avant de l'envoyer.",
+            });
+        }
+
+        // L'objet d'origine est conservé, préfixé d'un seul « Re: » : sans cela, une
+        // réponse à une réponse produit « Re: Re: Re: » dans le fil du demandeur.
+        var objet = message.Subject.StartsWith("Re:", StringComparison.OrdinalIgnoreCase)
+            ? message.Subject
+            : $"Re: {message.Subject}";
+
+        await emails.DispatchAsync(
+            EmailTemplateKeys.ContactReplied,
+            message.Email,
+            EmailValues.De(
+                (EmailVariables.NomContact, message.Name),
+                (EmailVariables.SujetContact, message.Subject),
+                (EmailVariables.MessageReponse, reponse)),
+            cancellationToken);
 
         message.MarkHandled(clock.GetUtcNow().UtcDateTime);
         unitOfWork.Repository<ContactMessage>().Update(message);

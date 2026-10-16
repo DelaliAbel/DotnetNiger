@@ -167,10 +167,24 @@ public sealed class ServiceCommentaires(IUnitOfWork uniteDeTravail)
         string? details,
         CancellationToken cancellationToken = default)
     {
-        if (!await uniteDeTravail.ReadRepository<Comment>().Query
-            .AnyAsync(comment => comment.Id == commentaireId, cancellationToken))
+        var commentaire = await uniteDeTravail.ReadRepository<Comment>().Query
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                comment => comment.Id == commentaireId,
+                cancellationToken);
+
+        if (commentaire is null)
         {
             return (false, "Ce commentaire n'existe plus.");
+        }
+
+        // Signaler son propre commentaire ne veut rien dire : le signalement sert à
+        // caractériser un propos tenu par quelqu'un d'autre. L'accepter ferait de la file
+        // de modération une boîte à lettres, et l'auteur pourrait faire remonter son
+        // propre commentaire devant tout le monde.
+        if (commentaire.AuthorId == rapporteurId)
+        {
+            return (false, "Vous ne pouvez pas signaler votre propre commentaire. Vous pouvez le supprimer.");
         }
 
         // Un même membre ne signale pas deux fois le même commentaire : sinon un spammeur

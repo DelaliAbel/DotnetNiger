@@ -93,6 +93,12 @@ window.DnAdminReplie = {
     // Le repli est une classe sur <html>, comme le thème : elle est donc appliquée avant
     // le premier rendu de l'administration et survit à la navigation enhanced de Blazor,
     // qui régénère le document sans rejouer le script d'amorçage.
+    //
+    // La classe s'appelle `admin-barre-replie` et non `admin-replie` : cette dernière est
+    // celle du bouton, et les deux se mélangeaient sur <html>. Une règle comme
+    // `.admin-replie { display: inline-grid }` — écrite pour le bouton — s'appliquait alors
+    // au document entier. D'où les deux symptômes : l'administration se dislocationnait au
+    // repli, et revenir au site public réduisait toute la page à une colonne.
     applique() {
         let replie = false;
 
@@ -102,14 +108,14 @@ window.DnAdminReplie = {
             // Stockage indisponible : la barre reste dépliée pour cette session.
         }
 
-        document.documentElement.classList.toggle("admin-replie", replie);
+        document.documentElement.classList.toggle("admin-barre-replie", replie);
         this.majBouton(replie);
     },
 
     bascule() {
-        const replie = !document.documentElement.classList.contains("admin-replie");
+        const replie = !document.documentElement.classList.contains("admin-barre-replie");
 
-        document.documentElement.classList.toggle("admin-replie", replie);
+        document.documentElement.classList.toggle("admin-barre-replie", replie);
 
         try {
             localStorage.setItem("dn-admin-replie", replie ? "1" : "0");

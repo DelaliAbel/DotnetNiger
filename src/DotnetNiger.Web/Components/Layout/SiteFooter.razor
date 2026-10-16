@@ -64,6 +64,31 @@
                     <li><a href="/contact">Contact</a></li>
                 </ul>
             </nav>
+
+            @* Coordonnéesdirectes : un visiteur qui veut joindre la communauté ne devrait pas
+               avoir à passer par le formulaire pour trouver un numéro. *@
+            @{
+    var courriel = _reglages?.Valeurs.Courriel;
+    var telephone = _reglages?.Valeurs.Telephone;
+}
+            @if (!string.IsNullOrWhiteSpace(courriel) || !string.IsNullOrWhiteSpace(telephone))
+            {
+                <nav class="site-footer__col" aria-label="Coordonnées">
+                    <h2 class="site-footer__title">Nous joindre</h2>
+                    <ul class="site-footer__list">
+                        @if (!string.IsNullOrWhiteSpace(telephone))
+                        {
+                            <li>
+                                <a href="tel:@LienTelephone(telephone)">@telephone</a>
+                            </li>
+                        }
+                        @if (!string.IsNullOrWhiteSpace(courriel))
+                        {
+                            <li><a href="mailto:@courriel">@courriel</a></li>
+                        }
+                    </ul>
+                </nav>
+            }
         </div>
 
         <!-- Lettre d'information : présente sur toutes les pages, le formulaire renvoie
@@ -133,6 +158,19 @@
         _reglages = await Reglages.LirePourAffichageAsync();
         _canaux = _reglages.Canaux;
     }
+
+    /// <summary>
+    /// Numéro réduit à ce qu'un lien <c>tel:</c> accepte.
+    /// </summary>
+    /// <param name="numero">Numéro tel qu'il est affiché.</param>
+    /// <returns>Le même numéro, sans espaces ni séparateurs.</returns>
+    /// <remarks>
+    /// L'affichage garde les espaces, qui le rendent lisible ; l'adresse du lien s'en passe,
+    /// parce que la plupart des téléphones ne composition pas les espaces. Le « + » de
+    /// l'indicatif international doit être conservé : il décide du pays appelé.
+    /// </remarks>
+    private static string LienTelephone(string numero)
+        => string.Concat(numero.Where(caractere => char.IsAsciiDigit(caractere) || caractere == '+'));
 
     /// <summary>
     /// Adresse confirmée, transmise par la redirection après soumission. Le message

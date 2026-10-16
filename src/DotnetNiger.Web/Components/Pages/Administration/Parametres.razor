@@ -77,9 +77,19 @@
                    placeholder="contact@votre-domaine" @bind="_formeCourriel" @bind:event="oninput" />
 
             <p class="admin-formulaire__aide">
-                Affichée sur le site et utilisée comme expéditeur des courriels. La changer ici
-                n'a pas d'effet sur l'envoi tant que <code>Email:FromAddress</code> n'a pas
-                été ajusté dans la configuration du serveur.
+                Affichée sur le site, dans le pied de page et la page contact.
+            </p>
+        </div>
+
+        <div class="admin-formulaire__champ">
+            <label class="admin-formulaire__intitule" for="reglage-telephone">Téléphone</label>
+            <input id="reglage-telephone" class="input" type="tel" maxlength="40"
+                   placeholder="+227 90 00 00 00" @bind="_formeTelephone" @bind:event="oninput" />
+
+            <p class="admin-formulaire__aide">
+                Affiché dans le pied de page et sur la page contact. Un numéro international
+                s'écrit avec l'indicatif, sans espaces ni tirets dans l'adresse : le site
+                compose lui-même le lien d'appel.
             </p>
         </div>
     </div>
@@ -153,28 +163,6 @@
     </div>
 </section>
 
-<section class="admin-section">
-    <h2 class="admin-section__titre">Configuration du serveur</h2>
-
-    <p class="admin-formulaire__aide">
-        Ces valeurs ne sont pas modifiables depuis le site : elles désignent la machine qui
-        héberge l'application. Les changer ici n'aurait aucun effet et donnerait l'illusion du
-        contraire.
-    </p>
-
-    <table class="admin-tableau">
-        <tbody>
-            @foreach (var reglage in Serveur)
-            {
-                <tr>
-                    <th scope="row" class="admin-tableau__titre">@reglage.Intitule</th>
-                    <td>@(reglage.EstComplet ? reglage.Valeur : $"⚠ {reglage.Valeur}")</td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</section>
-
 <div class="admin-toasts" role="status" aria-live="polite">
     @foreach (var message in _messages)
     {
@@ -186,13 +174,13 @@
 </div>
 
 @code {
-    private static readonly LigneReglage[] Aucun = [];
-
-    private ReglagesVue _valeurs = new(null, null, null, null, null, null, null, null);
+    private ReglagesVue _valeurs = new(null, null, null, null, null, null, null, null, null);
 
     private string _formeLogo = string.Empty;
 
     private string _formeCourriel = string.Empty;
+
+    private string _formeTelephone = string.Empty;
 
     private string _formeWhatsapp = string.Empty;
 
@@ -216,18 +204,7 @@
 
     private readonly List<Annonce> _messages = [];
 
-    protected override async Task OnInitializedAsync()
-    {
-        // La configuration du serveur est lue telle qu'elle est en vigueur, pas
-        // reconstruite : afficher un réglage « non renseigné » parce qu'on lui aurait donné
-        // une option vide serait pire que de ne rien afficher.
-        Serveur = new ServiceParametres(OptionsCourriel).Lire().Reglages;
-
-        await ChargerAsync();
-    }
-
-    /// <summary>Réglages de serveur, affichés en lecture seule.</summary>
-    private IReadOnlyList<LigneReglage> Serveur { get; set; } = Aucun;
+    protected override async Task OnInitializedAsync() => await ChargerAsync();
 
     private async Task ChargerAsync()
     {
@@ -235,6 +212,7 @@
 
         _formeLogo = _valeurs.Logo ?? string.Empty;
         _formeCourriel = _valeurs.Courriel ?? string.Empty;
+        _formeTelephone = _valeurs.Telephone ?? string.Empty;
         _formeWhatsapp = _valeurs.Whatsapp ?? string.Empty;
         _formeGithub = _valeurs.Github ?? string.Empty;
         _formeLinkedin = _valeurs.Linkedin ?? string.Empty;
@@ -288,6 +266,7 @@
                 {
                     logo = _formeLogo,
                     email = _formeCourriel,
+                    phone = _formeTelephone,
                     whatsappUrl = _formeWhatsapp,
                     githubUrl = _formeGithub,
                     linkedinUrl = _formeLinkedin,

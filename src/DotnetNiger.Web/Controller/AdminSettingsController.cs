@@ -66,6 +66,7 @@ public sealed class AdminSettingsController(
         {
             (ClesReglage.Logo, request.Logo),
             (ClesReglage.Courriel, request.Email),
+            (ClesReglage.Telephone, request.Phone),
             (ClesReglage.Whatsapp, request.WhatsappUrl),
             (ClesReglage.Github, request.GithubUrl),
             (ClesReglage.Linkedin, request.LinkedinUrl),
@@ -92,6 +93,7 @@ public sealed class AdminSettingsController(
     private static SiteSettingsResponse ToResponse(ReglagesVue valeurs) => new(
         valeurs.Logo,
         valeurs.Courriel,
+        valeurs.Telephone,
         valeurs.Whatsapp,
         valeurs.Github,
         valeurs.Linkedin,

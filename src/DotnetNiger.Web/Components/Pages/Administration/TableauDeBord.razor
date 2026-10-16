@@ -36,51 +36,59 @@ else
     <section class="admin-section" aria-labelledby="titre-en-ligne">
         <h2 class="admin-section__titre" id="titre-en-ligne">Ce qui est en ligne</h2>
 
+        @* Chaque carte mène à l'écran qui porte ce chiffre. Un nombre affiché sans issue
+           oblige à retrouver l'entrée dans le menu latéral : le tableau de bord perd
+           alors son intérêt, qui est précisément de raccourcir le chemin. *@
         <div class="admin-grille">
-            <div class="admin-carte">
+            <a class="admin-carte admin-carte--lien" href="/administration/membres">
                 <span class="admin-carte__libelle">Membres actifs</span>
                 <span class="admin-carte__valeur">@_vue.Membres</span>
-            </div>
+                <span class="admin-carte__aller">Voir les membres <DnIcon Name="arrow-right" Size="14" /></span>
+            </a>
 
-            <div class="admin-carte">
+            <a class="admin-carte admin-carte--lien" href="/administration/abonnes">
                 <span class="admin-carte__libelle">Abonnés confirmés</span>
                 <span class="admin-carte__valeur">@_vue.Abonnes</span>
-            </div>
+                <span class="admin-carte__aller">Voir les abonnés <DnIcon Name="arrow-right" Size="14" /></span>
+            </a>
 
-            <div class="admin-carte">
+            <a class="admin-carte admin-carte--lien" href="/administration/actualites">
                 <span class="admin-carte__libelle">Articles publiés</span>
                 <span class="admin-carte__valeur">@_vue.ArticlesPublies</span>
                 @if (_vue.Brouillons > 0)
                 {
-                    <a class="admin-carte__lien" href="/administration/actualites">
-                        @_vue.Brouillons brouillon(s) en attente
-                    </a>
+                    <span class="admin-carte__note">@_vue.Brouillons brouillon(s) en attente</span>
                 }
-            </div>
+                <span class="admin-carte__aller">Voir le blog <DnIcon Name="arrow-right" Size="14" /></span>
+            </a>
 
-            <div class="admin-carte">
+            <a class="admin-carte admin-carte--lien" href="/administration/ressources">
                 <span class="admin-carte__libelle">Ressources</span>
                 <span class="admin-carte__valeur">@_vue.Ressources</span>
-            </div>
+                <span class="admin-carte__aller">Voir les ressources <DnIcon Name="arrow-right" Size="14" /></span>
+            </a>
 
-            <div class="admin-carte">
+            <a class="admin-carte admin-carte--lien" href="/administration/evenements">
                 <span class="admin-carte__libelle">Événements</span>
                 <span class="admin-carte__valeur">@_vue.Evenements</span>
                 @if (_vue.EvenementsAVenir > 0)
                 {
                     <span class="admin-carte__note">@_vue.EvenementsAVenir à venir</span>
                 }
-            </div>
+                <span class="admin-carte__aller">Voir les événements <DnIcon Name="arrow-right" Size="14" /></span>
+            </a>
 
-            <div class="admin-carte">
+            <a class="admin-carte admin-carte--lien" href="/administration/projets">
                 <span class="admin-carte__libelle">Projets</span>
                 <span class="admin-carte__valeur">@_vue.Projets</span>
-            </div>
+                <span class="admin-carte__aller">Voir les projets <DnIcon Name="arrow-right" Size="14" /></span>
+            </a>
 
-            <div class="admin-carte">
+            <a class="admin-carte admin-carte--lien" href="/administration/partenaires">
                 <span class="admin-carte__libelle">Partenaires</span>
                 <span class="admin-carte__valeur">@_vue.Partenaires</span>
-            </div>
+                <span class="admin-carte__aller">Voir les partenaires <DnIcon Name="arrow-right" Size="14" /></span>
+            </a>
         </div>
     </section>
 
@@ -137,9 +145,55 @@ else
             <ListeContenus Contenus="_vue.DernieresRessources" />
         </div>
     </div>
+
+    <section class="admin-section" aria-labelledby="titre-actions">
+        <h2 class="admin-section__titre" id="titre-actions">Actions rapides</h2>
+        <p class="admin-entete__intro">
+            Les écrans de création, sans repasser par le menu.
+        </p>
+
+        <div class="admin-actions-rapides">
+            @foreach (var action in ActionsRapides)
+            {
+                <a class="admin-action-rapide" href="@action.Href">
+                    <span class="admin-action-rapide__icone">
+                        <DnIcon Name="@action.Icone" Size="18" />
+                    </span>
+                    <span class="admin-action-rapide__texte">
+                        <span class="admin-action-rapide__titre">@action.Titre</span>
+                        <span class="admin-action-rapide__note">@action.Note</span>
+                    </span>
+                </a>
+            }
+        </div>
+    </section>
 }
 
 @code {
+    /// <summary>
+    /// Raccourcis vers les écrans de création.
+    /// </summary>
+    /// <remarks>
+    /// L'adresse termine par <c>?nouveau=1</c> : le tiroir de création s'ouvre seul à
+    /// l'arrivée, sans ce paramètre l'action rapide ne remplacerait un clic par un autre.
+    /// </remarks>
+    private static readonly ActionRapide[] ActionsRapides =
+    [
+        new("/administration/actualites?nouveau=1", "Nouvel article", "Écrire et publier un billet de blog", "code"),
+        new("/administration/evenements?nouveau=1", "Nouvel événement", "Annoncer un meetup ou un atelier", "calendar"),
+        new("/administration/ressources?nouveau=1", "Nouvelle ressource", "Référencer un guide ou une bibliothèque", "book-open"),
+        new("/administration/membres?nouveau=1", "Nouveau membre", "Créer un compte à la main", "users"),
+        new("/administration/projets?nouveau=1", "Nouveau projet", "Présenter un projet open source", "layers"),
+        new("/administration/partenaires?nouveau=1", "Nouveau partenaire", "Ajouter un soutien ou un sponsor", "globe"),
+    ];
+
+    /// <summary>Raccourci vers un écran de création.</summary>
+    /// <param name="Href">Adresse de l'écran, tiroir de création compris.</param>
+    /// <param name="Titre">Intitulé affiché.</param>
+    /// <param name="Note">Ce que l'action permet, en une ligne.</param>
+    /// <param name="Icone">Nom d'icône dans la bibliothèque du site.</param>
+    private sealed record ActionRapide(string Href, string Titre, string Note, string Icone);
+
     /// <summary>Culture des dates affichées : le site parle français, quelle que soit la machine.</summary>
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
 

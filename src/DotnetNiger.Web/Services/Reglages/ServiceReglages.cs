@@ -16,6 +16,7 @@ public sealed record CanalSite(string Nom, string Url, string Icone);
 /// <summary>Les réglages du site, tels que l'administration les modifie.</summary>
 /// <param name="Logo">Logo du site, en-tête et courriels, ou <see langword="null"/>.</param>
 /// <param name="Courriel">Adresse de contact, ou <see langword="null"/>.</param>
+/// <param name="Telephone">Numéro de téléphone de la communauté, ou <see langword="null"/>.</param>
 /// <param name="Whatsapp">Adresse du groupe WhatsApp, ou <see langword="null"/>.</param>
 /// <param name="Github">Dépôt GitHub, ou <see langword="null"/>.</param>
 /// <param name="Linkedin">Page LinkedIn, ou <see langword="null"/>.</param>
@@ -25,6 +26,7 @@ public sealed record CanalSite(string Nom, string Url, string Icone);
 public sealed record ReglagesVue(
     string? Logo,
     string? Courriel,
+    string? Telephone,
     string? Whatsapp,
     string? Github,
     string? Linkedin,
@@ -175,6 +177,7 @@ public sealed class ServiceReglages(
         return new ReglagesVue(
             Valeur(ClesReglage.Logo),
             Valeur(ClesReglage.Courriel),
+            Valeur(ClesReglage.Telephone),
             Valeur(ClesReglage.Whatsapp),
             Valeur(ClesReglage.Github),
             Valeur(ClesReglage.Linkedin),

@@ -4061,30 +4061,30 @@
      administrateur qui l'a repliée connaît déjà ses écrans — et le compteur d'une
      entrée devient une pastille. */
   @media (min-width: 64rem) {
-    html.admin-replie .admin {
+    html.admin-barre-replie .admin {
       grid-template-columns: 4.75rem minmax(0, 1fr);
     }
   }
 
-  html.admin-replie .admin-nav__marque-texte,
-  html.admin-replie .admin-nav__libelle,
-  html.admin-replie .admin-nav__groupe-titre {
+  html.admin-barre-replie .admin-nav__marque-texte,
+  html.admin-barre-replie .admin-nav__libelle,
+  html.admin-barre-replie .admin-nav__groupe-titre {
     display: none;
   }
 
-  html.admin-replie .admin-nav__marque {
+  html.admin-barre-replie .admin-nav__marque {
     justify-content: center;
     padding-inline: 0;
   }
 
-  html.admin-replie .admin-nav__entree {
+  html.admin-barre-replie .admin-nav__entree {
     position: relative;
     justify-content: center;
     gap: 0;
     padding-inline: 0;
   }
 
-  html.admin-replie .admin-nav__compteur {
+  html.admin-barre-replie .admin-nav__compteur {
     position: absolute;
     top: 3px;
     right: 6px;
@@ -4095,16 +4095,45 @@
     font-size: 0;
   }
 
-  html.admin-replie .admin-nav__liste {
+  html.admin-barre-replie .admin-nav__liste {
     padding-inline: calc(var(--spacing) * 1);
   }
 
-  html.admin-replie .admin-nav__groupe + .admin-nav__groupe {
+  /* Le pied de la barre colle le lien de déconnexion en bas de la fenêtre, plutôt que
+     juste sous les sections : c'est là qu'on le cherche, et il reste atteignable quand
+     la liste est longue. */
+  .admin-nav {
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+  }
+
+  .admin-nav__pied {
+    margin-top: auto;
+    padding-top: calc(var(--spacing) * 2);
+    border-top: 1px solid var(--site-border);
+  }
+
+  .admin-nav__pied form {
+    margin: 0;
+  }
+
+  /* Un bouton de sortie ne se souligne pas au survol : ce n'est pas une navigation. */
+  .admin-nav__sortie {
+    width: 100%;
+    border: none;
+    background: none;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  html.admin-barre-replie .admin-nav__groupe + .admin-nav__groupe {
     padding-top: calc(var(--spacing) * 1);
     border-top: 1px solid var(--site-border);
   }
 
-  html.admin-replie .admin-replie .dn-icon {
+  html.admin-barre-replie .admin-replie .dn-icon {
     transform: rotate(180deg);
   }
 
@@ -4531,6 +4560,103 @@
     box-shadow: var(--shadow-xs);
   }
 
+  /* Une carte-chiffre qui mène à son écran : elle se comporte comme un bouton, et le
+     disclose « aller » n'apparaît qu'au survol, pour ne pas doubler le titre. */
+  .admin-carte--lien {
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  }
+
+  .admin-carte--lien:hover {
+    border-color: var(--color-violet-400);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+  }
+
+  .admin-carte--lien:focus-visible {
+    outline: 2px solid var(--color-violet-500);
+    outline-offset: 2px;
+  }
+
+  .admin-carte__aller {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 0.25);
+    margin-top: auto;
+    color: var(--color-violet-600);
+    font-size: var(--text-caption);
+    font-weight: 600;
+  }
+
+  .admin-carte--lien:hover .admin-carte__aller .dn-icon {
+    transform: translateX(2px);
+  }
+
+  .admin-carte__aller .dn-icon {
+    transition: transform 0.15s;
+  }
+
+  /* --- Actions rapides --- */
+
+  .admin-actions-rapides {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: var(--spacing);
+    margin-top: calc(var(--spacing) * 1.5);
+  }
+
+  .admin-action-rapide {
+    display: flex;
+    align-items: flex-start;
+    gap: calc(var(--spacing) * 1.25);
+    padding: calc(var(--spacing) * 2);
+    background: var(--site-surface);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-md);
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+  }
+
+  .admin-action-rapide:hover {
+    border-color: var(--color-violet-400);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+  }
+
+  .admin-action-rapide:focus-visible {
+    outline: 2px solid var(--color-violet-500);
+    outline-offset: 2px;
+  }
+
+  .admin-action-rapide__icone {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: calc(var(--spacing) * 5);
+    height: calc(var(--spacing) * 5);
+    border-radius: var(--radius-sm);
+    background: var(--site-surface-soft);
+    color: var(--color-violet-600);
+  }
+
+  .admin-action-rapide__texte {
+    display: grid;
+    gap: calc(var(--spacing) * 0.25);
+    min-width: 0;
+  }
+
+  .admin-action-rapide__titre {
+    color: var(--site-fg);
+    font-weight: 600;
+  }
+
+  .admin-action-rapide__note {
+    color: var(--site-fg-muted);
+    font-size: var(--text-caption);
+  }
+
   .admin-carte__libelle {
     color: var(--site-fg-muted);
     font-size: var(--text-caption);
@@ -4955,8 +5081,18 @@
       gap: calc(var(--spacing) * 0.5);
     }
 
+    /* Les boutons de décision se partagent la largeur au lieu de déborder : sur un écran
+       étroit, une barre de cinq boutons plus tardifs déborde et devient inutilisable
+       précisément quand la décision est urgente. */
     .admin-moderation__actions {
       gap: calc(var(--spacing) * 0.5);
+      flex-wrap: wrap;
+    }
+
+    .admin-moderation__actions .btn {
+      flex: 1 1 calc(50% - var(--spacing) * 0.5);
+      justify-content: center;
+      min-width: 0;
     }
   }
 

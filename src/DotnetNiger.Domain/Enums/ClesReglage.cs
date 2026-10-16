@@ -14,6 +14,9 @@ public static class ClesReglage
     /// <summary>Adresse de contact affichée sur le site et utilisée dans les courriels.</summary>
     public const string Courriel = "site.courriel";
 
+    /// <summary>Numéro de téléphone de la communauté, affiché sur le site.</summary>
+    public const string Telephone = "site.telephone";
+
     /// <summary>Adresse du numéro de la communauté sur WhatsApp.</summary>
     public const string Whatsapp = "canal.whatsapp";
 
@@ -35,6 +38,6 @@ public static class ClesReglage
     /// <summary>Toutes les clés, dans l'ordre où l'écran Paramètres les présente.</summary>
     public static readonly string[] Toutes =
     [
-        Logo, Courriel, Whatsapp, Github, Linkedin, X, Youtube, Facebook,
+        Logo, Courriel, Telephone, Whatsapp, Github, Linkedin, X, Youtube, Facebook,
     ];
 }

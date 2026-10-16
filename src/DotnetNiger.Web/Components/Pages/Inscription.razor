@@ -34,6 +34,23 @@
             <Alerte Variante="rouge">@Error</Alerte>
         }
 
+        @* Les fournisseurs passent avant le formulaire : une personne venue de Google n'a pas
+           d'abord à se demander si elle possède déjà un mot de passe chez nous. *@
+        @if (EnabledProviders.Count > 0)
+        {
+            <div class="compte__fournisseurs">
+                @foreach (var provider in EnabledProviders)
+                {
+                    <a href="/connexion/@provider.Key" class="btn btn--ghost w-full">
+                        <DnIcon Name="@provider.Icone" Size="18" />
+                        S'inscrire avec @provider.Label
+                    </a>
+                }
+            </div>
+
+            <p class="compte__separateur">ou avec votre adresse e-mail</p>
+        }
+
         <form method="post" action="/compte/inscription/creer" class="grid gap-4">
             <AntiforgeryToken />
 
@@ -73,20 +90,6 @@
 
             <button type="submit" class="btn btn--primary w-full">Créer mon compte</button>
         </form>
-
-        @if (EnabledProviders.Count > 0)
-        {
-            <p class="compte__separateur">ou s'inscrire avec un compte externe</p>
-            <div class="compte__fournisseurs">
-                @foreach (var provider in EnabledProviders)
-                {
-                    <a href="/connexion/@provider.Key" class="btn btn--ghost w-full">
-                        <DnIcon Name="@provider.Icone" Size="18" />
-                        S'inscrire avec @provider.Label
-                    </a>
-                }
-            </div>
-        }
 
         <p class="compte__pied">
             <span>Vous avez déjà un compte ?</span>

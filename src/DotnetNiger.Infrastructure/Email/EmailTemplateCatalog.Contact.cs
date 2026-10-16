@@ -6,6 +6,36 @@ namespace DotnetNiger.Infrastructure.Email;
 public static partial class EmailTemplateCatalog
 {
     /// <summary>
+    /// Réponse rédigée par l'administration au demandeur.
+    /// </summary>
+    /// <remarks>
+    /// Le message d'origine est rappelé sous la réponse : le demandeur lit souvent plusieurs
+    /// échanges avant de se souvenir de ce qui avait motivé le sien, et l'objet seul ne
+    /// suffit pas à le remettre en contexte.
+    /// </remarks>
+    private static EmailTemplate ModeleReponseContact() =>
+        new(
+            EmailTemplateKeys.ContactReplied,
+            "Réponse de l'administration",
+            "Envoyé à la personne qui a écrit, après réponse de l'administration.",
+            "Vous avez répondu à un message envoyé à l'administration de DotnetNiger.",
+            [EmailVariables.NomContact, EmailVariables.SujetContact, EmailVariables.MessageContact, EmailVariables.MessageReponse],
+            valeurs => $"Re: {valeurs.Texte(EmailVariables.SujetContact)}",
+            valeurs => new EmailContent(
+                "Notre réponse",
+                [
+                    $"Bonjour {valeurs.Texte(EmailVariables.NomContact)},",
+                    valeurs.Texte(EmailVariables.MessageReponse),
+                    $"— Notre message : « {valeurs.Texte(EmailVariables.MessageContact)} »",
+                ],
+                Note: "Vous répondez à ce courriel et notre équipe vous lira."),
+            EmailValues.De(
+                (EmailVariables.NomContact, "Awa Traoré"),
+                (EmailVariables.SujetContact, "Proposer un atelier pour les étudiants"),
+                (EmailVariables.MessageContact, "Bonjour, je souhaite animer un atelier d'initiation à C# à l'université Abdou Moumouni."),
+                (EmailVariables.MessageReponse, "Bonjour Awa, avec plaisir. Nous préparerons ensemble l'atelier, et je reviens vers vous cette semaine pour fixer la date.")));
+
+    /// <summary>
     /// Fabrique les modèles de contact.
     /// </summary>
     /// <returns>Les modèles, dans l'ordre d'affirmation de l'administration.</returns>

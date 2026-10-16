@@ -58,6 +58,20 @@
             }
         </div>
     }
+
+    @* La déconnexion est en bas, hors des sections repliables : quitter l'administration est
+       un geste rare, mais il doit être présent sans avoir à retrouver où il se cache.
+       C'est un formulaire et non un lien : la route n'accepte que le POST, parce qu'elle
+       invalide le cookie de session. *@
+    <div class="admin-nav__pied">
+        <form method="post" action="/compte/deconnexion">
+            <AntiforgeryToken />
+            <button class="admin-nav__entree admin-nav__sortie" type="submit">
+                <DnIcon Name="logout" Size="16" />
+                <span class="admin-nav__libelle">Se déconnecter</span>
+            </button>
+        </form>
+    </div>
 </nav>
 
 @code {

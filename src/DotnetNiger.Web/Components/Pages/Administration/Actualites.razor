@@ -295,6 +295,16 @@ else
 }
 
 @code {
+    /// <summary>
+    /// Demande d'ouverture du formulaire de création, par l'action rapide du tableau de bord.
+    /// </summary>
+    /// <remarks>
+    /// Le tiroir s'ouvre normalement au clic sur le bouton « Nouveau ». Cette adresse permet
+    /// à une action rapide d'y mener directement : sans elle, l'action rapide ne ferait que
+    /// remplacer un clic par un autre.
+    /// </remarks>
+    [SupplyParameterFromQuery(Name = "nouveau")]
+    public string? Nouveau { get; set; }
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
 
     private const string IdentifiantCorps = "corps-article";
@@ -345,7 +355,15 @@ else
                 || ligne.Titre.Contains(_recherche, StringComparison.OrdinalIgnoreCase)
                 || ligne.Chapo.Contains(_recherche, StringComparison.OrdinalIgnoreCase))];
 
-    protected override async Task OnInitializedAsync() => _donnees = await Blog.LireAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        _donnees = await Blog.LireAsync();
+
+        if (string.Equals(Nouveau, "1", StringComparison.Ordinal))
+        {
+            OuvrirCreation();
+        }
+    }
 
     /// <summary>
     /// Installe l'éditeur une fois le tiroir visible.

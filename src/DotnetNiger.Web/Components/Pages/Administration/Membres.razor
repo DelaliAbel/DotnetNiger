@@ -299,8 +299,9 @@ else
                 @if (_formeEquipe)
                 {
                     <p class="admin-formulaire__aide">
-                        La fiche ci-dessous apparaît sur la page « À propos ». Un champ laissé
-                        vide est tout simplement ignoré : la carte n'affiche que ce qui est renseigné.
+                        La fiche apparaît sur la page « À propos ». La photo et les liens
+                        viennent du profil du membre : cochez la case, la carte se remplit
+                        toute seule.
                     </p>
 
                     <div class="admin-formulaire__champ">
@@ -308,39 +309,11 @@ else
                         <input class="input" id="membre-fonction" type="text"
                                placeholder="Développeuse .NET" maxlength="200"
                                @bind="_formeFonction" @bind:event="oninput" />
-                    </div>
-
-                    <div class="admin-formulaire__champ">
-                        <label class="admin-formulaire__intitule" for="membre-photo">Photo</label>
-                        <input class="input" id="membre-photo" type="text"
-                               placeholder="/api/images/…" maxlength="1000"
-                               @bind="_formePhoto" @bind:event="oninput" />
 
                         <p class="admin-formulaire__aide">
-                            Adresse de l'image. Déposez-la d'abord via l'API
-                            <code>/api/images</code>, puis collez l'adresse renvoyée.
+                        La seule chose que l'administration saisit. Le reste vient du profil,
+                        que le membre remplit lui-même depuis son espace.
                         </p>
-                    </div>
-
-                    <div class="admin-formulaire__champ">
-                        <label class="admin-formulaire__intitule" for="membre-github">GitHub</label>
-                        <input class="input" id="membre-github" type="text"
-                               placeholder="identifiant, avec ou sans @@" maxlength="100"
-                               @bind="_formeGithub" @bind:event="oninput" />
-                    </div>
-
-                    <div class="admin-formulaire__champ">
-                        <label class="admin-formulaire__intitule" for="membre-linkedin">LinkedIn</label>
-                        <input class="input" id="membre-linkedin" type="url"
-                               placeholder="https://www.linkedin.com/in/…" maxlength="500"
-                               @bind="_formeLinkedIn" @bind:event="oninput" />
-                    </div>
-
-                    <div class="admin-formulaire__champ">
-                        <label class="admin-formulaire__intitule" for="membre-x">X</label>
-                        <input class="input" id="membre-x" type="url"
-                               placeholder="https://x.com/…" maxlength="500"
-                               @bind="_formeX" @bind:event="oninput" />
                     </div>
                 }
 
@@ -380,6 +353,11 @@ else
 }
 
 @code {
+    /// <summary>
+    /// Demande d'ouverture du formulaire de création, par l'action rapide du tableau de bord.
+    /// </summary>
+    [SupplyParameterFromQuery(Name = "nouveau")]
+    public string? Nouveau { get; set; }
     private static readonly CultureInfo Culture = CultureInfo.GetCultureInfo("fr-FR");
 
     private const string Actifs = "actifs";
@@ -414,14 +392,6 @@ else
 
     private string _formeFonction = string.Empty;
 
-    private string _formePhoto = string.Empty;
-
-    private string _formeGithub = string.Empty;
-
-    private string _formeLinkedIn = string.Empty;
-
-    private string _formeX = string.Empty;
-
     private bool _formeConfirme;
 
     private string? _erreur;
@@ -446,7 +416,15 @@ else
                 || (ligne.Courriel?.Contains(_recherche, StringComparison.OrdinalIgnoreCase) ?? false))
     ];
 
-    protected override async Task OnInitializedAsync() => _donnees = await Service.LireAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        _donnees = await Service.LireAsync();
+
+        if (string.Equals(Nouveau, "1", StringComparison.Ordinal))
+        {
+            OuvrirCreation();
+        }
+    }
 
     /// <summary>Un compte verrouillé ne peut plus se connecter jusqu'à la fin du verrouillage.</summary>
     /// <param name="ligne">Compte concerné.</param>
@@ -464,10 +442,6 @@ else
         _formeEquipe = false;
         _formeConfirme = false;
         _formeFonction = string.Empty;
-        _formePhoto = string.Empty;
-        _formeGithub = string.Empty;
-        _formeLinkedIn = string.Empty;
-        _formeX = string.Empty;
         _erreur = null;
         _formulaireOuvert = true;
     }
@@ -481,10 +455,6 @@ else
         _formeEquipe = ligne.EstEquipe;
         _formeConfirme = ligne.EmailConfirme;
         _formeFonction = ligne.Fonction ?? string.Empty;
-        _formePhoto = ligne.PhotoUrl ?? string.Empty;
-        _formeGithub = ligne.GitHub ?? string.Empty;
-        _formeLinkedIn = ligne.LinkedIn ?? string.Empty;
-        _formeX = ligne.X ?? string.Empty;
         _erreur = null;
         _formulaireOuvert = true;
     }
@@ -560,10 +530,6 @@ else
             confirmEmail = _formeConfirme,
             roles = new[] { _formeRole },
             profession = _formeFonction,
-            photoUrl = _formePhoto,
-            gitHubUsername = _formeGithub,
-            linkedInUrl = _formeLinkedIn,
-            xUrl = _formeX,
         });
 
         return reponse.Ok ? null : Raison(reponse);
@@ -591,10 +557,6 @@ else
             firstName = string.IsNullOrEmpty(prenomEdite) ? null : prenomEdite,
             lastName = string.IsNullOrEmpty(nomEdite) ? null : nomEdite,
             profession = _formeFonction,
-            photoUrl = _formePhoto,
-            gitHubUsername = _formeGithub,
-            linkedInUrl = _formeLinkedIn,
-            xUrl = _formeX,
         });
 
         if (!reponse.Ok)

@@ -6,6 +6,7 @@ using DotnetNiger.Infrastructure.Email;
 using DotnetNiger.Infrastructure.Identity;
 using DotnetNiger.Web.Controller.Common;
 using DotnetNiger.Web.Services.Membres;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DotnetNiger.Web.Controller;
@@ -66,22 +67,26 @@ public sealed class ProfilController : FormulaireControllerBase
     private readonly ServiceMembres _service;
     private readonly IAccountDeletionService _accountDeletion;
     private readonly DepotPhotosProfil _photos;
+    private readonly SignInManager<ApplicationUser> _connexion;
 
     /// <summary>Construit le contrôleur.</summary>
     /// <param name="utilisateur">Service d'identité de la requête.</param>
     /// <param name="service">Service des membres.</param>
     /// <param name="accountDeletion">Service de retrait de compte.</param>
     /// <param name="photos">Dépôt des photos de profil.</param>
+    /// <param name="connexion">Gestionnaire de connexion, pour fermer la session.</param>
     public ProfilController(
         ICurrentUserService utilisateur,
         ServiceMembres service,
         IAccountDeletionService accountDeletion,
-        DepotPhotosProfil photos)
+        DepotPhotosProfil photos,
+        SignInManager<ApplicationUser> connexion)
     {
         _utilisateur = utilisateur;
         _service = service;
         _accountDeletion = accountDeletion;
         _photos = photos;
+        _connexion = connexion;
     }
 
     /// <summary>Enregistre les modifications du profil.</summary>
@@ -240,9 +245,13 @@ public sealed class ProfilController : FormulaireControllerBase
             return RedirectionAvecMessage(PageProfil, "erreur", erreur.Message);
         }
 
-        // Le compte a disparu : la session ne peut plus être valide. La redirection
-        // vers la connexion ferme donc proprement la porte plutôt que de laisser une
-        // page renvoyer vers un compte inexistant.
+        // Le compte a disparu, mais le cookie de session reste valide tant que rien ne le
+        // révoque : rediriger ne suffit pas. Sans cette déconnexion, la personne reste
+        // « connectée » à un compte inexistant, et chaque page peut lui renvoyer un nom
+        // ou un rôle effacé. La déconnexion précède la redirection, sinon la réponse de
+        // déconnexion — elle aussi une redirection — prendrait la main.
+        await _connexion.SignOutAsync();
+
         return Redirect("/compte/connexion?desinscription=1");
     }
 }

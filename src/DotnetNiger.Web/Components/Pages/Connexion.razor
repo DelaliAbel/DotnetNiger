@@ -17,6 +17,24 @@
         <Alerte Variante="rouge">@Error</Alerte>
     }
 
+    @* Les fournisseurs passent avant le mot de passe. La plupart des visiteurs arrivent
+       avec un compte Google ou GitHub déjà ouvert, et un formulaire de mot de passe en
+       premier leur fait remplir un mot de passe qu'ils n'ont pas. *@
+    @if (EnabledProviders.Count > 0)
+    {
+        <div class="compte__fournisseurs">
+            @foreach (var provider in EnabledProviders)
+            {
+                <a href="@ExternalLink(provider)" class="btn btn--ghost w-full">
+                    <DnIcon Name="@provider.Icone" Size="18" />
+                    Continuer avec @provider.Label
+                </a>
+            }
+        </div>
+
+        <p class="compte__separateur">ou avec votre adresse e-mail</p>
+    }
+
     <form method="post" action="/compte/connexion/se-connecter" class="grid gap-4">
         <AntiforgeryToken />
         <input type="hidden" name="Retour" value="@ReturnUrl" />
@@ -45,20 +63,6 @@
 
         <button type="submit" class="btn btn--primary w-full">Se connecter</button>
     </form>
-
-    @if (EnabledProviders.Count > 0)
-    {
-        <p class="compte__separateur">ou continuer avec un compte externe</p>
-        <div class="compte__fournisseurs">
-            @foreach (var provider in EnabledProviders)
-            {
-                <a href="@ExternalLink(provider)" class="btn btn--ghost w-full">
-                    <DnIcon Name="@provider.Icone" Size="18" />
-                    Continuer avec @provider.Label
-                </a>
-            }
-        </div>
-    }
 
     <p class="compte__pied">
         <span>Pas encore de compte ?</span>
