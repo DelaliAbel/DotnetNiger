@@ -86,7 +86,7 @@ else
                 {
                     <tr>
                         <td class="admin-tableau__titre">@ligne.Nom</td>
-                        <td>
+                        <td data-label="Technologies">
                             @if (Technologies(ligne) is { Length: > 0 } liste)
                             {
                                 <span class="admin-tableau__technologies">
@@ -101,11 +101,11 @@ else
                                 <span class="admin-tableau__note">—</span>
                             }
                         </td>
-                        <td>
+                        <td data-label="État">
                             <span class="badge @Etiquette(ligne.Statut)">@Etat(ligne.Statut)</span>
                         </td>
-                        <td>@(string.IsNullOrWhiteSpace(ligne.Auteur) ? "—" : ligne.Auteur)</td>
-                        <td>@Date(ligne)</td>
+                        <td data-label="Auteur">@(string.IsNullOrWhiteSpace(ligne.Auteur) ? "—" : ligne.Auteur)</td>
+                        <td data-label="Modifié le">@Date(ligne)</td>
                         <td>
                             <div class="admin-tableau__actions">
                                 <button type="button" class="btn btn--ghost btn--sm"

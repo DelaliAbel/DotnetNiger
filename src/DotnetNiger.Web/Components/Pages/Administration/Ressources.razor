@@ -100,8 +100,8 @@ else
                 {
                     <tr>
                         <td class="admin-tableau__titre">@ligne.Titre</td>
-                        <td>@LibelleCategorie(ligne.Categorie)</td>
-                        <td>
+                        <td data-label="Catégorie">@LibelleCategorie(ligne.Categorie)</td>
+                        <td data-label="Partagée par">
                             @if (!string.IsNullOrWhiteSpace(ligne.Fournisseur))
                             {
                                 @ligne.Fournisseur
@@ -111,10 +111,10 @@ else
                                 <span class="admin-tableau__note">—</span>
                             }
                         </td>
-                        <td>
+                        <td data-label="État">
                             <span class="badge @Etiquette(ligne.Statut)">@Etat(ligne.Statut)</span>
                         </td>
-                        <td>@Date(ligne)</td>
+                        <td data-label="Modifié le">@Date(ligne)</td>
                         <td>
                             <div class="admin-tableau__actions">
                                 <button type="button" class="btn btn--ghost btn--sm"

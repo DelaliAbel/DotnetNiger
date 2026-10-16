@@ -95,7 +95,7 @@ else
                 @foreach (var ligne in Liste)
                 {
                     <tr>
-                        <td>
+                        <td class="admin-tableau__titre">
                             <span class="admin-partenaire">
                                 @if (!string.IsNullOrWhiteSpace(ligne.LogoUrl))
                                 {
@@ -111,13 +111,13 @@ else
                                 </span>
                             </span>
                         </td>
-                        <td>
+                        <td data-label="Niveau">
                             <span class="badge @(ligne.Niveau == PartnerTier.Sponsor ? "badge--violet" : "badge--outline")">
                                 @(ligne.Niveau == PartnerTier.Sponsor ? "Sponsor" : "Partenaire")
                             </span>
                         </td>
-                        <td>@ligne.Ordre</td>
-                        <td>
+                        <td data-label="Ordre">@ligne.Ordre</td>
+                        <td data-label="Sur le site">
                             @if (ligne.Actif)
                             {
                                 <span class="badge badge--vert">Affiché</span>

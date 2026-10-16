@@ -177,6 +177,10 @@ public sealed class AdminContactController(
             EmailValues.De(
                 (EmailVariables.NomContact, message.Name),
                 (EmailVariables.SujetContact, message.Subject),
+                // Le message d'origine est rappelé sous la réponse : le demandeur lit
+                // souvent plusieurs échanges avant de se souvenir du sien. Il est donc
+                // indispensable au modèle, et son absence ferait échouer l'envoi.
+                (EmailVariables.MessageContact, message.Body),
                 (EmailVariables.MessageReponse, reponse)),
             cancellationToken);
 

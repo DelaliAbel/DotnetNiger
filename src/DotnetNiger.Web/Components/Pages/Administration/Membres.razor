@@ -93,7 +93,7 @@ else
                 @foreach (var ligne in Liste)
                 {
                     <tr>
-                        <td>
+                        <td class="admin-tableau__titre">
                             <div class="admin-partenaire">
                                 <DnAvatar Nom="@ligne.NomComplet" ImageUrl="@ligne.PhotoUrl" Profil />
 
@@ -109,7 +109,7 @@ else
                                 </div>
                             </div>
                         </td>
-                        <td>
+                        <td data-label="Rôles">
                             <div class="admin-tableau__technologies">
                                 @foreach (var role in ligne.Roles)
                                 {
@@ -122,7 +122,7 @@ else
                                 }
                             </div>
                         </td>
-                        <td>
+                        <td data-label="État">
                             <div class="admin-tableau__technologies">
                                 <span class="badge @(ligne.EstActif ? "badge--vert" : "badge--ink")">
                                     @(ligne.EstActif ? "Actif" : "Désactivé")
@@ -139,7 +139,7 @@ else
                                 }
                             </div>
                         </td>
-                        <td>@ligne.InscritLe.ToString("d MMM yyyy", Culture)</td>
+                        <td data-label="Inscrit le">@ligne.InscritLe.ToString("d MMM yyyy", Culture)</td>
                         <td>
                             <div class="admin-tableau__actions">
                                 <button type="button" class="btn btn--ghost btn--sm"
@@ -246,6 +246,7 @@ else
                         </label>
                         <DnChampMotDePasse Id="membre-motdepasse"
                                         Name="MotDePasse"
+                                        @bind-Valeur="_formeMotDePasse"
                                         MinimumLength="MinimumLength"
                                         Required="true"
                                         AutoComplete="new-password" />

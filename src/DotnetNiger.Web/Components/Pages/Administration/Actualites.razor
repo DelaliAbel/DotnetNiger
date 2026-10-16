@@ -104,12 +104,12 @@ else
                 {
                     <tr>
                         <td class="admin-tableau__titre">@ligne.Titre</td>
-                        <td>@ligne.Rubrique</td>
-                        <td>
+                        <td data-label="Rubrique">@ligne.Rubrique</td>
+                        <td data-label="État">
                             <span class="badge @Etiquette(ligne.Statut)">@Etat(ligne.Statut)</span>
                         </td>
-                        <td>@Date(ligne)</td>
-                        <td>@(string.IsNullOrWhiteSpace(ligne.Auteur) ? "—" : ligne.Auteur)</td>
+                        <td data-label="Modifié le">@Date(ligne)</td>
+                        <td data-label="Auteur">@(string.IsNullOrWhiteSpace(ligne.Auteur) ? "—" : ligne.Auteur)</td>
                         <td>
                             <div class="admin-tableau__actions">
                                 <button type="button" class="btn btn--ghost btn--sm"

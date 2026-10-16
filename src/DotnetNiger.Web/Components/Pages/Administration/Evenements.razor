@@ -106,12 +106,12 @@ else
                                 <span class="admin-tableau__note">· @ligne.Lieu</span>
                             }
                         </td>
-                        <td>@Quand(ligne)</td>
-                        <td>@Format(ligne.Format)</td>
-                        <td>
+                        <td data-label="Quand">@Quand(ligne)</td>
+                        <td data-label="Modalité">@Format(ligne.Format)</td>
+                        <td data-label="État">
                             <span class="badge @Etiquette(ligne.Statut)">@Etat(ligne.Statut)</span>
                         </td>
-                        <td>
+                        <td data-label="Inscriptions">
                             @if (ligne.Capacite is { } capacite)
                             {
                                 @($"{ligne.Confirmes} / {capacite}")
@@ -237,12 +237,12 @@ else
                         {
                             <tr>
                                 <td class="admin-tableau__titre">@inscription.Membre</td>
-                                <td>
+                                <td data-label="État">
                                     <span class="badge @EtiquetteInscription(inscription.Etat)">
                                         @EtatInscription(inscription.Etat)
                                     </span>
                                 </td>
-                                <td>@inscription.InscritLe.ToString("d MMM yyyy à HH:mm", Culture)</td>
+                                <td data-label="Inscrit le">@inscription.InscritLe.ToString("d MMM yyyy à HH:mm", Culture)</td>
                             </tr>
                         }
                     </tbody>

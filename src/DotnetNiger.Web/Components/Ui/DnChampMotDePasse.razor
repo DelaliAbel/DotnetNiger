@@ -18,11 +18,12 @@
            id="@Id"
            name="@Name"
            type="@(Visible ? "text" : "password")"
-           value="@Value"
+           value="@Valeur"
            maxlength="@MaximumLength"
            autocomplete="@AutoComplete"
            required="@Required"
            minlength="@MinimumLength"
+           @oninput="SurSaisie"
            @attributes="AttributsSupplementaires" />
 
     <button class="champ-mdp__oeil" type="button"
@@ -48,8 +49,27 @@
     /// <summary>Nom transmis au serveur.</summary>
     [Parameter, EditorRequired] public required string Name { get; set; }
 
-    /// <summary>Valeur initiale, pour réafficher une saisie précédente après une erreur.</summary>
-    [Parameter] public string? Value { get; set; }
+    /// <summary>Valeur affichée dans le champ.</summary>
+    [Parameter] public string? Valeur { get; set; }
+
+    /// <summary>
+    /// Rappelée à chaque frappe, pour que la page puisse lire le mot de passe saisi.
+    /// </summary>
+    /// <remarks>
+    /// La liaison va dans les deux sens : une page qui lit ce champ — pour l'envoyer au
+    /// serveur, comme la création d'un compte — a besoin de connaître la saisie. Sans ce
+    /// rappel, le champ est visuellement rempli mais sa valeur reste nulle-part, et le
+    /// serveur reçoit une chaîne vide.
+    /// </remarks>
+    [Parameter] public EventCallback<string?> ValeurChanged { get; set; }
+
+    private async Task SurSaisie(ChangeEventArgs args)
+    {
+        var saisie = args.Value?.ToString();
+
+        Valeur = saisie;
+        await ValeurChanged.InvokeAsync(saisie);
+    }
 
     /// <summary>
     /// Longueur minimale déclarée au navigateur, ou <see langword="null"/> pour ne rien imposer.

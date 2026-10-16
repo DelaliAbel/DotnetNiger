@@ -2455,6 +2455,50 @@
     display: none;
   }
 
+  /* --- Réponse à un message, ouverte sous le message ---
+     Elle vit dans la carte et non dans un tiroir : on relit l'échange pendant qu'on écrit.
+     Le filet violet à gauche la distingue du texte à modérer, sans la déplacer. */
+  .admin-reponse {
+    display: grid;
+    gap: calc(var(--spacing) * 1);
+    margin-top: calc(var(--spacing) * 1.5);
+    padding: calc(var(--spacing) * 1.5);
+    border: 1px solid var(--color-violet-300);
+    border-left-width: 3px;
+    border-radius: var(--radius-md);
+    background: var(--site-surface-soft);
+  }
+
+  .admin-reponse__entete {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing);
+  }
+
+  .admin-reponse__fermer {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: calc(var(--spacing) * 5);
+    height: calc(var(--spacing) * 5);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-sm);
+    background: var(--site-surface);
+    color: var(--site-fg-muted);
+    cursor: pointer;
+  }
+
+  .admin-reponse__fermer .dn-icon {
+    transform: rotate(180deg);
+  }
+
+  .admin-reponse__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: calc(var(--spacing) * 0.75);
+  }
+
   .compte__separateur {
     align-items: center;
     gap: calc(var(--spacing) * 1.5);
@@ -4107,8 +4151,11 @@
     gap: calc(var(--spacing) * 1.5);
   }
 
+  /* L'apparence du bouton. Son affichage, lui, est réglé par les deux media queries :
+     la règle « inline-grid » ci-dessous arriverait sinon après celle qui le masque sur
+     mobile, et l'emporterait à spécificité égale — le bouton réapparaîtrait au
+     téléphone, où c'est le hamburger qui sert. */
   .admin-replie {
-    display: inline-grid;
     place-items: center;
     width: calc(var(--spacing) * 4);
     height: calc(var(--spacing) * 4);
@@ -4368,10 +4415,25 @@
 
   /* --- Cartes d'indicateurs --- */
 
+  /* Les cartes-chiffres tiennent deux par ligne dès le téléphone.
+     `auto-fill` sur une largeur minimale de 13 rem en tiendrait une seule : sous 26 rem,
+     il n'y a plus qu'une colonne, et le tableau de bord devient une longue liste à
+     faire défiler. Deux colonnes gardent la comparaison visible d'un coup d'œil. */
   .admin-grille {
     display: grid;
     gap: calc(var(--spacing) * 3);
-    grid-template-columns: repeat(auto-fill, minmax(13rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(13rem, 100%), 1fr));
+  }
+
+  @media (max-width: 47.999rem) {
+    .admin-grille {
+      gap: calc(var(--spacing) * 2);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .admin-grille--large {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
 
   .admin-grille--large {
@@ -4630,6 +4692,14 @@
     box-shadow: var(--shadow-xs);
   }
 
+  /* Deux colonnes sur téléphone : la marge se réduit, faute de place pour la garder. */
+  @media (max-width: 47.999rem) {
+    .admin-carte {
+      padding: calc(var(--spacing) * 1.75);
+      gap: calc(var(--spacing) * 0.5);
+    }
+  }
+
   /* Une carte-chiffre qui mène à son écran : elle se comporte comme un bouton, et le
      disclose « aller » n'apparaît qu'au survol, pour ne pas doubler le titre. */
   .admin-carte--lien {
@@ -4671,9 +4741,23 @@
 
   .admin-actions-rapides {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
     gap: var(--spacing);
     margin-top: calc(var(--spacing) * 1.5);
+  }
+
+  @media (max-width: 47.999rem) {
+    .admin-actions-rapides {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: calc(var(--spacing) * 0.75);
+    }
+
+    .admin-action-rapide {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: calc(var(--spacing) * 0.75);
+      padding: calc(var(--spacing) * 1.25);
+    }
   }
 
   .admin-action-rapide {
@@ -5136,22 +5220,98 @@
       width: 100%;
     }
 
+    /* Un tableau qui défile horizontalement sur un téléphone est illisible : on le voit
+       glisser, mais jamais la colonne de droite sans faire défiler de la main.
+       La ligne devient donc une carte, chaque cellule une ligne étiquetée.
+
+       L'étiquette vient de `data-label`, posé sur chaque cellule : sans elle, la carte
+      alignerait des valeurs sans dire ce qu'elles signifient — un état et une date
+       côte à côte, sans titre. Le navigateur ne sait pas lire le contenu d'une cellule
+       voisine pour nommer la suivante ; il faut l'écrire. */
     .admin-tableau--defilant {
       display: block;
-      overflow-x: auto;
+      border: none;
+      border-radius: 0;
+      background: none;
+    }
+
+    .admin-tableau--defilant thead {
+      /* Les en-têtes ne sont plus des colonnes : chaque carte porte ses propres
+         étiquettes. Les laisser afficher donnerait une bande de mots orphelins. */
+      display: none;
+    }
+
+    .admin-tableau--defilant tbody {
+      display: grid;
+      gap: var(--spacing);
+    }
+
+    .admin-tableau--defilant tbody tr {
+      display: grid;
+      grid-template-columns: minmax(6rem, 38%) minmax(0, 1fr);
+      align-items: baseline;
+      gap: calc(var(--spacing) * 0.5) var(--spacing);
+      padding: calc(var(--spacing) * 1.5);
+      background: var(--site-surface);
+      border: 1px solid var(--site-border);
+      border-radius: var(--radius-md);
+    }
+
+    .admin-tableau--defilant tbody tr + tr td {
+      border-top: none;
+    }
+
+    .admin-tableau--defilant tbody tr:hover td {
+      background: none;
     }
 
     .admin-tableau--defilant td,
     .admin-tableau--defilant th {
-      /* Le texte se replie dans sa colonne ; seule la ligne d'actions reste d'un tenant,
-         sinon chaque bouton de la ligne se retrouverait sur sa propre ligne. */
+      display: grid;
+      grid-template-columns: subgrid;
+      grid-column: 1 / -1;
+      padding: 0;
       white-space: normal;
       overflow-wrap: anywhere;
     }
 
+    .admin-tableau--defilant td::before {
+      content: attr(data-label);
+      color: var(--site-fg-muted);
+      font-size: var(--text-caption);
+      font-weight: 600;
+    }
+
+    /* La première cellule porte le titre de l'enregistrement : elle occupe toute la
+       largeur et sert de titre de carte, sans étiquette. */
+    .admin-tableau--defilant td:first-child {
+      grid-column: 1 / -1;
+      margin-bottom: calc(var(--spacing) * 0.5);
+      font-size: var(--text-base);
+      font-weight: 700;
+    }
+
+    .admin-tableau--defilant td:first-child::before {
+      content: none;
+    }
+
+    /* Les actions et la dernière ligne traversent la carte : elles portent leur
+       contenu, pas une étiquette suivie de boutons sur deux colonnes. */
+    .admin-tableau--defilant td.admin-tableau__actions,
     .admin-tableau--defilant .admin-tableau__actions {
-      white-space: nowrap;
-      flex-wrap: nowrap;
+      grid-column: 1 / -1;
+      display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: calc(var(--spacing) * 0.5);
+      margin-top: calc(var(--spacing) * 0.5);
+      padding-top: calc(var(--spacing) * 1);
+      border-top: 1px solid var(--site-border);
+    }
+
+    .admin-tableau--defilant td.admin-tableau__actions::before,
+    .admin-tableau--defilant .admin-tableau__actions::before {
+      content: none;
     }
 
     .admin-tiroir,

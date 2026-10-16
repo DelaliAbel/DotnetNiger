@@ -142,56 +142,59 @@ else
                             </button>
                         }
                     </div>
+
+                    @* Le formulaire s'ouvre sous le message auquel il répond, pas dans un
+                       tiroir ni en bas de page : c'est le seul endroit où l'on peut relire
+                       lexchange pendant qu'on écrit. Un tiroir ferait perdre le fil. *@
+                    @if (_reponse?.Id == ligne.Id)
+                    {
+                        <div class="admin-reponse" role="region" aria-labelledby="titre-reponse">
+                            <div class="admin-reponse__entete">
+                                <label class="admin-formulaire__intitule" for="reponse-@ligne.Id">
+                                    Répondre à @ligne.Courriel
+                                </label>
+                                <button type="button" class="admin-reponse__fermer" aria-label="Fermer la réponse"
+                                        @onclick="FermerReponse">
+                                    <DnIcon Name="chevron-right" Size="16" />
+                                </button>
+                            </div>
+
+                            <p class="admin-formulaire__aide">
+                                Objet : <strong>@ObjetDe(ligne)</strong>
+                            </p>
+
+                            @if (_erreurReponse is not null)
+                            {
+                                <div class="alerte alerte--rouge" role="alert">
+                                    <span class="alerte__icone"><DnIcon Name="alert" Size="16" /></span>
+                                    <span>@_erreurReponse</span>
+                                </div>
+                            }
+
+                            <textarea class="input" id="reponse-@ligne.Id" rows="8" maxlength="8000"
+                                      placeholder="Bonjour…"
+                                      @bind="_texteReponse" @bind:event="oninput"></textarea>
+
+                            <p class="admin-formulaire__aide">
+                                La réponse part par courriel, puis le message est marqué comme traité.
+                                Aucune mise en forme n'est nécessaire dans un message.
+                            </p>
+
+                            <div class="admin-reponse__actions">
+                                <button type="button" class="btn btn--ghost btn--sm" @onclick="FermerReponse">
+                                    Annuler
+                                </button>
+                                <button type="button" class="btn btn--primary btn--sm"
+                                        disabled="@_envoiReponse" @onclick="EnvoyerReponse">
+                                    @(_envoiReponse ? "Envoi…" : "Envoyer la réponse")
+                                </button>
+                            </div>
+                        </div>
+                    }
                 </article>
             }
         </div>
     }
-}
-
-@if (_reponse is not null)
-{
-    <div class="admin-tiroir admin-tiroir--etroit" role="dialog" aria-modal="true"
-         aria-labelledby="titre-reponse">
-        <div class="admin-tiroir__entete">
-            <h2 class="admin-tiroir__titre" id="titre-reponse">Répondre à @_reponse.Nom</h2>
-            <button type="button" class="admin-tiroir__fermer" aria-label="Fermer"
-                    @onclick="FermerReponse">
-                <DnIcon Name="chevron-right" Size="18" />
-            </button>
-        </div>
-
-        <div class="admin-formulaire__aide">
-            Objet : <strong>@ObjetDe(_reponse)</strong>
-        </div>
-
-        @if (_erreurReponse is not null)
-        {
-            <div class="alerte alerte--rouge" role="alert">
-                <span class="alerte__icone"><DnIcon Name="alert" Size="16" /></span>
-                <span>@_erreurReponse</span>
-            </div>
-        }
-
-        <div class="admin-formulaire__champ">
-            <label class="admin-formulaire__intitule" for="reponse-message">Votre réponse</label>
-            <textarea class="input" id="reponse-message" rows="10" maxlength="8000"
-                      placeholder="Bonjour…"
-                      @bind="_texteReponse" @bind:event="oninput"></textarea>
-
-            <p class="admin-formulaire__aide">
-                La réponse part par courriel à @_reponse.Courriel, puis le message est marqué
-                comme traité. Aucune mise en forme n'est nécessaire dans un message.
-            </p>
-        </div>
-
-        <div class="admin-formulaire__actions">
-            <button type="button" class="btn btn--ghost" @onclick="FermerReponse">Annuler</button>
-            <button type="button" class="btn btn--primary" disabled="@_envoiReponse"
-                    @onclick="EnvoyerReponse">
-                @(_envoiReponse ? "Envoi…" : "Envoyer la réponse")
-            </button>
-        </div>
-    </div>
 }
 
 <div class="admin-toasts" role="status" aria-live="polite">
