@@ -28,14 +28,15 @@
 
             <div class="field">
                 <label class="field__label" for="Password">Nouveau mot de passe</label>
-                <input class="input" id="Password" type="password" name="Password" required maxlength="128"
-                       autocomplete="new-password" autofocus />
+                <DnChampMotDePasse Id="Password" Name="Password" Required="true" AutoComplete="new-password" />
             </div>
 
             <div class="field">
                 <label class="field__label" for="ConfirmPassword">Confirmation du mot de passe</label>
-                <input class="input" id="ConfirmPassword" type="password" name="ConfirmPassword" required
-                       maxlength="128" autocomplete="new-password" />
+                <DnChampMotDePasse Id="ConfirmPassword"
+                                    Name="ConfirmPassword"
+                                    Required="true"
+                                    AutoComplete="new-password" />
             </div>
 
             <button type="submit" class="btn btn--primary w-full">Enregistrer le mot de passe</button>

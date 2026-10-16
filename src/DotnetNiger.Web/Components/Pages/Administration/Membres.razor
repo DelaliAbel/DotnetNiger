@@ -244,8 +244,11 @@ else
                             Mot de passe initial
                             <span class="admin-formulaire__obligatoire">obligatoire</span>
                         </label>
-                        <input id="membre-motdepasse" class="input" type="password" maxlength="128"
-                               @bind="_formeMotDePasse" @bind:event="oninput" />
+                        <DnChampMotDePasse Id="membre-motdepasse"
+                                        Name="MotDePasse"
+                                        MinimumLength="MinimumLength"
+                                        Required="true"
+                                        AutoComplete="new-password" />
 
                         <p class="admin-formulaire__aide">
                             Communiquez-le au membre : il pourra le changer depuis son espace.
@@ -391,6 +394,15 @@ else
     private bool _formeEquipe;
 
     private string _formeFonction = string.Empty;
+
+    /// <summary>
+    /// Longueur minimale du mot de passe, alignée sur celle que le serveur applique.
+    /// </summary>
+    /// <remarks>
+    /// Annoncée ici pour que le navigateur refuse un mot de passe trop court avant
+    /// l'envoi, plutôt que de renvoyer un message d'erreur après coup.
+    /// </remarks>
+    private const int MinimumLength = 12;
 
     private bool _formeConfirme;
 

@@ -2413,6 +2413,48 @@
     display: grid;
   }
 
+  /* --- Champ de mot de passe avec œil ---
+   Le bouton se pose sur le champ sans le décaler : `padding-right` sur l'input lui cède la
+   place, comme ça un mot de passe long ne passe pas sous l'icône. */
+  .champ-mdp {
+    position: relative;
+    display: grid;
+  }
+
+  .champ-mdp__champ {
+    padding-right: calc(var(--spacing) * 10);
+  }
+
+  .champ-mdp__oeil {
+    position: absolute;
+    top: 50%;
+    right: calc(var(--spacing) * 1);
+    translate: 0 -50%;
+    display: grid;
+    place-items: center;
+    width: calc(var(--spacing) * 7);
+    height: calc(var(--spacing) * 7);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--site-fg-muted);
+    cursor: pointer;
+    transition: color 0.15s;
+  }
+
+  .champ-mdp__oeil:hover {
+    color: var(--color-violet-600);
+  }
+
+  /* Mot de passe masqué : on propose de le montrer, donc l'œil ouvert.
+     Mot de passe montré : on propose de le cacher, donc l'œil barré.
+     L'inverse donnerait un œil barré à côté d'un champ déjà invisible — une contradiction
+     que le lecteur ne pourrait lever qu'en essayant. */
+  .champ-mdp__oeil[aria-pressed="false"] .champ-mdp__icone--barre,
+  .champ-mdp__oeil[aria-pressed="true"] .champ-mdp__icone--ouvert {
+    display: none;
+  }
+
   .compte__separateur {
     align-items: center;
     gap: calc(var(--spacing) * 1.5);

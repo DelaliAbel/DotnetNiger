@@ -13,7 +13,7 @@ internal static partial class ApiProjections
     /// <param name="auteur">Nom de l'auteur, résolu hors requête.</param>
     /// <returns>Résumé sérialisable.</returns>
     public static ArticleSummaryResponse ToSummary(Article article, string auteur) =>
-        new(article.Id, article.Slug, article.Title, article.Excerpt, article.RubriqueId, article.Rubrique.Nom, auteur, article.PublishedAtUtc);
+        new(article.Id, article.Slug, article.Title, article.Excerpt, article.RubriqueId, article.Rubrique.Nom, auteur, article.PublishedAtUtc, article.CoverImageUrl);
 
     /// <summary>
     /// Projette un article en résumé d'administration, état de publication compris.
@@ -67,7 +67,8 @@ internal static partial class ApiProjections
             article.RubriqueId,
             article.Rubrique,
             article.Auteur,
-            article.PublieLeUtc);
+            article.PublieLeUtc,
+            article.ImageUrl);
 
     /// <summary>
     /// Projette un article lu en base en réponse complète.

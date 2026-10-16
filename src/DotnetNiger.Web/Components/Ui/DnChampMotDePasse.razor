@@ -1,0 +1,87 @@
+@namespace DotnetNiger.Web.Components.Ui
+
+@*
+    Champ de mot de passe avec un bouton qui le rend lisible.
+
+    Un mot de passe recopié depuis un gestionnaire se trompe souvent d'un caractère. Sans
+    moyen de le vérifier, le membre échoue, attend le message « mot de passe incorrect »,
+    puis recommence — sans jamais comprendre que le mot de passe était juste.
+
+    Le bouton est un <button> et non un simple décor : il annonce son état à l'écran par
+    `aria-pressed`, et le champ garde son nom, son identifiant et ses règles. Un formulaire
+    qui perdrait le `name` à l'affichage du mot de passe enverrait une valeur vide au
+    serveur — exactement le bug qu'on cherche à éviter.
+*@
+
+<div class="champ-mdp">
+    <input class="input champ-mdp__champ @CssChamp"
+           id="@Id"
+           name="@Name"
+           type="@(Visible ? "text" : "password")"
+           value="@Value"
+           maxlength="@MaximumLength"
+           autocomplete="@AutoComplete"
+           required="@Required"
+           minlength="@MinimumLength"
+           @attributes="AttributsSupplementaires" />
+
+    <button class="champ-mdp__oeil" type="button"
+            aria-pressed="@(Visible ? "true" : "false")"
+            aria-label="@(Visible ? "Masquer le mot de passe" : "Afficher le mot de passe")"
+            title="@(Visible ? "Masquer" : "Afficher")"
+            onclick="DnMotDePasse.bascule(this); return false;">
+        @* Les deux icônes sont rendues ; c'est l'attribut `aria-pressed` que la feuille de
+           style interroge pour savoir laquelle montrer. *@
+        <span class="champ-mdp__icone champ-mdp__icone--barre">
+            <DnIcon Name="eye-off" Size="16" />
+        </span>
+        <span class="champ-mdp__icone champ-mdp__icone--ouvert">
+            <DnIcon Name="eye" Size="16" />
+        </span>
+    </button>
+</div>
+
+@code {
+    /// <summary>Identifiant du champ, relié au <c>label</c>.</summary>
+    [Parameter] public string Id { get; set; } = string.Empty;
+
+    /// <summary>Nom transmis au serveur.</summary>
+    [Parameter, EditorRequired] public required string Name { get; set; }
+
+    /// <summary>Valeur initiale, pour réafficher une saisie précédente après une erreur.</summary>
+    [Parameter] public string? Value { get; set; }
+
+    /// <summary>
+    /// Longueur minimale déclarée au navigateur, ou <see langword="null"/> pour ne rien imposer.
+    /// </summary>
+    /// <remarks>
+    /// Elle doit venir de la même source que le texte qui annonce la règle. Un minimum
+    /// annoncé à 12 et non appliqué laisse le membre remplir un mot de passe de 8 caractères,
+    /// se faire refuser par le serveur, et découvrir la règle trop tard.
+    /// </remarks>
+    [Parameter] public int? MinimumLength { get; set; }
+
+    /// <summary>Le champ est-il requis ?</summary>
+    [Parameter] public bool Required { get; set; }
+
+    /// <summary>Longueur maximale acceptée.</summary>
+    [Parameter] public int MaximumLength { get; set; } = 128;
+
+    /// <summary>Valeur du <c>autocomplete</c> : <c>new-password</c> ou <c>current-password</c>.</summary>
+    [Parameter] public string AutoComplete { get; set; } = "current-password";
+
+    /// <summary>Message d'erreur, affiché sous le champ.</summary>
+    [Parameter] public string? Erreur { get; set; }
+
+    /// <summary>Vrai tant que le mot de passe reste masqué.</summary>
+    private bool Visible { get; set; }
+
+    /// <summary>Classes additionnelles du champ, pour un état particulier.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    private string CssChamp => string.IsNullOrWhiteSpace(Class) ? string.Empty : Class!;
+
+    /// <summary>Attributs restants, transmis tels quels au <c>input</c>.</summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public IReadOnlyDictionary<string, object>? AttributsSupplementaires { get; set; }
+}

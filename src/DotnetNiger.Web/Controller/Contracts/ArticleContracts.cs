@@ -12,6 +12,14 @@ namespace DotnetNiger.Web.Controller.Contracts;
 /// <param name="Category">Libellé de la rubrique.</param>
 /// <param name="Author">Nom de l'auteur.</param>
 /// <param name="PublishedAtUtc">Date de publication.</param>
+/// <param name="CoverImageUrl">
+/// Image de couverture, absente d'un article sans illustration.
+/// </param>
+/// <remarks>
+/// Le résumé et l'article complet ne peuvent pas diverger sur ce point : l'un alimente les
+/// cartes de la liste du blog, l'autre la page de partage. Une couverture visible sur la
+/// fiche mais absente de la carte — ou l'inverse — ferait croire à un article sans image.
+/// </remarks>
 public sealed record ArticleSummaryResponse(
     Guid Id,
     string Slug,
@@ -20,7 +28,8 @@ public sealed record ArticleSummaryResponse(
     Guid CategoryId,
     string Category,
     string Author,
-    DateTime? PublishedAtUtc);
+    DateTime? PublishedAtUtc,
+    string? CoverImageUrl = null);
 
 /// <summary>Article complet.</summary>
 /// <param name="Id">Identifiant.</param>

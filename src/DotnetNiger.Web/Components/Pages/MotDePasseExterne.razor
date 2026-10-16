@@ -40,16 +40,21 @@
                 <label class="field__label" for="Password">
                     @(IsProof ? "Votre mot de passe actuel" : "Mot de passe")
                 </label>
-                <input class="input" id="Password" type="password" name="Password" required maxlength="256"
-                       autocomplete="@(IsProof ? "current-password" : "new-password")" />
+                <DnChampMotDePasse Id="Password"
+                                    Name="Password"
+                                    Required="true"
+                                    MaximumLength="256"
+                                    AutoComplete="@(IsProof ? "current-password" : "new-password")" />
             </div>
 
             @if (!IsProof)
             {
                 <div class="field">
                     <label class="field__label" for="ConfirmPassword">Confirmation du mot de passe</label>
-                    <input class="input" id="ConfirmPassword" type="password" name="ConfirmPassword" required maxlength="128"
-                           autocomplete="new-password" />
+                    <DnChampMotDePasse Id="ConfirmPassword"
+                                    Name="ConfirmPassword"
+                                    Required="true"
+                                    AutoComplete="new-password" />
                 </div>
             }
 
