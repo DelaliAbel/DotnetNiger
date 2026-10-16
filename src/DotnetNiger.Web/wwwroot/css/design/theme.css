@@ -2499,6 +2499,21 @@
     gap: calc(var(--spacing) * 0.75);
   }
 
+  /* Deux champs côte à côte dans une même ligne de formulaire : prénom et nom, jour et
+     heure. Ils s'empilent sur téléphone, où la moitié d'un écran ne tient aucun nom. */
+  .admin-formulaire__champ--paire {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--spacing);
+  }
+
+  @media (max-width: 47.999rem) {
+    .admin-formulaire__champ--paire {
+      grid-template-columns: minmax(0, 1fr);
+      gap: calc(var(--spacing) * 1.5);
+    }
+  }
+
   .compte__separateur {
     align-items: center;
     gap: calc(var(--spacing) * 1.5);

@@ -212,18 +212,30 @@ else
             <div class="admin-formulaire">
                 @if (_edition is null)
                 {
-                    <div class="admin-formulaire__champ">
-                        <label class="admin-formulaire__intitule" for="membre-nom">
-                            Nom complet
-                            <span class="admin-formulaire__obligatoire">obligatoire</span>
-                        </label>
-                        <input id="membre-nom" class="input" type="text" maxlength="200"
-                               placeholder="Awa Traoré" @bind="_formeNom" @bind:event="oninput" />
+                    <div class="admin-formulaire__champ admin-formulaire__champ--paire">
+                        <div>
+                            <label class="admin-formulaire__intitule" for="membre-prenom">
+                                Prénom
+                                <span class="admin-formulaire__obligatoire">obligatoire</span>
+                            </label>
+                            <input id="membre-prenom" class="input" type="text" maxlength="80"
+                                   placeholder="Awa" @bind="_formePrenom" @bind:event="oninput" />
+                        </div>
 
-                        <p class="admin-formulaire__aide">
-                            Le premier mot devient le prénom, le reste le nom.
-                        </p>
+                        <div>
+                            <label class="admin-formulaire__intitule" for="membre-nom">
+                                Nom
+                                <span class="admin-formulaire__obligatoire">obligatoire</span>
+                            </label>
+                            <input id="membre-nom" class="input" type="text" maxlength="80"
+                                   placeholder="Traoré" @bind="_formeNom" @bind:event="oninput" />
+                        </div>
                     </div>
+
+                    <p class="admin-formulaire__aide">
+                        Les deux sont obligatoires : le serveur refuse un compte sans l'un
+                        des deux, et il les inscrit sur toutes ses contributions.
+                    </p>
 
                     <div class="admin-formulaire__champ">
                         <label class="admin-formulaire__intitule" for="membre-courriel">
@@ -384,6 +396,8 @@ else
 
     private LigneMembreAdmin? _edition;
 
+    private string _formePrenom = string.Empty;
+
     private string _formeNom = string.Empty;
 
     private string _formeCourriel = string.Empty;
@@ -448,6 +462,7 @@ else
     private void OuvrirCreation()
     {
         _edition = null;
+        _formePrenom = string.Empty;
         _formeNom = string.Empty;
         _formeCourriel = string.Empty;
         _formeMotDePasse = string.Empty;
@@ -462,7 +477,8 @@ else
     private void OuvrirEdition(LigneMembreAdmin ligne)
     {
         _edition = ligne;
-        _formeNom = ligne.NomComplet;
+        _formePrenom = ligne.Prenom;
+        _formeNom = ligne.Nom;
         _formeCourriel = ligne.Courriel ?? string.Empty;
         _formeRole = ligne.Roles.FirstOrDefault() ?? RoleNames.Member;
         _formeEquipe = ligne.EstEquipe;
@@ -482,7 +498,13 @@ else
     {
         _erreur = null;
 
-        if (_edition is null && string.IsNullOrWhiteSpace(_formeNom))
+        if (_edition is null && string.IsNullOrWhiteSpace(_formePrenom))
+        {
+            _erreur = "Donnez un prénom au compte : il est affiché sur toutes ses contributions.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_formeNom))
         {
             _erreur = "Donnez un nom au compte : il est affiché sur toutes ses contributions.";
             return;
@@ -527,18 +549,16 @@ else
         }
     }
 
-    /// <summary>Crée un compte, le nom saisi étant réparti entre prénom et nom.</summary>
+    /// <summary>Crée un compte à partir des champs saisis.</summary>
     /// <returns>Le message d'erreur du serveur, ou <see langword="null"/> si tout s'est bien passé.</returns>
     private async Task<string?> CreerAsync()
     {
-        var (prenom, nom) = Partager(_formeNom);
-
         var reponse = await Ecrire("POST", "/api/admin/accounts", new
         {
             email = _formeCourriel.Trim(),
             password = _formeMotDePasse,
-            firstName = prenom,
-            lastName = nom,
+            firstName = _formePrenom.Trim(),
+            lastName = _formeNom.Trim(),
             isTeam = _formeEquipe,
             confirmEmail = _formeConfirme,
             roles = new[] { _formeRole },
@@ -558,17 +578,15 @@ else
     /// </remarks>
     private async Task<string?> MettreAJourAsync(LigneMembreAdmin ligne)
     {
-        var (prenomEdite, nomEdite) = Partager(_formeNom);
-
         var reponse = await Ecrire("PUT", $"/api/admin/accounts/{ligne.Id}", new
         {
             isActive = ligne.EstActif,
             isTeam = _formeEquipe,
-            // Le nom est renvoyé en entier : l'API traite un champ présent comme un
-            // remplacement, et le modèle refuse un prénom ou un nom vide. Une partie vide
-            // part donc à null, ce qui la laisse en place.
-            firstName = string.IsNullOrEmpty(prenomEdite) ? null : prenomEdite,
-            lastName = string.IsNullOrEmpty(nomEdite) ? null : nomEdite,
+            // Les deux parties sont renvoyées : l'API traite un champ présent comme un
+            // remplacement. Une partie vide part à null, ce qui la laisse en place — sinon
+            // corriger une faute de frappe dans le nom effacerait le prénom.
+            firstName = string.IsNullOrWhiteSpace(_formePrenom) ? null : _formePrenom.Trim(),
+            lastName = string.IsNullOrWhiteSpace(_formeNom) ? null : _formeNom.Trim(),
             profession = _formeFonction,
         });
 
@@ -585,21 +603,6 @@ else
         return changement.Ok
             ? null
             : $"Changement de rôle refusé ({changement.Statut}) : {Raison(changement)}";
-    }
-
-    /// <summary>Répartit un nom affiché entre prénom et nom.</summary>
-    /// <param name="nomComplet">Nom tel que saisi.</param>
-    /// <returns>Le prénom et le nom.</returns>
-    private static (string Prenom, string Nom) Partager(string nomComplet)
-    {
-        var morceaux = nomComplet.Trim().Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
-
-        return morceaux.Length switch
-        {
-            0 => (string.Empty, string.Empty),
-            1 => (string.Empty, morceaux[0]),
-            _ => (morceaux[0], morceaux[1]),
-        };
     }
 
     private async Task Activer(LigneMembreAdmin ligne, bool actif)
