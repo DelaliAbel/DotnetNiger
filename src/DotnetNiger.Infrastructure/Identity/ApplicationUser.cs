@@ -167,6 +167,39 @@ public sealed class ApplicationUser : IdentityUser<Guid>, IEntity, ITimestamped
     }
 
     /// <summary>
+    /// Met à jour les seuls champs du profil qui n'exigent pas de nom.
+    /// </summary>
+    /// <param name="profession">Fonction affichée sur la page « À propos ».</param>
+    /// <param name="photoUrl">Adresse de la photo.</param>
+    /// <param name="gitHubUsername">Identifiant GitHub.</param>
+    /// <param name="linkedInUrl">Adresse du profil LinkedIn.</param>
+    /// <param name="xUrl">Adresse du compte X.</param>
+    /// <remarks>
+    /// Une méthode distincte de <see cref="UpdateProfile"/>, parce que celle-ci exige le
+    /// prénom et le nom. Or un compte peut n'avoir ni l'un ni l'autre : il est alors venu
+    /// d'une connexion par fournisseur externe, ou créé avant que ces champs n'existent.
+    /// <para>
+    /// Passer par <see cref="UpdateProfile"/> dans ce cas échouerait sur un nom vide, et
+    /// l'administration verrait sa fonction — et la photo, et les liens — silencieusement
+    /// abandonnés, alors que la case « membre de l'équipe » resterait, elle, enregistrée.
+    /// La carte apparaîtrait vide : exactement le symptôme que cette méthode évite.
+    /// </para>
+    /// </remarks>
+    public void UpdateProfileFields(
+        string? profession,
+        string? photoUrl,
+        string? gitHubUsername,
+        string? linkedInUrl,
+        string? xUrl)
+    {
+        Profession = DomainGuard.OptionalAgainstTooLong(profession, FieldLimits.Label, nameof(profession));
+        PhotoUrl = DomainGuard.OptionalAgainstImageSource(photoUrl, nameof(photoUrl));
+        GitHubUsername = NormalizeHandle(gitHubUsername, nameof(gitHubUsername));
+        LinkedInUrl = DomainGuard.OptionalAgainstHttpUrl(linkedInUrl, nameof(linkedInUrl));
+        XUrl = DomainGuard.OptionalAgainstHttpUrl(xUrl, nameof(xUrl));
+    }
+
+    /// <summary>
     /// Définit l'appartenance à l'équipe organisatrice.
     /// </summary>
     /// <param name="isTeam"><see langword="true"/> pour afficher le membre dans l'équipe.</param>

@@ -121,15 +121,19 @@ internal static class EmailLayout
         // écrit juste à côté, et sert de repli lisible lorsque l'image ne s'affiche pas.
         // Les deux tiennent sur une même ligne : centré, le logo sauterait à la ligne sur un
         // client étroit et laisserait le nom seul en dessous.
+        //
+        // L'image a une hauteur fixe et une largeur libre : le logo déposé par
+        // l'administration est souvent horizontal, et un cadre carré l'écraserait. La largeur
+        // déclarée reste raisonnable pour un logo carré, que le client qui ignore la feuille
+        // de style rendra à sa taille.
+        //
+        // Aucun commentaire ne doit être écrit DANS cette chaîne : dans une chaîne brute,
+        // « @* » n'est pas un commentaire mais deux caractères, qui partiraient tels quels
+        // dans le courriel du membre.
         html.Append(CultureInfo.InvariantCulture, $$"""
                             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                               <tr>
                                 <td width="64" valign="middle" style="width:64px;">
-                                  @* Hauteur fixe, largeur libre : le logo déposé par
-                                     l'administration est souvent horizontal, et un cadre
-                                     carré l'écraserait. La largeur déclarée reste
-                                     raisonnable pour un logo carré, que le client qui
-                                     ignore la feuille de style rendra à sa taille. *@
                                   <img src="{{EmailEncoding.Html.Encode(branding.LogoUrl)}}"
                                        alt="{{EmailEncoding.Html.Encode(EmailBranding.SiteName)}}"
                                        width="48" height="48"

@@ -128,11 +128,32 @@ public sealed partial class AdminAccountsController
         // d'état — désactiver un compte qui se fait voler — effacerait le nom, la fonction
         // et la photo que l'administration avait saisis. Chaque champ fourni remplace
         // l'ancien ; un champ omis le conserve ; une chaîne vide l'efface.
-        if (request.FirstName is not null || request.LastName is not null)
+        //
+        // Le nom et les autres champs sont traités séparément. Les subordonner l'un à
+        // l'autre faisait perdre la fonction, la photo et les liens de tout compte sans
+        // nom — donc de la plupart des comptes venus d'une connexion externe.
+        var prenom = string.IsNullOrWhiteSpace(request.FirstName) ? compte.FirstName : request.FirstName.Trim();
+        var nom = string.IsNullOrWhiteSpace(request.LastName) ? compte.LastName : request.LastName.Trim();
+
+        if (!string.IsNullOrWhiteSpace(prenom) && !string.IsNullOrWhiteSpace(nom))
         {
             compte.UpdateProfile(
-               (request.FirstName ?? compte.FirstName).Trim(),
-                (request.LastName ?? compte.LastName).Trim(),
+                prenom,
+                nom,
+                bio: compte.Bio,
+                city: compte.City,
+                photoUrl: request.PhotoUrl ?? compte.PhotoUrl,
+                gitHubUsername: request.GitHubUsername ?? compte.GitHubUsername,
+                linkedInUrl: request.LinkedInUrl ?? compte.LinkedInUrl,
+                xUrl: request.XUrl ?? compte.XUrl,
+                technologies: compte.Technologies,
+                profession: request.Profession ?? compte.Profession);
+        }
+        else
+        {
+            // Compte sans nom : impossible de faire passer par UpdateProfile, qui l'exige.
+            // Les autres champs sont malgré tout mis à jour.
+            compte.UpdateProfileFields(
                 request.Profession ?? compte.Profession,
                 request.PhotoUrl ?? compte.PhotoUrl,
                 request.GitHubUsername ?? compte.GitHubUsername,
