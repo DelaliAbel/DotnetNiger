@@ -97,9 +97,11 @@ else
                     }
 
                     <div class="article__corps fiche__corps">
-                        <p class="text-lead">@_Article.Extrait</p>
                         @* Le corps est stocké en HTML, assaini à l'écriture par le domaine :
-                           l'échapper afficherait les balises au lecteur. *@
+                           l'échapper afficherait les balises au lecteur. Le chapô, lui, ne
+                           s'affiche pas ici : il sert aux cartes, au référencement et à
+                           l'aperçu de partage. Le montrer en tête de page ferait relire le
+                           début de l'article deux fois. *@
                         @((MarkupString)ContenuHtml.Nettoyer(_Article.Contenu))
                     </div>
 

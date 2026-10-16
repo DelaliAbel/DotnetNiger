@@ -87,9 +87,8 @@ else
                     }
 
                     <div class="article__corps fiche__corps">
-                        @* Le chapô, et non la description : celle-ci est du HTML, et la
-                           printer ici afficherait ses balises au lecteur. *@
-                        <p class="text-lead">@_Evenement.Resume</p>
+                        @* Le résumé ne s'affiche pas ici : il sert aux cartes, au référencement
+                           et à l'aperçu de partage. Le corps commence la rencontre. *@
                         @* Le corps de la rencontre est stocké en HTML, assaini à l'écriture
                            par le domaine : l'échapper afficherait les balises au lecteur. *@
                         @((MarkupString)ContenuHtml.Nettoyer(_Evenement.Contenu))

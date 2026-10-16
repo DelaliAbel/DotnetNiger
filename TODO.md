@@ -2,11 +2,11 @@
 
 ## Défaut bloquant
 
-- [ ] **1. Attribuer le rôle administrateur échoue en 405.** Le tiroir Membres appelle
-      `PUT /api/admin/accounts/{id}/roles`. Sans cela, personne ne devenir
-      administrateur. *L'API répond 200 en appel direct ; l'erreur ne se reproduit pas.
-      Le message affiché nomme désormais l'opération et le code pour diagnostiquer au
-      prochain essai.*
+- [x] **1. Attribuer le rôle administrateur échoue en 405.** *Cause trouvée.* Le middleware
+      `UseStatusCodePagesWithReExecute` rejouait toute requête en échec vers `/not-found` **en
+      conservant la méthode** : un `PUT` refusé à 403 revenait donc en `PUT /not-found`, auquel
+      Blazor répond 405. L'erreur réelle disparaissait derrière « méthode non autorisée ».
+      La ré-exécution est désormais écartée de l'API.
 
 ## Réglages du site
 
@@ -31,10 +31,6 @@
       erreur 400 à corps vide. Le trousseau est désormais écrit en base
       (`DataProtectionKeys`, migration `TrousseauDeDonnees`) et survit au redémarrage.
 
-## Connexion externe
-
-- [ ] **7. Tester la connexion par Google et par GitHub**, une fois les clés renseignées.
-
 ## Courriels
 
 - [x] **8. Modèles d'e-mail trop simples.** Bandeau logo + nom sur une ligne, filet violet
@@ -58,3 +54,47 @@
 
 - [x] **15. Signalement d'un commentaire depuis le site public.** Bouton « Signaler » replié,
       `POST /commentaires/signaler`, file de modération alimentée.
+
+## Ergonomie de l'administration
+
+- [x] **17. Le repli de la barre cassait l'administration et le site public.** Le nom de classe
+      `admin-replie` servait au bouton *et* à `<html>` : une règle d'affichage du bouton
+      s'appliquait au document entier. La classe d'état est devenue `admin-barre-replie`.
+- [x] **18. La barre latérale défilait avec la page.** Elle est fixe au défilement.
+- [x] **19. Suppression de compte sans déconnexion.** La redirection ne révoquait pas le
+      cookie : la personne restait « connectée » à un compte inexistant.
+- [x] **20. Signaler son propre commentaire.** Refusé par le domaine, et le bouton disparaît.
+- [x] **21. Déconnexion absente de la barre.** Ajoutée en bas, avec son icône.
+- [x] **22. Cartes KPI sans issue.** Chacune mène à son écran.
+- [x] **23. Pas d'action rapide.** Six cartes, tiroir de création ouvert d'office.
+- [x] **24. Bloc serveur dans Paramètres.** Retiré : il affichait en clair le relais SMTP et
+      l'adresse du compte expéditeur, sans rien permettre de changer.
+- [x] **25. Pas de numéro de téléphone.** Réglage ajouté, affiché en pied de page.
+
+## Contenu et présentation
+
+- [x] **26. Fiche d'équipe.** Une case à cocher et une fonction : la photo et les liens
+      viennent du profil du membre, que lui seul renseigne.
+- [x] **27. Couverture de blog qui déborde.** L'image est posée en absolu ; un
+      `height: 100 %` ne se résout pas quand la hauteur vient d'un `aspect-ratio`.
+- [x] **28. Chapô affiché sur la fiche.** Le chapô sert aux cartes, au référencement et au
+      partage ; le corps commence la fiche.
+- [x] **29. Pas d'aperçu à l'image sur les partages.** `og:image` était en adresse relative,
+      qu'aucun réseau social ne sait résoudre. Composant `DnSeo` : adresses absolues,
+      canonical par page, `twitter:card`.
+- [x] **30. Pas de plan du site.** `sitemap.xml` généré depuis la base, `robots.txt` qui
+      exclut l'administration, l'espace membre et l'API.
+- [x] **31. Favicon indépendant du logo.** Il suit désormais le logo des réglages.
+- [x] **32. Pas d'interface pour répondre aux messages.** Tiroir d rédaction, envoi par le
+      relais du site, message marqué traité après acceptation seulement.
+- [x] **33. Boutons de connexion externe sans logo et trop bas.** Logos Google et GitHub,
+      replacés au-dessus du formulaire.
+- [x] **34. Écritures PUT rejetées en 405.** *Cause trouvée* : la ré-exécution d'erreur
+      rejouait la requête vers `/not-found` en conservant la méthode, transformant tout 403
+      ou 400 d'API en 405. Écartée de l'API.
+
+## Connexion externe
+
+- [ ] **7. Tester la connexion par Google et par GitHub**, une fois les clés renseignées.
+      `ExternalProviders__Providers__{Google,GitHub}__ClientId` et `__ClientSecret`.
+      Les adresses de retour sont `/connexion/google/retour` et `/connexion/github/retour`.
