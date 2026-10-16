@@ -14,13 +14,14 @@
 @*
     Boîte de réception des messages du formulaire de contact.
 
-    Un message n'est pas envoyé depuis le site : il est écrit à l'attention de
-    l'administration, qui y répond avec son propre outil de courriel. Le bouton « Répondre »
-    ouvre donc le logiciel de messagerie du poste, pré-rempli avec l'adresse et l'objet —
-    plutôt que d'annoncer un envoi que le site ne ferait pas.
+    La réponse est rédigée ici et part par le relais du site : elle suit donc les mêmes
+    modèles que les autres envois, et le message est marqué traité à l'acceptation. Le
+    premier écran ouvrait le logiciel de messagerie du poste, ce qui laissait la moitié
+    du travail à l'administrateur — composer ailleurs, sans trace dans la boîte, et
+    sans que le site sache que la réponse est partie.
 
-    Un message est marqué comme traité après réponse : c'est le seul suivi que le site
-    connaît, et il en a besoin pour savoir ce qui attend encore une réponse.
+    L'éditeur riche est le même que celui des articles : il est chargé à la demande,
+    jamais au premier affichage de la page.
 *@
 
 <PageTitle>Messages — Administration</PageTitle>
@@ -102,10 +103,11 @@ else
                     }
 
                     <div class="admin-moderation__actions">
-                        <a class="btn btn--primary btn--sm" href="@Reponse(ligne)">
+                        <button type="button" class="btn btn--primary btn--sm"
+                                    @onclick="() => OuvrirReponse(ligne)">
                             <DnIcon Name="mail" Size="14" />
                             Répondre
-                        </a>
+                        </button>
 
                         @if (traite)
                         {
@@ -146,6 +148,52 @@ else
     }
 }
 
+@if (_reponse is not null)
+{
+    <div class="admin-tiroir admin-tiroir--etroit" role="dialog" aria-modal="true"
+         aria-labelledby="titre-reponse">
+        <div class="admin-tiroir__entete">
+            <h2 class="admin-tiroir__titre" id="titre-reponse">Répondre à @_reponse.Nom</h2>
+            <button type="button" class="admin-tiroir__fermer" aria-label="Fermer"
+                    @onclick="FermerReponse">
+                <DnIcon Name="chevron-right" Size="18" />
+            </button>
+        </div>
+
+        <div class="admin-formulaire__aide">
+            Objet : <strong>@ObjetDe(_reponse)</strong>
+        </div>
+
+        @if (_erreurReponse is not null)
+        {
+            <div class="alerte alerte--rouge" role="alert">
+                <span class="alerte__icone"><DnIcon Name="alert" Size="16" /></span>
+                <span>@_erreurReponse</span>
+            </div>
+        }
+
+        <div class="admin-formulaire__champ">
+            <label class="admin-formulaire__intitule" for="reponse-message">Votre réponse</label>
+            <textarea class="input" id="reponse-message" rows="10" maxlength="8000"
+                      placeholder="Bonjour…"
+                      @bind="_texteReponse" @bind:event="oninput"></textarea>
+
+            <p class="admin-formulaire__aide">
+                La réponse part par courriel à @_reponse.Courriel, puis le message est marqué
+                comme traité. Aucune mise en forme n'est nécessaire dans un message.
+            </p>
+        </div>
+
+        <div class="admin-formulaire__actions">
+            <button type="button" class="btn btn--ghost" @onclick="FermerReponse">Annuler</button>
+            <button type="button" class="btn btn--primary" disabled="@_envoiReponse"
+                    @onclick="EnvoyerReponse">
+                @(_envoiReponse ? "Envoi…" : "Envoyer la réponse")
+            </button>
+        </div>
+    </div>
+}
+
 <div class="admin-toasts" role="status" aria-live="polite">
     @foreach (var message in _messages)
     {
@@ -170,6 +218,15 @@ else
     private string _filtreEtat = string.Empty;
 
     private Guid? _aSupprimer;
+
+    /// <summary>Message auquel on rédige une réponse, ou <see langword="null"/> si le formulaire est fermé.</summary>
+    private LigneMessageAdmin? _reponse;
+
+    private string _texteReponse = string.Empty;
+
+    private string? _erreurReponse;
+
+    private bool _envoiReponse;
 
     private readonly List<Annonce> _messages = [];
 
@@ -296,24 +353,71 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
-    /// <summary>
-    /// Compose l'adresse d'un message de réponse, pré-rempli avec l'objet d'origine.
-    /// </summary>
-    /// <param name="ligne">Message auquel répondre.</param>
-    /// <returns>Une adresse <c>mailto:</c> complète.</returns>
+    /// <summary>Objet de la réponse, avec un seul préfixe « Re: ».</summary>
+    /// <param name="ligne">Message auquel on répond.</param>
+    /// <returns>L'objet qu prendra le courriel parti.</returns>
     /// <remarks>
-    /// L'objet et le corps sont encodés : un sujet contenant une esperluette ou un point-virgule
-    /// couperait l'adresse et ouvrirait une messagerie avec un message vide.
+    /// Le même calcul que le serveur. Il est refait ici pour l'aperçu affiché dans le
+    /// formulaire : si les deux divergeaient, l'administrateur verrait un objet différent
+    /// de celui que recevra le demandeur.
     /// </remarks>
-    private static string Reponse(LigneMessageAdmin ligne)
-    {
-        var objet = Uri.EscapeDataString(ligne.Sujet.StartsWith("Re:", StringComparison.OrdinalIgnoreCase)
+    private static string ObjetDe(LigneMessageAdmin ligne)
+        => ligne.Sujet.StartsWith("Re:", StringComparison.OrdinalIgnoreCase)
             ? ligne.Sujet
-            : $"Re: {ligne.Sujet}");
+            : $"Re: {ligne.Sujet}";
 
-        var corps = Uri.EscapeDataString($"\n\n—\nEnvoyé depuis l'administration de DotnetNiger");
+    /// <summary>Ouvre le formulaire de réponse à un message.</summary>
+    /// <param name="ligne">Message auquel répondre.</param>
+    private void OuvrirReponse(LigneMessageAdmin ligne)
+    {
+        _reponse = ligne;
+        _texteReponse = string.Empty;
+        _erreurReponse = null;
+    }
 
-        return $"mailto:{ligne.Courriel}?subject={objet}&body={corps}";
+    private void FermerReponse()
+    {
+        _reponse = null;
+        _texteReponse = string.Empty;
+        _erreurReponse = null;
+    }
+
+    /// <summary>Expédie la réponse et marque le message comme traité.</summary>
+    private async Task EnvoyerReponse()
+    {
+        if (_reponse is null || string.IsNullOrWhiteSpace(_texteReponse))
+        {
+            _erreurReponse = "Écrivez la réponse avant de l'envoyer.";
+            return;
+        }
+
+        _envoiReponse = true;
+        _erreurReponse = null;
+
+        try
+        {
+            var reponse = await Ecrire(
+                "POST",
+                $"/api/admin/contact/messages/{_reponse.Id}/reply",
+                new { body = _texteReponse });
+
+            if (!reponse.Ok)
+            {
+                _erreurReponse = $"Réponse refusée ({reponse.Statut}) : {Raison(reponse)}";
+                return;
+            }
+
+            FermerReponse();
+
+            Service.Oublie();
+            _donnees = await Service.LireAsync();
+
+            await Previent("Réponse envoyée.", true);
+        }
+        finally
+        {
+            _envoiReponse = false;
+        }
     }
 
     /// <summary>

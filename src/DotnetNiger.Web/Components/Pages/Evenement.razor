@@ -39,9 +39,10 @@ else
     <HeadContent>
         @* Le résumé sert de description : le corps est du HTML, illisible dans une balise
            meta comme dans un aperçu de partage. *@
-        <meta name="description" content="@_Evenement.Resume" />
-        <meta property="og:title" content="@_Evenement.Titre — DotnetNiger" />
-        <meta property="og:description" content="@_Evenement.Resume" />
+        <DnSeo Titre="@_Evenement.Titre"
+                Description="@_Evenement.Resume"
+                Image="@_Evenement.ImageUrl"
+                Type="article" />
     </HeadContent>
 
     <!-- 1. En-tête de l'événement -->

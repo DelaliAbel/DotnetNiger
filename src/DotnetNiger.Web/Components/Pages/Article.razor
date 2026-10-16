@@ -33,9 +33,11 @@ else
 {
     <PageTitle>@_Article.Titre — blog DotnetNiger</PageTitle>
     <HeadContent>
-        <meta name="description" content="@_Article.Extrait" />
-        <meta property="og:title" content="@_Article.Titre — DotnetNiger" />
-        <meta property="og:description" content="@_Article.Extrait" />
+        <DnSeo Titre="@_Article.Titre"
+                Description="@_Article.Extrait"
+                Image="@_Article.ImageUrl"
+                Type="article"
+                DatePublication="@_Article.DatePublication.ToDateTime(TimeOnly.MinValue)" />
     </HeadContent>
 
     <!-- 1. En-tête de l'article -->

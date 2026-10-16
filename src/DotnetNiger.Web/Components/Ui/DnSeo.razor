@@ -1,0 +1,116 @@
+@namespace DotnetNiger.Web.Components.Ui
+
+@inject Microsoft.Extensions.Options.IOptions<DotnetNiger.Infrastructure.Email.EmailOptions> OptionsCourriel
+
+@*
+    Balises de partage et de référencement d'une page.
+
+    Toutes les adresses produites sont absolues. C'est la règle que les réseaux sociaux
+    imposent : une adresse relative à la page n'a aucun sens pour un robot qui n'a jamais
+    chargé le site, et l'aperçu se retombe alors sur la première image trouvée — souvent
+    absente. De même, le canonical doit désigner l'adresse publique complète, faute de quoi
+    le moteur enregistre une adresse qu'il ne saura pas rejouer.
+
+    L'adresse publique vient de la configuration du serveur — la même valeur qui fabrique
+    les liens des courriels. Changer de domaine ne doit pas demander de réécrire chaque
+    page, et les deux ne peuvent pas diverger : un courriel vers un domaine et une balise
+    SEO vers un autre installeraient deux sites distincts aux yeux d'un moteur.
+*@
+
+@* Le titre du document reste produit par <PageTitle /> : c'est la manière idiomatique de
+   Blazor, et les pages le formulent plus finement qu'un assemblage automatique. Le produire
+   ici aussi donnerait deux balises <title>, dont le navigateur ne retiendrait que la
+   première — celle qui se rencontrerait par hasard. *@
+
+<meta name="description" content="@Description" />
+
+<link rel="canonical" href="@UrlCanonique" />
+
+@* Ni og:site_name ni og:locale ne sont pas repris ici : ils sont identiques sur toutes
+   les pages et déjà déclarés une seule fois dans le document racine. *@
+<meta property="og:type" content="@Type" />
+<meta property="og:title" content="@Titre" />
+<meta property="og:description" content="@Description" />
+<meta property="og:url" content="@UrlCanonique" />
+
+@if (ImageAbsolue is { Length: > 0 } image)
+{
+    <meta property="og:image" content="@image" />
+    <meta name="twitter:image" content="@image" />
+}
+
+@if (DatePublication is { } date)
+{
+    <meta property="article:published_time" content="@date.ToString("o", Culture)" />
+}
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="@Titre" />
+<meta name="twitter:description" content="@Description" />
+
+@code {
+    /// <summary>Culture des dates : le site parle français, quelle que soit la machine.</summary>
+    private static readonly System.Globalization.CultureInfo Culture =
+        System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
+
+    /// <summary>Titre de la page, sans le nom du site : il est ajouté au titre du document.</summary>
+    [Parameter, EditorRequired] public required string Titre { get; set; }
+
+    /// <summary>Résumé de la page, en une ou deux phrases.</summary>
+    /// <remarks>
+    /// Vaut pour le résultat de recherche comme pour l'aperçu de partage. Au-delà de deux
+    /// phrases, les deux tronquent de toute façon : mieux vaut un texte court et complet
+    /// qu'un texte long et coupé.
+    /// </remarks>
+    [Parameter, EditorRequired] public required string Description { get; set; }
+
+    /// <summary>
+    /// Adresse de l'image de partage, relative ou absolue.
+    /// </summary>
+    /// <remarks>
+    /// Rendue vide si elle est absente : le gabarit omet alors les balises, plutôt que
+    /// d'annoncer une image qui ne chargerait pas.
+    /// </remarks>
+    [Parameter] public string? Image { get; set; }
+
+    /// <summary>Type Open Graph : <c>article</c> pour un contenu, <c>website</c> sinon.</summary>
+    [Parameter] public string Type { get; set; } = "website";
+
+    /// <summary>Date de publication, pour les pages de contenu.</summary>
+    [Parameter] public DateTime? DatePublication { get; set; }
+
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    /// <summary>Adresse publique du site, sans barre finale.</summary>
+    private string SitePublic => OptionsCourriel.Value.SiteUrl.TrimEnd('/');
+
+    /// <summary>Adresse unique de la page.</summary>
+    /// <remarks>
+    /// La requête ne fait pas partie de l'identité de la page : deux adresses qui ne
+    /// diffèrent que par leurs paramètres désignent le même contenu. Les distinguer
+    /// ferait entrer les deux dans l'index, et divise l'autorité de la page entre elles.
+    /// </remarks>
+    private string UrlCanonique
+    {
+        get
+        {
+            var relative = Navigation.ToBaseRelativePath(Navigation.Uri);
+            var point = relative.IndexOf('?');
+
+            if (point >= 0)
+            {
+                relative = relative[..point];
+            }
+
+            return string.IsNullOrEmpty(relative) ? SitePublic : $"{SitePublic}/{relative}";
+        }
+    }
+
+    /// <summary>Adresse absolue de l'image de partage, ou vide s'il n'y en a pas.</summary>
+    private string? ImageAbsolue
+        => string.IsNullOrWhiteSpace(Image)
+            ? null
+            : Image.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                ? Image
+                : $"{SitePublic}/{Image.TrimStart('/')}";
+}

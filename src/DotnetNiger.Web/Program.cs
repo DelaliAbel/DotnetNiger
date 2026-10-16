@@ -9,6 +9,7 @@ using DotnetNiger.Web.Services.Commentaires;
 using DotnetNiger.Web.Services.Membres;
 using DotnetNiger.Web.Services.Inscriptions;
 using DotnetNiger.Web.Components;
+using DotnetNiger.Web.Seo;
 using DotnetNiger.Web.Controller.Common;
 using DotnetNiger.Web.Controller;
 using DotnetNiger.Web.Services;
@@ -236,9 +237,19 @@ else
 // points de terminaison qui suivent : un chemin sans page produit ainsi une 404 avec le
 // corps HTML de la page « introuvable », et non une 404 vide qui ferait perdre la
 // navigation à l'utilisateur.
-app.UseStatusCodePagesWithReExecute(
-    "/not-found",
-    createScopeForStatusCodePages: true);
+//
+// La ré-exécution est écartée de l'API, et c'est indispensable. Elle rejoue la requête
+// vers « /not-found » en conservant la méthode d'origine : un `PUT` d'API refusé à 403
+// devenait un `PUT /not-found`, auquel le routeur Blazor répond 405. L'appelant recevait
+// « méthode non autorisée » au lieu de « vous n'êtes pas autorisé », et l'erreur réelle
+// disparaissait. C'est ce qui rendait le changement de rôle incompréhensible.
+//
+// Une API doit répondre son code, jamais un document HTML de navigation.
+app.UseWhen(
+    contexte => !EstAppelApi(contexte.Request),
+    branche => branche.UseStatusCodePagesWithReExecute(
+        "/not-found",
+        createScopeForStatusCodePages: true));
 
 // Garde-fou pour l'API : la ré-exécution ci-dessus rendrait un document HTML pour un 404
 // d'API. Posé juste après, ce middleware enveloppe à son tour les points de terminaison :
@@ -289,6 +300,7 @@ app.MapPasswordResetEndpoints();
 app.MapNewsletterEndpoints();
 
 app.MapContactEndpoints();
+app.MapSeoEndpoints();
 
 // ---------- API ----------
 // Préfixe unique, sans versionnement : le contrat n'a pas encore été publié à des clients

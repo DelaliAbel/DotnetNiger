@@ -389,6 +389,21 @@
     background: linear-gradient(150deg, var(--color-violet-100), var(--color-violet-200));
   }
 
+  /* L'image est posée en absolu plutôt que dimensionnée en pourcentage.
+     `height: 100 %` ne se résout correctement que si la hauteur du parent est déjà
+     connue — or elle vient d'un `aspect-ratio`, qui ne la fixe qu'une fois la largeur
+     établie. Dans l'intervalle, et sur les images dont le rapport ne correspond pas,
+     l'image débordait du cadre et décalait tout ce qui suivait. `inset: 0` n'a pas
+     cette ambiguïté : le cadre est la référence, quelle que soit sa hauteur. */
+  .card__media > img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
   /* Visuel par défaut des cartes sans image (blog, événements…). */
   .card__media--defaut {
     display: grid;
@@ -3908,6 +3923,19 @@
     .admin {
       display: grid;
       grid-template-columns: 17rem minmax(0, 1fr);
+      align-items: start;
+    }
+
+    /* La barre reste en place quand la page défile. Sans cela, un tableau de
+       commentaires ou de messages — plus haut que l'écran — emportait le menu au
+       défilement, et l'administrateur devait remonter pour changer d'écran.
+       `align-self: start` est indispensable : sans lui la barre s'étirerait sur toute
+       la hauteur de la grille au lieu de fixer la sienne. */
+    .admin__barre {
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
     }
   }
 
@@ -4998,6 +5026,30 @@
     justify-content: space-between;
     gap: var(--spacing);
     margin-bottom: calc(var(--spacing) * 3);
+  }
+
+  /* La croix de fermeture des tiroirs. L'icône est une flèche tournée : le tiroir se
+     ferme vers la droite, comme il s'était ouvert. */
+  .admin-tiroir__fermer {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: calc(var(--spacing) * 5);
+    height: calc(var(--spacing) * 5);
+    border: 1px solid var(--site-border);
+    border-radius: var(--radius-sm);
+    background: var(--site-surface);
+    color: var(--site-fg-muted);
+    cursor: pointer;
+  }
+
+  .admin-tiroir__fermer .dn-icon {
+    transform: rotate(180deg);
+  }
+
+  .admin-tiroir__fermer:hover {
+    color: var(--site-fg);
+    border-color: var(--site-border-strong);
   }
 
   .admin-tiroir__titre {

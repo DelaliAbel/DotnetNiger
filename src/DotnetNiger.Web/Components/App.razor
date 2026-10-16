@@ -1,16 +1,33 @@
-﻿<!DOCTYPE html>
+﻿@inject DotnetNiger.Web.Services.Reglages.ServiceReglages Reglages
+@inject Microsoft.Extensions.Options.IOptions<DotnetNiger.Infrastructure.Email.EmailOptions> OptionsCourriel
+
+@*
+    Document racine, commun à toutes les pages.
+
+    L'adresse du site et le logo viennent de la configuration et des réglages, jamais d'une
+    chaîne en dur ici. Une adresse écrite dans ce fichier serait vraie au moment du
+    développement et fausse après le changement de domaine : le pire moment pour s'en
+    apercevoir, celui où l'indexation est déjà en cours.
+*@
+
+<!DOCTYPE html>
 <html lang="fr">
 
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#512BD4" />
-    <meta name="description" content="DotnetNiger — la communauté des développeurs .NET au Niger : événements, ressources, projets open source et actualités." />
+
+    @* Ces trois-là sont identiques quelle que soit la page : titre et description
+        canoniques sont fournis par <DnSeo />, sur chaque page. Les déclarer ici en plus
+        ferait doubler chaque balise, et le moteur retiendrait la première — celle du
+        document racine, donc la même pour toutes les pages. *@
     <meta property="og:site_name" content="DotnetNiger" />
-    <meta property="og:type" content="website" />
-    <meta property="og:title" content="DotnetNiger — la communauté des développeurs .NET au Niger" />
-    <meta property="og:description" content="Rejoignez la communauté des développeurs .NET au Niger : événements, ressources, projets open source et actualités." />
-    <meta property="og:image" content="/favicon.png" />
+    <meta property="og:locale" content="fr_NI" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    @* Image de repli quand une page n'en fournit pas : le logo des réglages. *@
+    <meta property="og:image" content="@ImagePartagee" />
     <base href="/" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -19,7 +36,18 @@
     <link rel="stylesheet" href="@Assets["DotnetNiger.Web.styles.css"]" />
     <ImportMap />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <link rel="icon" type="image/png" href="/favicon.png" />
+
+    @* Le favicon suit le logo des réglages : changer de logo sans changer d'icône laisse
+       deux identités différentes dans le navigateur et dans les signets. *@
+    @if (_logo is { Length: > 0 })
+    {
+        <link rel="icon" type="image/png" href="@_logo" />
+        <link rel="apple-touch-icon" href="@_logo" />
+    }
+    else
+    {
+        <link rel="icon" type="image/png" href="/favicon.png" />
+    }
     <script>
         // Applique le thème mémorisé avant le premier rendu pour éviter un flash clair/sombre.
         (function () {
@@ -99,3 +127,51 @@
 </body>
 
 </html>
+
+@code {
+    /// <summary>Logo déposé par l'administration, ou <see langword="null"/>.</summary>
+    private string? _logo;
+
+    /// <summary>
+    /// Adresse publique du site, sans barre finale.
+    /// </summary>
+    /// <remarks>
+    /// Elle vient de la configuration du serveur — la même valeur que celle qui fabrique
+    /// les liens des courriels. Les deux doivent concorder : des courriels pointant vers
+    /// un domaine et des balises SEO vers un autre installeraient deux sites aux yeux d'un
+    /// moteur de recherche.
+    /// </remarks>
+    private string SitePublic => OptionsCourriel.Value.SiteUrl.TrimEnd('/');
+
+    /// <summary>Adresse de la page courante, pour le canonical et <c>og:url</c>.</summary>
+    private string UrlCanonique
+    {
+        get
+        {
+            var relative = Navigation.ToBaseRelativePath(Navigation.Uri);
+
+            return string.IsNullOrEmpty(relative) ? SitePublic : $"{SitePublic}/{relative}";
+        }
+    }
+
+    /// <summary>Adresse absolue de l'image partagée sur les réseaux sociaux.</summary>
+    private string ImagePartagee
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(_logo))
+            {
+                return $"{SitePublic}/favicon.png";
+            }
+
+            return _logo.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+                ? _logo
+                : $"{SitePublic}/{_logo.TrimStart('/')}";
+        }
+    }
+
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+        => _logo = (await Reglages.LireAsync()).Logo;
+}
