@@ -125,7 +125,15 @@ internal static class EmailLayout
                             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
                               <tr>
                                 <td width="64" valign="middle" style="width:64px;">
-                                  <img src="{{EmailEncoding.Html.Encode(branding.LogoUrl)}}" alt="{{EmailEncoding.Html.Encode(EmailBranding.SiteName)}}" width="48" height="48" style="display:block;border:0;border-radius:10px;" />
+                                  @* Hauteur fixe, largeur libre : le logo déposé par
+                                     l'administration est souvent horizontal, et un cadre
+                                     carré l'écraserait. La largeur déclarée reste
+                                     raisonnable pour un logo carré, que le client qui
+                                     ignore la feuille de style rendra à sa taille. *@
+                                  <img src="{{EmailEncoding.Html.Encode(branding.LogoUrl)}}"
+                                       alt="{{EmailEncoding.Html.Encode(EmailBranding.SiteName)}}"
+                                       width="48" height="48"
+                                       style="display:block;max-width:180px;max-height:48px;width:auto;height:auto;border:0;border-radius:10px;object-fit:contain;" />
                                 </td>
                                 <td valign="middle" style="padding-left:14px;">
                                   <div style="font-size:20px;font-weight:700;color:{{Violet}};letter-spacing:-0.3px;line-height:1.2;">{{EmailEncoding.Html.Encode(EmailBranding.SiteName)}}</div>

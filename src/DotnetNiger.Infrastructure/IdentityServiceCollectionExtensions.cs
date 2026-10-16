@@ -60,6 +60,11 @@ public static class IdentityServiceCollectionExtensions
         services.AddScoped<IExternalAccountService, ExternalAccountService>();
         services.AddScoped<IAccountDeletionService, AccountDeletionService>();
 
+        // Les refus d'Identity sont écrits en anglais dans la bibliothèque. Sans ce
+        // descripteur, un membre qui saisit un mot de passe trop court lit un refus
+        // correct mais illisible, sur un site par ailleurs entièrement français.
+        services.AddScoped<IdentityErrorDescriber, FrenchIdentityErrorDescriber>();
+
         services.AddDataProtection()
             .PersistKeysToDbContext<DotnetNigerDbContext>()
             .SetApplicationName("DotnetNiger");

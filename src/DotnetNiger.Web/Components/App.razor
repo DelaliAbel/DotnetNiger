@@ -35,18 +35,22 @@
     <link rel="stylesheet" href="@Assets["css/app.css"]" />
     <link rel="stylesheet" href="@Assets["DotnetNiger.Web.styles.css"]" />
     <ImportMap />
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-
-    @* Le favicon suit le logo des réglages : changer de logo sans changer d'icône laisse
-       deux identités différentes dans le navigateur et dans les signets. *@
+    @* Le favicon suit le logo des réglages : changer de logo sans changer d'icône laisserait
+       deux identités différentes dans le navigateur et dans les signets.
+       Une seule source, donc : le `.ico` n'est déclaré que lorsqu'aucun logo n'est posé.
+       Le déclarer toujours laisserait le navigateur libre de le préférer au logo — et c'est
+       ce qu'il fait, l'onglet gardant alors l'ancienne icône sans raison visible. *@
     @if (_logo is { Length: > 0 })
     {
         <link rel="icon" type="image/png" href="@_logo" />
         <link rel="apple-touch-icon" href="@_logo" />
+        <link rel="shortcut icon" href="@_logo" />
     }
     else
     {
+        <link rel="icon" type="image/x-icon" href="/favicon.ico" />
         <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="apple-touch-icon" href="/favicon.png" />
     }
     <script>
         // Applique le thème mémorisé avant le premier rendu pour éviter un flash clair/sombre.

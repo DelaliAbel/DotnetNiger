@@ -1,5 +1,9 @@
 using DotnetNiger.Application.Abstractions;
+using DotnetNiger.Application.Abstractions.Persistence;
+using DotnetNiger.Domain.Entities.Content;
+using DotnetNiger.Domain.Enums;
 using DotnetNiger.Infrastructure.Notifications;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -59,6 +63,7 @@ public interface IEmailDispatcher
 public sealed partial class EmailDispatcher(
     IOutbox outbox,
     IMemberDirectory members,
+    IUnitOfWork unitOfWork,
     IOptions<EmailOptions> options,
     ILogger<EmailDispatcher> logger) : IEmailDispatcher
 {
@@ -76,7 +81,14 @@ public sealed partial class EmailDispatcher(
         }
 
         var modele = EmailTemplateCatalog.Obtenir(templateKey);
-        var message = modele.Rendre(values, EmailBranding.DepuisOptions(options.Value));
+
+        // Le logo vient des réglages du site, comme pour les autres envois. Sans cela, la
+        // lettre d'information et les messages de contact porteraient l'icône par défaut
+        // pendant que les courriels de compte porteraient le logo : deux identités selon le
+        // type de message, ce qui se remarque d'autant plus qu'elles partent du même site.
+        var message = modele.Rendre(
+            values,
+            EmailBranding.DepuisOptions(options.Value, await LogoAsync(cancellationToken)));
 
         await outbox.EnqueueAsync(templateKey, new QueuedEmail(recipient, message), cancellationToken);
 
@@ -93,6 +105,33 @@ public sealed partial class EmailDispatcher(
         var contact = await members.ObtenirAsync(memberId, cancellationToken);
 
         return await DispatchAsync(templateKey, contact?.Email!, values, cancellationToken);
+    }
+
+    /// <summary>
+    /// Adresse du logo déposé par l'administration, ou <see langword="null"/> si aucun.
+    /// </summary>
+    /// <param name="cancellationToken">Jeton d'annulation.</param>
+    /// <returns>L'adresse relative du logo, telle qu'elle est stockée.</returns>
+    /// <remarks>
+    /// La lecture se fait ici, dans la couche d'infrastructure, plutôt que par le service de
+    /// réglages de l'application : celui-ci est lié au conteneur web, et que le logo
+    /// manque n'a pas de raison d'interrompre un envoi. Un message sans logo vaut mieux
+    /// qu'un message perdu.
+    /// </remarks>
+    private async Task<string?> LogoAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await unitOfWork.ReadRepository<ReglageSite>().Query
+                .AsNoTracking()
+                .Where(reglage => reglage.Cle == ClesReglage.Logo)
+                .Select(reglage => reglage.Valeur)
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            return null;
+        }
     }
 
     [LoggerMessage(
