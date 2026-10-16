@@ -22,6 +22,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // ---------- Infrastructure : persistance ----------
 builder.Services.AddDotnetNigerPersistence(builder.Configuration);
+builder.Services.AddMemoryCache();
 
 // ---------- Web : état de requête et utilisateur courant ----------
 // `AddHttpContextAccessor` est aussi requis par le service de rattachement des comptes
@@ -46,7 +47,11 @@ builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceMessag
 builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceMembres>();
 builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceAbonnees>();
 builder.Services.AddScoped<DotnetNiger.Web.Services.Administration.ServiceParametres>();
-builder.Services.AddScoped<DotnetNiger.Web.Services.Reglages.ServiceReglages>();
+// Unique, et non limité à la requête : la marque, le pied de page et la page sont
+// initialisés en parallèle et partagent alors le même contexte EF. Un service de portée
+// limitée leur prêterait ce contexte, et le premier rendu échouerait sur une « seconde
+// opération démarrée ». Celui-ci ouvre sa propre portée pour lire.
+builder.Services.AddSingleton<DotnetNiger.Web.Services.Reglages.ServiceReglages>();
 builder.Services.AddScoped<ServiceInscriptionsMembre>();
 builder.Services.AddSingleton<PendingExternalSignInProtector>();
 

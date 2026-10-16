@@ -5,7 +5,11 @@ namespace DotnetNiger.Web.Authentication;
 /// </summary>
 /// <param name="Key">Clé de configuration, utilisée dans les liens.</param>
 /// <param name="Label">Nom affiché.</param>
-public sealed record EnabledProvider(string Key, string Label);
+/// <param name="Icone">
+/// Nom de l'icône dans la bibliothèque du site. Un bouton « continuer avec X » sans le logo
+/// de X seCamoufle en lien ordinaire : l'internaute ne sait pas où il clique.
+/// </param>
+public sealed record EnabledProvider(string Key, string Label, string Icone);
 
 /// <summary>
 /// Liste des fournisseurs externes effectivement configurés.
@@ -39,7 +43,10 @@ public static class ExternalProviderCatalog
                 continue;
             }
 
-            result.Add(new EnabledProvider(provider.ToLowerInvariant(), LabelFor(provider)));
+            result.Add(new EnabledProvider(
+                provider.ToLowerInvariant(),
+                LabelFor(provider),
+                IconeFor(provider)));
         }
 
         // L'ordre d'affichage ne doit pas dépendre de l'ordre des clés dans le fichier de
@@ -59,5 +66,22 @@ public static class ExternalProviderCatalog
         "MICROSOFT" => "Microsoft",
         "GITHUB" => "GitHub",
         _ => provider,
+    };
+
+    /// <summary>
+    /// Icône du logo, pour le bouton de connexion.
+    /// </summary>
+    /// <param name="provider">Clé de configuration du fournisseur.</param>
+    /// <returns>Le nom de l'icône, ou <c>external-link</c> si le logo n'existe pas.</returns>
+    /// <remarks>
+    /// Microsoft n'a pas de logo dans la bibliothèque du site. Plutôt que d'ajouter un
+    /// symbole approximatif, on garde l'icône générique : un logo Microsoft approximatif se
+    /// lirait comme une faute, alors qu'une icône neutre reste honnête.
+    /// </remarks>
+    private static string IconeFor(string provider) => provider.ToUpperInvariant() switch
+    {
+        "GOOGLE" => "google",
+        "GITHUB" => "github",
+        _ => "external-link",
     };
 }

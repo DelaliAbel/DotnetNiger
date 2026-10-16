@@ -81,7 +81,7 @@
                 @foreach (var provider in EnabledProviders)
                 {
                     <a href="/connexion/@provider.Key" class="btn btn--ghost w-full">
-                        <DnIcon Name="external-link" Size="16" />
+                        <DnIcon Name="@provider.Icone" Size="18" />
                         S'inscrire avec @provider.Label
                     </a>
                 }

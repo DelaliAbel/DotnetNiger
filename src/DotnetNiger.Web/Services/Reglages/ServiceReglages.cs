@@ -3,6 +3,7 @@ using DotnetNiger.Application.Abstractions.Persistence;
 using DotnetNiger.Domain.Entities.Content;
 using DotnetNiger.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace DotnetNiger.Web.Services.Reglages;
 
@@ -48,15 +49,35 @@ public sealed record ReglagesAffiches(ReglagesVue Valeurs, IReadOnlyList<CanalSi
 /// rendu sur chaque page : sans cela, chaque visite coûterait une requête pour rien.
 /// </para>
 /// </remarks>
-public sealed class ServiceReglages(IUnitOfWork uniteDeTravail)
+public sealed class ServiceReglages(
+    IServiceScopeFactory fabriquePortee,
+    IMemoryCache cache)
 {
-    private Task<ReglagesVue>? _lecture;
+    /// <summary>Clé de cache des réglages.</summary>
+    private const string CleCache = "reglages.site";
 
     /// <summary>Lit les réglages, une seule fois par changement.</summary>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
     /// <returns>Les réglages du site.</returns>
-    public Task<ReglagesVue> LireAsync(CancellationToken cancellationToken = default)
-        => (_lecture ??= LireInterneAsync(cancellationToken));
+    /// <remarks>
+    /// Le service est unique et ouvre sa propre portée pour lire. Il ne doit surtout pas
+    /// partager le contexte de la requête qui l'appelle : le pied de page et la marque sont
+    /// initialisés en même temps que la page, et un <c>DbContext</c> ne supporte qu'une
+    /// seule opération à la fois. Partagé, le premier rendu du site échouait sur une
+    /// « seconde opération démarrée ».
+    /// </remarks>
+    public async Task<ReglagesVue> LireAsync(CancellationToken cancellationToken = default)
+    {
+        if (cache.TryGetValue(CleCache, out ReglagesVue? memorise) && memorise is not null)
+        {
+            return memorise;
+        }
+
+        var valeurs = await LireInterneAsync(cancellationToken);
+        cache.Set(CleCache, valeurs);
+
+        return valeurs;
+    }
 
     /// <summary>Les réglages et les canaux effectivement affichables.</summary>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
@@ -78,6 +99,9 @@ public sealed class ServiceReglages(IUnitOfWork uniteDeTravail)
         string? valeur,
         CancellationToken cancellationToken = default)
     {
+        using var portee = fabriquePortee.CreateScope();
+        var uniteDeTravail = portee.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
         // Un réglage retiré disparaît de la table plutôt que d'y rester vide : la liste
         // des réglages du site est alors exactement la liste de ce qui est configuré.
         if (string.IsNullOrWhiteSpace(valeur))
@@ -114,7 +138,7 @@ public sealed class ServiceReglages(IUnitOfWork uniteDeTravail)
     }
 
     /// <summary>Relit les réglages à la prochaine demande, après une écriture.</summary>
-    public void Oublie() => _lecture = null;
+    public void Oublie() => cache.Remove(CleCache);
 
     /// <summary>
     /// Canaux renseignés, dans l'ordre d'affichage.
@@ -138,6 +162,9 @@ public sealed class ServiceReglages(IUnitOfWork uniteDeTravail)
 
     private async Task<ReglagesVue> LireInterneAsync(CancellationToken cancellationToken)
     {
+        using var portee = fabriquePortee.CreateScope();
+        var uniteDeTravail = portee.ServiceProvider.GetRequiredService<IUnitOfWork>();
+
         var reglages = await uniteDeTravail.ReadRepository<ReglageSite>().Query
             .AsNoTracking()
             .ToListAsync(cancellationToken);

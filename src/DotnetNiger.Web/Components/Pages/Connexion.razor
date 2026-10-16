@@ -53,8 +53,8 @@
             @foreach (var provider in EnabledProviders)
             {
                 <a href="@ExternalLink(provider)" class="btn btn--ghost w-full">
-                    <DnIcon Name="external-link" Size="16" />
-                    Continuer avec @provider
+                    <DnIcon Name="@provider.Icone" Size="18" />
+                    Continuer avec @provider.Label
                 </a>
             }
         </div>
@@ -83,7 +83,7 @@
     [SupplyParameterFromQuery(Name = "retour")]
     public string? ReturnUrl { get; set; }
 
-    private List<string> EnabledProviders { get; set; } = new();
+    private IReadOnlyList<EnabledProvider> EnabledProviders { get; set; } = [];
 
     private string? Confirmation =>
         Confirmed switch
@@ -101,18 +101,20 @@
 
     protected override void OnInitialized()
     {
-        EnabledProviders = ExternalProviderCatalog
-            .EnabledProviders(Configuration)
-            .Select(fournisseur => fournisseur.Label)
-            .ToList();
+        EnabledProviders = ExternalProviderCatalog.EnabledProviders(Configuration);
     }
 
-    private string ExternalLink(string label)
+    /// <summary>
+    /// Adresse de retour vers le fournisseur, en conservant la destination demandée.
+    /// </summary>
+    /// <param name="provider">Fournisseur choisi.</param>
+    /// <returns>Le lien de démarrage de la connexion externe.</returns>
+    /// <remarks>
+    /// Le fournisseur est transmis tel quel, et non retrouvé par son libellé : l'internaute
+    /// qui revient en arrière ne fait plus correspondre un libellé à une configuration.
+    /// </remarks>
+    private string ExternalLink(EnabledProvider provider)
     {
-        var provider = ExternalProviderCatalog
-            .EnabledProviders(Configuration)
-            .First(fournisseur => fournisseur.Label == label);
-
         var destination = ExternalSignInNavigation.IsLocal(ReturnUrl)
             ? ReturnUrl!
             : ExternalSignInNavigation.EspaceMembre;
