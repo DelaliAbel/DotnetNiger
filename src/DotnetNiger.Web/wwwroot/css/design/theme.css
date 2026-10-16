@@ -1734,21 +1734,35 @@
     vertical-align: text-bottom;
   }
 
-  /* --- Carte d'équipe --- */
+  /* --- Carte d'équipe ---
+     La vignette ne vaut pas un `aspect-ratio: 1 / 1`. La carte fait la largeur de sa
+     colonne — près de 400 px sur un écran large — tandis que l'avatar de profil, réglé pour
+     l'espace membre, n'en fait que 88 : la photo se retrouvait à 22 % de son cadre, dans
+     une grande boîte vide que l'œil lisait comme une absence. Un bandeau ajusté à la
+     photo, avec de l'air autour, donne une carte à l'échelle plutôt qu'un cadre à remplir. */
   .card__media--equipe {
-    aspect-ratio: 1 / 1;
-    /* L'avatar remplit la vignette : sans cette règle, le cercle des initiales
-       flotterait au centre d'un cadre vide plus large que lui. */
     display: grid;
     place-items: center;
+    min-height: calc(var(--spacing) * 24);
+    padding: calc(var(--spacing) * 5) calc(var(--spacing) * 3);
+    border-bottom: 1px solid var(--site-border);
   }
 
-  .card__media--equipe img {
+  /* La photo donne sa hauteur au bandeau, et non l'inverse. */
+  .card__media--equipe .avatar--profil {
+    width: calc(var(--spacing) * 16);
+    height: calc(var(--spacing) * 16);
+    border-radius: 50%;
+  }
+
+  /* L'agrandissement au survol existait mais ne se déclenchait jamais : les cartes
+     d'équipe ne portent pas la classe `card--hover`. */
+  .card__media--equipe .avatar--img {
     transition: transform 200ms ease;
   }
 
-  .card--hover:hover .card__media--equipe img {
-    transform: scale(1.04);
+  .card:hover .card__media--equipe .avatar--img {
+    transform: scale(1.05);
   }
 
   .equipe__social {

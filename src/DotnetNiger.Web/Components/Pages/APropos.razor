@@ -177,27 +177,38 @@ else
                         </div>
                         <div class="card__body">
                             <h3 class="card__title text-base">@membre.Nom</h3>
-                            <p class="card__text">@membre.Role</p>
-                            <p class="card__meta">
-                                @if (!string.IsNullOrWhiteSpace(membre.LienGithub))
-                                {
-                                    <a class="equipe__social" href="@membre.LienGithub" target="_blank" rel="noopener" aria-label="GitHub de @membre.Nom">
-                                        <DnIcon Name="github" Size="16" />
-                                    </a>
-                                }
-                                @if (!string.IsNullOrWhiteSpace(membre.LienLinkedin))
-                                {
-                                    <a class="equipe__social" href="@membre.LienLinkedin" target="_blank" rel="noopener" aria-label="LinkedIn de @membre.Nom">
-                                        <DnIcon Name="linkedin" Size="16" />
-                                    </a>
-                                }
-                                @if (!string.IsNullOrWhiteSpace(membre.LienX))
-                                {
-                                    <a class="equipe__social" href="@membre.LienX" target="_blank" rel="noopener" aria-label="X de @membre.Nom">
-                                        <DnIcon Name="x" Size="16" />
-                                    </a>
-                                }
-                            </p>
+
+                            @* Ni la fonction ni les liens ne sont rendus à vide : un
+                               paragraphe sans texte garde sa marge et laisse un trou
+                               sous le nom, comme une carte inachevée. *@
+                            @if (!string.IsNullOrWhiteSpace(membre.Role))
+                            {
+                                <p class="card__text">@membre.Role</p>
+                            }
+
+                            @if (AUnLien(membre))
+                            {
+                                <p class="card__meta">
+                                    @if (!string.IsNullOrWhiteSpace(membre.LienGithub))
+                                    {
+                                        <a class="equipe__social" href="@membre.LienGithub" target="_blank" rel="noopener" aria-label="GitHub de @membre.Nom">
+                                            <DnIcon Name="github" Size="16" />
+                                        </a>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(membre.LienLinkedin))
+                                    {
+                                        <a class="equipe__social" href="@membre.LienLinkedin" target="_blank" rel="noopener" aria-label="LinkedIn de @membre.Nom">
+                                            <DnIcon Name="linkedin" Size="16" />
+                                        </a>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(membre.LienX))
+                                    {
+                                        <a class="equipe__social" href="@membre.LienX" target="_blank" rel="noopener" aria-label="X de @membre.Nom">
+                                            <DnIcon Name="x" Size="16" />
+                                        </a>
+                                    }
+                                </p>
+                            }
                         </div>
                     </article>
                 }
@@ -258,6 +269,19 @@ else
 
 @code {
     private AProposVue? _APropos;
+
+    /// <summary>Ce membre a-t-il au moins un lien à montrer ?</summary>
+    /// <param name="membre">Membre de l'équipe.</param>
+    /// <returns><see langword="true"/> si l'un des trois réseaux est renseigné.</returns>
+    /// <remarks>
+    /// La ligne de liens n'est rendue que lorsqu'elle a quelque chose à montrer : vide,
+    /// elle laisserait une bande de marge sous le nom, que l'œil lit comme une carte
+    /// tronquée.
+    /// </remarks>
+    private static bool AUnLien(MembreVue membre)
+        => !string.IsNullOrWhiteSpace(membre.LienGithub)
+            || !string.IsNullOrWhiteSpace(membre.LienLinkedin)
+            || !string.IsNullOrWhiteSpace(membre.LienX);
 
     protected override async Task OnInitializedAsync()
     {
