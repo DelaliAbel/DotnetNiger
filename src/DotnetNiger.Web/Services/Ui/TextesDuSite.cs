@@ -11,9 +11,9 @@ namespace DotnetNiger.Web.Services.Ui;
 /// les ferait disparaître au premier incident d'affichage.
 /// </para>
 /// <para>
-/// Les canaux relèvent de la même logique : ils changent avec les coordonnées
-/// officielles du site, pas avec les publications. Les regrouper ici laisse une adresse
-/// Discord modifiable en un seul endroit lisible, et non dans une ligne de base.
+/// Les canaux de la communauté ne figuraient pas ici : ce sont des coordonnées de contact,
+/// pas une publication. Ils vivent dans les réglages du site, que l'administration modifie
+/// sans redéploiement, et ne sont affichés que lorsqu'ils sont renseignés.
 /// </para>
 /// <para>
 /// Les photos de l'équipe restent dans <c>wwwroot/images/equipe/</c>, choisies par
