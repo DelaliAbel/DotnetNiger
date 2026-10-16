@@ -79,11 +79,27 @@ public sealed class MemberDirectory(IUnitOfWork unitOfWork) : IMemberDirectory
                     utilisateur.Email ?? string.Empty,
                     $"{utilisateur.FirstName} {utilisateur.LastName}")),
                 utilisateur.Profession,
-                utilisateur.PhotoUrl))
+                utilisateur.PhotoUrl,
+                AdresseGitHub(utilisateur.GitHubUsername),
+                utilisateur.LinkedInUrl,
+                utilisateur.XUrl))
             .ToListAsync(cancellationToken);
 
         return membres;
     }
+
+    /// <summary>
+    /// Transforme un identifiant GitHub en adresse de profil.
+    /// </summary>
+    /// <param name="identifiant">Identifiant stocké, avec ou sans « @ ».</param>
+    /// <returns>L'adresse du profil, ou <see langword="null"/> si rien n'est renseigné.</returns>
+    /// <remarks>
+    /// Le compte ne stocke qu'un identifiant, parce que c'est ce que la personne connaît et
+    /// recopie. La carte d'équipe a besoin d'une adresse : la reconstruire ici évite de
+    /// laisser le composant deviner un préfixe qu'il ne peut pas garantir.
+    /// </remarks>
+    private static string? AdresseGitHub(string? identifiant)
+        => string.IsNullOrWhiteSpace(identifiant) ? null : $"https://github.com/{identifiant.TrimStart('@')}";
 
     /// <summary>
     /// Choisit le nom à adopter : les prénoms et noms s'ils sont connus, l'adresse sinon.

@@ -1722,6 +1722,10 @@
   /* --- Carte d'équipe --- */
   .card__media--equipe {
     aspect-ratio: 1 / 1;
+    /* L'avatar remplit la vignette : sans cette règle, le cercle des initiales
+       flotterait au centre d'un cadre vide plus large que lui. */
+    display: grid;
+    place-items: center;
   }
 
   .card__media--equipe img {

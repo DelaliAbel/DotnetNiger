@@ -118,8 +118,11 @@ public sealed class ContenuSiteService(
             Teinte = TeinteDe(membre.FullName),
             // La photo vient du compte ; à défaut, la carte tombe sur les initiales
             // calculées par le composant. Aucune image de substitution n'est inventée :
-            // une photo qui ne représente personne serait pire qu'un circle vide.
+            // une photo qui ne représenterait personne serait pire qu'un cercle vide.
             ImageUrl = membre.PhotoUrl,
+            LienGithub = membre.GitHubUrl,
+            LienLinkedin = membre.LinkedInUrl,
+            LienX = membre.XUrl,
         })];
     }
 

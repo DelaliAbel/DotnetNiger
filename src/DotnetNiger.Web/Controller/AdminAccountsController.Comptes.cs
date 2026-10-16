@@ -59,8 +59,17 @@ public sealed partial class AdminAccountsController
         {
             compte.UpdateProfile(
                 request.FirstName?.Trim() ?? string.Empty,
-                request.LastName?.Trim() ?? string.Empty);
+                request.LastName?.Trim() ?? string.Empty,
+                request.Profession,
+                request.PhotoUrl,
+                request.GitHubUsername,
+                request.LinkedInUrl,
+                request.XUrl);
         }
+
+        // L'appartenance à l'équipe est posée même sans nom : un compte créé vide puis
+        // complété par l'administration doit déjà figurer dans l'équipe.
+        compte.SetTeamMember(request.IsTeam);
 
         await VerifierAsync(userManager.CreateAsync(compte, request.Password), "invalid_password");
 
@@ -114,6 +123,22 @@ public sealed partial class AdminAccountsController
 
         compte.SetActive(request.IsActive);
         compte.SetTeamMember(request.IsTeam);
+
+        // Le profil n'est touché que sur les champs fournis : sans cela, un simple changement
+        // d'état — désactiver un compte qui se fait voler — effacerait le nom, la fonction
+        // et la photo que l'administration avait saisis. Chaque champ fourni remplace
+        // l'ancien ; un champ omis le conserve ; une chaîne vide l'efface.
+        if (request.FirstName is not null || request.LastName is not null)
+        {
+            compte.UpdateProfile(
+               (request.FirstName ?? compte.FirstName).Trim(),
+                (request.LastName ?? compte.LastName).Trim(),
+                request.Profession ?? compte.Profession,
+                request.PhotoUrl ?? compte.PhotoUrl,
+                request.GitHubUsername ?? compte.GitHubUsername,
+                request.LinkedInUrl ?? compte.LinkedInUrl,
+                request.XUrl ?? compte.XUrl);
+        }
 
         unitOfWork.Repository<ApplicationUser>().Update(compte);
         await unitOfWork.SaveChangesAsync(cancellationToken);

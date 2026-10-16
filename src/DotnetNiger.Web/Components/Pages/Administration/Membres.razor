@@ -296,6 +296,54 @@ else
                     Membre de l'équipe organisatrice
                 </label>
 
+                @if (_formeEquipe)
+                {
+                    <p class="admin-formulaire__aide">
+                        La fiche ci-dessous apparaît sur la page « À propos ». Un champ laissé
+                        vide est tout simplement ignoré : la carte n'affiche que ce qui est renseigné.
+                    </p>
+
+                    <div class="admin-formulaire__champ">
+                        <label class="admin-formulaire__intitule" for="membre-fonction">Fonction</label>
+                        <input class="input" id="membre-fonction" type="text"
+                               placeholder="Développeuse .NET" maxlength="200"
+                               @bind="_formeFonction" @bind:event="oninput" />
+                    </div>
+
+                    <div class="admin-formulaire__champ">
+                        <label class="admin-formulaire__intitule" for="membre-photo">Photo</label>
+                        <input class="input" id="membre-photo" type="text"
+                               placeholder="/api/images/…" maxlength="1000"
+                               @bind="_formePhoto" @bind:event="oninput" />
+
+                        <p class="admin-formulaire__aide">
+                            Adresse de l'image. Déposez-la d'abord via l'API
+                            <code>/api/images</code>, puis collez l'adresse renvoyée.
+                        </p>
+                    </div>
+
+                    <div class="admin-formulaire__champ">
+                        <label class="admin-formulaire__intitule" for="membre-github">GitHub</label>
+                        <input class="input" id="membre-github" type="text"
+                               placeholder="identifiant, avec ou sans @@" maxlength="100"
+                               @bind="_formeGithub" @bind:event="oninput" />
+                    </div>
+
+                    <div class="admin-formulaire__champ">
+                        <label class="admin-formulaire__intitule" for="membre-linkedin">LinkedIn</label>
+                        <input class="input" id="membre-linkedin" type="url"
+                               placeholder="https://www.linkedin.com/in/…" maxlength="500"
+                               @bind="_formeLinkedIn" @bind:event="oninput" />
+                    </div>
+
+                    <div class="admin-formulaire__champ">
+                        <label class="admin-formulaire__intitule" for="membre-x">X</label>
+                        <input class="input" id="membre-x" type="url"
+                               placeholder="https://x.com/…" maxlength="500"
+                               @bind="_formeX" @bind:event="oninput" />
+                    </div>
+                }
+
                 @if (_edition is null)
                 {
                     <label class="admin-case">
@@ -364,6 +412,16 @@ else
 
     private bool _formeEquipe;
 
+    private string _formeFonction = string.Empty;
+
+    private string _formePhoto = string.Empty;
+
+    private string _formeGithub = string.Empty;
+
+    private string _formeLinkedIn = string.Empty;
+
+    private string _formeX = string.Empty;
+
     private bool _formeConfirme;
 
     private string? _erreur;
@@ -405,6 +463,11 @@ else
         _formeRole = RoleNames.Member;
         _formeEquipe = false;
         _formeConfirme = false;
+        _formeFonction = string.Empty;
+        _formePhoto = string.Empty;
+        _formeGithub = string.Empty;
+        _formeLinkedIn = string.Empty;
+        _formeX = string.Empty;
         _erreur = null;
         _formulaireOuvert = true;
     }
@@ -417,6 +480,11 @@ else
         _formeRole = ligne.Roles.FirstOrDefault() ?? RoleNames.Member;
         _formeEquipe = ligne.EstEquipe;
         _formeConfirme = ligne.EmailConfirme;
+        _formeFonction = ligne.Fonction ?? string.Empty;
+        _formePhoto = ligne.PhotoUrl ?? string.Empty;
+        _formeGithub = ligne.GitHub ?? string.Empty;
+        _formeLinkedIn = ligne.LinkedIn ?? string.Empty;
+        _formeX = ligne.X ?? string.Empty;
         _erreur = null;
         _formulaireOuvert = true;
     }
@@ -491,6 +559,11 @@ else
             isTeam = _formeEquipe,
             confirmEmail = _formeConfirme,
             roles = new[] { _formeRole },
+            profession = _formeFonction,
+            photoUrl = _formePhoto,
+            gitHubUsername = _formeGithub,
+            linkedInUrl = _formeLinkedIn,
+            xUrl = _formeX,
         });
 
         return reponse.Ok ? null : Raison(reponse);
@@ -506,10 +579,22 @@ else
     /// </remarks>
     private async Task<string?> MettreAJourAsync(LigneMembreAdmin ligne)
     {
+        var (prenomEdite, nomEdite) = Partager(_formeNom);
+
         var reponse = await Ecrire("PUT", $"/api/admin/accounts/{ligne.Id}", new
         {
             isActive = ligne.EstActif,
             isTeam = _formeEquipe,
+            // Le nom est renvoyé en entier : l'API traite un champ présent comme un
+            // remplacement, et le modèle refuse un prénom ou un nom vide. Une partie vide
+            // part donc à null, ce qui la laisse en place.
+            firstName = string.IsNullOrEmpty(prenomEdite) ? null : prenomEdite,
+            lastName = string.IsNullOrEmpty(nomEdite) ? null : nomEdite,
+            profession = _formeFonction,
+            photoUrl = _formePhoto,
+            gitHubUsername = _formeGithub,
+            linkedInUrl = _formeLinkedIn,
+            xUrl = _formeX,
         });
 
         if (!reponse.Ok)

@@ -158,7 +158,7 @@ public sealed class ApplicationUser : IdentityUser<Guid>, IEntity, ITimestamped
         Bio = DomainGuard.OptionalAgainstTooLong(bio, FieldLimits.Bio, nameof(bio));
         City = DomainGuard.OptionalAgainstTooLong(city, FieldLimits.Location, nameof(city));
         Profession = DomainGuard.OptionalAgainstTooLong(profession, FieldLimits.Label, nameof(profession));
-        PhotoUrl = DomainGuard.OptionalAgainstHttpUrl(photoUrl, nameof(photoUrl));
+        PhotoUrl = DomainGuard.OptionalAgainstImageSource(photoUrl, nameof(photoUrl));
         GitHubUsername = NormalizeHandle(gitHubUsername, nameof(gitHubUsername));
         LinkedInUrl = DomainGuard.OptionalAgainstHttpUrl(linkedInUrl, nameof(linkedInUrl));
         XUrl = DomainGuard.OptionalAgainstHttpUrl(xUrl, nameof(xUrl));
@@ -187,9 +187,17 @@ public sealed class ApplicationUser : IdentityUser<Guid>, IEntity, ITimestamped
     /// endroit ferait échouer la photo sur un compte parfaitement valide.
     /// </remarks>
     /// <param name="photoUrl">Adresse de la photo, ou <see langword="null"/> pour la retirer.</param>
-    /// <exception cref="DotnetNiger.Domain.Exceptions.DomainException">L'adresse n'est pas une URL HTTP ou HTTPS.</exception>
+    /// <exception cref="DotnetNiger.Domain.Exceptions.DomainException">
+    /// L'adresse n'est ni une URL HTTP ou HTTPS, ni un chemin servi par le site.
+    /// </exception>
+    /// <remarks>
+    /// La photo est presque toujours déposée par l'administration, donc servie par le site
+    /// lui-même à une adresse de la forme <c>/api/images/…</c>. N'accepter qu'une URL absolue
+    /// obligerait à écrire le nom de domaine dans chaque profil, et ferait échouer la photo
+    /// d'un membre si le site changeait d'adresse.
+    /// </remarks>
     public void SetProfilePhoto(string? photoUrl) =>
-        PhotoUrl = DomainGuard.OptionalAgainstHttpUrl(photoUrl, nameof(photoUrl));
+        PhotoUrl = DomainGuard.OptionalAgainstImageSource(photoUrl, nameof(photoUrl));
 
     private static string? NormalizeHandle(string? value, string field)
     {

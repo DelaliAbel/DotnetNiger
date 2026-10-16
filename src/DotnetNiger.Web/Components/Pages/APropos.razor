@@ -171,7 +171,10 @@ else
                 {
                     <article class="card">
                         <div class="card__media card__media--equipe">
-                            <img class="h-full w-full object-cover" src="@membre.ImageUrl" alt="@membre.Nom" loading="lazy" />
+                            @* Sans photo, le composant tombe sur les initiales. Un
+                               <img src=""> afficherait une page d'erreur à la place de
+                               la photo, ce qui est pire qu'un cercle vide. *@
+                            <DnAvatar Nom="@membre.Nom" ImageUrl="@membre.ImageUrl" Teinte="@membre.Teinte" Profil />
                         </div>
                         <div class="card__body">
                             <h3 class="card__title text-base">@membre.Nom</h3>

@@ -19,6 +19,15 @@ namespace DotnetNiger.Web.Services.Administration;
 /// <param name="Roles">Rôles du compte.</param>
 /// <param name="BloqueJusquAu">Fin de verrouillage, ou <see langword="null"/>.</param>
 /// <param name="InscritLe">Date d'inscription (UTC).</param>
+/// <param name="Fonction">Fonction affichée sur la page « À propos », ou <see langword="null"/>.</param>
+/// <param name="GitHub">Identifiant GitHub, avec ou sans « @ ».</param>
+/// <param name="LinkedIn">Adresse du profil LinkedIn.</param>
+/// <param name="X">Adresse du compte X.</param>
+/// <remarks>
+/// Les quatre derniers champs ne servent qu'à remplir la fiche d'équipe. Ils sont lus pour
+/// l'éditeur, pas affichés dans le tableau : une ligne de compte n'a pas la place, et le
+/// tableau a déjà son propre « voir ».
+/// </remarks>
 public sealed record LigneMembreAdmin(
     Guid Id,
     string? Courriel,
@@ -31,7 +40,11 @@ public sealed record LigneMembreAdmin(
     bool EmailConfirme,
     IReadOnlyList<string> Roles,
     DateTimeOffset? BloqueJusquAu,
-    DateTime InscritLe);
+    DateTime InscritLe,
+    string? Fonction = null,
+    string? GitHub = null,
+    string? LinkedIn = null,
+    string? X = null);
 
 /// <summary>Tous les comptes, lus pour la page Membres.</summary>
 /// <param name="Membres">Comptes, du plus récemment inscrit au plus ancien.</param>
@@ -86,7 +99,11 @@ public sealed class ServiceMembres(
                 membre.EmailConfirmed,
                 attribues.TryGetValue(membre.Id, out var sesRoles) ? sesRoles : [],
                 membre.LockoutEnd,
-                membre.CreatedAtUtc))],
+                membre.CreatedAtUtc,
+                membre.Profession,
+                membre.GitHubUsername,
+                membre.LinkedInUrl,
+                membre.XUrl))],
             [.. RolesDisponibles()]);
     }
 

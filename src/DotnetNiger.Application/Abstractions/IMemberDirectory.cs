@@ -82,12 +82,26 @@ public interface IMemberDirectory
 /// <param name="FullName">Nom affiché.</param>
 /// <param name="Role">Fonction au sein de l'équipe, facultative.</param>
 /// <param name="PhotoUrl">Photo, facultative : l'absence fait tomber sur les initiales.</param>
+/// <param name="GitHubUrl">Adresse du profil GitHub, facultative.</param>
+/// <param name="LinkedInUrl">Adresse du profil LinkedIn, facultative.</param>
+/// <param name="XUrl">Adresse du compte X, facultative.</param>
 /// <remarks>
 /// Type distinct de <see cref="MemberProfile"/> : celui-ci décrit un auteur pour un
-/// contexte de lecture, celui-là une carte d'identité d'équipe avec sa photo et sa fonction.
-/// Confondre les deux ferait hériter les auteurs d'une photo qu'ils n'ont pas.
+/// contexte de lecture, celui-là une carte d'identité d'équipe avec sa photo, sa fonction
+/// et ses liens. Confondre les deux ferait hériter les auteurs d'une photo qu'ils n'ont pas.
+/// <para>
+/// Les trois liens sont déjà des adresses complètes, et non des identifiants : la carte
+/// d'équipe est le seul endroit du site qui les rend, et laisser le nom d'utilisateur nu
+/// obligerait le composant à reconstruire une adresse qu'il n'a aucun moyen de deviner.
+/// </para>
 /// </remarks>
-public sealed record TeamMember(string FullName, string? Role, string? PhotoUrl);
+public sealed record TeamMember(
+    string FullName,
+    string? Role,
+    string? PhotoUrl,
+    string? GitHubUrl = null,
+    string? LinkedInUrl = null,
+    string? XUrl = null);
 
 /// <summary>
 /// Profil public d'un membre, tel qu'une page de contenu l'affiche.
