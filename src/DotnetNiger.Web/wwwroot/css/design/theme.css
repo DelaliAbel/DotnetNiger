@@ -1735,23 +1735,19 @@
   }
 
   /* --- Carte d'équipe ---
-     La vignette ne vaut pas un `aspect-ratio: 1 / 1`. La carte fait la largeur de sa
-     colonne — près de 400 px sur un écran large — tandis que l'avatar de profil, réglé pour
-     l'espace membre, n'en fait que 88 : la photo se retrouvait à 22 % de son cadre, dans
-     une grande boîte vide que l'œil lisait comme une absence. Un bandeau ajusté à la
-     photo, avec de l'air autour, donne une carte à l'échelle plutôt qu'un cadre à remplir. */
+     Forme d'origine : une vignette carrée. Seule la taille de l'avatar change.
+     Il était réglé à 88 px, valeur calibrée pour l'espace membre où il tient dans une
+     barre à côté d'un nom — sur une vignette de près de 400 px, la photo n'occupait que
+     22 % de son cadre, et l'œil lisait une case vide plutôt qu'un visage. */
   .card__media--equipe {
+    aspect-ratio: 1 / 1;
     display: grid;
     place-items: center;
-    min-height: calc(var(--spacing) * 24);
-    padding: calc(var(--spacing) * 5) calc(var(--spacing) * 3);
-    border-bottom: 1px solid var(--site-border);
   }
 
-  /* La photo donne sa hauteur au bandeau, et non l'inverse. */
   .card__media--equipe .avatar--profil {
-    width: calc(var(--spacing) * 16);
-    height: calc(var(--spacing) * 16);
+    width: calc(var(--spacing) * 22);
+    height: calc(var(--spacing) * 22);
     border-radius: 50%;
   }
 

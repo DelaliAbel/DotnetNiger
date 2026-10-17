@@ -1,5 +1,6 @@
 using DotnetNiger.Application.Abstractions;
 using DotnetNiger.Application.Abstractions.Persistence;
+using DotnetNiger.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace DotnetNiger.Infrastructure.Identity;
@@ -80,13 +81,45 @@ public sealed class MemberDirectory(IUnitOfWork unitOfWork) : IMemberDirectory
                     $"{utilisateur.FirstName} {utilisateur.LastName}")),
                 utilisateur.Profession,
                 utilisateur.PhotoUrl,
+                utilisateur.Id,
                 AdresseGitHub(utilisateur.GitHubUsername),
                 utilisateur.LinkedInUrl,
                 utilisateur.XUrl))
             .ToListAsync(cancellationToken);
 
-        return membres;
+        // La photo déposée par le membre vit dans sa propre table, en octets : elle n'est
+        // jamais écrite dans `PhotoUrl`. La lire là-dessus donnait donc toujours vide, et
+        // la carte d'équipe tombait sur les initiales même pour un membre qui avait
+        // déjà déposé sa photo. On ne retient que les identités qui en ont une, et l'adresse
+        // est celle que le contrôleur sert.
+        var idsAvecPhoto = membres.Select(membre => membre.MembreId).ToArray();
+
+        var membresAvecPhoto = await unitOfWork.ReadRepository<ProfilePhoto>().Query
+            .AsNoTracking()
+            .Where(photo => idsAvecPhoto.Contains(photo.MembreId))
+            .Select(photo => photo.MembreId)
+            .ToListAsync(cancellationToken);
+
+        var avecPhoto = membresAvecPhoto.ToHashSet();
+
+        return
+        [
+            .. membres.Select(membre => membre with
+            {
+                PhotoUrl = avecPhoto.Contains(membre.MembreId)
+                    ? PhotoUrlPhotoDeposee(membre.MembreId)
+                    : membre.PhotoUrl,
+            }),
+        ];
     }
+
+    /// <summary>
+    /// Adresse de la photo de profil déposée par un membre.
+    /// </summary>
+    /// <param name="membreId">Identifiant du membre.</param>
+    /// <returns>L'adresse servie par le point de terminaison des photos de profil.</returns>
+    private static string PhotoUrlPhotoDeposee(Guid membreId)
+        => $"/api/photos-equipe/{membreId}";
 
     /// <summary>
     /// Transforme un identifiant GitHub en adresse de profil.

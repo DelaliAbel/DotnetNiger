@@ -82,6 +82,9 @@ public interface IMemberDirectory
 /// <param name="FullName">Nom affiché.</param>
 /// <param name="Role">Fonction au sein de l'équipe, facultative.</param>
 /// <param name="PhotoUrl">Photo, facultative : l'absence fait tomber sur les initiales.</param>
+/// <param name="MembreId">
+/// Identifiant du compte, nécessaire pour retrouver la photo qu'il a déposée.
+/// </param>
 /// <param name="GitHubUrl">Adresse du profil GitHub, facultative.</param>
 /// <param name="LinkedInUrl">Adresse du profil LinkedIn, facultative.</param>
 /// <param name="XUrl">Adresse du compte X, facultative.</param>
@@ -99,6 +102,7 @@ public sealed record TeamMember(
     string FullName,
     string? Role,
     string? PhotoUrl,
+    Guid MembreId,
     string? GitHubUrl = null,
     string? LinkedInUrl = null,
     string? XUrl = null);

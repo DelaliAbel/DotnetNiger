@@ -125,6 +125,11 @@ public sealed class ProfilePhotosController(
     /// Ouvert à tout membre connecté : une photo de profil est ce que les autres membres
     /// ont le droit de voir, la masquer rendrait le fil illisible. La lecture est toujours
     /// faite par identifiant, jamais par le nom du fichier.
+    /// <para>
+    /// La photo d'un membre de l'équipe est, elle, servie publiquement : c'est
+    /// <c>TeamPhotosController</c> qui s'en charge. Ouvrir celle-ci aussi aurait laissé ici
+    /// une exception dont on ne se souvient plus deux mois plus tard.
+    /// </para>
     /// </remarks>
     /// <param name="membreId">Identifiant du membre.</param>
     /// <param name="cancellationToken">Jeton d'annulation.</param>
