@@ -164,12 +164,26 @@ public sealed class MembreVue
 
     public string? ImageUrl { get; init; }
 
-    public string? LienGithub { get; init; }
-
-    public string? LienLinkedin { get; init; }
-
-    public string? LienX { get; init; }
+    /// <summary>
+    /// Liens affichés sur la fiche, dans l'ordre choisi par le membre.
+    /// </summary>
+    /// <remarks>
+    /// Une liste, et non trois champs fixes : le membre en ajoute autant qu'il veut depuis
+    /// son profil, et c'est cette liste qu'il a lui-même remplie qui est présentée ici.
+    /// Trois colonnes figées ne pouvaient porter qu'une adresse par réseau — et aucun
+    /// écran du site ne les remplissait.
+    /// </remarks>
+    public IReadOnlyList<LienEquipeVue> Liens { get; init; } = [];
 }
+
+/// <summary>Lien externe présenté sur la fiche d'un membre.</summary>
+/// <param name="Libelle">Nom du lien, saisit par le membre.</param>
+/// <param name="Url">Adresse de destination.</param>
+/// <param name="Icone">
+/// Nom de l'icône à dessiner. Le composant ne connaît que ces noms : un réseau non
+/// reconnu prend l'icône générique plutôt que de ne rien afficher du tout.
+/// </param>
+public sealed record LienEquipeVue(string Libelle, string Url, string Icone);
 
 /// <summary>Modèle de présentation d'un jalon de l'histoire de la communauté.</summary>
 public sealed class JalonVue

@@ -133,6 +133,14 @@ public sealed class ApplicationUser : IdentityUser<Guid>, IEntity, ITimestamped
     /// </summary>
     /// <param name="firstName">Prénom.</param>
     /// <param name="lastName">Nom.</param>
+    /// <param name="profession">
+    /// Fonction professionnelle. Facultative en valeur, obligatoire en argument : c'est
+    /// l'administration qui la saisit, et le membre ne fait que la conserver. La laisser
+    /// facultative avait permis deux pertes de données silencieuses — un appel en position
+    /// l'écrivait dans la biographie, un autre l'omettait et vidait le champ. À rendre
+    /// obligatoire, le compilateur oblige chaque appel à dire ce qu'il en fait, et une
+    /// valeur nulle reste parfaitement possible.
+    /// </param>
     /// <param name="bio">Biographie, facultative.</param>
     /// <param name="city">Ville, facultative.</param>
     /// <param name="photoUrl">URL de la photo, facultative.</param>
@@ -140,24 +148,23 @@ public sealed class ApplicationUser : IdentityUser<Guid>, IEntity, ITimestamped
     /// <param name="linkedInUrl">URL LinkedIn, facultative.</param>
     /// <param name="xUrl">URL X, facultative.</param>
     /// <param name="technologies">Compétences, facultatives.</param>
-    /// <param name="profession">Fonction professionnelle, facultative.</param>
     public void UpdateProfile(
         string firstName,
         string lastName,
+        string? profession,
         string? bio = null,
         string? city = null,
         string? photoUrl = null,
         string? gitHubUsername = null,
         string? linkedInUrl = null,
         string? xUrl = null,
-        string? technologies = null,
-        string? profession = null)
+        string? technologies = null)
     {
         FirstName = Required(firstName, FieldLimits.Name, nameof(firstName));
         LastName = Required(lastName, FieldLimits.Name, nameof(lastName));
+        Profession = DomainGuard.OptionalAgainstTooLong(profession, FieldLimits.Label, nameof(profession));
         Bio = DomainGuard.OptionalAgainstTooLong(bio, FieldLimits.Bio, nameof(bio));
         City = DomainGuard.OptionalAgainstTooLong(city, FieldLimits.Location, nameof(city));
-        Profession = DomainGuard.OptionalAgainstTooLong(profession, FieldLimits.Label, nameof(profession));
         PhotoUrl = DomainGuard.OptionalAgainstImageSource(photoUrl, nameof(photoUrl));
         GitHubUsername = NormalizeHandle(gitHubUsername, nameof(gitHubUsername));
         LinkedInUrl = DomainGuard.OptionalAgainstHttpUrl(linkedInUrl, nameof(linkedInUrl));
@@ -235,6 +242,31 @@ public sealed class ApplicationUser : IdentityUser<Guid>, IEntity, ITimestamped
     private static string? NormalizeHandle(string? value, string field)
     {
         var handle = DomainGuard.OptionalAgainstTooLong(value, FieldLimits.Handle, field);
+
+        if (string.IsNullOrWhiteSpace(handle))
+        {
+            return null;
+        }
+
+        // On colle l'adresse depuis le navigateur plus souvent qu'on ne recopie l'identifiant
+        // dans la barre de GitHub. Une adresse collée en entier produirait une carte pointant
+        // vers « https://github.com/https://github.com/… », que personne ne remarque avant
+        // que le lien soit public. On n'en garde donc que le dernier segment, ce qui couvre
+        // « koffi », « github.com/koffi », « https://github.com/koffi » et la même adresse
+        // suivie d'un « ?tab=repositories ».
+        var suffixe = handle.IndexOfAny(['?', '#']);
+
+        if (suffixe >= 0)
+        {
+            handle = handle[..suffixe];
+        }
+
+        var segments = handle.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        if (segments.Length > 0)
+        {
+            handle = segments[^1];
+        }
 
         return string.IsNullOrWhiteSpace(handle) ? null : handle.TrimStart('@');
     }

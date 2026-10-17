@@ -135,16 +135,22 @@ public sealed class MembersController(
             return NotFound();
         }
 
+        // Champs nommés, et `profession` renvoyée telle quelle : la fonction est saisie par
+        // l'administration, au moment où elle inscrit le membre dans l'équipe. `UpdateProfile`
+        // affecte toujours le champ qu'on lui donne, et son dixième paramètre vaut `null` par
+        // défaut — l'omettre faisait donc disparaître le poste de la fiche à chaque
+        // modification de profil, sans qu'aucune erreur ne le signale.
         membre.UpdateProfile(
             request.FirstName,
             request.LastName,
-            request.Bio,
-            request.City,
-            request.PhotoUrl,
-            request.GitHubUsername,
-            request.LinkedInUrl,
-            request.XUrl,
-            request.Technologies);
+            bio: request.Bio,
+            city: request.City,
+            photoUrl: request.PhotoUrl,
+            gitHubUsername: request.GitHubUsername,
+            linkedInUrl: request.LinkedInUrl,
+            xUrl: request.XUrl,
+            technologies: request.Technologies,
+            profession: membre.Profession);
 
         unitOfWork.Repository<ApplicationUser>().Update(membre);
         await unitOfWork.SaveChangesAsync(cancellationToken);

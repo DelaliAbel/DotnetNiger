@@ -85,17 +85,15 @@ public interface IMemberDirectory
 /// <param name="MembreId">
 /// Identifiant du compte, nécessaire pour retrouver la photo qu'il a déposée.
 /// </param>
-/// <param name="GitHubUrl">Adresse du profil GitHub, facultative.</param>
-/// <param name="LinkedInUrl">Adresse du profil LinkedIn, facultative.</param>
-/// <param name="XUrl">Adresse du compte X, facultative.</param>
+/// <param name="Liens">Liens que le membre a lui-même enregistrés, dans son ordre.</param>
 /// <remarks>
-/// Type distinct de <see cref="MemberProfile"/> : celui-ci décrit un auteur pour un
-/// contexte de lecture, celui-là une carte d'identité d'équipe avec sa photo, sa fonction
-/// et ses liens. Confondre les deux ferait hériter les auteurs d'une photo qu'ils n'ont pas.
+/// Une liste, non trois colonnes. Sur son profil, le membre ajoute autant de liens qu'il
+/// veut, et c'est cette liste — portfolio compris — qui est présentée sur la fiche.
+/// Rendre la fiche à partir de trois champs fixes n'aurait montré qu'une adresse par
+/// réseau, et aurait laissé de côté tout ce que le membre avait saisi.
 /// <para>
-/// Les trois liens sont déjà des adresses complètes, et non des identifiants : la carte
-/// d'équipe est le seul endroit du site qui les rend, et laisser le nom d'utilisateur nu
-/// obligerait le composant à reconstruire une adresse qu'il n'a aucun moyen de deviner.
+/// Chaque lien est déjà une adresse complète, telle que le membre l'a enregistrée : la
+/// fiche ne doit rien deviner sur ce qu'il a voulu y mettre.
 /// </para>
 /// </remarks>
 public sealed record TeamMember(
@@ -103,9 +101,12 @@ public sealed record TeamMember(
     string? Role,
     string? PhotoUrl,
     Guid MembreId,
-    string? GitHubUrl = null,
-    string? LinkedInUrl = null,
-    string? XUrl = null);
+    IReadOnlyList<TeamLink> Liens);
+
+/// <summary>Lien externe présenté sur une fiche d'équipe.</summary>
+/// <param name="Libelle">Libellé saisi par le membre.</param>
+/// <param name="Url">Adresse de destination.</param>
+public sealed record TeamLink(string Libelle, string Url);
 
 /// <summary>
 /// Profil public d'un membre, tel qu'une page de contenu l'affiche.

@@ -80,7 +80,10 @@ public static class AccountEndpoints
             }
 
             var user = new ApplicationUser(input.Email.Trim());
-            user.UpdateProfile(input.FirstName.Trim(), input.LastName.Trim());
+
+            // Pas de fonction à l'inscription : elle est saisie plus tard par
+            // l'administration, au moment où elle inscrit le membre dans l'équipe.
+            user.UpdateProfile(input.FirstName.Trim(), input.LastName.Trim(), profession: null);
 
             var creation = await userManager.CreateAsync(user, input.Password);
 

@@ -82,9 +82,9 @@ public sealed class MemberDirectory(IUnitOfWork unitOfWork) : IMemberDirectory
                 utilisateur.Profession,
                 utilisateur.PhotoUrl,
                 utilisateur.Id,
-                AdresseGitHub(utilisateur.GitHubUsername),
-                utilisateur.LinkedInUrl,
-                utilisateur.XUrl))
+                // Les liens sont lus dans une requête séparée : ce sont ceux du membre, pas
+                // une propriété de la requête par membre.
+                Array.Empty<TeamLink>()))
             .ToListAsync(cancellationToken);
 
         // La photo déposée par le membre vit dans sa propre table, en octets : elle n'est
@@ -92,15 +92,34 @@ public sealed class MemberDirectory(IUnitOfWork unitOfWork) : IMemberDirectory
         // la carte d'équipe tombait sur les initiales même pour un membre qui avait
         // déjà déposé sa photo. On ne retient que les identités qui en ont une, et l'adresse
         // est celle que le contrôleur sert.
-        var idsAvecPhoto = membres.Select(membre => membre.MembreId).ToArray();
+        var idsEquipe = membres.Select(membre => membre.MembreId).ToArray();
 
         var membresAvecPhoto = await unitOfWork.ReadRepository<ProfilePhoto>().Query
             .AsNoTracking()
-            .Where(photo => idsAvecPhoto.Contains(photo.MembreId))
+            .Where(photo => idsEquipe.Contains(photo.MembreId))
             .Select(photo => photo.MembreId)
             .ToListAsync(cancellationToken);
 
         var avecPhoto = membresAvecPhoto.ToHashSet();
+
+        // Les liens affichés sur la fiche sont ceux que le membre a enregistrés depuis son
+        // profil, dans l'ordre qu'il a choisi — la même liste que celle qu'il y modifie.
+        // Les lire ailleurs, ou sur trois colonnes fixes, ne pouvait montrer qu'une adresse
+        // par réseau et perdait tout ce qu'il avait ajouté.
+        var liens = await unitOfWork.ReadRepository<MemberLink>().Query
+            .AsNoTracking()
+            .Where(lien => idsEquipe.Contains(lien.MemberId))
+            .OrderBy(lien => lien.SortOrder)
+            .ThenBy(lien => lien.Id)
+            .Select(lien => new { lien.MemberId, lien.Label, lien.Url })
+            .ToListAsync(cancellationToken);
+
+        var liensParMembre = liens
+            .GroupBy(lien => lien.MemberId)
+            .ToDictionary(
+                groupe => groupe.Key,
+                groupe => (IReadOnlyList<TeamLink>)[.. groupe
+                    .Select(lien => new TeamLink(lien.Label, lien.Url))]);
 
         return
         [
@@ -109,6 +128,7 @@ public sealed class MemberDirectory(IUnitOfWork unitOfWork) : IMemberDirectory
                 PhotoUrl = avecPhoto.Contains(membre.MembreId)
                     ? PhotoUrlPhotoDeposee(membre.MembreId)
                     : membre.PhotoUrl,
+                Liens = liensParMembre.GetValueOrDefault(membre.MembreId) ?? [],
             }),
         ];
     }
@@ -120,19 +140,6 @@ public sealed class MemberDirectory(IUnitOfWork unitOfWork) : IMemberDirectory
     /// <returns>L'adresse servie par le point de terminaison des photos de profil.</returns>
     private static string PhotoUrlPhotoDeposee(Guid membreId)
         => $"/api/photos-equipe/{membreId}";
-
-    /// <summary>
-    /// Transforme un identifiant GitHub en adresse de profil.
-    /// </summary>
-    /// <param name="identifiant">Identifiant stocké, avec ou sans « @ ».</param>
-    /// <returns>L'adresse du profil, ou <see langword="null"/> si rien n'est renseigné.</returns>
-    /// <remarks>
-    /// Le compte ne stocke qu'un identifiant, parce que c'est ce que la personne connaît et
-    /// recopie. La carte d'équipe a besoin d'une adresse : la reconstruire ici évite de
-    /// laisser le composant deviner un préfixe qu'il ne peut pas garantir.
-    /// </remarks>
-    private static string? AdresseGitHub(string? identifiant)
-        => string.IsNullOrWhiteSpace(identifiant) ? null : $"https://github.com/{identifiant.TrimStart('@')}";
 
     /// <summary>
     /// Choisit le nom à adopter : les prénoms et noms s'ils sont connus, l'adresse sinon.

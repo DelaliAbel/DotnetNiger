@@ -200,14 +200,14 @@ public sealed class ServiceMembres(IUnitOfWork uniteDeTravail)
             membre.UpdateProfile(
                 membre.FirstName,
                 membre.LastName,
+                membre.Profession,
                 membre.Bio,
                 membre.City,
                 membre.PhotoUrl,
                 gitHubUsername: null,
                 linkedInUrl: null,
                 xUrl: null,
-                membre.Technologies,
-                membre.Profession);
+                technologies: membre.Technologies);
         }
 
         await uniteDeTravail.SaveChangesAsync(cancellationToken);
@@ -282,6 +282,12 @@ public sealed class ServiceMembres(IUnitOfWork uniteDeTravail)
         membre.UpdateProfile(
             prenom.Trim(),
             nom.Trim(),
+            // La fonction appartient à l'administration : c'est elle qui coche la case
+            // « membre de l'équipe » et saisit le poste. Elle est renvoyée telle quelle, et
+            // non omise — sans cet argument, le membre qui enregistrait sa biographie depuis
+            // son espace effaçait sa propre fonction, et la carte « À propos » perdait son
+            // poste sans qu'aucun écran ne signale quoi que ce soit.
+            membre.Profession,
             bio,
             ville,
             // Le champ d'adresse n'est pas éditable : les photos viennent du fournisseur

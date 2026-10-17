@@ -40,9 +40,10 @@ internal static class TextesDuSite
                 Role = "Président de la communauté",
                 Teinte = "violet",
                 ImageUrl = "/images/equipe/01-abdoulaye-ibrahim.png",
-                LienGithub = "https://github.com/abdoulaye-ibrahim",
-                LienLinkedin = "https://www.linkedin.com/in/abdoulaye-ibrahim",
-                LienX = "https://x.com/abdoulaye_ib",
+                Liens = Reseaux(
+                    ("GitHub", "https://github.com/abdoulaye-ibrahim"),
+                    ("LinkedIn", "https://www.linkedin.com/in/abdoulaye-ibrahim"),
+                    ("X", "https://x.com/abdoulaye_ib")),
             },
             new MembreVue
             {
@@ -50,9 +51,10 @@ internal static class TextesDuSite
                 Role = "Vice-présidente — événements",
                 Teinte = "vert",
                 ImageUrl = "/images/equipe/02-aicha-ousmane.png",
-                LienGithub = "https://github.com/aicha-ousmane",
-                LienLinkedin = "https://www.linkedin.com/in/aicha-ousmane",
-                LienX = "https://x.com/aicha_ousmane",
+                Liens = Reseaux(
+                    ("GitHub", "https://github.com/aicha-ousmane"),
+                    ("LinkedIn", "https://www.linkedin.com/in/aicha-ousmane"),
+                    ("X", "https://x.com/aicha_ousmane")),
             },
             new MembreVue
             {
@@ -60,9 +62,10 @@ internal static class TextesDuSite
                 Role = "Trésorier — partenariats",
                 Teinte = "orange",
                 ImageUrl = "/images/equipe/03-moussa-djibrilla.png",
-                LienGithub = "https://github.com/moussa-djibrilla",
-                LienLinkedin = "https://www.linkedin.com/in/moussa-djibrilla",
-                LienX = "https://x.com/moussa_dj",
+                Liens = Reseaux(
+                    ("GitHub", "https://github.com/moussa-djibrilla"),
+                    ("LinkedIn", "https://www.linkedin.com/in/moussa-djibrilla"),
+                    ("X", "https://x.com/moussa_dj")),
             },
             new MembreVue
             {
@@ -70,9 +73,10 @@ internal static class TextesDuSite
                 Role = "Lead développeur",
                 Teinte = "ink",
                 ImageUrl = "/images/equipe/04-salifou-maiga.png",
-                LienGithub = "https://github.com/salifou-maiga",
-                LienLinkedin = "https://www.linkedin.com/in/salifou-maiga",
-                LienX = "https://x.com/salifou_maiga",
+                Liens = Reseaux(
+                    ("GitHub", "https://github.com/salifou-maiga"),
+                    ("LinkedIn", "https://www.linkedin.com/in/salifou-maiga"),
+                    ("X", "https://x.com/salifou_maiga")),
             },
             new MembreVue
             {
@@ -80,9 +84,10 @@ internal static class TextesDuSite
                 Role = "Communication et communauté",
                 Teinte = "violet",
                 ImageUrl = "/images/equipe/05-fatima-harouna.png",
-                LienGithub = "https://github.com/fatima-harouna",
-                LienLinkedin = "https://www.linkedin.com/in/fatima-harouna",
-                LienX = "https://x.com/fatima_h",
+                Liens = Reseaux(
+                    ("GitHub", "https://github.com/fatima-harouna"),
+                    ("LinkedIn", "https://www.linkedin.com/in/fatima-harouna"),
+                    ("X", "https://x.com/fatima_h")),
             },
             new MembreVue
             {
@@ -90,9 +95,10 @@ internal static class TextesDuSite
                 Role = "Développeur backend",
                 Teinte = "vert",
                 ImageUrl = "/images/equipe/06-issoufou-hamadou.png",
-                LienGithub = "https://github.com/issoufou-hamadou",
-                LienLinkedin = "https://www.linkedin.com/in/issoufou-hamadou",
-                LienX = "https://x.com/issoufou_h",
+                Liens = Reseaux(
+                    ("GitHub", "https://github.com/issoufou-hamadou"),
+                    ("LinkedIn", "https://www.linkedin.com/in/issoufou-hamadou"),
+                    ("X", "https://x.com/issoufou_h")),
             },
             new MembreVue
             {
@@ -100,9 +106,10 @@ internal static class TextesDuSite
                 Role = "Formatrice C# et responsable pédagogie",
                 Teinte = "orange",
                 ImageUrl = "/images/equipe/07-zara-oumarou.png",
-                LienGithub = "https://github.com/zara-oumarou",
-                LienLinkedin = "https://www.linkedin.com/in/zara-oumarou",
-                LienX = "https://x.com/zara_oumarou",
+                Liens = Reseaux(
+                    ("GitHub", "https://github.com/zara-oumarou"),
+                    ("LinkedIn", "https://www.linkedin.com/in/zara-oumarou"),
+                    ("X", "https://x.com/zara_oumarou")),
             },
             new MembreVue
             {
@@ -110,9 +117,10 @@ internal static class TextesDuSite
                 Role = "Développeur .NET — secteur bancaire",
                 Teinte = "ink",
                 ImageUrl = "/images/equipe/08-mahamadou-kane.png",
-                LienGithub = "https://github.com/mahamadou-kane",
-                LienLinkedin = "https://www.linkedin.com/in/mahamadou-kane",
-                LienX = "https://x.com/mahamadou_k",
+                Liens = Reseaux(
+                    ("GitHub", "https://github.com/mahamadou-kane"),
+                    ("LinkedIn", "https://www.linkedin.com/in/mahamadou-kane"),
+                    ("X", "https://x.com/mahamadou_k")),
             },
             new MembreVue
             {
@@ -120,9 +128,10 @@ internal static class TextesDuSite
                 Role = "Chargée des partenariats académiques",
                 Teinte = "violet",
                 ImageUrl = "/images/equipe/09-rokia-diallo.png",
-                LienGithub = "https://github.com/rokia-diallo",
-                LienLinkedin = "https://www.linkedin.com/in/rokia-diallo",
-                LienX = "https://x.com/rokia_diallo",
+                Liens = Reseaux(
+                    ("GitHub", "https://github.com/rokia-diallo"),
+                    ("LinkedIn", "https://www.linkedin.com/in/rokia-diallo"),
+                    ("X", "https://x.com/rokia_diallo")),
             },
             new MembreVue
             {
@@ -130,8 +139,9 @@ internal static class TextesDuSite
                 Role = "Mainteneur DotnetNiger.Toolbox",
                 Teinte = "vert",
                 ImageUrl = "/images/equipe/10-hassan-adamou.png",
-                LienGithub = "https://github.com/hassan-adamou",
-                LienLinkedin = "https://www.linkedin.com/in/hassan-adamou",
+                Liens = Reseaux(
+                    ("GitHub", "https://github.com/hassan-adamou"),
+                    ("LinkedIn", "https://www.linkedin.com/in/hassan-adamou")),
             },
             new MembreVue
             {
@@ -139,9 +149,10 @@ internal static class TextesDuSite
                 Role = "Designer d'interface",
                 Teinte = "orange",
                 ImageUrl = "/images/equipe/11-mariama-seydou.png",
-                LienGithub = "https://github.com/mariama-seydou",
-                LienLinkedin = "https://www.linkedin.com/in/mariama-seydou",
-                LienX = "https://x.com/mariama_sey",
+                Liens = Reseaux(
+                    ("GitHub", "https://github.com/mariama-seydou"),
+                    ("LinkedIn", "https://www.linkedin.com/in/mariama-seydou"),
+                    ("X", "https://x.com/mariama_sey")),
             },
             new MembreVue
             {
@@ -149,11 +160,18 @@ internal static class TextesDuSite
                 Role = "Responsable des hackathons",
                 Teinte = "ink",
                 ImageUrl = "/images/equipe/12-ibrahim-cisse.png",
-                LienGithub = "https://github.com/ibrahim-cisse",
-                LienLinkedin = "https://www.linkedin.com/in/ibrahim-cisse",
-                LienX = "https://x.com/ibrahim_cisse",
+                Liens = Reseaux(
+                    ("GitHub", "https://github.com/ibrahim-cisse"),
+                    ("LinkedIn", "https://www.linkedin.com/in/ibrahim-cisse"),
+                    ("X", "https://x.com/ibrahim_cisse")),
             },
         };
+
+    /// <summary>Compose la liste de liens d'une fiche à partir de paires libellé/adresse.</summary>
+    /// <param name="paires">Libellé et adresse de chaque lien, dans l'ordre d'affichage.</param>
+    /// <returns>Les liens, prêts à être rendus.</returns>
+    private static IReadOnlyList<LienEquipeVue> Reseaux(params (string Libelle, string Url)[] paires)
+        => [.. paires.Select(paire => new LienEquipeVue(paire.Libelle, paire.Url, IconesDeLien.Pour(paire.Url)))];
 
     public static readonly ValeurVue[] Valeurs = new[]
         {

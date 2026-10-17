@@ -57,14 +57,20 @@ public sealed partial class AdminAccountsController
 
         if (!string.IsNullOrWhiteSpace(request.FirstName) || !string.IsNullOrWhiteSpace(request.LastName))
         {
+            // Les champs sont nommés, et non passés en position : `UpdateProfile` enchaîne
+            // dix paramètres facultatifs dont l'ordre ne se devine pas à l'appel. Passés en
+            // position, la fonction arrivait dans la biographie, une adresse de photo dans la
+            // ville, et `Profession` — le dixième — restait à sa valeur par défaut. La carte
+            // d'équipe affichait donc une fiche vide alors que l'administration avait saisi la
+            // fonction, qui elle-même réapparaissait dans la présentation du profil du membre.
             compte.UpdateProfile(
                 request.FirstName?.Trim() ?? string.Empty,
                 request.LastName?.Trim() ?? string.Empty,
-                request.Profession,
-                request.PhotoUrl,
-                request.GitHubUsername,
-                request.LinkedInUrl,
-                request.XUrl);
+                profession: request.Profession,
+                photoUrl: request.PhotoUrl,
+                gitHubUsername: request.GitHubUsername,
+                linkedInUrl: request.LinkedInUrl,
+                xUrl: request.XUrl);
         }
 
         // L'appartenance à l'équipe est posée même sans nom : un compte créé vide puis
