@@ -1735,26 +1735,31 @@
   }
 
   /* --- Carte d'équipe ---
-     Forme d'origine : une vignette carrée. Seule la taille de l'avatar change.
-     Il était réglé à 88 px, valeur calibrée pour l'espace membre où il tient dans une
-     barre à côté d'un nom — sur une vignette de près de 400 px, la photo n'occupait que
-     22 % de son cadre, et l'œil lisait une case vide plutôt qu'un visage. */
+     L'image occupe TOUTE la vignette, jusqu'à ses bords. Elle y était posée en petit
+     cercle centré : sur une vignette de près de 400 px de côté, une photo de 88 px
+     n'occupait qu'un quart de la surface — et la vignette, si haute, repoussait le nom,
+     la fonction et les liens hors de l'écran. On ne voyait qu'une photo minuscule dans un
+     cadre vide, et les informations en dessous semblaient manquantes.
+
+     La même règle sert au repli sur les initiales : sans photo, les lettres remplissent
+     la vignette à la même place, et la carte garde la même silhouette. */
   .card__media--equipe {
-    aspect-ratio: 1 / 1;
-    display: grid;
-    place-items: center;
+    aspect-ratio: 5 / 4;
+    overflow: hidden;
+    border-bottom: 1px solid var(--site-border);
   }
 
-  .card__media--equipe .avatar--profil {
-    width: calc(var(--spacing) * 22);
-    height: calc(var(--spacing) * 22);
-    border-radius: 50%;
+  .card__media--equipe .avatar {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    font-size: calc(var(--spacing) * 10);
   }
 
   /* L'agrandissement au survol existait mais ne se déclenchait jamais : les cartes
      d'équipe ne portent pas la classe `card--hover`. */
   .card__media--equipe .avatar--img {
-    transition: transform 200ms ease;
+    transition: transform 250ms ease;
   }
 
   .card:hover .card__media--equipe .avatar--img {
