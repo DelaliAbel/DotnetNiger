@@ -186,10 +186,8 @@ else
 {
     @* Le fond ferme le tiroir au clic : c'est le geste attendu de toute fenêtre qui
        sort du cadre. *@
-    <div class="admin-voile" @onclick="FermerFormulaire">
-        <div class="admin-tiroir" role="dialog" aria-modal="true"
-             aria-label="@(_edition is null ? "Nouvel article" : "Modifier l'article")"
-             @onclick:stopPropagation="true">
+    <DnVoile Libelle="@(_edition is null ? "Nouvel article" : "Modifier l'article")"
+             Fermer="FermerFormulaire">
 
             <div class="admin-tiroir__entete">
                 <h2 class="admin-tiroir__titre">
@@ -290,8 +288,7 @@ else
                     </button>
                 </div>
             </div>
-        </div>
-    </div>
+    </DnVoile>
 }
 
 @code {

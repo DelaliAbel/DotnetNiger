@@ -7,7 +7,7 @@
 @using DotnetNiger.Application.Common
 @using DotnetNiger.Web.Services.Administration
 
-@attribute [Authorize(Roles = RoleNames.Admin)]
+@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
 
 @inject ServiceMembres Service
 @inject ICurrentUserService UtilisateurCourant

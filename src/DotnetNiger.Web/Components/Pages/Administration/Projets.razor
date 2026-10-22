@@ -178,10 +178,8 @@ else
 
 @if (_formulaireOuvert)
 {
-    <div class="admin-voile" @onclick="FermerFormulaire">
-        <div class="admin-tiroir" role="dialog" aria-modal="true"
-             aria-label="@(_edition is null ? "Nouveau projet" : "Modifier le projet")"
-             @onclick:stopPropagation="true">
+    <DnVoile Libelle="@(_edition is null ? "Nouveau projet" : "Modifier le projet")"
+             Fermer="FermerFormulaire">
 
             <div class="admin-tiroir__entete">
                 <h2 class="admin-tiroir__titre">
@@ -282,8 +280,7 @@ else
                     </button>
                 </div>
             </div>
-        </div>
-    </div>
+    </DnVoile>
 }
 
 @code {

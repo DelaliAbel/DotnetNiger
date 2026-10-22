@@ -8,7 +8,7 @@
 @using DotnetNiger.Application.Common
 @using DotnetNiger.Web.Services.Administration
 
-@attribute [Authorize(Roles = RoleNames.Admin)]
+@attribute [Authorize(Roles = DotnetNiger.Application.Common.RoleNames.Admin)]
 
 @inject ServiceMembres Service
 @inject ICurrentUserService UtilisateurCourant
@@ -193,10 +193,8 @@ else
 
 @if (_formulaireOuvert)
 {
-    <div class="admin-voile" @onclick="FermerFormulaire">
-        <div class="admin-tiroir admin-tiroir--etroit" role="dialog" aria-modal="true"
-             aria-label="@(_edition is null ? "Nouveau compte" : "Modifier le compte")"
-             @onclick:stopPropagation="true">
+    <DnVoile Libelle="@(_edition is null ? "Nouveau compte" : "Modifier le compte")"
+             ClasseTiroir="admin-tiroir--etroit" Fermer="FermerFormulaire">
 
             <div class="admin-tiroir__entete">
                 <h2 class="admin-tiroir__titre">
@@ -364,8 +362,7 @@ else
                     </button>
                 </div>
             </div>
-        </div>
-    </div>
+    </DnVoile>
 }
 
 @code {

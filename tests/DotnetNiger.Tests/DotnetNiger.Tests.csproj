@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Un seul projet de tests, qui couvre la logique pure des deux couches : les invariants du
+    domaine et les aides d'affichage du Web (slug, chapô, assainissement HTML, référentiel).
+
+    Ces tests n'ont aucune dépendance nouvelle : xunit, le lanceur Visual Studio et le SDK de
+    test sont déjà déclarés dans Directory.Packages.props. Restaurer en CI reste donc court
+    et ne dépend d'aucun paquet approximatif.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!--
+      Les tests n'ont rien à publier ni à documenter : la documentation XML obligatoire de la
+      solution ne s'applique pas ici, et l'exiger ferait échouer le build sur chaque cas de test.
+    -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Le domaine pour les invariants, le Web pour les aides d'affichage et l'assainisseur. -->
+    <ProjectReference Include="..\..\src\DotnetNiger.Domain\DotnetNiger.Domain.csproj" />
+    <ProjectReference Include="..\..\src\DotnetNiger.Web\DotnetNiger.Web.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

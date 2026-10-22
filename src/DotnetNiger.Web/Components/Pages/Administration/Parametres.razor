@@ -37,6 +37,13 @@
     </div>
 </header>
 
+@if (_chargement)
+{
+    <Chargement />
+}
+else
+{
+
 <section class="admin-section">
     <h2 class="admin-section__titre">Identité</h2>
 
@@ -173,6 +180,8 @@
     }
 </div>
 
+}
+
 @code {
     private ReglagesVue _valeurs = new(null, null, null, null, null, null, null, null, null);
 
@@ -198,6 +207,16 @@
 
     private bool _depotEnCours;
 
+    /// <summary>
+    /// Vrai tant que les réglages ne sont pas arrivés de la base.
+    /// </summary>
+    /// <remarks>
+    /// Le formulaire n'est pas affiché avant : les champs sont liés à des valeurs vides au
+    /// départ, et un enregistrement fait sur un formulaire encore vide effacerait tous les
+    /// réglages du site. Mieux vaut un court écran d'attente qu'une perte silencieuse.
+    /// </remarks>
+    private bool _chargement = true;
+
     private string? _erreur;
 
     private ElementReference _champLogo;
@@ -208,7 +227,16 @@
 
     private async Task ChargerAsync()
     {
-        _valeurs = await Service.LireAsync();
+        _chargement = true;
+
+        try
+        {
+            _valeurs = await Service.LireAsync();
+        }
+        finally
+        {
+            _chargement = false;
+        }
 
         _formeLogo = _valeurs.Logo ?? string.Empty;
         _formeCourriel = _valeurs.Courriel ?? string.Empty;

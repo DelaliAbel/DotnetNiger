@@ -89,6 +89,19 @@ public sealed class ReglageSite : Entity
 
         // Le logo et les canaux sont rendus dans des attributs href et src. Un schéma
         // dangereux y aurait sa place si la valeur passait sans contrôle.
+        //
+        // Le chemin du site — « /api/images/… » — est accepté au même titre qu'une adresse :
+        // le logo déposé par l'administration est renvoyé sous cette forme, et c'est elle qui
+        // permet de changer de nom de domaine sans réécrire le réglage.
+        //
+        // L'exclusion du schéma ne peut pas reposer sur UriKind.Absolute seul : sous Linux,
+        // « /api/images/12 » est une URI absolue, de type fichier. La confondre avec une
+        // adresse web ferait refuser le logo que le site vient lui-même de déposer.
+        if (EstCheminDuSite(texte))
+        {
+            return texte;
+        }
+
         if (Uri.TryCreate(texte, UriKind.Absolute, out var adresse)
             && adresse.Scheme is not ("http" or "https" or "mailto" or "tel"))
         {
@@ -99,4 +112,14 @@ public sealed class ReglageSite : Entity
 
         return texte;
     }
+
+    /// <summary>
+    /// Indique si une valeur est un chemin servi par le site lui-même.
+    /// </summary>
+    /// <remarks>
+    /// Même règle que <c>DomainGuard</c> : une barre oblique initiale, et aucun deux-points.
+    /// Un chemin n'a jamais besoin d'un schéma, et son absence écarte « javascript:… » comme
+    /// « data:… ».</remarks>
+    private static bool EstCheminDuSite(string valeur)
+        => valeur.StartsWith('/') && !valeur.Contains(':', StringComparison.Ordinal);
 }

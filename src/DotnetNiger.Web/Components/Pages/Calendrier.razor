@@ -54,6 +54,21 @@ else
                     }
                 </div>
 
+                @* Un mois sans rendez-vous donnait une grille muette : le lecteur ne savait
+                   pas si le calendrier était vide ou s'il n'avait pas encore chargé. Le dire
+                   une fois, et proposer la liste complète, vaut mieux qu'une grille nue. *@
+                @if (_Evenements.Count == 0)
+                {
+                    <EmptyState Icone="calendar"
+                                Titre="Aucun événement au calendrier"
+                                Message="Les rendez-vous publiés apparaîtront ici, mois par mois.">
+                        <a class="btn btn--ghost" href="/evenements">
+                            Voir l'agenda <DnIcon Name="arrow-right" Size="16" />
+                        </a>
+                    </EmptyState>
+                }
+                else
+                {
                 <div class="calendrier__grille">
                     @foreach (var case_ in CasesDuMois)
                     {
@@ -81,6 +96,7 @@ else
                         </div>
                     }
                 </div>
+                }
             </div>
 
             <p class="calendrier__legende">

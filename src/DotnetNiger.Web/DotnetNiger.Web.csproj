@@ -5,6 +5,14 @@
     <ProjectReference Include="..\DotnetNiger.Infrastructure\DotnetNiger.Infrastructure.csproj" />
   </ItemGroup>
 
+  <!--
+    Permet aux tests de joindre les aides d'affichage internes au Web — le choix d'icône d'un
+    lien, notamment. Elles n'ont pas à devenir publiques pour être couvertes.
+  -->
+  <ItemGroup>
+    <InternalsVisibleTo Include="DotnetNiger.Tests" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="AspNet.Security.OAuth.GitHub" />
     <PackageReference Include="HtmlSanitizer" />

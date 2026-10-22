@@ -5,4 +5,7 @@
     <Project Path="src/DotnetNiger.Infrastructure/DotnetNiger.Infrastructure.csproj" />
     <Project Path="src/DotnetNiger.Web/DotnetNiger.Web.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/DotnetNiger.Tests/DotnetNiger.Tests.csproj" />
+  </Folder>
 </Solution>

@@ -1,0 +1,52 @@
+@*
+    Fond d'un tiroir d'édition : le voile sombre qui ferme la fenêtre au clic.
+
+    Écrit une seule fois pour les sept tiroirs de l'administration, afin que le
+    comportement d'un fond ne dépende pas de la page qui l'ouvre.
+
+    Le geste attendu d'une fenêtre modale est double : un clic hors du panneau ferme, et
+    Échap ferme aussi. Le premier existait déjà ; le second manquait partout. Un fond
+    laissé en simple <div @onclick> n'offrait, lui, aucune issue au clavier.
+
+    Le voile n'est pas un bouton : il reste un fond décoratif, et l'issue au clavier est
+    la touche Échap — le geste que tout le monde connaît pour refermer une fenêtre. Il
+    n'est donc pas focalisable, et ne vole pas le focus au premier champ du formulaire.
+*@
+
+<div class="admin-voile" @onclick="Fermer" @onkeydown="ToucheSiFermeture">
+    <div class="admin-tiroir @ClasseTiroir" role="dialog" aria-modal="true"
+         aria-label="@Libelle" @onclick:stopPropagation="true">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    /// <summary>Fermeture demandée : clic sur le fond, ou touche Échap.</summary>
+    [Parameter] public EventCallback Fermer { get; set; }
+
+    /// <summary>Nom accessible du tiroir, lu par les technologies d'assistance.</summary>
+    [Parameter, EditorRequired] public string Libelle { get; set; } = string.Empty;
+
+    /// <summary>Classe supplémentaire du panneau, par exemple <c>admin-tiroir--etroit</c>.</summary>
+    [Parameter] public string? ClasseTiroir { get; set; }
+
+    /// <summary>Contenu du tiroir : en-tête, formulaire, actions.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Ferme le tiroir sur Échap.
+    /// </summary>
+    /// <remarks>
+    /// L'événement est posé sur le voile ; le gestionnaire du tiroir l'arrête, une touche
+    /// enfoncée dans un champ ne referme donc pas le formulaire au milieu d'une saisie.
+    /// Les tiroirs s'ouvrent dans le circuit interactif, où la touche atteint bien le fond.
+    /// </remarks>
+    /// <param name="arguments">Touche enfoncée.</param>
+    private async Task ToucheSiFermeture(KeyboardEventArgs arguments)
+    {
+        if (arguments.Key == "Escape")
+        {
+            await Fermer.InvokeAsync();
+        }
+    }
+}

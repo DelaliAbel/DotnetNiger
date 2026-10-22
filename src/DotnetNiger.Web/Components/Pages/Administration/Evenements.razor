@@ -201,9 +201,8 @@ else
 {
     @* Le panneau des inscrits est distinct du tiroir d'édition : on regarde qui vient,
        ou on modifie la rencontre — jamais les deux à la fois. *@
-    <div class="admin-voile" @onclick="FermerInscriptions">
-        <div class="admin-tiroir admin-tiroir--etroit" role="dialog" aria-modal="true"
-             aria-label="Personnes inscrites" @onclick:stopPropagation="true">
+    <DnVoile Libelle="Personnes inscrites" ClasseTiroir="admin-tiroir--etroit"
+             Fermer="FermerInscriptions">
 
             <div class="admin-tiroir__entete">
                 <h2 class="admin-tiroir__titre">Inscrits — @_inscriptionsEvenement?.Titre</h2>
@@ -248,16 +247,13 @@ else
                     </tbody>
                 </table>
             }
-        </div>
-    </div>
+    </DnVoile>
 }
 
 @if (_formulaireOuvert)
 {
-    <div class="admin-voile" @onclick="FermerFormulaire">
-        <div class="admin-tiroir" role="dialog" aria-modal="true"
-             aria-label="@(_edition is null ? "Nouvel événement" : "Modifier l'événement")"
-             @onclick:stopPropagation="true">
+    <DnVoile Libelle="@(_edition is null ? "Nouvel événement" : "Modifier l'événement")"
+             Fermer="FermerFormulaire">
 
             <div class="admin-tiroir__entete">
                 <h2 class="admin-tiroir__titre">
@@ -417,8 +413,7 @@ else
                     </button>
                 </div>
             </div>
-        </div>
-    </div>
+    </DnVoile>
 }
 
 @code {
