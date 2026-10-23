@@ -4,6 +4,9 @@
 @inject IConfiguration Configuration
 
 <PageTitle>Connexion - DotnetNiger</PageTitle>
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
 
 <CadreCompte Titre="Connexion"
             SurTitre="Espace membre"
@@ -60,7 +63,7 @@
             Rester connecté
         </label>
 
-        <button type="submit" class="btn btn--primary w-full">Se connecter</button>
+        <button type="submit" class="btn btn--primary w-full" data-dn-submit>Se connecter</button>
     </form>
 
     <p class="compte__pied">

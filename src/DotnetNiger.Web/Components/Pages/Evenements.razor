@@ -8,10 +8,16 @@
             Description="Meetups, conférences, ateliers et hackathons : les rendez-vous de la communauté des développeurs .NET du Niger." />
 </HeadContent>
 
-@if (_Evenements is null)
+@if (_erreur)
 {
     <div class="wrap py-12">
-        <p class="text-caption text-[var(--site-fg-muted)]">Chargement…</p>
+        <EtatErreur />
+    </div>
+}
+else if (_Evenements is null)
+{
+    <div class="wrap py-12">
+        <Chargement />
     </div>
 }
 else
@@ -221,6 +227,7 @@ else
     ];
 
     private IReadOnlyList<EvenementVue>? _Evenements;
+    private bool _erreur;
 
     [SupplyParameterFromQuery(Name = "q")]
     public string? _Recherche { get; set; }
@@ -259,14 +266,21 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        _Evenements = await Contenu.ChargerEvenementsAsync();
-
-        if (_Page is { } pageDemandee && pageDemandee > 0)
+        try
         {
-            PageCourante = pageDemandee;
-        }
+            _Evenements = await Contenu.ChargerEvenementsAsync();
 
-        AppliquerFiltres();
+            if (_Page is { } pageDemandee && pageDemandee > 0)
+            {
+                PageCourante = pageDemandee;
+            }
+
+            AppliquerFiltres();
+        }
+        catch
+        {
+            _erreur = true;
+        }
     }
 
     private void AppliquerFiltres()
@@ -304,7 +318,7 @@ else
         resultats = _Tri switch
         {
             "proche" => resultats.OrderBy(e => e.DateDebut),
-            "ancien" => resultats.OrderBy(e => e.DateDebut),
+            "ancien" => resultats.OrderByDescending(e => e.DateDebut),
             "az" => resultats.OrderBy(e => e.Titre, StringComparer.OrdinalIgnoreCase),
             "za" => resultats.OrderByDescending(e => e.Titre, StringComparer.OrdinalIgnoreCase),
             _ => resultats.OrderByDescending(e => e.DateDebut),

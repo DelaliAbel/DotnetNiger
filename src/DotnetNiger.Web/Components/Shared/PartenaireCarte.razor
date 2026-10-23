@@ -5,7 +5,7 @@
         <div class="partenaire__identite">
             @if (!string.IsNullOrWhiteSpace(Partenaire.LogoUrl))
             {
-                <img class="partenaire__logo" src="@Partenaire.LogoUrl" alt="" loading="lazy" />
+                <img class="partenaire__logo" src="@Partenaire.LogoUrl" alt="@Partenaire.Nom" loading="lazy" />
             }
             else
             {

@@ -93,7 +93,7 @@ else
                 <div class="md:col-span-2">
                     @if (!string.IsNullOrWhiteSpace(_Article.ImageUrl))
                     {
-                        <DnCardMedia ImageUrl="@_Article.ImageUrl" Alt="" />
+                        <DnCardMedia ImageUrl="@_Article.ImageUrl" Alt="@_Article.Titre" />
                     }
 
                     <div class="article__corps fiche__corps">

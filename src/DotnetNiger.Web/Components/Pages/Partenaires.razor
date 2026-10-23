@@ -8,10 +8,16 @@
             Description="Les entreprises, établissements et associations qui rendent les meetups, ateliers et hackathons de la communauté possibles." />
 </HeadContent>
 
-@if (_Partenaires is null)
+@if (_erreur)
 {
     <div class="wrap py-12">
-        <p class="text-caption text-[var(--site-fg-muted)]">Chargement…</p>
+        <EtatErreur />
+    </div>
+}
+else if (_Partenaires is null)
+{
+    <div class="wrap py-12">
+        <Chargement />
     </div>
 }
 else
@@ -142,9 +148,19 @@ else
 
 @code {
     private IReadOnlyList<PartenaireVue>? _Partenaires;
+    private bool _erreur;
 
-    protected override async Task OnInitializedAsync() =>
-        _Partenaires = await Contenu.ChargerPartenairesAsync();
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _Partenaires = await Contenu.ChargerPartenairesAsync();
+        }
+        catch
+        {
+            _erreur = true;
+        }
+    }
 
     /// <summary>
     /// Partenaires d'un type donné. Le type vient de la donnée plutôt que d'une liste

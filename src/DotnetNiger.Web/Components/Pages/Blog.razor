@@ -10,10 +10,16 @@
             Description="Nouveautés de .NET, projets locaux et interviews : les articles écrits et maintenus par la communauté des développeurs .NET du Niger." />
 </HeadContent>
 
-@if (_Articles is null)
+@if (_erreur)
 {
     <div class="wrap py-12">
-        <p class="text-caption text-[var(--site-fg-muted)]">Chargement…</p>
+        <EtatErreur />
+    </div>
+}
+else if (_Articles is null)
+{
+    <div class="wrap py-12">
+        <Chargement />
     </div>
 }
 else
@@ -134,40 +140,6 @@ else
         </div>
     </section>
 
-    @* ------------------------------------a trancher entre celui ci------------------------------------------------------ *@
-
-    @* <!-- 4. Écrire sur le blog -->
-    <section class="section" aria-labelledby="ecrire-titre">
-        <div class="wrap">
-            <div class="bande">
-                <div class="grid items-center gap-6 md:grid-cols-2">
-                    <div>
-                        <p class="eyebrow text-vert-300">Contribuer</p>
-                        <h2 id="ecrire-titre" class="bande__title mt-1">
-                            Un retour d'expérience à partager ?
-                        </h2>
-                        <p class="bande__lead">
-                            Un projet mené, une difficulté rencontrée, une découverte : ces articles
-                            sont écrits par des membres comme vous, et c'est ce qui fait leur valeur.
-                        </p>
-                    </div>
-                    <div class="contribuer__actions">
-                        <a class="btn btn--white btn--lg" href="/compte/inscription">
-                            Proposer un article <DnIcon Name="arrow-right" Size="18" />
-                        </a>
-                        <p class="contribuer__note">
-                            Connectez-vous pour publier directement :
-                            <a class="link" href="/compte/connexion?retour=/blog">se connecter</a>.
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section> *@
-
-    @* ---------------------------------------ou celui la------------------------------------------------------------------ *@
-
-
 <!-- 4. Contribuer -->
 <section class="section" aria-labelledby="proposer-titre">
     <div class="wrap">
@@ -176,36 +148,30 @@ else
                 <div>
                     <p class="eyebrow text-vert-300">Contribuer</p>
                     <h2 id="proposer-titre" class="bande__title mt-1">
-                        Une ressource à partager avec la communauté ?
+                        Un retour d'expérience à partager ?
                     </h2>
                     <p class="bande__lead">
-                        Tutoriel, outil ou guide qui vous a fait gagner du temps : proposez-la,
-                        elle aidera peut-être un autre développeur nigerien.
+                        Un projet mené, une difficulté rencontrée, une découverte : ces articles
+                        sont écrits par des membres comme vous, et c'est ce qui fait leur valeur.
                     </p>
                 </div>
                 <div class="contribuer__actions">
-
                     @if (Utilisateur.IsAuthenticated)
                     {
-
                         <a class="btn btn--white btn--lg" href="/compte/tableau-de-bord">
-                            Proposer une ressource <DnIcon Name="arrow-right" Size="18" />
+                            Proposer un article <DnIcon Name="arrow-right" Size="18" />
                         </a>
-
                     }
                     else
                     {
-
                         <a class="btn btn--white btn--lg" href="/compte/inscription">
-                            Proposer une ressource <DnIcon Name="arrow-right" Size="18" />
+                            Proposer un article <DnIcon Name="arrow-right" Size="18" />
                         </a>
                         <p class="contribuer__note">
-                            Connectez-vous pour publier directement votre ressource :
-                            <a class="link" href="/compte/connexion?retour=/ressources">se connecter</a>.
+                            Connectez-vous pour publier directement :
+                            <a class="link" href="/compte/connexion?retour=/blog">se connecter</a>.
                         </p>
                     }
-
-
                 </div>
             </div>
         </div>
@@ -245,6 +211,7 @@ else
     public int? _Page { get; set; }
 
     private ArticleVue[] ResultatsFiltres { get; set; } = [];
+    private bool _erreur;
 
     private string Rubrique { get; set; } = "Tous les";
 
@@ -259,16 +226,23 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var articles = await Contenu.ChargerArticlesAsync();
-
-        _Articles = [.. articles.OrderByDescending(a => a.DatePublication)];
-
-        if (_Page is { } pageDemandee && pageDemandee > 0)
+        try
         {
-            PageCourante = pageDemandee;
-        }
+            var articles = await Contenu.ChargerArticlesAsync();
 
-        AppliquerFiltres();
+            _Articles = [.. articles.OrderByDescending(a => a.DatePublication)];
+
+            if (_Page is { } pageDemandee && pageDemandee > 0)
+            {
+                PageCourante = pageDemandee;
+            }
+
+            AppliquerFiltres();
+        }
+        catch
+        {
+            _erreur = true;
+        }
     }
 
     private void AppliquerFiltres()

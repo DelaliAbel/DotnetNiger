@@ -10,10 +10,16 @@
             Description="Découvrez la mission, les valeurs, l'histoire et l'équipe de la communauté des développeurs .NET au Niger." />
 </HeadContent>
 
-@if (_APropos is null)
+@if (_erreur)
 {
     <div class="wrap py-12">
-        <p class="text-caption text-[var(--site-fg-muted)]">Chargement…</p>
+        <EtatErreur />
+    </div>
+}
+else if (_APropos is null)
+{
+    <div class="wrap py-12">
+        <Chargement />
     </div>
 }
 else
@@ -48,6 +54,7 @@ else
                     <span class="hero__panel__dot bg-violet-300"></span>
                 </div>
                 <img class="hero__panel__image" src="/images/img3.jpg" loading="lazy"
+                     width="640" height="480"
                 alt="Atelier DotnetNiger : des développeurs .NET du Niger autour de leurs ordinateurs portables" />
             </div>
         </div>
@@ -263,9 +270,17 @@ else
 
 @code {
     private AProposVue? _APropos;
+    private bool _erreur;
 
     protected override async Task OnInitializedAsync()
     {
-        _APropos = await Contenu.ChargerAProposAsync();
+        try
+        {
+            _APropos = await Contenu.ChargerAProposAsync();
+        }
+        catch
+        {
+            _erreur = true;
+        }
     }
 }

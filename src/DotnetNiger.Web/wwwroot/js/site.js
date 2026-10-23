@@ -440,3 +440,34 @@ window.DnPartage = (function () {
 
     return { installe: installe };
 })();
+
+// Empêche le double-envoi des formulaires publics : au premier clic, le bouton est
+// désactivé et un indicateur de progression s'affiche. Les formulaires sont du HTML
+// statique (method="post"), donc la protection ne peut pas venir de Blazor.
+(function () {
+    let installe = false;
+    function brancher() {
+        if (installe) return;
+        installe = true;
+        document.addEventListener("submit", (evenement) => {
+            const formulaire = evenement.target;
+            if (!(formulaire instanceof HTMLFormElement)) return;
+            const bouton = formulaire.querySelector('[data-dn-submit]');
+            if (!bouton) return;
+            if (bouton.disabled) {
+                evenement.preventDefault();
+                return;
+            }
+            bouton.disabled = true;
+            bouton.setAttribute("aria-busy", "true");
+            const texte = bouton.textContent;
+            bouton.dataset.texteOriginal = texte.trim();
+            bouton.textContent = "Envoi en cours…";
+        });
+    }
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", brancher);
+    } else {
+        brancher();
+    }
+})();

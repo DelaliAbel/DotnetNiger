@@ -1,6 +1,9 @@
 @page "/compte/reinitialiser-mot-de-passe"
 
 <PageTitle>Nouveau mot de passe - DotnetNiger</PageTitle>
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
 
 <CadreCompte Titre="Nouveau mot de passe"
             SurTitre="Récupération d'accès"
@@ -39,7 +42,7 @@
                                     AutoComplete="new-password" />
             </div>
 
-            <button type="submit" class="btn btn--primary w-full">Enregistrer le mot de passe</button>
+            <button type="submit" class="btn btn--primary w-full" data-dn-submit>Enregistrer le mot de passe</button>
         </form>
 
         <p class="compte__pied">

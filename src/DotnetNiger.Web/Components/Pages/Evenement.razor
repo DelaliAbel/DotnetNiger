@@ -82,7 +82,7 @@ else
                 <div class="md:col-span-2">
                     @if (!string.IsNullOrWhiteSpace(_Evenement.ImageUrl))
                     {
-                        <DnCardMedia ImageUrl="@_Evenement.ImageUrl" Alt=""
+                        <DnCardMedia ImageUrl="@_Evenement.ImageUrl" Alt="@_Evenement.Titre"
                                     Etiquette="@(EstPasse ? "Terminé" : null)" />
                     }
 
@@ -147,7 +147,7 @@ else
                                     }
                                 </p>
 
-                                <button class="btn @(_Inscrit ? "btn--ghost" : "btn--primary")" type="submit">
+                                <button class="btn @(_Inscrit ? "btn--ghost" : "btn--primary")" type="submit" data-dn-submit>
                                     @if (_Inscrit)
                                     {
                                         <text>Annuler ma participation</text>

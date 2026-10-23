@@ -10,10 +10,16 @@
             Description="Formations et tutoriels (Blazor, ASP.NET Core, MAUI), bibliothèques et outils, articles de blog et guides techniques pour apprendre et pratiquer .NET." />
 </HeadContent>
 
-@if (_Ressources is null)
+@if (_erreur)
 {
     <div class="wrap py-12">
-        <p class="text-caption text-[var(--site-fg-muted)]">Chargement…</p>
+        <EtatErreur />
+    </div>
+}
+else if (_Ressources is null)
+{
+    <div class="wrap py-12">
+        <Chargement />
     </div>
 }
 else
@@ -146,7 +152,7 @@ else
                     </h2>
                     <p class="bande__lead">
                         Tutoriel, outil ou guide qui vous a fait gagner du temps : proposez-la,
-                        elle aidera peut-être un autre développeur nigerien.
+                        elle aidera peut-être un autre développeur nigérien.
                     </p>
                 </div>
                 <div class="contribuer__actions">
@@ -198,6 +204,7 @@ else
     };
 
     private IReadOnlyList<RessourceVue>? _Ressources;
+    private bool _erreur;
 
     [SupplyParameterFromQuery(Name = "q")]
     public string? _Recherche { get; set; }
@@ -228,15 +235,22 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        var ressources = await Contenu.ChargerRessourcesAsync();
-        _Ressources = ressources.ToArray();
-
-        if (_Page is { } pageDemandee && pageDemandee > 0)
+        try
         {
-            PageCourante = pageDemandee;
-        }
+            var ressources = await Contenu.ChargerRessourcesAsync();
+            _Ressources = ressources.ToArray();
 
-        AppliquerFiltres();
+            if (_Page is { } pageDemandee && pageDemandee > 0)
+            {
+                PageCourante = pageDemandee;
+            }
+
+            AppliquerFiltres();
+        }
+        catch
+        {
+            _erreur = true;
+        }
     }
 
     private void AppliquerFiltres()
@@ -283,9 +297,11 @@ else
 
         (TitreCatalogue, SousTitreCatalogue) = CategorieSelectionnee() switch
         {
-            "Formations et tutoriels" => ("Formations et", "tutoriels"),
-            "Bibliothèques et outils" => ("Bibliothèques et", "outils"),
-            "Articles de blog et guides" => ("Articles et", "guides"),
+            "Formation" => ("Formations et", "tutoriels"),
+            "Tutoriel" => ("Tutoriels de", "la communauté"),
+            "Guide" => ("Guides et", "articles de référence"),
+            "Bibliothèque" => ("Bibliothèques et", "outils"),
+            "Outil" => ("Outils et", "extensions"),
             _ => ("Toutes les", "ressources"),
         };
     }
@@ -308,14 +324,9 @@ else
             paramètres.Add($"categorie={Uri.EscapeDataString(_Categorie)}");
         }
 
-        if (_Recherche is { Length: > 0 })
+        if (!string.IsNullOrWhiteSpace(_Recherche))
         {
             paramètres.Add($"q={Uri.EscapeDataString(_Recherche)}");
-        }
-
-        if (!string.IsNullOrWhiteSpace(_Categorie))
-        {
-            paramètres.Add($"categorie={Uri.EscapeDataString(_Categorie)}");
         }
 
         if (_Tri is { Length: > 0 } and not "selection")

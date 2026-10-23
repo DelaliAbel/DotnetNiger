@@ -1,0 +1,27 @@
+@*
+    Le contenu n'a pas pu être lu. Sans ce message, la page restait sur « Chargement… »
+    indéfiniment : le visiteur n'avait aucun moyen de savoir si la lecture échouait ou si
+    elle prenait simplement du temps, et aucun geste à tenter.
+*@
+
+<div class="vide" role="alert">
+    <span class="vide__icone" aria-hidden="true"><DnIcon Name="alert" Size="22" /></span>
+    <p class="vide__titre">@Titre</p>
+    <p class="vide__texte">
+        @Message
+    </p>
+    <button class="btn btn--ghost" type="button" onclick="location.reload(); return false;">
+        Réessayer <DnIcon Name="refresh" Size="16" />
+    </button>
+</div>
+
+@code {
+    /// <summary>Titre du message d'échec.</summary>
+    [Parameter] public string Titre { get; set; } = "Le contenu n'a pas pu être chargé";
+
+    /// <summary>Piste proposée pour comprendre et contourner l'échec.</summary>
+    [Parameter]
+    public string Message { get; set; } =
+        "La connexion a échoué ou le service est momentanément indisponible. "
+        + "Réessayez dans un instant.";
+}

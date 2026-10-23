@@ -1,6 +1,9 @@
 @page "/compte/mot-de-passe-oublie"
 
 <PageTitle>Mot de passe oublié - DotnetNiger</PageTitle>
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
 
 <CadreCompte Titre="Mot de passe oublié"
             SurTitre="Récupération d'accès"
@@ -42,7 +45,7 @@
                        autocomplete="username" value="@Email" />
             </div>
 
-            <button type="submit" class="btn btn--primary w-full">Envoyer le lien</button>
+            <button type="submit" class="btn btn--primary w-full" data-dn-submit>Envoyer le lien</button>
         </form>
 
         <p class="compte__pied">

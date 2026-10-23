@@ -2,6 +2,9 @@
 @inject IConfiguration Configuration
 
 <PageTitle>Créer un compte - DotnetNiger</PageTitle>
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
 
 <CadreCompte Titre="Créer un compte"
             SurTitre="Rejoindre la communauté"
@@ -94,7 +97,7 @@
                                     AutoComplete="new-password" />
             </div>
 
-            <button type="submit" class="btn btn--primary w-full">Créer mon compte</button>
+            <button type="submit" class="btn btn--primary w-full" data-dn-submit>Créer mon compte</button>
         </form>
 
         <p class="compte__pied">

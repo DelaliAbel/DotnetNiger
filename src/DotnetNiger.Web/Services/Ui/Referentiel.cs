@@ -42,20 +42,23 @@ public static class Referentiel
     ];
 
     /// <summary>
-    /// Catégories de la bibliothèque de ressources. Chacune possède au moins une
-    /// entrée : cette bibliothèque est sélectionnée à la main, une catégorie vide
-    /// n'y aurait pas de sens.
+    /// Catégories de la bibliothèque de ressources.
     /// </summary>
+    /// <remarks>
+    /// Le <see cref="Rubrique.Nom"/> de chaque entrée est exactement le libellé que la
+    /// couche de lecture produit pour une ressource : la liste des ressources range chaque
+    /// catégorie de l'énumération sous « Formation », « Tutoriel », « Guide »,
+    /// « Bibliothèque » ou « Outil ». Le filtre public comparant ce libellé, une catégorie
+    /// écrite autrement ne correspondait à rien et le filtre restait sans effet.
+    /// Le <see cref="Rubrique.Slug"/>, lui, reste lisible dans une URL.
+    /// </remarks>
     public static IReadOnlyList<Rubrique> CategoriesRessource { get; } =
     [
-        new("formations", "Formations et tutoriels", "violet"),
-        new("articles", "Articles de blog et guides", "violet"),
-        new("outils", "Bibliothèques et outils", "vert"),
-        new("documentation", "Documentation .NET", "vert"),
-        new("securite", "Sécurité et identité", "orange"),
-        new("devops", "DevOps et déploiement", "ink"),
-        new("tests", "Tests et qualité", "vert"),
-        new("donnees", "Données et persistance", "vert"),
+        new("formations", "Formation", "violet"),
+        new("tutoriels", "Tutoriel", "violet"),
+        new("guides", "Guide", "orange"),
+        new("bibliotheques", "Bibliothèque", "vert"),
+        new("outils", "Outil", "vert"),
     ];
 
     /// <summary>Types de rendez-vous de l'agenda.</summary>

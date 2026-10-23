@@ -14,7 +14,7 @@
     @* « Terminé » est posé sur l'image : dans la ligne de métadonnées, il passait
        inaperçu à côté de la date, et c'est pourtant l'information qui décide si
        l'on peut encore venir. *@
-    <DnCardMedia ImageUrl="@Evenement.ImageUrl" Alt=""
+    <DnCardMedia ImageUrl="@Evenement.ImageUrl" Alt="@Evenement.Titre"
                 Etiquette="@(EstPasse ? "Terminé" : null)"
                 EtiquetteVariante="ink" />
     <div class="card__body">

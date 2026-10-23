@@ -16,12 +16,16 @@
 <PageTitle>Mon profil — DotnetNiger</PageTitle>
 
 <HeadContent>
-    <meta name="robots" content="noindex" />
+    <meta name="robots" content="noindex, nofollow" />
 </HeadContent>
 
-@if (_Profil is null)
+@if (_erreur)
 {
-    <p class="text-caption text-[var(--site-fg-muted)]">Chargement…</p>
+    <EtatErreur />
+}
+else if (_Profil is null)
+{
+    <Chargement />
 }
 else
 {
@@ -63,7 +67,7 @@ else
                             </label>
                             <input id="profil-photo-fichier" class="input" type="file" name="file"
                                    accept="image/jpeg,image/png,image/webp" />
-                            <button class="btn btn--secondary btn--sm mt-2" type="submit">
+                            <button class="btn btn--secondary btn--sm mt-2" type="submit" data-dn-submit>
                                 Envoyer la photo
                             </button>
                         </form>
@@ -72,7 +76,7 @@ else
                         {
                             <form method="post" action="/compte/photo/retirer" class="mt-2">
                                 <AntiforgeryToken />
-                                <button class="btn btn--ghost btn--sm" type="submit">
+                                <button class="btn btn--ghost btn--sm" type="submit" data-dn-submit>
                                     Retirer ma photo
                                 </button>
                             </form>
@@ -177,7 +181,7 @@ else
                 </fieldset>
 
                 <div>
-                    <button class="btn btn--primary" type="submit">
+                    <button class="btn btn--primary" type="submit" data-dn-submit>
                         Enregistrer <DnIcon Name="check" Size="16" />
                     </button>
                 </div>
@@ -225,7 +229,7 @@ else
                             </span>
                         </label>
 
-                        <button class="btn btn--rouge mt-4" type="submit">
+                        <button class="btn btn--rouge mt-4" type="submit" data-dn-submit>
                             Supprimer définitivement mon compte
                         </button>
                     </form>
@@ -272,47 +276,59 @@ else
     {
         _Erreur = string.IsNullOrWhiteSpace(_ErreurUrl) ? null : _ErreurUrl;
         _Confirmation = string.IsNullOrWhiteSpace(_ConfirmationUrl) ? null : _ConfirmationUrl;
+        _erreur = false;
 
         if (UtilisateurCourant.UserId is not { } identifiant)
         {
+            _erreur = true;
             return;
         }
 
-        // La lecture passe par le service partagé, comme la mise en page : les deux
-        // attendent la même tâche au lieu de poser deux requêtes sur le même contexte.
-        // L'adresse du compte est lue ensuite, quand la tâche commune est terminée.
-        var espace = await Espace.LireAsync();
-
-        if (espace is null)
+        try
         {
-            return;
+            // La lecture passe par le service partagé, comme la mise en page : les deux
+            // attendent la même tâche au lieu de poser deux requêtes sur le même contexte.
+            // L'adresse du compte est lue ensuite, quand la tâche commune est terminée.
+            var espace = await Espace.LireAsync();
+
+            if (espace is null)
+            {
+                _erreur = true;
+                return;
+            }
+
+            _AdresseCompte = await UniteDeTravail.ReadRepository<ApplicationUser>().Query
+                .AsNoTracking()
+                .Where(compte => compte.Id == identifiant)
+                .Select(compte => compte.Email ?? string.Empty)
+                .FirstOrDefaultAsync() ?? string.Empty;
+
+            var membre = espace.Profil;
+            _Liens = await Membres.ListerLiensAsync(identifiant);
+
+            // Le nom affiché est unique dans la table d'identité, pas dans le formulaire :
+            // on le rend en deux champs pour que la personne corrige une faute, tout en gardant
+            // possible un nom composé.
+            var parties = membre.FullName.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+
+            _Profil = new ProfilEnCours(
+                parties.ElementAtOrDefault(0) ?? string.Empty,
+                string.Join(' ', parties.Skip(1)),
+                membre.Bio,
+                membre.City,
+                membre.PhotoUrl,
+                membre.Technologies,
+                null,
+                null,
+                null);
         }
-
-        _AdresseCompte = await UniteDeTravail.ReadRepository<ApplicationUser>().Query
-            .AsNoTracking()
-            .Where(compte => compte.Id == identifiant)
-            .Select(compte => compte.Email ?? string.Empty)
-            .FirstOrDefaultAsync() ?? string.Empty;
-
-        var membre = espace.Profil;
-        _Liens = await Membres.ListerLiensAsync(identifiant);
-
-        // Le nom affiché est unique dans la table d'identité, pas dans le formulaire :
-        // on le rend en deux champs pour que la personne corrige une faute, tout en gardant
-        // possible un nom composé.
-        var parties = membre.FullName.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
-
-        _Profil = new ProfilEnCours(
-            parties.ElementAtOrDefault(0) ?? string.Empty,
-            string.Join(' ', parties.Skip(1)),
-            membre.Bio,
-            membre.City,
-            membre.PhotoUrl,
-            membre.Technologies,
-            null,
-            null,
-            null);
+        catch
+        {
+            _erreur = true;
+        }
     }
+
+    private bool _erreur;
 
     /// <summary>Champs du formulaire, alignés sur ce que le formulaire de l'API accepte.</summary>
     private sealed record ProfilEnCours(

@@ -11,10 +11,16 @@
             Description="Meetups, projets open source et entraide : participez à la communauté des développeurs .NET au Niger." />
 </HeadContent>
 
-@if (_Communaute is null)
+@if (_erreur)
 {
     <div class="wrap py-12">
-        <p class="text-caption text-[var(--site-fg-muted)]">Chargement…</p>
+        <EtatErreur />
+    </div>
+}
+else if (_Communaute is null)
+{
+    <div class="wrap py-12">
+        <Chargement />
     </div>
 }
 else
@@ -54,6 +60,7 @@ else
                     <span class="hero__panel__dot bg-violet-300"></span>
                 </div>
                 <img class="hero__panel__image" src="/images/img2.jpg" loading="lazy"
+                     width="640" height="480"
                 alt="Développeurs .NET du Niger réunis autour d'un meetup communautaire" />
             </div>
         </div>
@@ -326,6 +333,7 @@ else
         ?? [];
 
     private DotnetNiger.Web.Services.Reglages.ReglagesAffiches? _reglages;
+    private bool _erreur;
 
     /// <summary>
     /// Vrai si au moins un canal est renseigné. Sans canal, la page affiche un état vide
@@ -338,19 +346,26 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        _Communaute = await Contenu.ChargerCommunauteAsync();
-        _reglages = await Reglages.LirePourAffichageAsync();
-
-        var total = _Communaute.Projets.Count;
-        NombreDePagesProjets = Math.Max(1, (int)Math.Ceiling(total / (double)ProjetsParPage));
-        if (_Page is { } pageDemandee && pageDemandee > 0)
+        try
         {
-            PageProjets = pageDemandee;
+            _Communaute = await Contenu.ChargerCommunauteAsync();
+            _reglages = await Reglages.LirePourAffichageAsync();
+
+            var total = _Communaute.Projets.Count;
+            NombreDePagesProjets = Math.Max(1, (int)Math.Ceiling(total / (double)ProjetsParPage));
+            if (_Page is { } pageDemandee && pageDemandee > 0)
+            {
+                PageProjets = pageDemandee;
+            }
+
+            if (PageProjets > NombreDePagesProjets)
+            {
+                PageProjets = NombreDePagesProjets;
+            }
         }
-
-        if (PageProjets > NombreDePagesProjets)
+        catch
         {
-            PageProjets = NombreDePagesProjets;
+            _erreur = true;
         }
     }
 

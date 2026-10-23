@@ -11,7 +11,7 @@
 <PageTitle>Mes rencontres — DotnetNiger</PageTitle>
 
 <HeadContent>
-    <meta name="robots" content="noindex" />
+    <meta name="robots" content="noindex, nofollow" />
 </HeadContent>
 
 <header class="mb-6">
@@ -76,7 +76,7 @@ else
                             <AntiforgeryToken />
                             <input type="hidden" name="Slug" value="@inscription.Slug" />
                             <input type="hidden" name="Retour" value="/compte/mes-rencontres" />
-                            <button class="btn btn--ghost btn--sm" type="submit">Se désinscrire</button>
+                            <button class="btn btn--ghost btn--sm" type="submit" data-dn-submit>Se désinscrire</button>
                         </form>
                     }
                 </div>

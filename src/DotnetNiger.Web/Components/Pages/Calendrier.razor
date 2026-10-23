@@ -9,10 +9,16 @@
             Description="Tous les rendez-vous de la communauté au calendrier : meetups, conférences en ligne, ateliers pratiques et hackathons." />
 </HeadContent>
 
-@if (_Evenements is null)
+@if (_erreur)
 {
     <div class="wrap py-12">
-        <p class="text-caption text-[var(--site-fg-muted)]">Chargement…</p>
+        <EtatErreur />
+    </div>
+}
+else if (_Evenements is null)
+{
+    <div class="wrap py-12">
+        <Chargement />
     </div>
 }
 else
@@ -175,12 +181,21 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        _Evenements = await Contenu.ChargerEvenementsAsync();
-        _PremierJour = MoisDemandé();
+        try
+        {
+            _Evenements = await Contenu.ChargerEvenementsAsync();
+            _PremierJour = MoisDemandé();
+        }
+        catch
+        {
+            _erreur = true;
+        }
 
         // Un événement qui s'étale sur plusieurs jours apparaît dans chaque case
         // occupée, la connexion à la fiche se fait par le titre du premier jour.
     }
+
+    private bool _erreur;
 
     /// <summary>
     /// Mois affiché, déduit du paramètre d'URL, sinon du mois courant.
