@@ -233,6 +233,9 @@
     left: var(--spacing);
     top: var(--spacing);
     z-index: 100;
+    min-height: calc(var(--spacing) * 5.5);
+    display: inline-flex;
+    align-items: center;
     background: var(--color-white);
     padding: calc(var(--spacing) * 2) calc(var(--spacing) * 3);
     border-radius: var(--radius-md);
@@ -1168,6 +1171,13 @@
     color: var(--color-violet-500);
   }
 
+  /* Le pied de page est toujours sombre : l'accent doit donc rester clair,
+     même en thème clair, pour garder un contraste suffisant. */
+  .site-footer .site-brand__accent,
+  .site-footer__name .site-brand__accent {
+    color: var(--color-violet-300);
+  }
+
   .dark .site-brand__accent {
     color: var(--color-violet-300);
   }
@@ -1288,6 +1298,9 @@
 
   .site-nav__link {
     width: 100%;
+    min-height: calc(var(--spacing) * 5.5);
+    display: inline-flex;
+    align-items: center;
     padding: calc(var(--spacing) * 1.25) calc(var(--spacing) * 1.75);
     border-radius: var(--radius-sm);
     font-size: var(--text-sm);
@@ -1437,8 +1450,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: calc(var(--spacing) * 4);
-    height: calc(var(--spacing) * 4);
+    width: calc(var(--spacing) * 5.5);
+    height: calc(var(--spacing) * 5.5);
     border-radius: var(--radius-sm);
     border: 1px solid var(--site-border);
     background: var(--site-surface);
@@ -1457,8 +1470,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: calc(var(--spacing) * 4);
-    height: calc(var(--spacing) * 4);
+    width: calc(var(--spacing) * 5.5);
+    height: calc(var(--spacing) * 5.5);
     border-radius: var(--radius-full);
     border: 1px solid var(--site-border);
     background: var(--site-surface);
@@ -1511,7 +1524,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--color-ink-600);
+    color: var(--color-ink-400);
     margin-bottom: calc(var(--spacing) * 2);
   }
 
@@ -1527,6 +1540,9 @@
     color: var(--color-ink-200);
     text-decoration: none;
     font-size: var(--text-sm);
+    display: inline-flex;
+    align-items: center;
+    min-height: calc(var(--spacing) * 5.5);
     transition: color 150ms ease;
   }
 
@@ -1566,13 +1582,16 @@
     gap: var(--spacing);
     align-items: center;
     justify-content: space-between;
-    color: var(--color-ink-600);
+    color: var(--color-ink-400);
     font-size: var(--text-caption);
   }
 
   .site-footer__legal a {
-    color: var(--color-ink-500);
+    color: var(--color-ink-300);
     text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    min-height: calc(var(--spacing) * 5.5);
   }
 
   .site-footer__legal a:hover {
