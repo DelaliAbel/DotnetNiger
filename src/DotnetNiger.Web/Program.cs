@@ -1,5 +1,8 @@
 using DotnetNiger.Application.Abstractions;
+using DotnetNiger.Application.Abstractions.Persistence;
 using DotnetNiger.Application.Common;
+using DotnetNiger.Domain.Entities.Content;
+using DotnetNiger.Domain.Enums;
 using DotnetNiger.Infrastructure.Email;
 using DotnetNiger.Infrastructure.Identity;
 using DotnetNiger.Infrastructure.Persistence;
@@ -392,10 +395,19 @@ static async Task<bool> SiteEnMaintenanceAsync(HttpContext contexte)
         return false;
     }
 
-    var reglages = contexte.RequestServices.GetRequiredService<ServiceReglages>();
-    var valeurs = await reglages.LireAsync(contexte.RequestAborted);
+    // Lecture directe en base, sans le cache mémoire : un réglage activé par
+    // l'administration doit être vu immédiatement par toutes les instances du
+    // site, y compris celles qui n'ont pas traité la demande d'écriture.
+    using var portee = contexte.RequestServices.GetRequiredService<IServiceScopeFactory>().CreateScope();
+    var unite = portee.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-    return valeurs.Maintenance;
+    var reglage = await unite.ReadRepository<ReglageSite>().Query
+        .AsNoTracking()
+        .FirstOrDefaultAsync(
+            r => r.Cle == ClesReglage.Maintenance,
+            contexte.RequestAborted);
+
+    return string.Equals(reglage?.Valeur, "true", StringComparison.OrdinalIgnoreCase);
 }
 
 static bool CheminHorsMaintenance(HttpRequest requete)
