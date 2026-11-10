@@ -92,7 +92,9 @@
 
                     <p class="commentaire__texte">@commentaire.Body</p>
 
-                    @if (UtilisateurCourant.IsAuthenticated && !EstMoi(commentaire))
+                    @* Seul l'auteur retire sa parole : le serveur le vérifie aussi, mais un bouton
+                       qui mène à un refus est un bouton inutile. *@
+                    @if (UtilisateurCourant.IsAuthenticated && EstMoi(commentaire))
                     {
                         <form method="post" action="/commentaires/suppression" class="mt-1">
                             <AntiforgeryToken />
