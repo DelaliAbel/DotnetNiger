@@ -150,25 +150,43 @@ else
                    placeholder="https://www.facebook.com/…" @bind="_formeFacebook" @bind:event="oninput" />
         </div>
     </div>
+</section>
 
-    @if (_erreur is not null)
-    {
-        <div class="alerte alerte--rouge" role="alert">
-            <span class="alerte__icone"><DnIcon Name="alert" Size="16" /></span>
-            <span>@_erreur</span>
+<section class="admin-section">
+    <h2 class="admin-section__titre">Disponibilité</h2>
+
+    <div class="admin-formulaire">
+        <div class="admin-formulaire__champ">
+            <label class="admin-case">
+                <input type="checkbox" @bind="_formeMaintenance" />
+                Mettre le site public en maintenance
+            </label>
+
+            <p class="admin-formulaire__aide">
+                Le public voit la page de maintenance à la place des pages du site. L'administration,
+                la connexion et l'API restent accessibles. Décochez la case pour rouvrir le site.
+            </p>
         </div>
-    }
-
-    <div class="admin-formulaire__actions">
-        <button type="button" class="btn btn--ghost" @onclick="Recharger" disabled="@(_envoi || _depotEnCours)">
-            Annuler les modifications
-        </button>
-
-        <button type="button" class="btn btn--primary" @onclick="Enregistrer" disabled="@(_envoi || _depotEnCours)">
-            @(_envoi ? "Enregistrement…" : "Enregistrer les réglages")
-        </button>
     </div>
 </section>
+
+@if (_erreur is not null)
+{
+    <div class="alerte alerte--rouge" role="alert">
+        <span class="alerte__icone"><DnIcon Name="alert" Size="16" /></span>
+        <span>@_erreur</span>
+    </div>
+}
+
+<div class="admin-formulaire__actions">
+    <button type="button" class="btn btn--ghost" @onclick="Recharger" disabled="@(_envoi || _depotEnCours)">
+        Annuler les modifications
+    </button>
+
+    <button type="button" class="btn btn--primary" @onclick="Enregistrer" disabled="@(_envoi || _depotEnCours)">
+        @(_envoi ? "Enregistrement…" : "Enregistrer les réglages")
+    </button>
+</div>
 
 <div class="admin-toasts" role="status" aria-live="polite">
     @foreach (var message in _messages)
@@ -183,7 +201,7 @@ else
 }
 
 @code {
-    private ReglagesVue _valeurs = new(null, null, null, null, null, null, null, null, null);
+    private ReglagesVue _valeurs = new(null, null, null, null, null, null, null, null, null, false);
 
     private string _formeLogo = string.Empty;
 
@@ -202,6 +220,8 @@ else
     private string _formeYoutube = string.Empty;
 
     private string _formeFacebook = string.Empty;
+
+    private bool _formeMaintenance;
 
     private bool _envoi;
 
@@ -247,6 +267,7 @@ else
         _formeX = _valeurs.X ?? string.Empty;
         _formeYoutube = _valeurs.Youtube ?? string.Empty;
         _formeFacebook = _valeurs.Facebook ?? string.Empty;
+        _formeMaintenance = _valeurs.Maintenance;
     }
 
     private async Task Recharger()
@@ -301,6 +322,7 @@ else
                     xUrl = _formeX,
                     youtubeUrl = _formeYoutube,
                     facebookUrl = _formeFacebook,
+                    maintenance = _formeMaintenance,
                 });
 
             if (!reponse.Ok)

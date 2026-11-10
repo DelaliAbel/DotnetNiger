@@ -12,6 +12,7 @@ namespace DotnetNiger.Web.Controller.Contracts;
 /// <param name="XUrl">Compte X, ou <see langword="null"/>.</param>
 /// <param name="YoutubeUrl">Chaîne YouTube, ou <see langword="null"/>.</param>
 /// <param name="FacebookUrl">Page Facebook, ou <see langword="null"/>.</param>
+/// <param name="Maintenance">Vrai quand le site public est en maintenance.</param>
 public sealed record SiteSettingsResponse(
     string? Logo,
     string? Email,
@@ -21,7 +22,8 @@ public sealed record SiteSettingsResponse(
     string? LinkedinUrl,
     string? XUrl,
     string? YoutubeUrl,
-    string? FacebookUrl);
+    string? FacebookUrl,
+    bool Maintenance);
 
 /// <summary>Demande de modification des réglages du site.</summary>
 /// <param name="Logo">Logo du site, ou <see langword="null"/> pour le retirer.</param>
@@ -33,6 +35,7 @@ public sealed record SiteSettingsResponse(
 /// <param name="XUrl">Compte X, ou <see langword="null"/>.</param>
 /// <param name="YoutubeUrl">Chaîne YouTube, ou <see langword="null"/>.</param>
 /// <param name="FacebookUrl">Page Facebook, ou <see langword="null"/>.</param>
+/// <param name="Maintenance">Vrai pour fermer le site public et afficher la page de maintenance.</param>
 /// <remarks>
 /// Les champs sont nommés comme sur le site, en anglais : c'est la convention des contrats
 /// d'API du projet. Une adresse laissée vide retire le réglage — et donc l'entrée du pied de
@@ -47,4 +50,5 @@ public sealed record UpdateSiteSettingsRequest(
     [StringLength(500)] string? LinkedinUrl = null,
     [StringLength(500)] string? XUrl = null,
     [StringLength(500)] string? YoutubeUrl = null,
-    [StringLength(500)] string? FacebookUrl = null);
+    [StringLength(500)] string? FacebookUrl = null,
+    bool Maintenance = false);

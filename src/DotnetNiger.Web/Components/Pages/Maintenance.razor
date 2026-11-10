@@ -1,0 +1,82 @@
+@page "/maintenance"
+@layout MaintenanceLayout
+
+@inject DotnetNiger.Web.Services.Reglages.ServiceReglages Reglages
+
+@*
+    Page affichée à la place du site public quand l'administration active la maintenance.
+    Elle occupe tout l'écran : pas d'en-tête, pas de navigation, pas de pied de page.
+    Les coordonnées et les canaux viennent des réglages, pour qu'une personne qui arrive
+    ici puisse nous joindre sans passer par une page du site, fermée elle aussi.
+*@
+
+<PageTitle>Maintenance — DotnetNiger</PageTitle>
+<HeadContent>
+    <meta name="robots" content="noindex, nofollow" />
+</HeadContent>
+
+<div class="maintenance">
+    <div class="maintenance__panneau">
+        <p class="maintenance__eyebrow">
+            <DnIcon Name="settings" Size="14" /> Maintenance
+        </p>
+
+        <h1 class="maintenance__titre">Le site revient très vite</h1>
+
+        <p class="maintenance__texte">
+            DotnetNiger est en cours de mise à jour. Les articles, les événements et les comptes
+            restent intacts : le site revient dans un instant.
+        </p>
+
+        @if (!string.IsNullOrWhiteSpace(_courriel) || !string.IsNullOrWhiteSpace(_telephone))
+        {
+            <div class="maintenance__coordonnees">
+                @if (!string.IsNullOrWhiteSpace(_courriel))
+                {
+                    <a class="maintenance__contact" href="mailto:@_courriel">
+                        <DnIcon Name="mail" Size="18" />
+                        <span>@_courriel</span>
+                    </a>
+                }
+                @if (!string.IsNullOrWhiteSpace(_telephone))
+                {
+                    <a class="maintenance__contact" href="tel:@_telephoneSansEspaces">
+                        <DnIcon Name="phone" Size="18" />
+                        <span>@_telephone</span>
+                    </a>
+                }
+            </div>
+        }
+
+        @if (_canaux.Count > 0)
+        {
+            <ul class="maintenance__canaux" aria-label="Canaux de la communauté">
+                @foreach (var canal in _canaux)
+                {
+                    <li>
+                        <a class="maintenance__canal" href="@canal.Url" target="_blank" rel="noopener noreferrer">
+                            <DnIcon Name="@canal.Icone" Size="20" />
+                            <span>@canal.Nom</span>
+                        </a>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
+
+@code {
+    private string? _courriel;
+    private string? _telephone;
+    private string? _telephoneSansEspaces;
+    private IReadOnlyList<DotnetNiger.Web.Services.Reglages.CanalSite> _canaux = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var affiches = await Reglages.LirePourAffichageAsync();
+        _courriel = affiches.Valeurs.Courriel;
+        _telephone = affiches.Valeurs.Telephone;
+        _telephoneSansEspaces = _telephone?.Replace(" ", string.Empty).Replace("-", string.Empty);
+        _canaux = affiches.Canaux;
+    }
+}

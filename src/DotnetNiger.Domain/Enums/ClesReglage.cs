@@ -35,9 +35,15 @@ public static class ClesReglage
     /// <summary>Page Facebook de la communauté.</summary>
     public const string Facebook = "canal.facebook";
 
+    /// <summary>
+    /// Met le site public en maintenance. La valeur « true » active la page de maintenance ;
+    /// toute autre valeur, ou l'absence de réglage, laisse le site ouvert.
+    /// </summary>
+    public const string Maintenance = "site.maintenance";
+
     /// <summary>Toutes les clés, dans l'ordre où l'écran Paramètres les présente.</summary>
     public static readonly string[] Toutes =
     [
-        Logo, Courriel, Telephone, Whatsapp, Github, Linkedin, X, Youtube, Facebook,
+        Logo, Courriel, Telephone, Whatsapp, Github, Linkedin, X, Youtube, Facebook, Maintenance,
     ];
 }

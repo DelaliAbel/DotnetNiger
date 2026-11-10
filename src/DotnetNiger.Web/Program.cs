@@ -1,4 +1,5 @@
 using DotnetNiger.Application.Abstractions;
+using DotnetNiger.Application.Common;
 using DotnetNiger.Infrastructure.Email;
 using DotnetNiger.Infrastructure.Identity;
 using DotnetNiger.Infrastructure.Persistence;
@@ -13,6 +14,7 @@ using DotnetNiger.Web.Seo;
 using DotnetNiger.Web.Controller.Common;
 using DotnetNiger.Web.Controller;
 using DotnetNiger.Web.Services;
+using DotnetNiger.Web.Services.Reglages;
 using DotnetNiger.Web.Services.Ui;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
@@ -276,9 +278,47 @@ app.Use(async (contexte, suivant) =>
 app.UseHttpsRedirection();
 
 // ---------- Authentification ----------
-// L'authentification précède l'autorisation, et les deux précèdent les points de terminaison.
+// L'authentification est posée avant le routage : le middleware de maintenance, qui suit,
+// a besoin de connaître le rôle de l'appelant pour laisser passer un administrateur. Elle
+// n'a pas besoin de l'itinéraire ; l'autorisation, elle, vient après le routage.
 app.UseRateLimiter();
 app.UseAuthentication();
+
+// ---------- Maintenance ----------
+// Quand l'administration ferme le site, toute page publique est servie par la page de
+// maintenance, avec un 503 et un délai de reprise. L'administration, la connexion, l'API
+// et les fichiers statiques restent joignables : sans cela, personne ne pourrait rouvrir
+// le site, et le navigateur afficherait une page sans style.
+app.Use(async (contexte, suivant) =>
+{
+    if (await SiteEnMaintenanceAsync(contexte))
+    {
+        // Le statut est posé de nouveau au démarrage de la réponse : le rendu Blazor peut
+        // le remettre à 200, et un 200 ferait croire aux moteurs de recherche que la page
+        // est le site normal.
+        contexte.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+        contexte.Response.Headers.RetryAfter = "300";
+        contexte.Response.OnStarting(() =>
+        {
+            contexte.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;
+            return Task.CompletedTask;
+        });
+
+        contexte.Request.Path = "/maintenance";
+        contexte.Request.QueryString = QueryString.Empty;
+    }
+
+    await suivant(contexte);
+});
+
+// ---------- Routage ----------
+// `UseRouting` est appelé ici, et non laissé à l'ajout automatique de `WebApplication`.
+// L'ajout automatique place le routage avant `UseStatusCodePagesWithReExecute` : la
+// ré-exécution vers `/not-found` ne re-routait donc pas, et un chemin inconnu renvoyait
+// une 404 vide. Explicite et placé après la ré-exécution, il route bien la page 404.
+app.UseRouting();
+
+// L'autorisation a besoin de l'itinéraire choisi pour lire [Authorize].
 app.UseAuthorization();
 // Le middleware est posé pour les pages et composants du site, qui naviguent réellement
 // et portent un jeton. Il est écarté de l'API : une requête JSON n'a pas de jeton de
@@ -338,5 +378,50 @@ app.Run();
 // l'erreur auprès de l'appelant.
 static bool EstAppelApi(HttpRequest requete) =>
     requete.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase);
+
+// Indique si la requête doit être servie par la page de maintenance.
+//
+// Un administrateur garde l'accès à tout le site : sans cette exception, activer la
+// maintenance depuis l'administration fermerait la porte derrière soi. Les chemins
+// indispensables au fonctionnement — administration, comptes, API, santé, fichiers
+// statiques — restent ouverts pour la même raison.
+static async Task<bool> SiteEnMaintenanceAsync(HttpContext contexte)
+{
+    if (contexte.User.IsInRole(RoleNames.Admin) || CheminHorsMaintenance(contexte.Request))
+    {
+        return false;
+    }
+
+    var reglages = contexte.RequestServices.GetRequiredService<ServiceReglages>();
+    var valeurs = await reglages.LireAsync(contexte.RequestAborted);
+
+    return valeurs.Maintenance;
+}
+
+static bool CheminHorsMaintenance(HttpRequest requete)
+{
+    var chemin = requete.Path;
+
+    if (chemin.StartsWithSegments("/administration", StringComparison.OrdinalIgnoreCase)
+        || chemin.StartsWithSegments("/compte", StringComparison.OrdinalIgnoreCase)
+        || chemin.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase)
+        || chemin.StartsWithSegments("/health", StringComparison.OrdinalIgnoreCase)
+        || chemin.StartsWithSegments("/not-found", StringComparison.OrdinalIgnoreCase)
+        || chemin.StartsWithSegments("/maintenance", StringComparison.OrdinalIgnoreCase)
+        || chemin.StartsWithSegments("/error", StringComparison.OrdinalIgnoreCase)
+        || chemin.StartsWithSegments("/_blazor", StringComparison.OrdinalIgnoreCase)
+        || chemin.StartsWithSegments("/_framework", StringComparison.OrdinalIgnoreCase)
+        || chemin.StartsWithSegments("/openapi", StringComparison.OrdinalIgnoreCase)
+        || chemin.StartsWithSegments("/swagger", StringComparison.OrdinalIgnoreCase))
+    {
+        return true;
+    }
+
+    // Un fichier statique garde son extension : c'est ce qui distingue `/css/app.css`
+    // d'une page comme `/blog`, sans tenir une liste de dossiers à jour.
+    var dernier = chemin.Value?.Split('/', StringSplitOptions.RemoveEmptyEntries).LastOrDefault();
+
+    return dernier is not null && Path.HasExtension(dernier);
+}
 
 

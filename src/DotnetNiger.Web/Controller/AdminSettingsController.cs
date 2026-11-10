@@ -73,6 +73,7 @@ public sealed class AdminSettingsController(
             (ClesReglage.X, request.XUrl),
             (ClesReglage.Youtube, request.YoutubeUrl),
             (ClesReglage.Facebook, request.FacebookUrl),
+            (ClesReglage.Maintenance, request.Maintenance ? "true" : null),
         };
 
         // Les réglages sont écrits l'un après l'autre : une clé refusée arrête l'écriture
@@ -99,5 +100,6 @@ public sealed class AdminSettingsController(
         valeurs.Linkedin,
         valeurs.X,
         valeurs.Youtube,
-        valeurs.Facebook);
+        valeurs.Facebook,
+        valeurs.Maintenance);
 }

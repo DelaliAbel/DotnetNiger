@@ -23,6 +23,7 @@ public sealed record CanalSite(string Nom, string Url, string Icone);
 /// <param name="X">Compte X, ou <see langword="null"/>.</param>
 /// <param name="Youtube">Chaîne YouTube, ou <see langword="null"/>.</param>
 /// <param name="Facebook">Page Facebook, ou <see langword="null"/>.</param>
+/// <param name="Maintenance">Vrai quand le site public est en maintenance.</param>
 public sealed record ReglagesVue(
     string? Logo,
     string? Courriel,
@@ -32,7 +33,8 @@ public sealed record ReglagesVue(
     string? Linkedin,
     string? X,
     string? Youtube,
-    string? Facebook);
+    string? Facebook,
+    bool Maintenance);
 
 /// <summary>Les mêmes réglages, avec la liste des canaux à afficher.</summary>
 /// <param name="Valeurs">Réglages bruts.</param>
@@ -183,6 +185,7 @@ public sealed class ServiceReglages(
             Valeur(ClesReglage.Linkedin),
             Valeur(ClesReglage.X),
             Valeur(ClesReglage.Youtube),
-            Valeur(ClesReglage.Facebook));
+            Valeur(ClesReglage.Facebook),
+            string.Equals(Valeur(ClesReglage.Maintenance), "true", StringComparison.OrdinalIgnoreCase));
     }
 }

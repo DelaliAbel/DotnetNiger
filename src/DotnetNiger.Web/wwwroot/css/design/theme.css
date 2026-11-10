@@ -386,7 +386,7 @@
     /* Référence de l'étiquette posée sur l'image : sans elle, elle se
        positionnerait par rapport à la carte entière. */
     position: relative;
-    background: linear-gradient(150deg, var(--color-violet-100), var(--color-violet-200));
+    background: var(--color-violet-100);
   }
 
   /* L'image est posée en absolu plutôt que dimensionnée en pourcentage.
@@ -408,10 +408,7 @@
   .card__media--defaut {
     display: grid;
     place-items: center;
-    background:
-      radial-gradient(rgb(255 255 255 / 0.16) 1px, transparent 1px),
-      linear-gradient(150deg, var(--color-violet-500), var(--color-violet-900));
-    background-size: 28px 28px, auto;
+    background: var(--color-violet-700);
   }
 
   .card__media__defaut {
@@ -805,18 +802,9 @@
   .hero {
     position: relative;
     overflow: hidden;
-    background: linear-gradient(160deg, var(--color-violet-900) 0%, var(--color-violet-600) 55%, var(--color-violet-500) 100%);
+    background: var(--color-violet-800);
     color: #fff;
     padding-block: calc(var(--spacing) * 12);
-  }
-
-  .hero::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image: radial-gradient(rgb(255 255 255 / 0.14) 1px, transparent 1px);
-    background-size: 28px 28px;
-    pointer-events: none;
   }
 
   .hero::after {
@@ -827,7 +815,7 @@
     right: -120px;
     top: -140px;
     border-radius: 50%;
-    background: radial-gradient(circle at center, rgb(3 173 105 / 0.4), transparent 70%);
+    background: rgb(3 173 105 / 0.28);
     pointer-events: none;
   }
 
@@ -892,10 +880,7 @@
   }
 
   .hero__title strong {
-    background: linear-gradient(92deg, #ffffff 20%, var(--color-vert-300) 90%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
+    color: var(--color-vert-300);
   }
 
   .hero__lead {
@@ -1162,7 +1147,7 @@
     border-radius: var(--radius-sm);
     display: inline-grid;
     place-items: center;
-    background: linear-gradient(150deg, var(--color-violet-500), var(--color-violet-800));
+    background: var(--color-violet-500);
     color: #fff;
     font-weight: 800;
     font-size: var(--text-sm);
@@ -1679,12 +1664,12 @@
     }
   }
 
-  /* --- Bandeau d'appel à l'action (dégradé violet) --- */
+  /* --- Bandeau d'appel à l'action --- */
   .bande {
     position: relative;
     overflow: hidden;
     border-radius: var(--radius-xl);
-    background: linear-gradient(160deg, var(--color-violet-900) 0%, var(--color-violet-600) 60%, var(--color-violet-500) 100%);
+    background: var(--color-violet-800);
     color: #fff;
     padding: calc(var(--spacing) * 8);
   }
@@ -1693,15 +1678,6 @@
     .bande {
       padding: calc(var(--spacing) * 5) calc(var(--spacing) * 3);
     }
-  }
-
-  .bande::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image: radial-gradient(rgb(255 255 255 / 0.14) 1px, transparent 1px);
-    background-size: 28px 28px;
-    pointer-events: none;
   }
 
   .bande > * {
@@ -1798,18 +1774,9 @@
     position: relative;
     overflow: hidden;
     border-radius: var(--radius-xl);
-    background: linear-gradient(160deg, var(--color-violet-900) 0%, var(--color-violet-600) 60%, var(--color-violet-500) 100%);
+    background: var(--color-violet-800);
     color: #fff;
     padding: calc(var(--spacing) * 8);
-  }
-
-  .mission::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background-image: radial-gradient(rgb(255 255 255 / 0.14) 1px, transparent 1px);
-    background-size: 28px 28px;
-    pointer-events: none;
   }
 
   .mission > * {
@@ -1827,10 +1794,7 @@
   }
 
   .mission__titre strong {
-    background: linear-gradient(92deg, #fff 20%, var(--color-vert-300) 90%);
-    color: transparent;
-    -webkit-background-clip: text;
-    background-clip: text;
+    color: var(--color-vert-300);
   }
 
   .mission__detail {
@@ -2609,7 +2573,7 @@
     height: calc(var(--spacing) * 9);
     flex-shrink: 0;
     border-radius: var(--radius-md);
-    background: linear-gradient(150deg, var(--color-violet-500), var(--color-violet-800));
+    background: var(--color-violet-600);
     color: #fff;
     font-size: var(--text-sm);
     font-weight: 700;
@@ -3552,10 +3516,7 @@
     line-height: 1;
     font-weight: 800;
     letter-spacing: -0.04em;
-    color: transparent;
-    background: linear-gradient(92deg, var(--color-violet-500) 10%, var(--color-vert-500) 90%);
-    -webkit-background-clip: text;
-    background-clip: text;
+    color: var(--color-violet-500);
   }
 
   .introuvable__titre {
@@ -3593,6 +3554,114 @@
     .introuvable__liens {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+  }
+
+  /* --- Page de maintenance ---------------------------------------------
+     Page plein écran, sans en-tête ni pied de page. Aplat violet, comme le
+     reste du site ; aucune dégradé. */
+  .maintenance-shell {
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .maintenance {
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: calc(var(--spacing) * 4);
+    background: var(--color-violet-800);
+    color: #fff;
+  }
+
+  .maintenance__panneau {
+    width: min(100%, 40rem);
+    display: grid;
+    gap: calc(var(--spacing) * 3);
+    text-align: center;
+    padding: calc(var(--spacing) * 6) calc(var(--spacing) * 4);
+  }
+
+  .maintenance__eyebrow {
+    justify-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 0.75);
+    padding: calc(var(--spacing) * 0.75) calc(var(--spacing) * 1.5);
+    border-radius: var(--radius-full);
+    background: rgb(255 255 255 / 0.12);
+    color: #fff;
+    font-size: var(--text-caption);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .maintenance__titre {
+    font-size: var(--text-section);
+    line-height: 1.2;
+    font-weight: 800;
+    letter-spacing: -0.015em;
+  }
+
+  @media (min-width: 48rem) {
+    .maintenance__titre {
+      font-size: var(--text-display);
+    }
+  }
+
+  .maintenance__texte {
+    color: rgb(255 255 255 / 0.85);
+    font-size: var(--text-lead);
+    line-height: 1.6;
+  }
+
+  .maintenance__coordonnees {
+    display: grid;
+    gap: calc(var(--spacing) * 1.5);
+    justify-items: center;
+  }
+
+  .maintenance__contact {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 1);
+    color: #fff;
+    font-size: var(--text-lead);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .maintenance__contact:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .maintenance__canaux {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: calc(var(--spacing) * 1.5);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .maintenance__canal {
+    display: inline-flex;
+    align-items: center;
+    gap: calc(var(--spacing) * 0.75);
+    padding: calc(var(--spacing) * 1) calc(var(--spacing) * 1.5);
+    border-radius: var(--radius-full);
+    background: rgb(255 255 255 / 0.12);
+    color: #fff;
+    font-size: var(--text-sm);
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .maintenance__canal:hover {
+    background: rgb(255 255 255 / 0.22);
   }
 }
 
@@ -3646,11 +3715,7 @@
 
   .carte__couverture {
     height: calc(var(--spacing) * 7);
-    background: linear-gradient(
-      120deg,
-      var(--color-violet-500),
-      var(--color-violet-300)
-    );
+    background: var(--color-violet-500);
   }
 
   .fiche__identite {
